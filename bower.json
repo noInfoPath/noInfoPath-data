@@ -1,0 +1,10 @@
+{
+  "name": "noinfopath-data",
+  "main": "noinfopath-data.js",
+  "version": "0.0.1",
+  "authors": [
+    "Adarian Eastman <adarian@imginconline.com>"
+  ],
+  "description": "noInfoPath data module",
+  "license": "MIT"
+}
