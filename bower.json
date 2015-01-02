@@ -1,0 +1,17 @@
+{
+  "name": "noinfopath-data",
+  "main": "noinfopath-data.js",
+  "version": "0.0.1",
+  "authors": [
+    "noInfoPath <info@noinfopath.com>"
+  ],
+  "description": "noInfoPath data module",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
