@@ -293,7 +293,7 @@
 								});	
 								tasks = queue;
 								deferred.resolve(queue);	
-							},1)
+							},1);
 
 							return deferred.promise;
 						}
