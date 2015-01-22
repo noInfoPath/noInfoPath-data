@@ -1,7 +1,17 @@
-
 describe("Testing NoInfoPath (Local) Data Module", function(){
+
+	beforeEach(module("noinfopath.data"));
+	
 	describe("when online", function(){
-		it("should retrieve the 'upgrades' from $http::~/noupgrades/:id");
+		it("should retrieve the 'upgrades' from $http::~/noupgrades/:id", function(done){
+			requestDbUpgrades("54b9a2dcd2a8e3e80e626ce9")
+
+
+
+		});
+
+
+
 		it("then queue all of the upgrade tasks");
 		it("then initalize all CRUD interface for all object stores.");
 		describe("then initialize Db", function(){
@@ -19,7 +29,6 @@ describe("Testing NoInfoPath (Local) Data Module", function(){
 				}
 			});
 		});
-
 	});
 
 	describe("Test simple CUD functionality", function(){
