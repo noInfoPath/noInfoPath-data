@@ -386,44 +386,7 @@
 					}
 					this.init = init;
 
-					function sync(cb){
-						var eag = {};
 
-						function _makeEAG(){
-							var promises = [];
-
-							angular.forEach(SELF.collection, function(col,key){
-								var promise = col.sync().then(function(r){
-									eag[key] = r;
-								});
-								promises.push(promise);
-							});
-
-							return $q.all(promises);
-						}
-
-						function _success(data, status, headers, config){
-							log.write("_success: " + status);
-							_finish();
-						}
-
-						function _error(data, status, headers, config){
-							log.write("_error: " + status);
-							log.write(headers());
-							_finish();
-						}
-
-						function _finish(){
-							setTimeout(_broadcast, 1000, NODB.SYNC_COMPLETE);
-						}
-
-						_makeEAG().then(function(){
-							$http.post(endpointUri + "/sync/54a316dc912d8cd02d7770c7", eag)
-								.success(_success)
-								.error(_error);
-						});
-					}
-					this.sync = sync;
 
 					function collection(name, config){
 						var SELF = this, createNode = _.findWhere(config, {"action": "createStore"});

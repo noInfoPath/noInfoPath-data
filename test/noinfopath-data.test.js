@@ -25,7 +25,7 @@ describe("Testing NoInfoPath (Local) Data Module", function(){
 	describe("Test simple CUD functionality", function(){
 		it("should add (create) a new object to the specified objectStore");
 		it("should update the object specified by the primary key, on the specified objectStore.");
-		it("should delete the object specified by the primary key, on the specufied objectStore.");
+		it("should delete the object specified by the primary key, on the specified objectStore.");
 	});
 
 	describe("Test batch CUD functions", function(){
