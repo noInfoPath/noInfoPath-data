@@ -11,7 +11,12 @@
 		.constant('NODB_CONSTANTS', {
 			DBNAME: "NoInfoPath",
 			DATA_READY: "NoInfoPath::dataReady",
-			DATA_CHANGED: "NoInfoPath::dataChanged"
+			DATA_CHANGED: "NoInfoPath::dataChanged",
+			DB_READY: "NoInfoPath::dbReady",
+			SYNC_COMPLETE: "NoInfoPath::dbSyncComplete",
+			COLLECTION: {        
+				"NODBUPGRADES": "nodbupgrades"
+			}
 		})
 		
 		.config(['$indexedDBProvider', function($indexedDBProvider){
@@ -30,18 +35,188 @@
 			}
 			this.setEndPointUri = _setEndPointUri;
 
+			function _crudUrl(collectionName,id){
+				var url = endpointUri + "/entity/mongodb/" + collectionName;
+				if(id) url = url + "/" + id;
+				return url;
+			}
+
 			this.$get = [
+				'$q',
 				'$window', 
+				'$http',
 				'$indexedDB', 
 				'NODB_CONSTANTS', 
 				'noLogService', 
 				'$rootScope',
-				function($window, $indexedDB, NODB, log,$rootScope){
+				'noOnlineStatus',
+				'NOSYNC_CONSTANTS',
+				function($q, $window, $http, $indexedDB, NODB, log,$rootScope, noStatus, NOSYNC){
 
 					if(!endpointUri) throw {"error": 10000, "message": "noDB requires that you call setEndPointUri during the angular.config phase."}
 					
-					var SELF = this;
+					var SELF = this,
+						objectStore,
+						queue,
+						upgradeActions = {
+							createStore: function(name, action, deferred){
+								log.write('Create object store: ' + name);
+								var db = this.result, 
+									objectStore,
+								 	storeExists = _.values(this.result.objectStoreNames).indexOf(name) > -1;
+									
+								if(storeExists){
+									objectStore = this.transaction.objectStore(name);
+								}else{
+									try{
+										objectStore = db.createObjectStore(name, action.options);	
+									}catch(err){
+										deferred.reject(err);
+									}
+								}
+								deferred.resolve(objectStore);						
+							},
+							createIndex: function(name, action, deferred){
+								log.write('Create Index: ' + name);
+
+								var tx = this.transaction,
+									ndx = action.property + "_ndx",
+									objectStore;
+								
+								tx.onerror = function(e){
+									log.write('Create Index Error: ' + name);
+									deferred.reject(e);							
+								};
+
+								tx.oncomplete = function(e){
+									deferred.resolve();					
+								}
+	
+								objectStore = tx.objectStore(name);
+
+								if(_.values(objectStore.indexNames).indexOf(ndx) == -1){
+									objectStore.createIndex(ndx, action.property, action.options);
+								}					
+							},
+							deleteStore: function(name, action, deferred){
+								log.write('Delete object store: ' + name);
+								var db = this.result,
+								 	storeExists = _.values(this.result.objectStoreNames).indexOf(name) > -1;
+									
+								if(storeExists){
+									try{
+										db.deleteObjectStore(name);
+										deferred.resolve(true);
+									}catch(err){
+										deferred.reject(err);
+									}
+								}else{
+									deferred.resolve(objectStore);	
+								}
+							},
+							deleteIndex: function(name, action, deferred){
+								log.write('Delete Index: ' + name);
+
+								var tx = this.transaction,
+									ndx = action.property + "_ndx",
+									objectStore;
+								
+								tx.onerror = function(e){
+									log.write('delete Index Error: ' + name);
+									deferred.reject(e);							
+								};
+
+								tx.oncomplete = function(e){
+									deferred.resolve();					
+								}
+	
+								objectStore = tx.objectStore(name);
+
+								if(_.values(objectStore.indexNames).indexOf(ndx) > -1){
+									objectStore.deleteIndex(ndx, action.property, action.options);
+								}		
+							},						
+							populateStore: function(name, action, deferred){								
+								var entity = SELF.collection[name],
+									db = this.result;
+
+								$http.get(_crudUrl(name))
+									.success(function(data){
+										//log.write(data);
+										var list = data.results || data;
+										entity.upsert(db, list)
+											.then(deferred.resolve)
+											.finally(function(d){
+												log.write("finally:" + d);
+											}, function(info){
+												log.write(info);
+											});										
+									})
+									.error(deferred.reject);								
+							},
+							clear: function(name,action, deferred){
+								if(!objectStore){
+									var tx = e.target.transaction;
+									
+									tx.onerror = function(e){
+										log.write(e.target.error.message)
+									};
+
+									tx.oncomplete = function(e){
+										log.write('Clear completed successfully.')
+									}
+
+									objectStore = tx.objectStore(name);
+								}
+							}
+						},
+						currentUpgrade;
+
 					this.collection = {};
+
+					function dbPromise(upgrade, revision) {
+				        var deferred = $q.defer(),
+				        	request = indexedDB.open(NODB.DBNAME, revision),
+				        	fn = upgrade.pop();
+
+					        request.onupgradeneeded = function onupgradeneeded(event) {
+					            var db = request.result,
+					            	tx = db.transaction;
+
+						        tx.oncomplete = function oncomplete(ev) { 
+						        	log.write("tx.oncomplete");
+						        	deferred.resolve(); 
+						        }
+						      
+						        tx.onabort = function onabort(ev) { 
+						        	log.write("tx.onabort")
+						        	deferred.reject(transaction.error.toString()); 
+						        };
+
+								upgrade.push(deferred);		
+
+						       	if(fn) fn.apply(request, upgrade);
+					        };
+
+					        request.onerror = function onerror(ev) { deferred.reject(request.error); };
+
+					        return deferred.promise.then(function(){
+					        	request.result.close();
+					        });
+					};					
+
+					function _ceateQueue(upgrades){
+						queue = [];
+						angular.forEach(upgrades.collections, function(collection, name){
+							angular.forEach(collection, function(upgrade){
+								queue.unshift([name, upgrade, upgradeActions[upgrade.action]]);
+							});
+						});		
+					}
+
+					function _broadcast(event){
+						$rootScope.$broadcast(event || NODB.DB_READY, true);
+					}
 
 					/**
 					 * Initialize or upgrade the IndexedDB from provided
@@ -50,97 +225,216 @@
 					 * @return {void}        [description]
 					 */
 					function init(config, cb){
+						var deferred = $q.defer();
 
-						//Define actions that can be performed on the database.
-						var dbActions = {
-								drop: function (){
-									$window.indexedDB.deleteDatabase(NODB.DBNAME);
-									log.write("Database has been dropped.")
-								}
-							},
-							currentUpgrade = config.database.upgrades[config.database.version];
+						noStatus.update(NOSYNC.STATUS_CODES.DBINIT);
 
-						//Run any db actions that exist in the current config.
-						//Typically this array is empty. But, useful if you want
-						//to start over with version 1 of the NoInfoPath database.
-						//This can be accomplished by adding {action: "drop"}
-						//to the array.
-						angular.forEach(currentUpgrade.db, function(upgrade){
-							dbActions[upgrade.action](upgrade);
-						});
+						var tasks,
+							internal_version = (config.ver * 1000)
+						;
 
+						function checkDbVersion(version){
+					        var deferred = $q.defer(),
+					        	revision = (version * 1000) - tasks.length,
+					        	request = indexedDB.open(NODB.DBNAME, revision),
+					        	db;
 
-						//Next open and upgrade the database if possible and required.
-						var dbOpenReq = $window.indexedDB.open(NODB.DBNAME, config.database.version)
-							dbOpenReq.onerror = function(e){
-								log.write(event.target.error.message);			
-							};
+					        request.onerror = function onerror(ev) { 
+					        	if(ev.target.error.name == "AbortError"){
+					        		//Assume this was because we explictly
+					        		//called abort() in the upgradeneeded event.
+					        		deferred.resolve(true); 
+					        	}else if(ev.target.error.name == "VersionError"){
+					        		//assume this means that the version does
+					        		//already exist.
+					        		deferred.resolve(false);
+					        	}				         	
+					     	};
 
-							dbOpenReq.onsuccess = function(e){
-								log.write('Database opened successfully.');
-								var db = e.target.result;
-								
-								angular.forEach(db.objectStoreNames, function(name){
-									SELF.collection[name] = new collection(db, name);
-								});
-								log.write('NoInfoPath interfaces initialized.')
+					     	request.onsuccess = function onsuccess(ev){
+								db = request.result;
+								db.close();
+								deferred.resolve(false);
+					     	};
 
-								if(cb) cb();
-							};
+					     	request.onupgradeneeded = function onupgradeneeded(ev){
+					     		event.target.transaction.abort();
+					     	};
 
-							dbOpenReq.onupgradeneeded = function(e){
+					        return deferred.promise;
+						}
 
-								log.write('Upgrade needed.')
-								
-								var db = e.target.result,
-									upgradeActions = {
-										createStore: function(name, action){
-											log.write('Create object store.')
-											objectStore = db.createObjectStore(name, action.options);
-										},
-										createIndex: function(name, action){
-											log.write('Create Index.')
+						function requestDbUpgrades(upgradeId){
+							var deferred = $q.defer();
 
-											if(!objectStore){
-												var tx = e.target.transaction;
-												
-												tx.onerror = function(e){
-													log.write(e.target.error.message)
-												};
+							log.write("getting upgradeid " + upgradeId);
+							$http.get(_crudUrl(NODB.COLLECTION.NODBUPGRADES, upgradeId))
+								.success(function(data){
+									currentUpgrade = data;
+									deferred.resolve();
+								})
+								.error(function(err){
+									deferred.reject(err);
+								})
+							return deferred.promise;
+						}
 
-												tx.oncomplete = function(e){
-													log.write('Transaction completed successfully.')
-												}
+						function queueUpgradeTasks(){
+							var deferred = $q.defer(), 
+								queue = [],
+								upgrades = currentUpgrade;
 
-												objectStore = tx.objectStore(name);
-											}
-
-											objectStore.createIndex(
-												action.property + "_ndx", 
-												action.property, action.options);
-										}
-									}, objectStore;
-
-								db.onerror = function(e){
-									log.write(e.target.error.message)
-								}
-
-								angular.forEach(currentUpgrade.collections, function(store, name){
-									angular.forEach(store, function(upgrade){
-										upgradeActions[upgrade.action](name, upgrade);
+							setTimeout(function(){
+								angular.forEach(upgrades.collections, function(collection, name){
+									angular.forEach(collection, function(upgrade){
+										var fn = upgradeActions[upgrade.action];
+										queue.push([name, upgrade, fn]);
 									});
+								});	
+								tasks = queue;
+								deferred.resolve(queue);	
+							},1)
+
+							return deferred.promise;
+						}
+
+						function start(queue){ 
+							internal_version = internal_version - tasks.length + 1;
+							var deferred = $q.defer();
+							run(deferred)
+								.then(function(data){
+									log.write(data);
+								})
+								.catch(function(err){
+									log.write(err.name + ": " + err.message);
+								})
+								.finally(function(){
+									log.write("run, finally...");
+								});				
+
+							var deferred = $q.defer();
+							
+							return deferred.promise;
+						}
+
+						function run(whenDone){
+
+							var task = tasks.shift();
+
+							if(!!task){
+								var p = new dbPromise(task, internal_version++);
+								p.then(function(data){
+									run(whenDone);
+								}).catch(function(err){
+									whenDone.reject(err);
+								});								
+							}
+
+
+							return whenDone.promise;
+						}
+
+						function initDb(){
+							var deferred = $q.defer();
+							
+							checkDbVersion(config.ver)							
+								.then(function(startUpgrade){
+									if(startUpgrade){
+										log.write("db upgrade required");
+										start(tasks)
+											.then(function(){
+												log.write("db upgrade completed at version: " + internal_version);
+												deferred.resolve(true)
+											})
+											.catch(function(err){
+												deferred.reject(err);
+											})
+									}else{
+										log.write("db upgrade is not required");
+										deferred.resolve(true);
+									}
 								});
-							};
+
+							return deferred.promise;
+						}
+
+						function initCollections(){
+							var deferred = $q.defer();
+							
+							setTimeout(function(){
+								angular.forEach(currentUpgrade.collections, function(col, name){
+									SELF.collection[name] = new collection(name, col);
+								});
+								
+								log.write('NoInfoPath collection interfaces initialized.')
+								//_broadcast(NODB.DB_READY);
+								deferred.resolve(true);
+							},1);							
+
+							
+							return deferred.promise;
+						}
+
+						requestDbUpgrades(config.id)
+							.then(queueUpgradeTasks)
+							.then(initCollections)
+							.then(initDb)
+							.then(deferred.resolve)
+							.catch(deferred.reject);	
+
+						return deferred.promise;										
 					}
 					this.init = init;
 
-					function collection(db, store){
-						var SELF = this;
-						this.db = db;
-						this.store = store;
+					function sync(cb){
+						var eag = {};
 
-						this.one = function(id, cb){
-							var tx = this.db.transaction([this.store], "readwrite");
+						function _makeEAG(){
+							var promises = [];
+
+							angular.forEach(SELF.collection, function(col,key){
+								var promise = col.sync().then(function(r){
+									eag[key] = r;
+								});
+								promises.push(promise);
+							});
+
+							return $q.all(promises);
+						}
+
+						function _success(data, status, headers, config){
+							log.write("_success: " + status);
+							_finish();
+						}
+
+						function _error(data, status, headers, config){
+							log.write("_error: " + status);
+							log.write(headers());
+							_finish();
+						}
+
+						function _finish(){
+							setTimeout(_broadcast, 1000, NODB.SYNC_COMPLETE);
+						}
+
+						_makeEAG().then(function(){
+							$http.post(endpointUri + "/sync/54a316dc912d8cd02d7770c7", eag)
+								.success(_success)
+								.error(_error);
+						});
+					}
+					this.sync = sync;
+
+					function collection(name, config){
+						var SELF = this, createNode = _.findWhere(config, {"action": "createStore"});
+						this.store = name;
+						this.primaryKey = createNode &&  createNode.options.keyPath  ? createNode.options.keyPath + "_ndx" : "ID";
+
+						this.indecies = function(db){
+						}
+
+						this.one = function(db, id, cb){
+							var tx = db.transaction([this.store], "readwrite");
 								tx.onerror = function(e){
 								log.write(e.target.error.message)
 								$rootScope.$apply();
@@ -162,16 +456,16 @@
 							} 
 						};
 
-						this.query = function(criteria, cb){
+						this.query = function(db, criteria, cb){
 							log.write('TODO: implement queries that use criteria.')
-							var tx = this.db.transaction([this.store], "readwrite");
+							var tx = db.transaction([this.store], "readwrite");
 								tx.onerror = function(e){
 								log.write(e.target.error.message)
 								$rootScope.$apply();
 							};
 
 							tx.oncomplete = function(e){
-								log.write('Transaction completed successfully.')
+								log.write('Query completed successfully.')
 								$rootScope.$apply();
 							}
 
@@ -196,31 +490,90 @@
 							};
 						};
 
-						this.upsert = function(data, cb){
-							var tx = this.db.transaction([this.store], "readwrite");
+						this.upsert = function(db, data, cb){
 
-							tx.onerror = function(e){
-								log.write(e.target.error.message);
-								$rootScope.$apply();
-							};
+							var deferred = $q.defer(),
+								items = angular.isArray(data) ? data : [data];
 
-							tx.oncomplete = function(e){
-								log.write('Transaction completed successfully.')
-								$rootScope.$apply();
+							function _index(db, name){
+								var deferred = $q.defer(),
+									ndxName = !!name ? (name + "_ndx") : "ID",
+									tx = db.transaction([SELF.store], "readwrite"),
+									os = tx.objectStore(SELF.store), 
+									ndx = os.index(name);
+
+								tx.onerror = function(e){
+									//log.write(e.target.error.message);
+									//$rootScope.$apply();
+									
+									deferred.reject(e.target.error);
+								};
+
+								tx.oncomplete = function(e){
+									//log.write('Transaction completed successfully.')
+									//$rootScope.$apply();
+									deferred.resolve(ndx);
+								}
+
+								os.onsuccess = function(e){
+									
+									debugger;
+									deferred.resolve(ndx);
+								}
+								//log.write(os.indexNames);
+								return deferred.promise;							
 							}
 
-							var os = tx.objectStore(this.store);
+							function _add(db, datum){
 
-							var r = os.add(data);
+								var deferred = $q.defer(),
+									tx = db.transaction([SELF.store], "readwrite"),
+									os = tx.objectStore(SELF.store),
+									r = os.add(datum);
 
-							r.onsuccess = function(e){							
-								$rootScope.$broadcast(NODB.DATA_CHANGED, {collection: SELF.store,  data: e.target.result});
-								if(cb) cb(e.target.result);
-							} 
+								tx.onerror = function(e){
+									//log.write(e.target.error.message);
+									//$rootScope.$apply();
+									deferred.notify(e.target.error);
+								};
+
+								tx.oncomplete = function(e){
+									//log.write('Transaction completed successfully.')
+									//$rootScope.$apply();
+									deferred.notify(e);
+								}
+
+								r.onsuccess = function(e){
+									deferred.resolve(e.target.result);
+								};
+
+								r.onerror = function(e){
+									deferred.reject(e.target.error);
+								};
+
+								return deferred.promise;
+							}
+
+							_index(db, SELF.primaryKey)
+								.then(function(ndx){
+									log.write(ndx);
+								})
+								.catch(function(err){
+									log.write(err);
+								});
+
+							// angular.forEach(items, function(item,k){
+							// 	_add(db, item)
+							// 		.then(deferred.notify)
+							// 		.catch(deferred.notify);
+							// });							
+
+
+							return deferred.promise;
 						};
 
-						this.del = function(id, cb){
-							var tx = this.db.transaction([this.store], "readwrite");
+						this.del = function(db, id, cb){
+							var tx = db.transaction([this.store], "readwrite");
 							
 							tx.onerror = function(e){
 								log.write(e.target.error.message)
@@ -241,11 +594,33 @@
 								if(cb) cb(e.target.result);
 							} 							
 						};
-					}
 
+						this.sync = function(){
+
+							var deferred = $q.defer()
+							
+							var eag = {
+								adds: [],
+								update: [],
+								deletes: []
+							}
+
+							this.query({},function(r){
+								angular.forEach(r, function(obj, key){
+									eag.adds.push({
+										key: {"indexedDB": key},
+										doc: obj
+									})									
+								})
+								deferred.resolve(eag);
+							})
+
+							
+							return deferred.promise;
+						}
+					}
 				
 					log.write('initialized noDBProvider')
-
 
 					return this;
 				}
