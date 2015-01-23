@@ -19,6 +19,7 @@ module.exports = function(config) {
       'node_modules/angular-mocks/angular-mocks.js',
       'node_modules/noinfopath-logger/noinfopath-logger.js',
       'bower_components/angularjs-indexedDB/src/indexeddb.js',
+      'test/mock/*.*',
       'test/*.test.js',
       'src/*.*'
     ],

@@ -1,9 +1,10 @@
 (function(angular, undefined){
-	angular.module('noinfopath.data.init',['xc.indexedDB','noinfopath.logger'])
-		.service('noDbInit', ['$q','$http', '$timeout', '$indexedDB', 'noLogService', function($q, $http, $timeout, $indexedDB, log){
+	angular.module('noinfopath.data.init',['xc.indexedDB','noinfopath.logger',"noinfopath.data.const"])
+		.service('noDbInit', ['$q','$http', '$timeout', '$indexedDB', 'noLogService', 'NODB_CONSTANTS', function($q, $http, $timeout, $indexedDB, log, NODB){
 			
 
 			var tasks,
+				SELF = this,
 				internal_version = 0,
 				upgradeActions = {
 					createStore: function(name, action, deferred){
@@ -121,7 +122,7 @@
 
 			this.dbPromise = function dbPromise(upgrade, revision) {
 		        var deferred = $q.defer(),
-		        	request = indexedDB.open(NODB.DBNAME, revision),
+		        	request = $indexedDB.open(NODB.DBNAME, revision),
 		        	fn = upgrade.pop();
 
 			        request.onupgradeneeded = function onupgradeneeded(event) {
@@ -155,31 +156,45 @@
 				internal_version = version * 1000;
 			};
 
-			this.checkDbVersion = function checkDbVersion(version){
+			this.getVersion = function getVersion(){
+				return internal_version;
+			};
+
+			this.getIndexedDBReference = function getIndexedDBReference() {
+				return $indexedDB;
+			}
+
+			this.checkDbVersion = function checkDbVersion(queue){
+
 			    var deferred = $q.defer(),
-			    	revision = (version * 1000) - tasks.length,
+			    	revision = SELF.getVersion() - queue.length,
 			    	request = $indexedDB.open(NODB.DBNAME, revision),
 			    	db;
 
+			    	console.log("We are in checkDbVersion");
 			    request.onerror = function onerror(ev) { 
 			    	if(ev.target.error.name == "AbortError"){
 			    		//Assume this was because we explictly
 			    		//called abort() in the upgradeneeded event.
+			    		console.log("We are in AbortError");
 			    		deferred.resolve(true); 
 			    	}else if(ev.target.error.name == "VersionError"){
 			    		//assume this means that the version does
 			    		//already exist.
+			    		console.log("We are in VersionError");
 			    		deferred.resolve(false);
 			    	}				         	
 			 	};
 
 			 	request.onsuccess = function onsuccess(ev){
+			 		console.log("We are in onsuccess");
 					db = request.result;
 					db.close();
 					deferred.resolve(false);
 			 	};
 
 			 	request.onupgradeneeded = function onupgradeneeded(ev){
+			 		console.log("We are in onupgradeneeded");
 			 		event.target.transaction.abort();
 			 	};
 
@@ -189,7 +204,7 @@
 			this.requestDbUpgrades = function requestDbUpgrades(uri){
 				var deferred = $q.defer();
 
-				$http.get(url)
+				$http.get(uri)
 					.success(function(data){
 						//currentUpgrade = data;
 						deferred.resolve(data);
@@ -205,6 +220,7 @@
 					queue = [],
 					upgrades = currentUpgrade;
 
+					console.log("We are in queueUpgradeTasks");
 				$timeout(function(){
 					angular.forEach(upgrades.collections, function(collection, name){
 						angular.forEach(collection, function(upgrade){
@@ -243,7 +259,7 @@
 				var task = tasks.shift();
 
 				if(!!task){
-					var p = new this.dbPromise(task, internal_version++);
+					var p = this.dbPromise(task, internal_version++);
 					p.then(function(data){
 						run(whenDone);
 					}).catch(function(err){
@@ -255,14 +271,14 @@
 				return whenDone.promise;
 			};
 
-			this.initDb = function initDb(){
+			this.initDb = function initDb(queue){
 				var deferred = $q.defer();
 				
 				checkDbVersion(config.ver)							
 					.then(function(startUpgrade){
 						if(startUpgrade){
-							log.write("db upgrade required");
-							start(tasks)
+							deferred.notify("db upgrade required");
+							this.start(queue)
 								.then(function(){
 									log.write("db upgrade completed at version: " + internal_version);
 									deferred.resolve(true)
@@ -296,12 +312,13 @@
 				return deferred.promise;
 			};
 
-			this.exec = function exec(){
+			this.exec = function exec(version){
 				var deferred = $q.defer();
+				    
+				this.setVersion(version);
 
 				this.requestDbUpgrades(config.id)
 					.then(queueUpgradeTasks)
-					.then(initCollections)
 					.then(initDb)
 					.then(deferred.resolve)
 					.catch(deferred.reject);	
