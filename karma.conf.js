@@ -17,11 +17,10 @@ module.exports = function(config) {
     files: [
       'node_modules/angular/angular.js',
       'node_modules/angular-mocks/angular-mocks.js',
-      'node_modules/noinfopath-logger/noinfopath-logger.js',
-      'bower_components/angularjs-indexedDB/src/indexeddb.js',
+      'bower_components/ng-lodash/build/ng-lodash.js',
       'test/mock/*.*',
-      'test/*.test.js',
-      'src/*.*'
+      'test/storage.spec.js',
+      'src/storage.js'
     ],
 
 
@@ -39,7 +38,7 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress'],
+    reporters: ['verbose'],
 
 
     // web server port

@@ -17,6 +17,7 @@
   "dependencies": {
     "angularjs-indexedDB": "*",
     "angular-resource": "~1.3.10",
-    "ngstorage": "~0.3.0"
+    "ngstorage": "~0.3.0",
+    "ng-lodash": "~0.2.0"
   }
 }
