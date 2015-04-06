@@ -1,4 +1,4 @@
-//manifest.mock.js
+
 var NoCacheManifest = {
 	request: {
 		url: "/NoCacheManifest"

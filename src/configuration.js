@@ -1,4 +1,4 @@
-//noinfopath-configuration@0.0.4*
+//configuration.js
 (function(angular, undefined){
 	"use strict";
 
@@ -14,51 +14,61 @@
 			noConfig.load()
 				.then(function(){
 					$rootScope.noConfigReady = true;
-					$rootScope.$emit("noConfig::ready")
+					//$rootScope.$emit("noConfig::ready")
 				})
 				.catch(function(err){
 					console.error(err);
 				})
 		}])
 
-		.service("noConfig", ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
+		.provider("noConfig", [function(){
 			var _currentConfig;
-			Object.defineProperties(this, {
-				"current": {
-					"get": function() {return _currentConfig;}
-				}
-			});
+			
+			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+				Object.defineProperties(this, {
+					"current": {
+						"get": function() {return _currentConfig;}
+					}
+				});
 
-			this.load = function (){
-				return $http.get("/config.json")
-					.then(function(resp){ 
-						_currentConfig = resp.data;
-						noLocalStorage.setItem("noConfig", _currentConfig);
-					})
-					.catch(function(){
-						_currentConfig = noLocalStorage.get("noConfig");
-					});
-			};
+				this.load = function (){
+					return $http.get("/config.json")
+						.then(function(resp){ 
+							_currentConfig = resp.data;
+							noLocalStorage.setItem("noConfig", _currentConfig);
+						})
+						.catch(function(){
+							_currentConfig = noLocalStorage.get("noConfig");
+						});
+				};
 
-			this.whenReady = function(){
-				var deferred = $q.defer();
+				this.whenReady = function(){
+					var deferred = $q.defer();
 
-				$timeout(function(){
-					if($rootScope.noConfigReady)
-					{
-						console.log("config Ready");
-						deferred.resolve();
-					}else{	
-						$rootScope.$on("noConfig::ready", function(){
+					$timeout(function(){
+						if($rootScope.noConfigReady)
+						{
 							console.log("config Ready");
 							deferred.resolve();
-						});					
-					}					
-				});	
+						}else{	
+							$rootScope.$watch("noConfigReady", function(newval){
+								if(newval){
+									console.log("config Ready");
+									deferred.resolve();								
+								}
 
-				return deferred.promise;			
-			};
+							});					
+						}					
+					});	
+
+					return deferred.promise;			
+				};				
+			}
+
+			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
+				return new noConfig($http, $q, $timeout, $rootScope, noLocalStorage);
+			}];
 		}])
 
 	;
-})(angular)
+})(angular);

@@ -1,147 +1,305 @@
-//indexeddb.js
+//configuration.js
+(function(angular, undefined){
+	"use strict";
 
-(function(){
+	var noODATAProv;
 
-	angular.module("noinfopath.indexeddb",['ngLodash', 'noinfopath.odata'])
-		
-		.run(['$rootScope', 'noConfig', 'noCacheManifest', 'noIndexedDB', function($rootScope, noConfig, noCacheManifest, noIndexedDB){
-			noCacheManifest.whenReady()
-				.then(_start)
+	angular.module("noinfopath.configuration", [])
+		.config([function(){
+			
+		}])
+
+		.run(['$rootScope', 'noConfig', function($rootScope, noConfig){
+
+			noConfig.load()
 				.then(function(){
-					$rootScope.noIndexedDBReady = true;
-					$rootScope.$emit("noIndexedDB::ready");
+					$rootScope.noConfigReady = true;
+					//$rootScope.$emit("noConfig::ready")
 				})
 				.catch(function(err){
 					console.error(err);
-				});
-
-			function _start(){	
-				return noIndexedDB.configure(noConfig.current.IndexedDB, noCacheManifest.dbConfig);
-			}	
+				})
 		}])
 
-		.factory("noIndexedDB", ['$rootScope','lodash', '$q', '$timeout', 'noCacheManifest', function($rootScope, _, $q, $timeout, noCacheManifest){
-			var SELF = this, dex,
-				queryBuilder = {
-					kendo: function(table, options){
+		.provider("noConfig", [function(){
+			var _currentConfig;
+			
+			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+				Object.defineProperties(this, {
+					"current": {
+						"get": function() {return _currentConfig;}
+					}
+				});
 
-						var operators = {
-							"eq": function(a, b){
-								return a === b;
-							}
-						}, _total = 0;
+				this.load = function (){
+					return $http.get("/config.json")
+						.then(function(resp){ 
+							_currentConfig = resp.data;
+							noLocalStorage.setItem("noConfig", _currentConfig);
+						})
+						.catch(function(){
+							_currentConfig = noLocalStorage.get("noConfig");
+						});
+				};
 
-						function _filter(table, filter){
+				this.whenReady = function(){
+					var deferred = $q.defer();
 
-							var deferred = $q.defer(),
-								fields,
-								values,
-								logic;
-
-							$timeout(function(){
-								if(filter)
-								{
-									fields = _.pluck(filter.filters, "field");
-									values = _.pluck(filter.filters, "value");
-									logic = filter.logic;
-
-									//console.log(fields, values, filter)
-									console.warn("TODO: This is hard coded to only work with keys. Expand to full where clause functionality.")
-									var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
-										v = values.length === 1 ? values[0] : values,
-										collection = table.where(w).equals(v);
-
-									deferred.resolve(collection);
-								}else{
-									deferred.resolve(table.toCollection());
+					$timeout(function(){
+						if($rootScope.noConfigReady)
+						{
+							console.log("config Ready");
+							deferred.resolve();
+						}else{	
+							$rootScope.$watch("noConfigReady", function(newval){
+								if(newval){
+									console.log("config Ready");
+									deferred.resolve();								
 								}
-							});
 
+							});					
+						}					
+					});	
 
-							return deferred.promise;
+					return deferred.promise;			
+				};				
+			}
+
+			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
+				return new noConfig($http, $q, $timeout, $rootScope, noLocalStorage);
+			}];
+		}])
+
+	;
+})(angular);
+
+//http.js
+(function(angular, undefined){
+	"use strict";
+
+	angular.module('noinfopath.http',[])
+		.provider("noHTTP",[function(){
+			
+			this.configure = function(){
+				angular.noop();
+			}
+
+			this.createTransport = function(){
+				return new noREST();
+			}
+
+			function noREST($q, $http){
+				var SELF = this;
+
+				this.create = function(resourceURI, formdata){
+					var json = angular.toJson(formdata);
+					console.log(resourceURI);
+
+					var deferred = $q.defer(),
+						req = {
+							method: "POST",
+							url: resourceURI,
+							data: json,
+							headers: {
+								"Content-Type": "application/json",
+								"Accept": "application/json"
+							},
+							withCredentials: true
+						};
+				
+					$http(req)
+						.success(function(data){
+							//console.log(angular.toJson(data) );
+
+							deferred.resolve(data);
+						})
+						.error(function(reason){
+							console.error(reason);
+							deferred.reject(reason);
+						});
+
+				
+	
+					return deferred.promise;
+				}
+
+				this.read = function(resourceURI, query){
+					//console.log(!!query);
+
+					var deferred = $q.defer(),
+						url = resourceURI + (!!query ? query : ""),
+						req = {
+							method: "GET",
+							url: url,
+							headers: {
+								"Content-Type": "application/json",
+								"Accept": "application/json"
+							},
+							withCredentials: true
+						};
+					
+					$http(req)
+						.success(function(data){
+							//console.log( angular.toJson(data));
+							deferred.resolve(data.value);
+						})
+						.error(function(reason){
+							deferred.reject(reason);
+						});
+
+					return deferred.promise;
+				}
+
+				this.update = function(){
+					var deferred = $q.defer();
+					$timeout(function(){
+						console.warn("TODO: Implement INOCRUD::update.");
+						deferred.resolve();
+					})
+					return deferred.promise;
+				}
+
+				this.destroy = function(){
+					var deferred = $q.defer();
+					$timeout(function(){
+						console.warn("TODO: Implement INOCRUD::destroy.");
+						deferred.resolve();
+					})					
+					return deferred.promise;
+				}
+			}
+
+			this.$get = ['$q', '$http', function($q, $http){
+				return new noREST($q, $http)
+			}]
+		}])
+	;
+})(angular);
+
+//indexeddb.js
+(function(angular, Dexie, undefined){
+
+	angular.module("noinfopath.indexeddb", ['ngLodash', 'noinfopath.manifest'])
+
+		.factory("noIndexedDB", ['$rootScope','lodash', 'noManifest', '$q', '$timeout', function($rootScope, _, noManifest, $q, $timeout){
+			var SELF = this, dex;
+
+			function queryBuilder(table, options){
+
+				var operators = {
+					"eq": function(a, b){
+						return a === b;
+					}
+				}, _total = 0;
+
+				function _filter(table, filter){
+
+					var deferred = $q.defer(),
+						fields,
+						values,
+						logic;
+
+					$timeout(function(){
+						if(filter)
+						{
+							fields = _.pluck(filter.filters, "field");
+							values = _.pluck(filter.filters, "value");
+							logic = filter.logic;
+
+							//console.log(fields, values, filter)
+							console.warn("TODO: This is hard coded to only work with keys. Expand to full where clause functionality.")
+							var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
+								v = values.length === 1 ? values[0] : values,
+								collection = table.where(w).equals(v);
+
+							deferred.resolve(collection);
+						}else{
+							deferred.resolve(table.toCollection());
 						}
+					});
 
-						function _count(collection){
-							var deferred = $q.defer();
 
-							collection.count()
-								.then(function(total){
-									_total = total;
-									deferred.resolve(collection);
+					return deferred.promise;
+				}
+
+				function _count(collection){
+					var deferred = $q.defer();
+
+					collection.count()
+						.then(function(total){
+							_total = total;
+							deferred.resolve(collection);
+						})
+						.catch(function(err){
+							deferred.reject(err);
+						});
+
+					return deferred.promise;
+				}
+
+				function _sort(collection, sort){	
+					var deferred = $q.defer(),
+						arry = [];
+
+					$timeout(function(){
+						if(sort.length > 0){
+							collection.sortBy(sort[0].field)
+								.then(function(array){
+									console.warn("TODO: Implement multi-column sorting.");
+									deferred.resolve(array);
 								})
 								.catch(function(err){
+									console.error(err);
+									deferred.reject(err);
+								})
+						}else{
+							collection.toArray()
+								.then(function(){
+									deferred.resolve(array);
+								})
+								.catch(function(err){
+									console.error(err);
 									deferred.reject(err);
 								});
-
-							return deferred.promise;
 						}
+					});
 
-						function _sort(collection, sort){	
-							var deferred = $q.defer(),
-								arry = [];
+					return deferred.promise;
+				}
 
-							$timeout(function(){
-								if(sort.length > 0){
-									collection.sortBy(sort[0].field)
-										.then(function(array){
-											console.warn("TODO: Implement multi-column sorting.");
-											deferred.resolve(array);
-										})
-										.catch(function(err){
-											console.error(err);
-											deferred.reject(err);
-										})
-								}else{
-									collection.toArray()
-										.then(function(){
-											deferred.resolve(array);
-										})
-										.catch(function(err){
-											console.error(err);
-											deferred.reject(err);
-										});
-								}
-							});
+				function _page(array, skip, take){
+					var deferred = $q.defer();
 
-							return deferred.promise;
+					$timeout(function(){
+						if(take){							
+							deferred.resolve(array.slice(skip, take));
+						}else{
+							deferred.resolve(array);
 						}
+					})
 
-						function _page(array, skip, take){
-							var deferred = $q.defer();
+					return deferred.promise;
+				}
 
-							$timeout(function(){
-								if(take){							
-									deferred.resolve(array.slice(skip, take));
-								}else{
-									deferred.resolve(array);
-								}
-							})
-
-							return deferred.promise;
-						}
-
-						_filter(table, options.data.filter)
-							.then(function(collection){
-								return _count(collection);
-							})
-							.then(function(collection){
-								return _sort(collection,options.data.sort)
-							})
-							.then(function(array){
-								return _page(array, options.data.skip, options.data.take);
-							})
-							.then(function(array){
-								array.__no_total__ = _total;
-								options.success(array);
-							})
-							.catch(function(err){
-								console.error(err);
-								options.error(err);
-							})
-					}
-				};
-			
-
+				_filter(table, options.data.filter)
+					.then(function(collection){
+						return _count(collection);
+					})
+					.then(function(collection){
+						return _sort(collection,options.data.sort)
+					})
+					.then(function(array){
+						return _page(array, options.data.skip, options.data.take);
+					})
+					.then(function(array){
+						array.__no_total__ = _total;
+						options.success(array);
+					})
+					.catch(function(err){
+						console.error(err);
+						options.error(err);
+					})
+			};
 
 			function _bind(tables){
 				function _import(table, data, deferred, progress){
@@ -206,9 +364,11 @@
 						console.log("IndexedDB Ready");
 						deferred.resolve();
 					}else{	
-						$rootScope.$on("noIndexedDB::ready", function(){
-							console.log("IndexedDB Ready");
-							deferred.resolve();
+						$rootScope.$watch("noIndexedDBReady", function(newval){
+							if(newval){
+								console.log("IndexedDB Ready");
+								deferred.resolve();								
+							}
 						});					
 					}					
 				});	
@@ -242,7 +402,7 @@
 				dex.on('ready', function(err) {
 				    // Log to console or show en error indicator somewhere in your GUI...
 				    console.info("IndedexDB is ready");
-					_bind(noCacheManifest.current.indexedDB);	
+					_bind(noManifest.current.indexedDB);	
 				    deferred.resolve();
 				});	
 
@@ -300,12 +460,11 @@
 				this.read = function(options) {
 					//console.debug(options);
 
-					var tbl = dex[SELF.tableName],
-						qb = queryBuilder[SELF.type];
+					var tbl = dex[SELF.tableName];
 
 					dex.transaction("r", tbl, function(){
 						if(options){
-							qb(tbl, options);
+							queryBuilder(tbl, options);
 						}else{
 							options.error("options parameter cannot be null.")
 						}
@@ -367,8 +526,8 @@
 				};
 			}
 
-			Dexie.prototype.createTransport = function(tableName, type){
-				return new noCRUD(noCacheManifest.current.indexedDB[tableName], type);
+			Dexie.prototype.createTransport = function(tableName){
+				return new noCRUD(noManifest.current.indexedDB[tableName]);
 			}
 
 			return 	dex = new Dexie("NoInfoPath-v3");
@@ -460,42 +619,36 @@
 				}.bind(this);
 		}])
 		;
-})(angular);
-//noinfopath-manifest.js
+})(angular, Dexie);
+
+//manifest.js
 (function(angular, undefined){
 	"use strict";
 
-	var noODATAProv, noRefDataProv;
-
-	angular.module("noinfopath.manifest", ['noinfopath.configuration', 'noinfopath-odata'])
-		.config(['noODATAProvider',function(noODATAProvider){
-			noODATAProv = noODATAProvider;
+	angular.module("noinfopath.manifest", ['ngLodash','noinfopath.configuration', 'noinfopath.http', 'noinfopath.helpers', 'noinfopath.storage'])
+		.config([function(){
 		}])
 
-		.run(['$rootScope', 'noODATA', 'noConfig', 'noCacheManifest',
-			function($rootScope, noODATA, noConfig, noCacheManifest){
+		.run(['$rootScope', 'noConfig', 'noManifest', function($rootScope, noConfig, noManifest){
+			noConfig.whenReady()
+				.then(_start)
+				.catch(function(err){
+					console.error(err);
+				});
 
-				noConfig.whenReady()
-					.then(_start)
-					.catch(function(err){
-						console.error(err);
+			function _start(){	
+				noManifest.load()
+					.then(function(data){
+						$rootScope.noManifest = data;
+						//$rootScope.$emit("noManifest::ready");
+					})
+					.catch(function(){
+						console.log("noManifest connection failed.")
 					});
-	
-				function _start(){	
-					noODATAProv.setEndPoint(noConfig.current.RESTURI);
-					noCacheManifest.load()
-						.then(function(){
-							$rootScope.noCacheManifestReady = true;
-							$rootScope.$emit("noCacheManifest::ready");
-						})
-						.catch(function(){
-							console.log("noCacheManifest connection")
-						});
-				}	
-
+			}	
 		}])
 
-		.service("noCacheManifest",['lodash', 'noODATA', 'noLocalStorage', '$rootScope', '$q', '$timeout', 'noConfig', function(_, noODATA, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+		.provider("noManifest",[function(){
 			var _manifestMap = {
 				localStorage:{},
 				sessionStorage: {},
@@ -506,298 +659,144 @@
 				indexedDB: {}
 			}, _dbConfig, _tableNames = [];
 
-			Object.defineProperties(this, {
-				"current": {
-					"get": function() {return _manifestMap;}
-				},
-				"deltas": {
-					"get": function() {return _deltas;}
-				},
-				"dbConfig": {
-					"get": function() {return _dbConfig; }
-				},
-				"lookupTables": {
-					"get": function() {return _tableNames; }
-				}
-			});
-
-			this._createManifestMap = function(cacheManifest){
-				function _isTable(obj, name){
-					return obj.TableName === name;
-				}
-				var keys =  _.pluck(cacheManifest, "TableName");
-
-				for(var i in keys)
-				{	
-					var tn = keys[i],
-						item =  _.find(cacheManifest, {"TableName": tn});
-					
-					if(tn.indexOf("LU") === 0) {
-						_tableNames.push({ text: item.EntityName, value: tn });
+			function noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+				Object.defineProperties(this, {
+					"current": {
+						"get": function() {return _manifestMap;}
+					},
+					"deltas": {
+						"get": function() {return _deltas;}
+					},
+					"dbConfig": {
+						"get": function() {return _dbConfig; }
+					},
+					"lookupTables": {
+						"get": function() {return _tableNames; }
 					}
-					
+				});
 
-					_manifestMap[item.StorageLocation][tn] = item;
-				}
-			};
+				function _createManifestMap(cacheManifest){
+					function _isTable(obj, name){
+						return obj.TableName === name;
+					}
+					var keys =  _.pluck(cacheManifest, "TableName");
 
-			this._deltaManifest = function(newManifest){
+					for(var i in keys)
+					{	
+						var tn = keys[i],
+							item =  _.find(cacheManifest, {"TableName": tn});
+						
+						if(tn.indexOf("LU") === 0) {
+							_tableNames.push({ text: item.EntityName, value: tn });
+						}
+						
 
-				var oldCacheManifest = noLocalStorage.getItem("NoCacheManifest") || {
-					localStorage:{},
-					sessionStorage: {},
-					indexedDB: {}					
+						_manifestMap[item.StorageLocation][tn] = item;
+					}
 				};
-					//oldKeys = _.pluck(oldCacheManifest[storageType], "TableName"),
-					//newKeys = _.pluck(_manifestMap[storageType], "TableName"),
-					//diffOld = _.difference(oldKeys, newKeys),
-					//diffNew = _.difference(newKeys, oldKeys)
-					//;
 
-				_.each(["localStorage", "indexedDB"], function(storageType){
-					var keys = _.pluck(_manifestMap[storageType], "TableName")
-					_.each(keys, function(key){
-						var local = oldCacheManifest[storageType][key],
-							localTime = local ? Date.parse(local.LastTransaction) : null,
-							serv = _manifestMap[storageType][key],
-							servTime =  Date.parse(serv.LastTransaction);
+				function _deltaManifest(newManifest){
 
-						if(!local){
-							_deltas[storageType][key] = _manifestMap[storageType][key];
-						}else{
-							if(!_.isEqual(local, serv))
-							{
-								if(servTime > localTime)
+					var oldCacheManifest = noLocalStorage.getItem("NoCacheManifest") || {
+						localStorage:{},
+						sessionStorage: {},
+						indexedDB: {}					
+					};
+						//oldKeys = _.pluck(oldCacheManifest[storageType], "TableName"),
+						//newKeys = _.pluck(_manifestMap[storageType], "TableName"),
+						//diffOld = _.difference(oldKeys, newKeys),
+						//diffNew = _.difference(newKeys, oldKeys)
+						//;
+
+					_.each(["localStorage", "indexedDB"], function(storageType){
+						var keys = _.pluck(_manifestMap[storageType], "TableName")
+						_.each(keys, function(key){
+							var local = oldCacheManifest[storageType][key],
+								localTime = local ? Date.parse(local.LastTransaction) : null,
+								serv = _manifestMap[storageType][key],
+								servTime =  Date.parse(serv.LastTransaction);
+
+							if(!local){
+								_deltas[storageType][key] = _manifestMap[storageType][key];
+							}else{
+								if(!_.isEqual(local, serv))
 								{
-									_deltas[storageType][key] = _deltas[storageType][key] = _manifestMap[key];;
+									if(servTime > localTime)
+									{
+										_deltas[storageType][key] = _deltas[storageType][key] = _manifestMap[key];;
+									}
 								}
 							}
-						}
 
-					});					
-				});
-			}.bind(this);
-
-			this._makeDBConfig = function (){
-				var config = {};
-
-				_.each(_manifestMap.indexedDB, function(table){
-					var cfg = angular.fromJson(table.IndexedDB);
-					config[table.TableName] = cfg.keys;
-				});
-				//console.debug(config);
-				
-				_dbConfig = config;
-			};
-
-			this.load = (function (){
-				return noODATA.read(noODATA.makeResourceUrl("NoCacheManifest"))
-					.then(function(data){
-						noLocalStorage.setItem("NoCacheManifest", data);
-						this._createManifestMap(data);
-						//this._deltaManifest();
-						this._makeDBConfig();
-					}.bind(this))
-					.catch(function(){
-						//Assume offline or no connection to REST Service
-						var data = noLocalStorage.getItem("NoCacheManifest")
-						if(data){
-							this._createManifestMap(data);
-							//this._deltaManifest();
-							this._makeDBConfig();
-						}else{
-							throw "No Configuration, please again when online."
-						}
-					}.bind(this));
-			}).bind(this);
-
-			this.whenReady = function(){
-				var deferred = $q.defer();
-
-				$timeout(function(){
-					if($rootScope.noCacheManifestReady)
-					{
-						console.log("cacheManifest Ready");
-						deferred.resolve();
-					}else{	
-						$rootScope.$on("noCacheManifest::ready", function(){
-							console.log("cacheManifest Ready");
-							deferred.resolve();
 						});					
-					}					
-				});	
-
-				return deferred.promise;			
-			};
-
-		}])
-
-	;
-})(angular)
-/**
- * noinfopath-odata@0.0.5
- */
-
-(function(angular, undefined){
-	"use strict";
-
-	angular.module('noinfopath.odata',['noinfopath.helpers'])
-		.service("noODataQueryBulder",['$filter',function($filter){
-
-			/**
-			 * If value is a string then the value is returned
-			 * with single quotes around it. This ensures compatibility
-			 * the ODATA specification.
-			 * @param  {string|number} value this is what should be wrapped if a string
-			 * @return {string|number}       Either returns the original or a string wrapped in single quotes
-			 */
-			this.normalizeValue = function(value){
-				if(typeof value === "string"){
-					return "'" + value + "'";
-				}else if(angular.isDate(value)){
-					 return  $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
-				}else{
-					return value;
-				}					
-			};
-
-			this.makeFilterExpression = function(filterObj, processor){
-				console.log(angular.toJson(filterObj))
-				var filter = "$filter=";
-				if(angular.isObject(filterObj)){
-					console.log("TODO: implement complex queries")
-					filter = processor(filterObj);
-				}else{
-					//Assume primative string, or number as passed in as filterObj.
-					//in this case return a simple identity filter
-					filter = "(" + this.normalizeValue(filterObj) + ")";
-				}
-				return filter;
-			};
-
-			this.makeSelectExpression = function(colmnsArray){
-				var select = "$select=";
-
-				return select;
-			};
-
-			this.buildQueryString = function(filter, mapParams, type){
-				var query;
-
-
-				//function _makeFilter
-
-				if(!filter){
-					query = "";
-				}else if(angular.isObject(filter)){
-					if(!angular.isFunction(mapParams)) throw "Parameter mapper required."
-
-					console.log("TODO: Do something with a query that is an object.");
-					query = "?" + mapParams(filter, type);
-				}else{
-					query = "(" + queryBuilder.normalizeValue(filter) + ")";						
+					});
 				}
 
-				return query;
-			}
+				function _makeDBConfig(){
+					var config = {};
 
-			return this;
-		}])
-
-		.provider("noODATA",[function(){
-			var PROV = this,
-				endPoint = "";
-
-			function _noODATA($q, $http, queryBulder){
-				var SELF = this;
-
-				this.makeResourceUrl = function(listname){
-					return PROV.getEndPoint() + "/" + listname;
+					_.each(_manifestMap.indexedDB, function(table){
+						var cfg = angular.fromJson(table.IndexedDB);
+						config[table.TableName] = cfg.keys;
+					});
+					//console.debug(config);
+					
+					_dbConfig = config;
 				};
 
-
-				this.create = function(resourceURI, formdata){
-					var json = angular.toJson(formdata);
-					
-
-					var deferred = $q.defer(),
-						req = {
-							method: "POST",
-							url: resourceURI,
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-					
-					$http(req)
-						.success(function(data){
-							//console.log(angular.toJson(data) );
-							deferred.resolve(data.d);
+				this.load = function (){
+					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest"))
+						.then(function(data){
+							noLocalStorage.setItem("noManifest", data);
+							_createManifestMap(data);
+							//this._deltaManifest();
+							_makeDBConfig();
+							$rootScope.noManifestReady = true;
 						})
-						.error(function(reason){
-							deferred.reject(reason);
+						.catch(function(){
+							//Assume offline or no connection to REST Service
+							var data = noLocalStorage.getItem("noManifest")
+							if(data){
+								_createManifestMap(data);
+								//this._deltaManifest();
+								_makeDBConfig();
+							}else{
+								throw "No Configuration, please again when online."
+							}
 						});
+				};
 
-					return deferred.promise;
-				}
-
-				this.read = function(resourceURI, query){
-					//console.log(!!query);
-
-					var deferred = $q.defer(),
-						url = resourceURI + (!!query ? query : ""),
-						req = {
-							method: "GET",
-							url: url,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-					
-					console.log('\n' + url);
-					$http(req)
-						.success(function(data){
-							//console.log( angular.toJson(data));
-							deferred.resolve(data.value);
-						})
-						.error(function(reason){
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				}
-
-				this.update = function(){
+				this.whenReady = function(){
 					var deferred = $q.defer();
 
-					return deferred.promise;
-				}
+					$timeout(function(){
+						if($rootScope.noManifestReady)
+						{
+							console.log("Manifest Ready");
+							deferred.resolve();
+						}else{	
+							$rootScope.$watch("noManifestReady", function(newval){
+								if(newval){
+									console.log("Manifest Ready");
+									deferred.resolve();									
+								}
 
-				this.destroy = function(){
-					var deferred = $q.defer();
+							});					
+						}					
+					});	
 
-					return deferred.promise;
-				}
+					return deferred.promise;			
+				};				
 			}
-
-			this.setEndPoint = function(uri) { endPoint = uri; };
-
-			this.getEndPoint = function() { return endPoint; };
-
-			this.$get = ['$q', '$http', 'noODataQueryBulder',  function($q, $http, queryBuilder){
-				return new _noODATA($q, $http, queryBuilder);
-			}];
+	
+			this.$get = ['lodash', 'noHTTP', 'noUrl', 'noLocalStorage', '$rootScope', '$q', '$timeout', 'noConfig', function(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+				return new noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig);
+			}]
 		}])
 	;
-})(angular)
-//storage.js
-//noinfopath-storage@0.0.3
+})(angular);
 
+//storage.js
 (function(){
 	function mockStorage(){
 		var _store = {},_len=0;
@@ -878,7 +877,7 @@
 		};
 	}
 
-	angular.module("noinfopath.storage",['ngLodash', 'noinfopath.odata'])
+	angular.module("noinfopath.storage",[])
 		.factory("noSessionStorage",[function(){
 			return new noStorage("sessionStorage");
 		}])

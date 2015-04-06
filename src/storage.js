@@ -1,6 +1,4 @@
 //storage.js
-//noinfopath-storage@0.0.3
-
 (function(){
 	function mockStorage(){
 		var _store = {},_len=0;
@@ -81,7 +79,7 @@
 		};
 	}
 
-	angular.module("noinfopath.storage",['ngLodash'])
+	angular.module("noinfopath.storage",[])
 		.factory("noSessionStorage",[function(){
 			return new noStorage("sessionStorage");
 		}])

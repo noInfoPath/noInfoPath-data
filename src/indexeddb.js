@@ -1,147 +1,127 @@
 //indexeddb.js
+(function(angular, Dexie, undefined){
 
-(function(){
+	angular.module("noinfopath.indexeddb", ['ngLodash', 'noinfopath.manifest'])
 
-	angular.module("noinfopath.indexed", [])
-		
-		.run(['$rootScope', 'noConfig', 'noManifest', 'noIndexedDB', function($rootScope, noConfig, noManifest, noIndexedDB){
-			noManifest.whenReady()
-				.then(_start)
-				.then(function(){
-					$rootScope.noIndexedDBReady = true;
-					$rootScope.$emit("noIndexedDB::ready");
-				})
-				.catch(function(err){
-					console.error(err);
-				});
+		.factory("noIndexedDB", ['$rootScope','lodash', 'noManifest', '$q', '$timeout', function($rootScope, _, noManifest, $q, $timeout){
+			var SELF = this, dex;
 
-			function _start(){	
-				return noIndexedDB.configure(noConfig.current.IndexedDB, noManifest.dbConfig);
-			}	
-		}])
+			function queryBuilder(table, options){
 
-		.factory("noIndexedDB", ['$rootScope','lodash', '$q', '$timeout', 'noCacheManifest', function($rootScope, _, $q, $timeout, noCacheManifest){
-			var SELF = this, dex,
-				queryBuilder = {
-					kendo: function(table, options){
+				var operators = {
+					"eq": function(a, b){
+						return a === b;
+					}
+				}, _total = 0;
 
-						var operators = {
-							"eq": function(a, b){
-								return a === b;
-							}
-						}, _total = 0;
+				function _filter(table, filter){
 
-						function _filter(table, filter){
+					var deferred = $q.defer(),
+						fields,
+						values,
+						logic;
 
-							var deferred = $q.defer(),
-								fields,
-								values,
-								logic;
+					$timeout(function(){
+						if(filter)
+						{
+							fields = _.pluck(filter.filters, "field");
+							values = _.pluck(filter.filters, "value");
+							logic = filter.logic;
 
-							$timeout(function(){
-								if(filter)
-								{
-									fields = _.pluck(filter.filters, "field");
-									values = _.pluck(filter.filters, "value");
-									logic = filter.logic;
+							//console.log(fields, values, filter)
+							console.warn("TODO: This is hard coded to only work with keys. Expand to full where clause functionality.")
+							var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
+								v = values.length === 1 ? values[0] : values,
+								collection = table.where(w).equals(v);
 
-									//console.log(fields, values, filter)
-									console.warn("TODO: This is hard coded to only work with keys. Expand to full where clause functionality.")
-									var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
-										v = values.length === 1 ? values[0] : values,
-										collection = table.where(w).equals(v);
-
-									deferred.resolve(collection);
-								}else{
-									deferred.resolve(table.toCollection());
-								}
-							});
-
-
-							return deferred.promise;
+							deferred.resolve(collection);
+						}else{
+							deferred.resolve(table.toCollection());
 						}
+					});
 
-						function _count(collection){
-							var deferred = $q.defer();
 
-							collection.count()
-								.then(function(total){
-									_total = total;
-									deferred.resolve(collection);
+					return deferred.promise;
+				}
+
+				function _count(collection){
+					var deferred = $q.defer();
+
+					collection.count()
+						.then(function(total){
+							_total = total;
+							deferred.resolve(collection);
+						})
+						.catch(function(err){
+							deferred.reject(err);
+						});
+
+					return deferred.promise;
+				}
+
+				function _sort(collection, sort){	
+					var deferred = $q.defer(),
+						arry = [];
+
+					$timeout(function(){
+						if(sort.length > 0){
+							collection.sortBy(sort[0].field)
+								.then(function(array){
+									console.warn("TODO: Implement multi-column sorting.");
+									deferred.resolve(array);
 								})
 								.catch(function(err){
+									console.error(err);
+									deferred.reject(err);
+								})
+						}else{
+							collection.toArray()
+								.then(function(){
+									deferred.resolve(array);
+								})
+								.catch(function(err){
+									console.error(err);
 									deferred.reject(err);
 								});
-
-							return deferred.promise;
 						}
+					});
 
-						function _sort(collection, sort){	
-							var deferred = $q.defer(),
-								arry = [];
+					return deferred.promise;
+				}
 
-							$timeout(function(){
-								if(sort.length > 0){
-									collection.sortBy(sort[0].field)
-										.then(function(array){
-											console.warn("TODO: Implement multi-column sorting.");
-											deferred.resolve(array);
-										})
-										.catch(function(err){
-											console.error(err);
-											deferred.reject(err);
-										})
-								}else{
-									collection.toArray()
-										.then(function(){
-											deferred.resolve(array);
-										})
-										.catch(function(err){
-											console.error(err);
-											deferred.reject(err);
-										});
-								}
-							});
+				function _page(array, skip, take){
+					var deferred = $q.defer();
 
-							return deferred.promise;
+					$timeout(function(){
+						if(take){							
+							deferred.resolve(array.slice(skip, take));
+						}else{
+							deferred.resolve(array);
 						}
+					})
 
-						function _page(array, skip, take){
-							var deferred = $q.defer();
+					return deferred.promise;
+				}
 
-							$timeout(function(){
-								if(take){							
-									deferred.resolve(array.slice(skip, take));
-								}else{
-									deferred.resolve(array);
-								}
-							})
-
-							return deferred.promise;
-						}
-
-						_filter(table, options.data.filter)
-							.then(function(collection){
-								return _count(collection);
-							})
-							.then(function(collection){
-								return _sort(collection,options.data.sort)
-							})
-							.then(function(array){
-								return _page(array, options.data.skip, options.data.take);
-							})
-							.then(function(array){
-								array.__no_total__ = _total;
-								options.success(array);
-							})
-							.catch(function(err){
-								console.error(err);
-								options.error(err);
-							})
-					}
-				};
-			
-
+				_filter(table, options.data.filter)
+					.then(function(collection){
+						return _count(collection);
+					})
+					.then(function(collection){
+						return _sort(collection,options.data.sort)
+					})
+					.then(function(array){
+						return _page(array, options.data.skip, options.data.take);
+					})
+					.then(function(array){
+						array.__no_total__ = _total;
+						options.success(array);
+					})
+					.catch(function(err){
+						console.error(err);
+						options.error(err);
+					})
+			};
 
 			function _bind(tables){
 				function _import(table, data, deferred, progress){
@@ -206,9 +186,11 @@
 						console.log("IndexedDB Ready");
 						deferred.resolve();
 					}else{	
-						$rootScope.$on("noIndexedDB::ready", function(){
-							console.log("IndexedDB Ready");
-							deferred.resolve();
+						$rootScope.$watch("noIndexedDBReady", function(newval){
+							if(newval){
+								console.log("IndexedDB Ready");
+								deferred.resolve();								
+							}
 						});					
 					}					
 				});	
@@ -242,7 +224,7 @@
 				dex.on('ready', function(err) {
 				    // Log to console or show en error indicator somewhere in your GUI...
 				    console.info("IndedexDB is ready");
-					_bind(noCacheManifest.current.indexedDB);	
+					_bind(noManifest.current.indexedDB);	
 				    deferred.resolve();
 				});	
 
@@ -300,12 +282,11 @@
 				this.read = function(options) {
 					//console.debug(options);
 
-					var tbl = dex[SELF.tableName],
-						qb = queryBuilder[SELF.type];
+					var tbl = dex[SELF.tableName];
 
 					dex.transaction("r", tbl, function(){
 						if(options){
-							qb(tbl, options);
+							queryBuilder(tbl, options);
 						}else{
 							options.error("options parameter cannot be null.")
 						}
@@ -367,8 +348,8 @@
 				};
 			}
 
-			Dexie.prototype.createTransport = function(tableName, type){
-				return new noCRUD(noCacheManifest.current.indexedDB[tableName], type);
+			Dexie.prototype.createTransport = function(tableName){
+				return new noCRUD(noManifest.current.indexedDB[tableName]);
 			}
 
 			return 	dex = new Dexie("NoInfoPath-v3");
@@ -460,4 +441,4 @@
 				}.bind(this);
 		}])
 		;
-})(angular);
+})(angular, Dexie);

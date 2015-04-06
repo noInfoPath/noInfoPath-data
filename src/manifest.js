@@ -1,8 +1,8 @@
-//noinfopath-manifest.js
+//manifest.js
 (function(angular, undefined){
 	"use strict";
 
-	angular.module("noinfopath.manifest", ['noinfopath.configuration', 'noinfopath-http', 'noinfopath-helpers', 'noinfopath.storage'])
+	angular.module("noinfopath.manifest", ['ngLodash','noinfopath.configuration', 'noinfopath.http', 'noinfopath.helpers', 'noinfopath.storage'])
 		.config([function(){
 		}])
 
@@ -14,7 +14,7 @@
 				});
 
 			function _start(){	
-				noCacheManifest.load()
+				noManifest.load()
 					.then(function(data){
 						$rootScope.noManifest = data;
 						//$rootScope.$emit("noManifest::ready");
@@ -25,7 +25,7 @@
 			}	
 		}])
 
-		.service("noManifest",['lodash', 'noODATA', 'noLocalStorage', '$rootScope', '$q', '$timeout', 'noConfig', function(_, noODATA, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+		.provider("noManifest",[function(){
 			var _manifestMap = {
 				localStorage:{},
 				sessionStorage: {},
@@ -36,129 +36,139 @@
 				indexedDB: {}
 			}, _dbConfig, _tableNames = [];
 
-			Object.defineProperties(this, {
-				"current": {
-					"get": function() {return _manifestMap;}
-				},
-				"deltas": {
-					"get": function() {return _deltas;}
-				},
-				"dbConfig": {
-					"get": function() {return _dbConfig; }
-				},
-				"lookupTables": {
-					"get": function() {return _tableNames; }
-				}
-			});
-
-			function _createManifestMap(cacheManifest){
-				function _isTable(obj, name){
-					return obj.TableName === name;
-				}
-				var keys =  _.pluck(cacheManifest, "TableName");
-
-				for(var i in keys)
-				{	
-					var tn = keys[i],
-						item =  _.find(cacheManifest, {"TableName": tn});
-					
-					if(tn.indexOf("LU") === 0) {
-						_tableNames.push({ text: item.EntityName, value: tn });
+			function noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+				Object.defineProperties(this, {
+					"current": {
+						"get": function() {return _manifestMap;}
+					},
+					"deltas": {
+						"get": function() {return _deltas;}
+					},
+					"dbConfig": {
+						"get": function() {return _dbConfig; }
+					},
+					"lookupTables": {
+						"get": function() {return _tableNames; }
 					}
-					
+				});
 
-					_manifestMap[item.StorageLocation][tn] = item;
-				}
-			};
+				function _createManifestMap(cacheManifest){
+					function _isTable(obj, name){
+						return obj.TableName === name;
+					}
+					var keys =  _.pluck(cacheManifest, "TableName");
 
-			function _deltaManifest(newManifest){
+					for(var i in keys)
+					{	
+						var tn = keys[i],
+							item =  _.find(cacheManifest, {"TableName": tn});
+						
+						if(tn.indexOf("LU") === 0) {
+							_tableNames.push({ text: item.EntityName, value: tn });
+						}
+						
 
-				var oldCacheManifest = noLocalStorage.getItem("NoCacheManifest") || {
-					localStorage:{},
-					sessionStorage: {},
-					indexedDB: {}					
+						_manifestMap[item.StorageLocation][tn] = item;
+					}
 				};
-					//oldKeys = _.pluck(oldCacheManifest[storageType], "TableName"),
-					//newKeys = _.pluck(_manifestMap[storageType], "TableName"),
-					//diffOld = _.difference(oldKeys, newKeys),
-					//diffNew = _.difference(newKeys, oldKeys)
-					//;
 
-				_.each(["localStorage", "indexedDB"], function(storageType){
-					var keys = _.pluck(_manifestMap[storageType], "TableName")
-					_.each(keys, function(key){
-						var local = oldCacheManifest[storageType][key],
-							localTime = local ? Date.parse(local.LastTransaction) : null,
-							serv = _manifestMap[storageType][key],
-							servTime =  Date.parse(serv.LastTransaction);
+				function _deltaManifest(newManifest){
 
-						if(!local){
-							_deltas[storageType][key] = _manifestMap[storageType][key];
-						}else{
-							if(!_.isEqual(local, serv))
-							{
-								if(servTime > localTime)
+					var oldCacheManifest = noLocalStorage.getItem("NoCacheManifest") || {
+						localStorage:{},
+						sessionStorage: {},
+						indexedDB: {}					
+					};
+						//oldKeys = _.pluck(oldCacheManifest[storageType], "TableName"),
+						//newKeys = _.pluck(_manifestMap[storageType], "TableName"),
+						//diffOld = _.difference(oldKeys, newKeys),
+						//diffNew = _.difference(newKeys, oldKeys)
+						//;
+
+					_.each(["localStorage", "indexedDB"], function(storageType){
+						var keys = _.pluck(_manifestMap[storageType], "TableName")
+						_.each(keys, function(key){
+							var local = oldCacheManifest[storageType][key],
+								localTime = local ? Date.parse(local.LastTransaction) : null,
+								serv = _manifestMap[storageType][key],
+								servTime =  Date.parse(serv.LastTransaction);
+
+							if(!local){
+								_deltas[storageType][key] = _manifestMap[storageType][key];
+							}else{
+								if(!_.isEqual(local, serv))
 								{
-									_deltas[storageType][key] = _deltas[storageType][key] = _manifestMap[key];;
+									if(servTime > localTime)
+									{
+										_deltas[storageType][key] = _deltas[storageType][key] = _manifestMap[key];;
+									}
 								}
 							}
-						}
 
-					});					
-				});
-			}
+						});					
+					});
+				}
 
-			function _makeDBConfig(){
-				var config = {};
+				function _makeDBConfig(){
+					var config = {};
 
-				_.each(_manifestMap.indexedDB, function(table){
-					var cfg = angular.fromJson(table.IndexedDB);
-					config[table.TableName] = cfg.keys;
-				});
-				//console.debug(config);
-				
-				_dbConfig = config;
-			};
+					_.each(_manifestMap.indexedDB, function(table){
+						var cfg = angular.fromJson(table.IndexedDB);
+						config[table.TableName] = cfg.keys;
+					});
+					//console.debug(config);
+					
+					_dbConfig = config;
+				};
 
-			this.load = function (){
-				return noODATA.read(noODATA.makeResourceUrl("NoCacheManifest"))
-					.then(function(data){
-						noLocalStorage.setItem("NoCacheManifest", data);
-						_createManifestMap(data);
-						//this._deltaManifest();
-						_makeDBConfig();
-					})
-					.catch(function(){
-						//Assume offline or no connection to REST Service
-						var data = noLocalStorage.getItem("NoCacheManifest")
-						if(data){
+				this.load = function (){
+					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest"))
+						.then(function(data){
+							noLocalStorage.setItem("noManifest", data);
 							_createManifestMap(data);
 							//this._deltaManifest();
 							_makeDBConfig();
-						}else{
-							throw "No Configuration, please again when online."
-						}
-					});
-			});
+							$rootScope.noManifestReady = true;
+						})
+						.catch(function(){
+							//Assume offline or no connection to REST Service
+							var data = noLocalStorage.getItem("noManifest")
+							if(data){
+								_createManifestMap(data);
+								//this._deltaManifest();
+								_makeDBConfig();
+							}else{
+								throw "No Configuration, please again when online."
+							}
+						});
+				};
 
-			this.whenReady = function(){
-				var deferred = $q.defer();
+				this.whenReady = function(){
+					var deferred = $q.defer();
 
-				$timeout(function(){
-					if($rootScope.noManifest)
-					{
-						console.log("Manifest Ready");
-						deferred.resolve();
-					}else{	
-						$rootScope.$watch("noManifest", function(){
+					$timeout(function(){
+						if($rootScope.noManifestReady)
+						{
 							console.log("Manifest Ready");
 							deferred.resolve();
-						});					
-					}					
-				});	
+						}else{	
+							$rootScope.$watch("noManifestReady", function(newval){
+								if(newval){
+									console.log("Manifest Ready");
+									deferred.resolve();									
+								}
 
-				return deferred.promise;			
-			};
+							});					
+						}					
+					});	
+
+					return deferred.promise;			
+				};				
+			}
+	
+			this.$get = ['lodash', 'noHTTP', 'noUrl', 'noLocalStorage', '$rootScope', '$q', '$timeout', 'noConfig', function(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+				return new noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig);
+			}]
 		}])
 	;
-})(angular)
+})(angular);

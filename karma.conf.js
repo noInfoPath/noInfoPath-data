@@ -15,12 +15,14 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'node_modules/angular/angular.js',
-      'node_modules/angular-mocks/angular-mocks.js',
-      'bower_components/ng-lodash/build/ng-lodash.js',
-      'test/mock/*.*',
-      'test/storage.spec.js',
-      'src/storage.js'
+        'node_modules/angular/angular.js',
+        'node_modules/angular-mocks/angular-mocks.js',
+        'bower_components/ng-lodash/build/ng-lodash.js',
+        'test/mock/*.*',
+        'test/storage.spec.js',
+        'src/storage.js',
+        'test/http.spec.js',
+        'src/http.js'
     ],
 
 
