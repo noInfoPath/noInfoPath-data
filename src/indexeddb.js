@@ -120,7 +120,8 @@
 					.catch(function(err){
 						console.error(err);
 						options.error(err);
-					})
+					})					
+
 			};
 
 			function _bind(tables){
@@ -280,6 +281,8 @@
 				};
 
 				this.read = function(options) {
+					var deferred = $q.defer();
+
 					//console.debug(options);
 
 					var tbl = dex[SELF.tableName];
@@ -288,15 +291,19 @@
 						if(options){
 							queryBuilder(tbl, options);
 						}else{
-							options.error("options parameter cannot be null.")
+							tbl.toArray();
 						}
 					})
 					.then(function(resp){
 						console.log("Transaction complete. ", resp || "");
+						deferred.resolve(resp);
 					})
 					.catch(function(err){
 						console.error(err);
-					})						
+						deferred.reject(err);
+					})	
+
+					return deferred.promise;					
 				};
 
 				this.update = function(options) {
