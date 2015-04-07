@@ -404,6 +404,7 @@
 				    // Log to console or show en error indicator somewhere in your GUI...
 				    console.info("IndedexDB is ready");
 					_bind(noManifest.current.indexedDB);	
+					$rootScope.noIndexedDBReady = true;
 				    deferred.resolve();
 				});	
 
