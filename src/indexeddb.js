@@ -357,7 +357,12 @@
 			}
 
 			Dexie.prototype.createTransport = function(tableName){
-				return new noCRUD(noManifest.current.indexedDB[tableName]);
+				if(angular.isObject(tableName)){
+					return new noCrud(tableName);
+				}else{
+					return new noCRUD(noManifest.current.indexedDB[tableName]);
+				}
+				
 			}
 
 			return 	dex = new Dexie("NoInfoPath-v3");
