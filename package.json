@@ -26,6 +26,7 @@
     "jshint-stylish": "^1.0.1",
     "jsdoc": "^3.3.0-beta1",
     "karma": "^0.12.28",
+    "karma-coverage": "^0.2.7",
     "karma-chrome-launcher": "^0.1.7",
     "karma-html-reporter": "^0.2.4",
     "karma-ie-launcher": "^0.1.5",
