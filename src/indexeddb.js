@@ -64,7 +64,12 @@
 						arry = [];
 
 					$timeout(function(){
-						if(sort.length > 0){
+						if(sort && sort.length > 0){
+							if(sort[0].dir === "desc")
+							{
+								collection.reverse();
+							}
+
 							collection.sortBy(sort[0].field)
 								.then(function(array){
 									console.warn("TODO: Implement multi-column sorting.");
@@ -76,7 +81,7 @@
 								})
 						}else{
 							collection.toArray()
-								.then(function(){
+								.then(function(array){
 									deferred.resolve(array);
 								})
 								.catch(function(err){
@@ -93,10 +98,11 @@
 					var deferred = $q.defer();
 
 					$timeout(function(){
-						if(take){							
-							deferred.resolve(array.slice(skip, take));
+						if(take){	
+
+							deferred.resolve(array.slice(skip, skip+take));
 						}else{
-							deferred.resolve(array);
+							deferred.resolve(collection);
 						}
 					})
 
@@ -121,7 +127,6 @@
 						console.error(err);
 						options.error(err);
 					})					
-
 			};
 
 			function _bind(tables){
@@ -155,8 +160,7 @@
 						}else{
 							deferred.resolve(table.name);
 						}
-					}
-											
+					}											
 				}
 
 				_.each(tables, function(table){
