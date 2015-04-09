@@ -1,4 +1,7 @@
 //globals.js
+/*
+	noinfopath-data@0.1.0
+*/
 (function(angular, undefined){
 	var noInfoPath = {
 		noFilterExpression: function (type, key, operator, match, logic){
