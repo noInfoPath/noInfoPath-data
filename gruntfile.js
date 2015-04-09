@@ -7,7 +7,14 @@ module.exports = function(grunt) {
 		pkg: grunt.file.readJSON('package.json'),
 	    concat: {
 		    noinfopath: {
-		        src: ['src/*.js'],
+		        src: [
+		        	'src/globals.js',
+		        	'src/storage.js',
+		        	'src/configuration.js',
+		        	'src/http.js',
+		        	'src/manifest.js',
+		        	'src/indexeddb.js'
+		        ],
 		        dest: 'dist/lib/noinfopath-data.js'
 		    }
 	 	}		
