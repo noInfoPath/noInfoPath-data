@@ -17,12 +17,23 @@ module.exports = function(grunt) {
 		        ],
 		        dest: 'dist/lib/noinfopath-data.js'
 		    }
-	 	}		
+	 	},
+        karma: {
+          unit: {
+            configFile: "karma.conf.js"
+          },
+          continuous: {
+            configFile: 'karma.conf.js',
+            singleRun: true,
+            browsers: ['PhantomJS']
+          }
+        }		
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-karma');
  
 	//Default task(s).
 	//  grunt.registerTask('production', ['copy:production']);
