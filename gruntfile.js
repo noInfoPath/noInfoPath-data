@@ -15,7 +15,7 @@ module.exports = function(grunt) {
 		        	'src/manifest.js',
 		        	'src/indexeddb.js'
 		        ],
-		        dest: 'dist/lib/noinfopath-data.js'
+		        dest: 'dist/noinfopath-data.js'
 		    }
 	 	},
         karma: {
@@ -36,6 +36,6 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-karma');
  
 	//Default task(s).
-	//  grunt.registerTask('production', ['copy:production']);
+	grunt.registerTask('build', ['karma:continuous', 'concat:noinfopath']);
 
 };
