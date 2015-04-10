@@ -15,11 +15,11 @@
 
 	window.noInfoPath = noInfoPath;
 
-	angular.module("noinfopath-data", [
-		'noinfopath-storage',
-		'noinfopath-configuration',
-		'noinfopath-http',
-		'noinfopath-manifest',
-		'noinfopath-indexeddb'
+	angular.module("noinfopath.data", [
+		'noinfopath.storage',
+		'noinfopath.configuration',
+		'noinfopath.http',
+		'noinfopath.manifest',
+		'noinfopath.indexeddb'
 	]);
 })(angular);
