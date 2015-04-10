@@ -1,6 +1,6 @@
 //globals.js
 /*
-	noinfopath-data@0.1.0
+	noinfopath-data@0.1.1
 */
 (function(angular, undefined){
 	var noInfoPath = {
