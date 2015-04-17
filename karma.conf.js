@@ -20,7 +20,7 @@ module.exports = function(config) {
         'node_modules/angular-mocks/angular-mocks.js',
         'bower_components/ng-lodash/build/ng-lodash.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
-        'lib/dexie.js',
+        'lib/Dexie.js',
         'src/globals.js',
         'src/configuration.js',        
         'src/http.js',
