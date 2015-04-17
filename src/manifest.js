@@ -2,7 +2,7 @@
 (function(angular, undefined){
 	"use strict";
 
-	angular.module("noinfopath.manifest", ['ngLodash','noinfopath.configuration', 'noinfopath.http', 'noinfopath.helpers', 'noinfopath.storage'])
+	angular.module("noinfopath.data")
 		.config([function(){
 		}])
 

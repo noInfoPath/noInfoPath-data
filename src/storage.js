@@ -1,5 +1,15 @@
 //storage.js
 (function(){
+	angular.module("noinfopath.data")
+		.factory("noSessionStorage",[function(){
+			return new noStorage("sessionStorage");
+		}])
+
+		.factory("noLocalStorage",[function(){			
+			return new noStorage("localStorage");
+		}])
+		;
+
 	function mockStorage(){
 		var _store = {},_len=0;
 	    
@@ -79,13 +89,5 @@
 		};
 	}
 
-	angular.module("noinfopath.storage",[])
-		.factory("noSessionStorage",[function(){
-			return new noStorage("sessionStorage");
-		}])
 
-		.factory("noLocalStorage",[function(){			
-			return new noStorage("localStorage");
-		}])
-		;
 })(angular);

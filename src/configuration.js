@@ -4,13 +4,12 @@
 
 	var noODATAProv;
 
-	angular.module("noinfopath.configuration", [])
+	angular.module("noinfopath.data")
 		.config([function(){
 			
 		}])
 
 		.run(['$rootScope', 'noConfig', function($rootScope, noConfig){
-
 			noConfig.load()
 				.then(function(){
 					$rootScope.noConfigReady = true;

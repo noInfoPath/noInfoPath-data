@@ -1,5 +1,222 @@
 //indexeddb.js
 (function(angular, Dexie, undefined){
+	angular.module("noinfopath.data")
+
+		.factory("noIndexedDB", ['$rootScope','lodash', 'noManifest', '$q', '$timeout', function($rootScope, _, noManifest, $q, $timeout){
+			var SELF = this, dex;
+
+			function _bind(tables){
+				function _import(table, data, deferred, progress){
+					var total = data ? data.length : 0;
+						
+					$timeout(function(){progress.rows.start({max: total})});
+					var currentItem = 0;
+
+					dex.transaction('rw', table, function (){
+						_next();
+					});	
+					
+					
+					function _next(){
+						if(currentItem < data.length){
+							var datum = data[currentItem];
+
+							table.add(datum).then(function(){
+								$timeout(function(){ progress.rows.update.call(progress.rows); });
+							})
+							.catch(function(err){
+								console.error(err);
+								throw err;
+							})
+							.finally(function(){
+								currentItem++;
+								_next();								
+							});	
+
+						}else{
+							deferred.resolve(table.name);
+						}
+					}											
+				}
+
+				_.each(tables, function(table){
+					var tmp = dex[table.TableName];
+					tmp.noCRUD = new noCRUD(dex, $q, $timeout, _, table, queryBuilder);
+					//tmp.IndexedDB = angular.fromJson(table.IndexedDB);
+					//this[table.TableName].noInfoPath = table;
+					tmp.bulkLoad = function(data, progress){
+						//console.info("bulkLoad: ", table.TableName)
+						var deferred = $q.defer();
+
+						this[table.TableName].clear()
+							.then(function(){
+								_import.call(this, this[table.TableName], data, deferred, progress);
+							}.bind(this));
+
+						return deferred.promise;
+					}.bind(dex);
+				});
+			}			
+
+			Dexie.prototype.whenReady = function(){
+				var deferred = $q.defer();
+
+				$timeout(function(){
+					if($rootScope.noIndexedDBReady)
+					{
+						console.log("IndexedDB Ready");
+						deferred.resolve();
+					}else{	
+						$rootScope.$watch("noIndexedDBReady", function(newval){
+							if(newval){
+								console.log("IndexedDB Ready");
+								deferred.resolve();								
+							}
+						});					
+					}					
+				});	
+
+				return deferred.promise;			
+			};
+
+			Dexie.prototype.configure = function(dbinfo, stores){
+				var deferred = $q.defer();
+
+				dex.on('error', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    console.error("Uncaught error: " + err);
+				    deferred.reject(err);
+				});
+				dex.on('blocked', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    console.warn("IndedexDB is currently execting a blocking operation.");
+				});	
+
+				dex.on('versionchange', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    console.error("IndexedDB as detected a version change");
+				});
+
+				dex.on('populate', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    console.warn("IndedexDB populate...  not implemented.");
+				});	
+
+				dex.on('ready', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    console.info("IndedexDB is ready");
+					_bind(noManifest.current.indexedDB);	
+					$rootScope.noIndexedDBReady = true;
+				    deferred.resolve();
+				});	
+
+				if(dbinfo.name !== dex.name) throw "DB Name is invalid.";
+
+				if(!dex.isOpen()){
+					dex.version(dbinfo.version).stores(stores);
+					dex.open();
+				}
+
+				return deferred.promise;
+			}.bind(dex);
+
+			Dexie.prototype.createTransport = function(tableName){
+				if(angular.isObject(tableName)){
+					return new noCrud(tableName);
+				}else{
+					return new noCRUD(noManifest.current.indexedDB[tableName]);
+				}
+			}
+
+			return 	dex = new Dexie("NoInfoPath-v3");
+		}])
+
+		.service("noBulkData", ['$q', '$timeout','noConfig', 'noUrl', 'noIndexedDB', function($q, $timeout, noConfig, noUrl, noIndexedDB){
+				var _tasks = [], _datasvc;
+
+				function _queue(manifest){
+					var urls = noUrl.makeResourceUrls(noConfig.current.RESTURI, manifest);
+
+					for(var k in urls){
+						var task = manifest[k];
+						task.url = urls[k];
+						_tasks.push(task);
+					}
+				}
+
+				function _recurse(deferred, progress) {
+					var task = _tasks.shift(), table;
+
+					if(task){
+						$timeout(function(){
+							progress.tables.update("Downloading " + task.TableName);
+							progress.tables.changeCss("progress-bar-success progress-bar-striped active");							
+						})
+						console.info("Downloading " + task.TableName);
+
+						table = noIndexedDB[task.TableName];
+
+						if(table)
+						{
+							_datasvc.read(task.url)
+								.then(function(data){
+									if(data){
+										console.info("\t" + data.length + " " + task.TableName + " downloaded.")
+										$timeout(function(){
+											progress.tables.changeMessage("Importing " + data.length + " items from " + task.TableName, false);
+											progress.tables.changeCss("progress-bar-info progress-bar-striped active");
+										});
+										console.info("\tImporting " + data.length + " items from " + task.TableName);
+										noIndexedDB[task.TableName].bulkLoad(data, progress)
+											.then(function(info){
+												//deferred.notify(info);
+												console.info("\t" + info + " import completed.");									
+												_recurse(deferred, progress);
+											})
+											.catch(function(err){
+												console.error(err);
+												_recurse(deferred, progress);
+											})
+											.finally(angular.noop, function(info){
+												console.info(info);
+											});								
+									}else{
+										console.info("\tError downloading " + task.TableName);
+										$timeout(function(){
+											progress.rows.start({min: 1, max: 1, showProgress: false})
+											progress.rows.update("Error downloading " + task.TableName);
+											progress.rows.changeCss("progress-bar-warning");
+										});
+										_recurse(deferred, progress);
+									}
+							})
+							.catch(function(err){
+								$timeout(function(){
+									progress.rows.start({min: 1, max: 1, showProgress: false})
+									progress.rows.update("Error downloading " + task.TableName);
+									progress.rows.changeCss("progress-bar-warning");												
+								})
+								_recurse(deferred, progress);
+
+							});
+						}
+						
+					}else{
+						deferred.resolve();  //Nothing left to do
+					}
+				}
+
+				this.load = function(noManifest, datasvc, progress){
+					var deferred = $q.defer();
+
+					_datasvc = datasvc;
+					_queue(noManifest);
+					_recurse(deferred, progress);
+
+					return deferred.promise;
+				}.bind(this);
+		}])
+		;
 
 	function noCRUD(dex, $q, $timeout, lodash, noTable, querySvc) {
 		this.$q = $q;
@@ -270,221 +487,5 @@
 			})					
 	};
 
-	angular.module("noinfopath.indexeddb", ['ngLodash', 'noinfopath.manifest'])
 
-		.factory("noIndexedDB", ['$rootScope','lodash', 'noManifest', '$q', '$timeout', function($rootScope, _, noManifest, $q, $timeout){
-			var SELF = this, dex;
-
-			function _bind(tables){
-				function _import(table, data, deferred, progress){
-					var total = data ? data.length : 0;
-						
-					$timeout(function(){progress.rows.start({max: total})});
-					var currentItem = 0;
-
-					dex.transaction('rw', table, function (){
-						_next();
-					});	
-					
-					
-					function _next(){
-						if(currentItem < data.length){
-							var datum = data[currentItem];
-
-							table.add(datum).then(function(){
-								$timeout(function(){ progress.rows.update.call(progress.rows); });
-							})
-							.catch(function(err){
-								console.error(err);
-								throw err;
-							})
-							.finally(function(){
-								currentItem++;
-								_next();								
-							});	
-
-						}else{
-							deferred.resolve(table.name);
-						}
-					}											
-				}
-
-				_.each(tables, function(table){
-					var tmp = dex[table.TableName];
-					tmp.noCRUD = new noCRUD(dex, $q, $timeout, _, table, queryBuilder);
-					//tmp.IndexedDB = angular.fromJson(table.IndexedDB);
-					//this[table.TableName].noInfoPath = table;
-					tmp.bulkLoad = function(data, progress){
-						//console.info("bulkLoad: ", table.TableName)
-						var deferred = $q.defer();
-
-						this[table.TableName].clear()
-							.then(function(){
-								_import.call(this, this[table.TableName], data, deferred, progress);
-							}.bind(this));
-
-						return deferred.promise;
-					}.bind(dex);
-				});
-			}			
-
-			Dexie.prototype.whenReady = function(){
-				var deferred = $q.defer();
-
-				$timeout(function(){
-					if($rootScope.noIndexedDBReady)
-					{
-						console.log("IndexedDB Ready");
-						deferred.resolve();
-					}else{	
-						$rootScope.$watch("noIndexedDBReady", function(newval){
-							if(newval){
-								console.log("IndexedDB Ready");
-								deferred.resolve();								
-							}
-						});					
-					}					
-				});	
-
-				return deferred.promise;			
-			};
-
-			Dexie.prototype.configure = function(dbinfo, stores){
-				var deferred = $q.defer();
-
-				dex.on('error', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.error("Uncaught error: " + err);
-				    deferred.reject(err);
-				});
-				dex.on('blocked', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.warn("IndedexDB is currently execting a blocking operation.");
-				});	
-
-				dex.on('versionchange', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.error("IndexedDB as detected a version change");
-				});
-
-				dex.on('populate', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.warn("IndedexDB populate...  not implemented.");
-				});	
-
-				dex.on('ready', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.info("IndedexDB is ready");
-					_bind(noManifest.current.indexedDB);	
-					$rootScope.noIndexedDBReady = true;
-				    deferred.resolve();
-				});	
-
-				if(dbinfo.name !== dex.name) throw "DB Name is invalid.";
-
-				if(!dex.isOpen()){
-					dex.version(dbinfo.version).stores(stores);
-					dex.open();
-				}
-
-				return deferred.promise;
-			}.bind(dex);
-
-			Dexie.prototype.createTransport = function(tableName){
-				if(angular.isObject(tableName)){
-					return new noCrud(tableName);
-				}else{
-					return new noCRUD(noManifest.current.indexedDB[tableName]);
-				}
-			}
-
-			return 	dex = new Dexie("NoInfoPath-v3");
-		}])
-
-		.service("noBulkData", ['$q', '$timeout','noConfig', 'noUrl', 'noIndexedDB', function($q, $timeout, noConfig, noUrl, noIndexedDB){
-				var _tasks = [], _datasvc;
-
-				function _queue(manifest){
-					var urls = noUrl.makeResourceUrls(noConfig.current.RESTURI, manifest);
-
-					for(var k in urls){
-						var task = manifest[k];
-						task.url = urls[k];
-						_tasks.push(task);
-					}
-				}
-
-				function _recurse(deferred, progress) {
-					var task = _tasks.shift(), table;
-
-					if(task){
-						$timeout(function(){
-							progress.tables.update("Downloading " + task.TableName);
-							progress.tables.changeCss("progress-bar-success progress-bar-striped active");							
-						})
-						console.info("Downloading " + task.TableName);
-
-						table = noIndexedDB[task.TableName];
-
-						if(table)
-						{
-							_datasvc.read(task.url)
-								.then(function(data){
-									if(data){
-										console.info("\t" + data.length + " " + task.TableName + " downloaded.")
-										$timeout(function(){
-											progress.tables.changeMessage("Importing " + data.length + " items from " + task.TableName, false);
-											progress.tables.changeCss("progress-bar-info progress-bar-striped active");
-										});
-										console.info("\tImporting " + data.length + " items from " + task.TableName);
-										noIndexedDB[task.TableName].bulkLoad(data, progress)
-											.then(function(info){
-												//deferred.notify(info);
-												console.info("\t" + info + " import completed.");									
-												_recurse(deferred, progress);
-											})
-											.catch(function(err){
-												console.error(err);
-												_recurse(deferred, progress);
-											})
-											.finally(angular.noop, function(info){
-												console.info(info);
-											});								
-									}else{
-										console.info("\tError downloading " + task.TableName);
-										$timeout(function(){
-											progress.rows.start({min: 1, max: 1, showProgress: false})
-											progress.rows.update("Error downloading " + task.TableName);
-											progress.rows.changeCss("progress-bar-warning");
-										});
-										_recurse(deferred, progress);
-									}
-							})
-							.catch(function(err){
-								$timeout(function(){
-									progress.rows.start({min: 1, max: 1, showProgress: false})
-									progress.rows.update("Error downloading " + task.TableName);
-									progress.rows.changeCss("progress-bar-warning");												
-								})
-								_recurse(deferred, progress);
-
-							});
-						}
-						
-					}else{
-						deferred.resolve();  //Nothing left to do
-					}
-				}
-
-				this.load = function(noManifest, datasvc, progress){
-					var deferred = $q.defer();
-
-					_datasvc = datasvc;
-					_queue(noManifest);
-					_recurse(deferred, progress);
-
-					return deferred.promise;
-				}.bind(this);
-		}])
-		;
 })(angular, Dexie);

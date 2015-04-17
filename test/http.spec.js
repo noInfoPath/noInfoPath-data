@@ -3,7 +3,8 @@ describe("Testing noHTTP service", function(){
 	var noHTTP, noHTTPProvider, $httpBackend, $rootScope, scope, createController, $controller;
 
 	beforeEach(function(){
-		module("noinfopath.http");
+		module("noinfopath.helpers");
+		module("noinfopath.data");
 
 		angular.module('dummyModule', [])
 	  		.config(['noHTTPProvider', function(_noHTTPProvider_) {
@@ -44,6 +45,10 @@ describe("Testing noHTTP service", function(){
 
 		it("should successfully post a new record to the create endpoint.", function(){
 			
+			$httpBackend
+				.when("GET", "/config.json")
+				.respond(200,mockConfig);
+
 			$httpBackend
 				.when("POST", CRUD.POST.request.url, angular.toJson(CRUD.POST.request.data))
 				.respond(201, CRUD.POST.response, CRUD.POST.request.headers );

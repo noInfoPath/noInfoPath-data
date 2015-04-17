@@ -2,7 +2,7 @@
 (function(angular, undefined){
 	"use strict";
 
-	angular.module('noinfopath.http',[])
+	angular.module('noinfopath.data')
 		.provider("noHTTP",[function(){
 			
 			this.configure = function(){

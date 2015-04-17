@@ -4,7 +4,8 @@ var storeTypes = ["noLocalStorage","noSessionStorage"];
 
 describe("Testing noStorage", function(){
 	beforeEach(function(){
-		module("noinfopath.storage");
+		module("noinfopath.helpers");
+		module("noinfopath.data");
 	});
 
 	for(var k in storeTypes){

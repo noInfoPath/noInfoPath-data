@@ -4,6 +4,8 @@
 
 //globals.js
 (function(angular, undefined){
+	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers']);
+
 	var noInfoPath = {
 		noFilterExpression: function (type, key, operator, match, logic){
 			this.type = type || "indexed";
@@ -137,11 +139,4 @@
 
 	window.noInfoPath = noInfoPath;
 
-	angular.module("noinfopath.data", [
-		'noinfopath.storage',
-		'noinfopath.configuration',
-		'noinfopath.http',
-		'noinfopath.manifest',
-		'noinfopath.indexeddb'
-	]);
 })(angular);
