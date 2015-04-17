@@ -1,5 +1,5 @@
 /*
-	noinfopath-data@0.1.2
+	noinfopath-data@0.1.3
 */
 
 //globals.js
@@ -137,6 +137,6 @@
 		}
 	}
 
-	window.noInfoPath = noInfoPath;
+	window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
 
 })(angular);
