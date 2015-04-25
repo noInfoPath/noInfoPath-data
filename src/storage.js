@@ -1,14 +1,6 @@
 //storage.js
 (function(){
-	angular.module("noinfopath.data")
-		.factory("noSessionStorage",[function(){
-			return new noStorage("sessionStorage");
-		}])
-
-		.factory("noLocalStorage",[function(){			
-			return new noStorage("localStorage");
-		}])
-		;
+	"use strict";
 
 	function mockStorage(){
 		var _store = {},_len=0;
@@ -73,11 +65,23 @@
 		};
 
 		this.setItem = function (k,v){
-			_store.setItem(k,angular.toJson(v));
+			if(v){
+				_store.setItem(k,angular.toJson(v));
+			}else{
+				_store.setItem(k,undefined);
+			}
+			
 		};
 
 		this.getItem = function (k){
-			return angular.fromJson(_store.getItem(k));
+			var x = _store.getItem(k)
+			
+			if(x === "undefined"){
+				return undefined;
+			}else{
+				return angular.fromJson(x);	
+			}
+			
 		};
 
 		this.removeItem = function (k){
@@ -89,5 +93,13 @@
 		};
 	}
 
+	angular.module("noinfopath.data")
+		.factory("noSessionStorage",[function(){
+			return new noStorage("sessionStorage");
+		}])
 
+		.factory("noLocalStorage",[function(){			
+			return new noStorage("localStorage");
+		}])
+		;
 })(angular);

@@ -1,30 +1,151 @@
-//globals.js
 /*
-	noinfopath-data@0.1.0
+	noinfopath-data@0.1.4
 */
+
+//globals.js
 (function(angular, undefined){
+	"use strict";
+	
+	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers']);
+
 	var noInfoPath = {
 		noFilterExpression: function (type, key, operator, match, logic){
-			this.type = type;
-			this.key = key;
+			this.type = type || "indexed";
+			this.field = key;
 			this.operator = operator;
-			this.match = match;
+			this.value = match;
 			this.logic = logic;
-		}	
+		},	
+
+		noFilter: function (table){
+			var _table = table,
+				_filters = [],
+				_logic = "and";
+
+			Object.defineProperties(this, {
+				"filters": {
+					"get": function(){
+						return _filters;
+					}
+				},
+				"logic": {
+					"get": function(){ return _logic;},
+					"set": function(value){ _logic = value }
+				}
+			});
+
+			this.__proto__.type = "noFilter";
+			this.__proto__.add = function (key, operator, match, logic){
+				var index = _table.schema.indexes.filter(function(a){ return a.name === key; }),
+					isIndexed = index.length == 1 || _table.schema.primKey.name === key,
+					type = isIndexed ? "indexed" : "filtered";
+				
+				_filters.push( new noInfoPath.noFilterExpression(type, key, operator, match, logic));
+			};
+		},
+
+		noDataReadRequest: function($q, table){
+			var deferred = $q.defer(), _table = table;
+
+			Object.defineProperties(this, {
+				"promise": {
+					"get": function(){
+						return deferred.promise;
+					}
+				}
+			});
+
+			this.data = {
+				filter: undefined,
+				page: undefined,
+				pageSize: undefined,
+				sort: undefined,
+				skip: undefined,
+				take: undefined,
+			};
+
+			this.__proto__.addFilter = function(key, operator, match, logic){
+				if(this.data.filter === undefined){
+					this.data.filter = new noInfoPath.noFilter(_table);
+				}
+
+				this.data.filter.add(key, operator, match, logic);
+			};
+
+			this.__proto__.removeFilter = function(indexOf){
+				if(!this.data.filter)
+					return;
+
+				
+				delete this.data.filter[indexOf];
+			
+				if(this.data.filter.length === 0){
+					delete this.data.filter;
+				}	
+			};
+
+			this.__proto__.indexOfFilter = function(key){
+				if(this.data.filter === undefined){
+					return -1;
+				}
+
+				for(var i in this.data.filter){
+					var f = this.data.filter[i];
+					if(f.key === key){
+						return Number(i);
+					}
+				}
+
+				return -1;
+			};
+
+			this.__proto__.addSort = function(sort){
+				if(this.data.sort === undefined){
+					this.data.sort = [];
+				}
+
+				this.data.sort.push(sort);
+			};
+
+			this.__proto__.removeSort = function(indexOf){
+				if(!this.data.sort)
+					return;
+
+				
+				delete this.data.sort[indexOf];
+			
+				if(this.data.sort.length === 0){
+					delete this.data.sort;
+				}	
+			};
+
+			this.__proto__.indexOfSort = function(key){
+				if(this.data.sort === undefined){
+					return -1;
+				}
+
+				for(var i in this.data.sort){
+					var f = this.data.sort[i];
+					if(f.key === key){
+						return Number(i);
+					}
+				}
+
+				return -1;
+			};
+
+			this.__proto__.success  = deferred.resolve;
+			this.__proto__.error = deferred.reject;
+		}
 	}
 
-	window.noInfoPath = noInfoPath;
+	window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
 
-	angular.module("noinfopath.data", [
-		'noinfopath.storage',
-		'noinfopath.configuration',
-		'noinfopath.http',
-		'noinfopath.manifest',
-		'noinfopath.indexeddb'
-	]);
 })(angular);
 //storage.js
 (function(){
+	"use strict";
+
 	function mockStorage(){
 		var _store = {},_len=0;
 	    
@@ -88,11 +209,23 @@
 		};
 
 		this.setItem = function (k,v){
-			_store.setItem(k,angular.toJson(v));
+			if(v){
+				_store.setItem(k,angular.toJson(v));
+			}else{
+				_store.setItem(k,undefined);
+			}
+			
 		};
 
 		this.getItem = function (k){
-			return angular.fromJson(_store.getItem(k));
+			var x = _store.getItem(k)
+			
+			if(x === "undefined"){
+				return undefined;
+			}else{
+				return angular.fromJson(x);	
+			}
+			
 		};
 
 		this.removeItem = function (k){
@@ -104,7 +237,7 @@
 		};
 	}
 
-	angular.module("noinfopath.storage",[])
+	angular.module("noinfopath.data")
 		.factory("noSessionStorage",[function(){
 			return new noStorage("sessionStorage");
 		}])
@@ -121,13 +254,11 @@
 
 	var noODATAProv;
 
-	angular.module("noinfopath.configuration", [])
+	angular.module("noinfopath.data")
 		.config([function(){
-			
 		}])
 
 		.run(['$rootScope', 'noConfig', function($rootScope, noConfig){
-
 			noConfig.load()
 				.then(function(){
 					$rootScope.noConfigReady = true;
@@ -194,7 +325,7 @@
 (function(angular, undefined){
 	"use strict";
 
-	angular.module('noinfopath.http',[])
+	angular.module('noinfopath.data')
 		.provider("noHTTP",[function(){
 			
 			this.configure = function(){
@@ -292,12 +423,11 @@
 		}])
 	;
 })(angular);
-
 //manifest.js
 (function(angular, undefined){
 	"use strict";
 
-	angular.module("noinfopath.manifest", ['ngLodash','noinfopath.configuration', 'noinfopath.http', 'noinfopath.helpers', 'noinfopath.storage'])
+	angular.module("noinfopath.data")
 		.config([function(){
 		}])
 
@@ -467,137 +597,14 @@
 		}])
 	;
 })(angular);
-
 //indexeddb.js
 (function(angular, Dexie, undefined){
-
-	angular.module("noinfopath.indexeddb", ['ngLodash', 'noinfopath.manifest'])
+	"user strict";
+	
+	angular.module("noinfopath.data")
 
 		.factory("noIndexedDB", ['$rootScope','lodash', 'noManifest', '$q', '$timeout', function($rootScope, _, noManifest, $q, $timeout){
 			var SELF = this, dex;
-
-			function queryBuilder(table, options){
-
-				var operators = {
-					"eq": function(a, b){
-						return a === b;
-					}
-				}, _total = 0;
-
-				function _filter(table, filter){
-
-					var deferred = $q.defer(),
-						fields,
-						values,
-						logic;
-
-					$timeout(function(){
-						if(filter)
-						{
-							fields = _.pluck(filter.filters, "field");
-							values = _.pluck(filter.filters, "value");
-							logic = filter.logic;
-
-							//console.log(fields, values, filter)
-							console.warn("TODO: This is hard coded to only work with keys. Expand to full where clause functionality.")
-							var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
-								v = values.length === 1 ? values[0] : values,
-								collection = table.where(w).equals(v);
-
-							deferred.resolve(collection);
-						}else{
-							deferred.resolve(table.toCollection());
-						}
-					});
-
-
-					return deferred.promise;
-				}
-
-				function _count(collection){
-					var deferred = $q.defer();
-
-					collection.count()
-						.then(function(total){
-							_total = total;
-							deferred.resolve(collection);
-						})
-						.catch(function(err){
-							deferred.reject(err);
-						});
-
-					return deferred.promise;
-				}
-
-				function _sort(collection, sort){	
-					var deferred = $q.defer(),
-						arry = [];
-
-					$timeout(function(){
-						if(sort && sort.length > 0){
-							if(sort[0].dir === "desc")
-							{
-								collection.reverse();
-							}
-
-							collection.sortBy(sort[0].field)
-								.then(function(array){
-									console.warn("TODO: Implement multi-column sorting.");
-									deferred.resolve(array);
-								})
-								.catch(function(err){
-									console.error(err);
-									deferred.reject(err);
-								})
-						}else{
-							collection.toArray()
-								.then(function(array){
-									deferred.resolve(array);
-								})
-								.catch(function(err){
-									console.error(err);
-									deferred.reject(err);
-								});
-						}
-					});
-
-					return deferred.promise;
-				}
-
-				function _page(array, skip, take){
-					var deferred = $q.defer();
-
-					$timeout(function(){
-						if(take){	
-
-							deferred.resolve(array.slice(skip, skip+take));
-						}else{
-							deferred.resolve(collection);
-						}
-					})
-
-					return deferred.promise;
-				}
-
-				_filter(table, options.data.filter)
-					.then(function(collection){
-						return _count(collection);
-					})
-					.then(function(collection){
-						return _sort(collection,options.data.sort)
-					})
-					.then(function(array){
-						return _page(array, options.data.skip, options.data.take);
-					})
-					.then(function(array){
-						array.__no_total__ = _total;
-						options.success(array);
-					})
-					.catch(function(err){
-						console.error(err);
-						options.error(err);
-					})					
-			};
 
 			function _bind(tables){
 				function _import(table, data, deferred, progress){
@@ -635,7 +642,7 @@
 
 				_.each(tables, function(table){
 					var tmp = dex[table.TableName];
-					tmp.noCRUD = new noCRUD(table);
+					tmp.noCRUD = new noCRUD(dex, $q, $timeout, _, table, queryBuilder);
 					//tmp.IndexedDB = angular.fromJson(table.IndexedDB);
 					//this[table.TableName].noInfoPath = table;
 					tmp.bulkLoad = function(data, progress){
@@ -714,129 +721,12 @@
 				return deferred.promise;
 			}.bind(dex);
 
-
-			function noCRUD(noTable, type) {
-				var SELF = this;
-
-				this.type = type || "kendo";
-				this.tableName = noTable.TableName;
-				this.noTable = noTable;
-				this.noTable.IndexedDB = angular.fromJson(this.noTable.IndexedDB);
-				this.create = function(options) {
-					console.log(options);
-					if(options){
-						var tbl = dex[SELF.tableName];
-
-						dex.transaction("rw", tbl, function(){
-							//tbl.add(options.data);
-
-							if(SELF.noTable.IndexedDB.pk){
-								tbl.orderBy(SELF.noTable.IndexedDB.pk).last()
-									.then(function(lastOne){
-										//This is a temporary hack.  Will be moving to
-										//using UUID's soon.
-										var newKey =  Number(lastOne[SELF.noTable.IndexedDB.pk]) + 1;
-										options.data[SELF.noTable.IndexedDB.pk] = newKey;
-										tbl.add(options.data);
-									});								
-							}else{
-								tbl.add(options.data);
-							}
-
-						})
-						.then(function(resp){
-							console.log("Transaction complete. ", resp || "");
-							options.success(options.data);
-						})
-						.catch(function(err){
-							console.error(err);
-							options.error(err);
-						})
-					}					
-				};
-
-				this.read = function(options) {
-					var deferred = $q.defer();
-
-					//console.debug(options);
-
-					var tbl = dex[SELF.tableName];
-
-					dex.transaction("r", tbl, function(){
-						if(options){
-							queryBuilder(tbl, options);
-						}else{
-							tbl.toArray();
-						}
-					})
-					.then(function(resp){
-						console.log("Transaction complete. ", resp || "");
-						deferred.resolve(resp);
-					})
-					.catch(function(err){
-						console.error(err);
-						deferred.reject(err);
-					})	
-
-					return deferred.promise;					
-				};
-
-				this.update = function(options) {
-					console.log(options);
-					if(options){
-						var tbl = dex[SELF.tableName],
-							key = options.data[SELF.noTable.IndexedDB.pk];
-
-						dex.transaction("rw", tbl, function(){
-							tbl.update(key, options.data)
-								.then(function(resp){
-									if(resp === 1)
-									{
-										options.success(options.data);
-									}else{
-										options.error("Record not updated.");
-									}									
-								});
-						})
-						.then(function(resp){
-							console.log("Transaction complete. ", resp || "");
-						})
-						.catch(function(err){
-							console.error(err);
-							options.error(err);
-						})
-					}						
-				};
-
-				this.destroy = function(options) {
-					console.log(options);
-					if(options){
-						var tbl = dex[SELF.tableName],
-							key = options.data[SELF.noTable.IndexedDB.pk];
-
-						dex.transaction("rw", tbl, function(){
-							tbl.delete(key)
-								.then(options.success)
-								.catch(options.error);
-						})
-						.then(function(resp){
-							console.log("Transaction complete. ", resp || "");
-						})
-						.catch(function(err){
-							console.error(err);
-							options.error(err);
-						})
-					}		
-				};
-			}
-
 			Dexie.prototype.createTransport = function(tableName){
 				if(angular.isObject(tableName)){
 					return new noCrud(tableName);
 				}else{
 					return new noCRUD(noManifest.current.indexedDB[tableName]);
 				}
-				
 			}
 
 			return 	dex = new Dexie("NoInfoPath-v3");
@@ -928,4 +818,275 @@
 				}.bind(this);
 		}])
 		;
+
+	function noCRUD(dex, $q, $timeout, lodash, noTable, querySvc) {
+		this.$q = $q;
+		this.$timeout = $timeout;
+		this._ = lodash;
+		this.dex = dex;
+		this.type = "kendo";
+		this.tableName = noTable.TableName;
+		this.noTable = noTable;
+		this.noTable.IndexedDB = angular.fromJson(this.noTable.IndexedDB);
+		this.querySvc = querySvc;
+	}
+
+		noCRUD.prototype.create = function(options) {
+			
+			if(options){
+				var tbl = this.dex[this.tableName],
+					THAT = this;
+
+				this.dex.transaction("rw", tbl, function(){
+					//tbl.add(options.data);
+
+					if(THAT.noTable.IndexedDB.pk){
+						tbl.orderBy(THAT.noTable.IndexedDB.pk).last()
+							.then(function(lastOne){
+								//This is a temporary hack.  Will be moving to
+								//using UUID's soon.
+								var newKey =  Number(lastOne[THAT.noTable.IndexedDB.pk]) + 1;
+								options.data[THAT.noTable.IndexedDB.pk] = newKey;
+								tbl.add(options.data);
+							});								
+					}else{
+						tbl.add(options.data);
+					}
+				})
+				.then(function(resp){
+					options.success(options.data);
+				})
+				.catch(function(err){
+					console.error(err);
+					options.error(err);
+				})
+			}					
+		};
+
+		noCRUD.prototype.read = function(options) {
+
+
+			var deferred = this.$q.defer(),
+				THAT = this;
+
+			//console.debug(options);
+
+			var tbl = this.dex[this.tableName];
+
+			this.dex.transaction("r", tbl, function(){
+				if(options){
+					THAT.querySvc(tbl, options);
+				}else{
+					tbl.toArray();
+				}
+			})
+			.then(function(resp){
+				//console.log("Transaction complete. ", resp || "");
+				deferred.resolve(resp);
+			})
+			.catch(function(err){
+				console.error(err);
+				deferred.reject(err);
+			})	
+
+			return deferred.promise;					
+		};
+
+		noCRUD.prototype.one = function(options){
+			var deferred = this.$q.defer(), SELF = this;
+
+			this.$timeout(function(){
+				SELF.read(options)
+					.catch(function(err){
+						console.error(err);
+					});
+
+				options.promise
+					.then(function(data){
+						if(data.length > 0){
+							deferred.resolve(data[0]);
+						}else{
+							deferred.reject("Item not found.")
+						}
+					})
+					.catch(deferred.reject);				
+			});
+
+
+			return deferred.promise;
+		};
+
+		noCRUD.prototype.update = function(options) {
+			console.log(options);
+			if(options){
+				var tbl = this.dex[this.tableName],
+					key = options.data[this.noTable.IndexedDB.pk];
+
+				this.dex.transaction("rw", tbl, function(){
+					tbl.update(key, options.data)
+						.then(function(resp){
+							if(resp === 1)
+							{
+								options.success(options.data);
+							}else{
+								options.error("Record not updated.");
+							}									
+						});
+				})
+				.then(function(resp){
+					console.log("Transaction complete. ", resp || "");
+				})
+				.catch(function(err){
+					console.error(err);
+					options.error(err);
+				})
+			}						
+		};
+
+		noCRUD.prototype.destroy = function(options) {
+			console.log(options);
+			if(options){
+				var tbl = this.dex[this.tableName],
+					key = options.data[this.noTable.IndexedDB.pk];
+
+				this.dex.transaction("rw", tbl, function(){
+					tbl.delete(key)
+						.then(options.success)
+						.catch(options.error);
+				})
+				.then(function(resp){
+					console.log("Transaction complete. ", resp || "");
+				})
+				.catch(function(err){
+					console.error(err);
+					options.error(err);
+				})
+			}		
+		};
+
+	function queryBuilder(table, options){
+
+		var operators = {
+			"eq": function(a, b){
+				return a === b;
+			}
+		}, _total = 0, 
+		filters = options.data.filter;
+
+		function _filter(table, filter){
+
+			var deferred = table.noCRUD.$q.defer(),
+				fields,
+				values,
+				logic;
+
+			table.noCRUD.$timeout(function(){
+				if(filter)
+				{
+					fields = table.noCRUD._.pluck(filter.filters, "field");
+					values = table.noCRUD._.pluck(filter.filters, "value");
+					logic = filter.logic;
+
+					//console.log(fields, values, filter)
+					console.warn("TODO: This is hard coded to only work with keys. Expand to full where clause functionality.")
+					var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
+						v = values.length === 1 ? values[0] : values,
+						collection = table.where(w).equals(v);
+
+					deferred.resolve(collection);
+				}else{
+					deferred.resolve(table.toCollection());
+				}
+			});
+
+
+			return deferred.promise;
+		}
+
+		function _count(collection){
+			var deferred = table.noCRUD.$q.defer();
+
+			collection.count()
+				.then(function(total){
+					_total = total;
+					deferred.resolve(collection);
+				})
+				.catch(function(err){
+					deferred.reject(err);
+				});
+
+			return deferred.promise;
+		}
+
+		function _sort(collection, sort){	
+			var deferred = table.noCRUD.$q.defer(),
+				arry = [];
+
+			table.noCRUD.$timeout(function(){
+				if(sort && sort.length > 0){
+					if(sort[0].dir === "desc")
+					{
+						collection.reverse();
+					}
+
+					collection.sortBy(sort[0].field)
+						.then(function(array){
+							console.warn("TODO: Implement multi-column sorting.");
+							deferred.resolve(array);
+						})
+						.catch(function(err){
+							console.error(err);
+							deferred.reject(err);
+						})
+				}else{
+					collection.toArray()
+						.then(function(array){
+							deferred.resolve(array);
+						})
+						.catch(function(err){
+							console.error(err);
+							deferred.reject(err);
+						});
+				}
+			});
+
+			return deferred.promise;
+		}
+
+		function _page(array, skip, take){
+			var deferred = table.noCRUD.$q.defer();
+
+			table.noCRUD.$timeout(function(){
+				if(take){	
+
+					deferred.resolve(array.slice(skip, skip+take));
+				}else{
+					deferred.resolve(array);
+				}
+			})
+
+			return deferred.promise;
+		}
+
+		_filter(table, filters)
+			.then(function(collection){
+				return _count(collection);
+			})
+			.then(function(collection){
+				return _sort(collection,options.data.sort)
+			})
+			.then(function(array){
+				return _page(array, options.data.skip, options.data.take);
+			})
+			.then(function(array){
+				array.__no_total__ = _total;
+				options.success(array);
+			})
+			.catch(function(err){
+				console.error(err);
+				options.error(err);
+			})					
+	};
+
+
 })(angular, Dexie);

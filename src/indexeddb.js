@@ -1,5 +1,7 @@
 //indexeddb.js
 (function(angular, Dexie, undefined){
+	"user strict";
+	
 	angular.module("noinfopath.data")
 
 		.factory("noIndexedDB", ['$rootScope','lodash', 'noManifest', '$q', '$timeout', function($rootScope, _, noManifest, $q, $timeout){

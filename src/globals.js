@@ -1,9 +1,11 @@
 /*
-	noinfopath-data@0.1.3
+	noinfopath-data@0.1.4
 */
 
 //globals.js
 (function(angular, undefined){
+	"use strict";
+	
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers']);
 
 	var noInfoPath = {

@@ -6,7 +6,6 @@
 
 	angular.module("noinfopath.data")
 		.config([function(){
-			
 		}])
 
 		.run(['$rootScope', 'noConfig', function($rootScope, noConfig){
