@@ -30,6 +30,7 @@ module.exports = function(config) {
         'test/mock/*.*',
         'test/storage.spec.js',
         'test/http.spec.js',
+        'test/configuration.spec.js'
     ],
 
 

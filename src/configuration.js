@@ -9,25 +9,44 @@
 		}])
 
 		.run(['$rootScope', 'noConfig', function($rootScope, noConfig){
-			noConfig.load()
-				.then(function(){
-					$rootScope.noConfigReady = true;
-					//$rootScope.$emit("noConfig::ready")
-				})
-				.catch(function(err){
-					console.error(err);
-				})
+			// noConfig.load()
+			// 	.then(function(){
+			// 		$rootScope.noConfigReady = true;
+			// 		//$rootScope.$emit("noConfig::ready")
+			// 	})
+			// 	.catch(function(err){
+			// 		console.error(err);
+			// 	})
 		}])
 
 		.provider("noConfig", [function(){
 			var _currentConfig;
 			
 			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+				var SELF = this;
+
 				Object.defineProperties(this, {
 					"current": {
 						"get": function() {return _currentConfig;}
 					}
 				});
+
+				this.ping = function(){
+					var deferred = $q.defer();
+
+
+					$http.get("/config.json", {timeout: 50})
+						.then(function(resp){ 
+							console.log("Hello")
+							deferred.resolve();
+						})
+						.catch(function(){
+							deferred.reject();
+						});
+
+
+					return deferred.promise;
+				}
 
 				this.load = function (){
 					return $http.get("/config.json")
@@ -46,16 +65,23 @@
 					$timeout(function(){
 						if($rootScope.noConfigReady)
 						{
-							console.log("config Ready");
 							deferred.resolve();
 						}else{	
 							$rootScope.$watch("noConfigReady", function(newval){
 								if(newval){
-									console.log("config Ready");
 									deferred.resolve();								
 								}
+							});	
 
-							});					
+							SELF.ping()
+								.then(this.load)
+								.then(function(){
+									$rootScope.noConfigReady = true;
+									//$rootScope.$emit("noConfig::ready")
+								})
+								.catch(function(err){
+									deferred.reject({service: "noConfig", status: "offline", error: err });
+								})			
 						}					
 					});	
 
