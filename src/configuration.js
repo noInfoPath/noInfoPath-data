@@ -8,56 +8,34 @@
 		.config([function(){
 		}])
 
-		.run(['$rootScope', 'noConfig', function($rootScope, noConfig){
-			// noConfig.load()
-			// 	.then(function(){
-			// 		$rootScope.noConfigReady = true;
-			// 		//$rootScope.$emit("noConfig::ready")
-			// 	})
-			// 	.catch(function(err){
-			// 		console.error(err);
-			// 	})
-		}])
-
 		.provider("noConfig", [function(){
-			var _currentConfig;
+			var _currentConfig, _status;
 			
 			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
 				var SELF = this;
 
 				Object.defineProperties(this, {
 					"current": {
-						"get": function() {return _currentConfig;}
+						"get": function() { return _currentConfig; }
+					},
+					"status": {
+						"get": function() { return _status; }
 					}
 				});
-
-				this.ping = function(){
-					var deferred = $q.defer();
-
-
-					$http.get("/config.json", {timeout: 50})
-						.then(function(resp){ 
-							console.log("Hello")
-							deferred.resolve();
-						})
-						.catch(function(){
-							deferred.reject();
-						});
-
-
-					return deferred.promise;
-				}
 
 				this.load = function (){
 					return $http.get("/config.json")
 						.then(function(resp){ 
-							_currentConfig = resp.data;
-							noLocalStorage.setItem("noConfig", _currentConfig);
+							noLocalStorage.setItem("noConfig", resp.data);
 						})
-						.catch(function(){
-							_currentConfig = noLocalStorage.get("noConfig");
+						.catch(function(err){
+							throw err;
 						});
 				};
+
+				this.fromCache = function(){
+					_currentConfig = noLocalStorage.getItem("noConfig");
+				}
 
 				this.whenReady = function(){
 					var deferred = $q.defer();
@@ -73,14 +51,19 @@
 								}
 							});	
 
-							SELF.ping()
-								.then(this.load)
+							SELF.load()
 								.then(function(){
+									_currentConfig = noLocalStorage.getItem("noConfig");
 									$rootScope.noConfigReady = true;
-									//$rootScope.$emit("noConfig::ready")
 								})
 								.catch(function(err){
-									deferred.reject({service: "noConfig", status: "offline", error: err });
+									SELF.fromCache();
+
+									if(_currentConfig){
+										$rootScope.noConfigReady = true;
+									}else{
+										deferred.reject("noConfig is offline, and no cached version was available.");
+									}
 								})			
 						}					
 					});	

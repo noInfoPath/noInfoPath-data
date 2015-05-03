@@ -1,28 +1,10 @@
+
 //manifest.js
 (function(angular, undefined){
 	"use strict";
 
 	angular.module("noinfopath.data")
 		.config([function(){
-		}])
-
-		.run(['$rootScope', 'noConfig', 'noManifest', function($rootScope, noConfig, noManifest){
-			noConfig.whenReady()
-				.then(_start)
-				.catch(function(err){
-					console.error(err);
-				});
-
-			function _start(){	
-				noManifest.load()
-					.then(function(data){
-						$rootScope.noManifest = data;
-						//$rootScope.$emit("noManifest::ready");
-					})
-					.catch(function(){
-						console.log("noManifest connection failed.")
-					});
-			}	
 		}])
 
 		.provider("noManifest",[function(){
@@ -37,6 +19,8 @@
 			}, _dbConfig, _tableNames = [];
 
 			function noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+				var SELF = this;
+
 				Object.defineProperties(this, {
 					"current": {
 						"get": function() {return _manifestMap;}
@@ -121,6 +105,10 @@
 					_dbConfig = config;
 				};
 
+				this.fromCache = function(){
+					_currentConfig = noLocalStorage.getItem("noConfig");
+				}
+
 				this.load = function (){
 					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest"))
 						.then(function(data){
@@ -137,6 +125,7 @@
 								_createManifestMap(data);
 								//this._deltaManifest();
 								_makeDBConfig();
+								$rootScope.noManifestReady = true;
 							}else{
 								throw "No Configuration, please again when online."
 							}
@@ -157,8 +146,12 @@
 									console.log("Manifest Ready");
 									deferred.resolve();									
 								}
+							});	
 
-							});					
+							SELF.load()
+								.catch(function(err){
+									deferred.reject(err);
+								});				
 						}					
 					});	
 
