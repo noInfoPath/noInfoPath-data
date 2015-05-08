@@ -221,6 +221,8 @@
 		;
 
 	function noCRUD(dex, $q, $timeout, lodash, noTable, querySvc) {
+		if(!noTable) throw "noTable is a required parameter";
+		
 		this.$q = $q;
 		this.$timeout = $timeout;
 		this._ = lodash;
@@ -278,12 +280,17 @@
 				if(options){
 					THAT.querySvc(tbl, options);
 				}else{
-					tbl.toArray();
+					tbl.toArray()
+						.then(function(data){
+							deferred.resolve(data);
+						})
+						.catch(deferred.reject);
 				}
 			})
 			.then(function(resp){
 				//console.log("Transaction complete. ", resp || "");
-				deferred.resolve(resp);
+
+				if(resp) deferred.resolve(resp);
 			})
 			.catch(function(err){
 				console.error(err);
@@ -488,6 +495,5 @@
 				options.error(err);
 			})					
 	};
-
-
 })(angular, Dexie);
+

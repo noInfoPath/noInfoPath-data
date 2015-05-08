@@ -1,4 +1,3 @@
-
 //manifest.js
 (function(angular, undefined){
 	"use strict";
@@ -33,6 +32,11 @@
 					},
 					"lookupTables": {
 						"get": function() {return _tableNames; }
+					},
+					"isCached": {
+						"get": function(){
+							return noLocalStorage.getItem("noManifest");
+						}
 					}
 				});
 
@@ -165,3 +169,4 @@
 		}])
 	;
 })(angular);
+
