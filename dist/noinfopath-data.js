@@ -1,5 +1,5 @@
 /*
-	noinfopath-data@0.1.5
+	noinfopath-data@0.1.7
 */
 
 //globals.js
@@ -431,7 +431,6 @@
 		}])
 	;
 })(angular);
-
 //manifest.js
 (function(angular, undefined){
 	"use strict";
@@ -466,6 +465,11 @@
 					},
 					"lookupTables": {
 						"get": function() {return _tableNames; }
+					},
+					"isCached": {
+						"get": function(){
+							return noLocalStorage.getItem("noManifest");
+						}
 					}
 				});
 
@@ -539,7 +543,9 @@
 				};
 
 				this.fromCache = function(){
-					_currentConfig = noLocalStorage.getItem("noConfig");
+					var tmp = noLocalStorage.getItem("noManifest");
+					_createManifestMap(tmp);
+					_makeDBConfig();
 				}
 
 				this.load = function (){
@@ -598,6 +604,7 @@
 		}])
 	;
 })(angular);
+
 //indexeddb.js
 (function(angular, Dexie, undefined){
 	"user strict";
@@ -821,6 +828,8 @@
 		;
 
 	function noCRUD(dex, $q, $timeout, lodash, noTable, querySvc) {
+		if(!noTable) throw "noTable is a required parameter";
+		
 		this.$q = $q;
 		this.$timeout = $timeout;
 		this._ = lodash;
@@ -878,12 +887,17 @@
 				if(options){
 					THAT.querySvc(tbl, options);
 				}else{
-					tbl.toArray();
+					tbl.toArray()
+						.then(function(data){
+							deferred.resolve(data);
+						})
+						.catch(deferred.reject);
 				}
 			})
 			.then(function(resp){
 				//console.log("Transaction complete. ", resp || "");
-				deferred.resolve(resp);
+
+				if(resp) deferred.resolve(resp);
 			})
 			.catch(function(err){
 				console.error(err);
@@ -1088,6 +1102,5 @@
 				options.error(err);
 			})					
 	};
-
-
 })(angular, Dexie);
+
