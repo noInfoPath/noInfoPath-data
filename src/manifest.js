@@ -110,7 +110,9 @@
 				};
 
 				this.fromCache = function(){
-					_currentConfig = noLocalStorage.getItem("noConfig");
+					var tmp = noLocalStorage.getItem("noManifest");
+					_createManifestMap(tmp);
+					_makeDBConfig();
 				}
 
 				this.load = function (){
@@ -169,4 +171,3 @@
 		}])
 	;
 })(angular);
-
