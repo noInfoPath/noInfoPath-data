@@ -267,18 +267,15 @@
 		};
 
 		noCRUD.prototype.read = function(options) {
-
-
 			var deferred = this.$q.defer(),
+				tbl = this.dex[this.tableName],
 				THAT = this;
 
-			//console.debug(options);
-
-			var tbl = this.dex[this.tableName];
 
 			this.dex.transaction("r", tbl, function(){
 				if(options){
-					THAT.querySvc(tbl, options);
+					var ndrr = options.__type === "noDataReadRequest" ? options : new noInfoPath.noDataReadRequest(THAT.$q, tbl, options)				
+					THAT.querySvc(tbl, ndrr, THAT.$q);
 				}else{
 					tbl.toArray()
 						.then(function(data){
@@ -372,7 +369,8 @@
 			}		
 		};
 
-	function queryBuilder(table, options){
+	function queryBuilder(table, options, $q){
+
 
 		var operators = {
 			"eq": function(a, b){
@@ -476,7 +474,7 @@
 			return deferred.promise;
 		}
 
-		_filter(table, filters)
+		_filter(table, options.data.filter)
 			.then(function(collection){
 				return _count(collection);
 			})
@@ -496,4 +494,3 @@
 			})					
 	};
 })(angular, Dexie);
-

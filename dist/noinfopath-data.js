@@ -1,5 +1,5 @@
 /*
-	noinfopath-data@0.1.7
+	noinfopath-data@0.1.8
 */
 
 //globals.js
@@ -36,33 +36,43 @@
 
 			this.__proto__.type = "noFilter";
 			this.__proto__.add = function (key, operator, match, logic){
-				var index = _table.schema.indexes.filter(function(a){ return a.name === key; }),
-					isIndexed = index.length == 1 || _table.schema.primKey.name === key,
+				var k, o, m, l;
+
+				if(angular.isObject(key)){
+					k = key.field;
+					o = key.operator;
+					m = key.value;
+					l = "and";
+				}else{
+					k = key;
+					o = operator;
+					m = match;
+					l = logic;
+				}
+
+				var index = _table.schema.indexes.filter(function(a){ return a.name === k; }),
+					isIndexed = index.length == 1 || _table.schema.primKey.name === k,
 					type = isIndexed ? "indexed" : "filtered";
-				
-				_filters.push( new noInfoPath.noFilterExpression(type, key, operator, match, logic));
+					
+				_filters.push( new noInfoPath.noFilterExpression(type, k, o, m, l));
 			};
 		},
 
-		noDataReadRequest: function($q, table){
+		noDataReadRequest: function($q, table, options){
 			var deferred = $q.defer(), _table = table;
 
 			Object.defineProperties(this, {
+				"__type": { 
+					"get": function () { return "noDataReadRequest"; }
+				},
 				"promise": {
-					"get": function(){
+					"get": function (){
 						return deferred.promise;
 					}
 				}
 			});
 
-			this.data = {
-				filter: undefined,
-				page: undefined,
-				pageSize: undefined,
-				sort: undefined,
-				skip: undefined,
-				take: undefined,
-			};
+
 
 			this.__proto__.addFilter = function(key, operator, match, logic){
 				if(this.data.filter === undefined){
@@ -70,6 +80,8 @@
 				}
 
 				this.data.filter.add(key, operator, match, logic);
+				
+
 			};
 
 			this.__proto__.removeFilter = function(indexOf){
@@ -134,14 +146,50 @@
 				return -1;
 			};
 
-			this.__proto__.success  = deferred.resolve;
-			this.__proto__.error = deferred.reject;
+			if(options){
+
+				this.data = {
+					filter: undefined,
+					page: undefined,
+					pageSize: undefined,
+					sort: undefined,
+					skip: undefined,
+					take: undefined,
+				};
+
+				angular.extend(this.data, options.data);
+
+				if(options.data.filter){
+					this.data.filter = new noInfoPath.noFilter(table);
+
+					angular.forEach(options.data.filter.filters, function(filter){
+						this.data.filter.add(filter)
+					},this);					
+				}
+
+
+				this.__proto__.success  = options.success;
+				this.__proto__.error = options.error;
+			}else{
+				this.data = {
+					filter: undefined,
+					page: undefined,
+					pageSize: undefined,
+					sort: undefined,
+					skip: undefined,
+					take: undefined,
+				};
+				this.__proto__.success  = deferred.resolve;
+				this.__proto__.error = deferred.reject;				
+			}
 		}
 	}
 
 	window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
 
 })(angular);
+
+
 //storage.js
 (function(){
 	"use strict";
@@ -605,6 +653,7 @@
 	;
 })(angular);
 
+
 //indexeddb.js
 (function(angular, Dexie, undefined){
 	"user strict";
@@ -874,18 +923,15 @@
 		};
 
 		noCRUD.prototype.read = function(options) {
-
-
 			var deferred = this.$q.defer(),
+				tbl = this.dex[this.tableName],
 				THAT = this;
 
-			//console.debug(options);
-
-			var tbl = this.dex[this.tableName];
 
 			this.dex.transaction("r", tbl, function(){
 				if(options){
-					THAT.querySvc(tbl, options);
+					var ndrr = options.__type === "noDataReadRequest" ? options : new noInfoPath.noDataReadRequest(THAT.$q, tbl, options)				
+					THAT.querySvc(tbl, ndrr, THAT.$q);
 				}else{
 					tbl.toArray()
 						.then(function(data){
@@ -979,7 +1025,8 @@
 			}		
 		};
 
-	function queryBuilder(table, options){
+	function queryBuilder(table, options, $q){
+
 
 		var operators = {
 			"eq": function(a, b){
@@ -1083,7 +1130,7 @@
 			return deferred.promise;
 		}
 
-		_filter(table, filters)
+		_filter(table, options.data.filter)
 			.then(function(collection){
 				return _count(collection);
 			})
@@ -1103,4 +1150,3 @@
 			})					
 	};
 })(angular, Dexie);
-
