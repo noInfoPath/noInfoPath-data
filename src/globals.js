@@ -1,5 +1,5 @@
 /*
-	noinfopath-data@0.1.8
+	noinfopath-data@0.1.9
 */
 
 //globals.js
@@ -167,9 +167,6 @@
 					},this);					
 				}
 
-
-				this.__proto__.success  = options.success;
-				this.__proto__.error = options.error;
 			}else{
 				this.data = {
 					filter: undefined,
@@ -179,13 +176,16 @@
 					skip: undefined,
 					take: undefined,
 				};
-				this.__proto__.success  = deferred.resolve;
-				this.__proto__.error = deferred.reject;				
 			}
+
+			this.__proto__.success  = deferred.resolve;
+			this.__proto__.error = deferred.reject;				
 		}
 	}
 
 	window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
 
 })(angular);
+
+
 

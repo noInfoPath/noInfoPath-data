@@ -274,13 +274,12 @@
 
 			this.dex.transaction("r", tbl, function(){
 				if(options){
-					var ndrr = options.__type === "noDataReadRequest" ? options : new noInfoPath.noDataReadRequest(THAT.$q, tbl, options)				
-					THAT.querySvc(tbl, ndrr, THAT.$q);
+					THAT.querySvc(tbl, options, THAT.$q)
+						.then(deferred.resolve)
+						.catch(deferred.reject);
 				}else{
 					tbl.toArray()
-						.then(function(data){
-							deferred.resolve(data);
-						})
+						.then(deferred.resolve)
 						.catch(deferred.reject);
 				}
 			})
@@ -294,7 +293,8 @@
 				deferred.reject(err);
 			})	
 
-			return deferred.promise;					
+			return deferred.promise;
+								
 		};
 
 		noCRUD.prototype.one = function(options){
@@ -302,11 +302,6 @@
 
 			this.$timeout(function(){
 				SELF.read(options)
-					.catch(function(err){
-						console.error(err);
-					});
-
-				options.promise
 					.then(function(data){
 						if(data.length > 0){
 							deferred.resolve(data[0]);
@@ -314,7 +309,9 @@
 							deferred.reject("Item not found.")
 						}
 					})
-					.catch(deferred.reject);				
+					.catch(function(err){
+						deferred.reject(err);
+					});				
 			});
 
 
@@ -322,62 +319,68 @@
 		};
 
 		noCRUD.prototype.update = function(options) {
-			console.log(options);
-			if(options){
-				var tbl = this.dex[this.tableName],
-					key = options.data[this.noTable.IndexedDB.pk];
+			var deferred = this.$q.defer();
 
-				this.dex.transaction("rw", tbl, function(){
-					tbl.update(key, options.data)
-						.then(function(resp){
-							if(resp === 1)
-							{
-								options.success(options.data);
-							}else{
-								options.error("Record not updated.");
-							}									
-						});
-				})
-				.then(function(resp){
-					console.log("Transaction complete. ", resp || "");
-				})
-				.catch(function(err){
-					console.error(err);
-					options.error(err);
-				})
-			}						
+			if(!options) throw "noCRUD::update requires options parameter";
+			
+			var tbl = this.dex[this.tableName],
+				key = options.data[this.noTable.IndexedDB.pk];
+
+			this.dex.transaction("rw", tbl, function(){
+				tbl.update(key, options.data)
+					.then(function(resp){
+						if(resp === 1)
+						{
+							deferred.resolve(options.data);
+						}else{
+							deferred.reject("Record not updated.");
+						}									
+					});
+			})
+			.then(function(resp){
+				console.log("Transaction complete. ", resp || "");
+			})
+			.catch(function(err){
+				console.error(err);
+				deferred.reject(err);
+			})
+			
+
+			return deferred.promise;						
 		};
 
 		noCRUD.prototype.destroy = function(options) {
-			console.log(options);
-			if(options){
-				var tbl = this.dex[this.tableName],
-					key = options.data[this.noTable.IndexedDB.pk];
+			var deferred = this.$q.defer(),
+				tbl = this.dex[this.tableName],
+				key = options.data[this.noTable.IndexedDB.pk];
 
-				this.dex.transaction("rw", tbl, function(){
-					tbl.delete(key)
-						.then(options.success)
-						.catch(options.error);
-				})
-				.then(function(resp){
-					console.log("Transaction complete. ", resp || "");
-				})
-				.catch(function(err){
-					console.error(err);
-					options.error(err);
-				})
-			}		
+			this.dex.transaction("rw", tbl, function(){
+				tbl.delete(key)
+					.then(deferred.resolve)
+					.catch(deferred.reject);
+			})
+			.then(function(resp){
+				console.log("Transaction complete. ", resp || "");
+			})
+			.catch(function(err){
+				console.error(err);
+				deferred.reject(err);
+			})
+
+			return deferred.promise;
+					
 		};
 
 	function queryBuilder(table, options, $q){
 
 
-		var operators = {
-			"eq": function(a, b){
-				return a === b;
-			}
-		}, _total = 0, 
-		filters = options.data.filter;
+		var deferred = $q.defer(),
+			operators = {
+				"eq": function(a, b){
+					return a === b;
+				}
+			}, _total = 0, 
+			filters = options.data.filter;
 
 		function _filter(table, filter){
 
@@ -486,11 +489,13 @@
 			})
 			.then(function(array){
 				array.__no_total__ = _total;
-				options.success(array);
+				deferred.resolve(array);
 			})
 			.catch(function(err){
-				console.error(err);
-				options.error(err);
-			})					
+				deferred.reject(err);
+			});
+
+		return deferred.promise;					
 	};
 })(angular, Dexie);
+
