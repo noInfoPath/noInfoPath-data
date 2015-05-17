@@ -235,35 +235,38 @@
 	}
 
 		noCRUD.prototype.create = function(options) {
+			var deferred = this.$q.defer();
+
+			if(!options) throw "noCRUD::update requires options parameter";
 			
-			if(options){
-				var tbl = this.dex[this.tableName],
-					THAT = this;
+		
+			var tbl = this.dex[this.tableName],
+				THAT = this;
 
-				this.dex.transaction("rw", tbl, function(){
-					//tbl.add(options.data);
+			this.dex.transaction("rw", tbl, function(){
+				//tbl.add(options.data);
 
-					if(THAT.noTable.IndexedDB.pk){
-						tbl.orderBy(THAT.noTable.IndexedDB.pk).last()
-							.then(function(lastOne){
-								//This is a temporary hack.  Will be moving to
-								//using UUID's soon.
-								var newKey =  Number(lastOne[THAT.noTable.IndexedDB.pk]) + 1;
-								options.data[THAT.noTable.IndexedDB.pk] = newKey;
-								tbl.add(options.data);
-							});								
-					}else{
-						tbl.add(options.data);
-					}
-				})
-				.then(function(resp){
-					options.success(options.data);
-				})
-				.catch(function(err){
-					console.error(err);
-					options.error(err);
-				})
-			}					
+				if(THAT.noTable.IndexedDB.pk){
+					tbl.orderBy(THAT.noTable.IndexedDB.pk).last()
+						.then(function(lastOne){
+							//This is a temporary hack.  Will be moving to
+							//using UUID's soon.
+							var newKey =  Number(lastOne[THAT.noTable.IndexedDB.pk]) + 1;
+							options.data[THAT.noTable.IndexedDB.pk] = newKey;
+							tbl.add(options.data);
+						});								
+				}else{
+					tbl.add(options.data);
+				}
+			})
+			.then(function(resp){
+				deferred.resolve(options.data);
+			})
+			.catch(function(err){
+				deferred.reject(err);
+			})
+				
+			return deferred.promise;				
 		};
 
 		noCRUD.prototype.read = function(options) {
@@ -293,8 +296,7 @@
 				deferred.reject(err);
 			})	
 
-			return deferred.promise;
-								
+			return deferred.promise;						
 		};
 
 		noCRUD.prototype.one = function(options){
@@ -367,9 +369,21 @@
 				deferred.reject(err);
 			})
 
-			return deferred.promise;
-					
+			return deferred.promise;		
 		};
+
+		noCRUD.prototype.upsert = function(options){
+			if(!options) throw "noCRUD::update requires options parameter";
+			
+			var tbl = this.dex[this.tableName],
+				key = options.data[this.noTable.IndexedDB.pk];
+
+			if(key){
+				return this.create(options);
+			}else{
+				return this.update(options);
+			}
+		}
 
 	function queryBuilder(table, options, $q){
 
@@ -498,4 +512,3 @@
 		return deferred.promise;					
 	};
 })(angular, Dexie);
-
