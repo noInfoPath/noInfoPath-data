@@ -397,26 +397,66 @@
 			filters = options.data.filter;
 
 		function _filter(table, filter){
+			function _indexFilter(fields, values){
+				var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
+					v = values.length === 1 ? values[0] : values,
+					collection = table.where(w).equals(v);
+			}
+
+			function _jsFilter(filter){
+				var collection = table.filter(function(obj){
+					//console.log("_jsFilter", value[this.field], this.field, value[this.field].indexOf(this.value));
+					var result = false;
+							
+
+					angular.forEach(filter.filters, function(fltr){
+						var val = obj[fltr.field].toLowerCase();						
+
+						switch(fltr.operator.toLowerCase()){
+							case "eq":
+								result = (val === fltr.value);
+								break;
+							case "contains":
+								result = val.indexOf(fltr.value) > -1;
+								break;
+							case "startswith":
+								result = val.indexOf(fltr.value) === 0;
+								break;
+						}
+					});
+
+					return result;
+				}.bind(filter));
+
+				return collection;
+			}
 
 			var deferred = table.noCRUD.$q.defer(),
 				fields,
 				values,
-				logic;
+				logic,
+				types;
 
 			table.noCRUD.$timeout(function(){
+
 				if(filter)
 				{
+					//console.log("filter", filter);
+					
 					fields = table.noCRUD._.pluck(filter.filters, "field");
 					values = table.noCRUD._.pluck(filter.filters, "value");
+					types = table.noCRUD._.pluck(filter.filters, "type");
 					logic = filter.logic;
 
-					//console.log(fields, values, filter)
-					console.warn("TODO: This is hard coded to only work with keys. Expand to full where clause functionality.")
-					var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
-						v = values.length === 1 ? values[0] : values,
-						collection = table.where(w).equals(v);
+					//If any of the filters are type filtered then all
+					//must be treated that way.
+					if(types && table.noCRUD._.contains(types, "filtered")){
+						deferred.resolve(_jsFilter(filter));
+					}else{
+						//Performing simple primary key lookup
+						deferred.resolve(_indexFilter(fields, values));
+					}				
 
-					deferred.resolve(collection);
 				}else{
 					deferred.resolve(table.toCollection());
 				}
