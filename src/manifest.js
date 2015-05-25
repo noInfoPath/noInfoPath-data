@@ -35,7 +35,8 @@
 					},
 					"isCached": {
 						"get": function(){
-							return noLocalStorage.getItem("noManifest");
+							var tmp = noLocalStorage.getItem("noManifest");
+							return tmp && tmp.length > 0;
 						}
 					}
 				});
@@ -171,4 +172,3 @@
 		}])
 	;
 })(angular);
-

@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.13
+	@version 0.1.14
 */
 
 //globals.js
@@ -627,7 +627,8 @@
 					},
 					"isCached": {
 						"get": function(){
-							return noLocalStorage.getItem("noManifest");
+							var tmp = noLocalStorage.getItem("noManifest");
+							return tmp && tmp.length > 0;
 						}
 					}
 				});
@@ -763,7 +764,6 @@
 		}])
 	;
 })(angular);
-
 
 //indexeddb.js
 (function(angular, Dexie, undefined){
