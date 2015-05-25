@@ -397,10 +397,14 @@
 			filters = options.data.filter;
 
 		function _filter(table, filter){
+
+
 			function _indexFilter(fields, values){
 				var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
 					v = values.length === 1 ? values[0] : values,
 					collection = table.where(w).equals(v);
+
+				return collection;
 			}
 
 			function _jsFilter(filter){
@@ -410,7 +414,11 @@
 							
 
 					angular.forEach(filter.filters, function(fltr){
-						var val = obj[fltr.field].toLowerCase();						
+						var tmp = obj[fltr.field],
+							val = tmp ? tmp : undefined;
+
+						val = angular.isString(val) ? val.toLowerCase() : val;
+
 
 						switch(fltr.operator.toLowerCase()){
 							case "eq":
@@ -426,7 +434,7 @@
 					});
 
 					return result;
-				}.bind(filter));
+				});
 
 				return collection;
 			}

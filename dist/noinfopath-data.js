@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.12
+	@version 0.1.13
 */
 
 //globals.js
@@ -9,7 +9,7 @@
 	
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers'])
 
-		.run(['$parse', '$q', function($parse, $q){
+		.run(['$injector', '$parse', '$q', function($injector, $parse, $q){
 
 			function _setItem(store, key, value){
 				 var getter = $parse(key),
@@ -173,12 +173,14 @@
 
 					angular.extend(this.data, options.data);
 
-					if(options.data.filter){
-						this.data.filter = new window.noInfoPath.noFilter(table);
+					if(this.data.filter){
+						var tmp = new window.noInfoPath.noFilter(table);
 
-						angular.forEach(options.data.filter.filters, function(filter){
-							this.data.filter.add(filter)
-						},this);					
+						angular.forEach(this.data.filter.filters, function(filter){
+							tmp.add(filter);
+						},this);	
+
+						this.data.filter = tmp;				
 					}
 
 				}else{
@@ -196,18 +198,108 @@
 				this.__proto__.error = deferred.reject;				
 			}
 
+            function _noDataSource(component, config, stateParams, scope){
+                var service = $injector.get(component),
+                    provider = $injector.get(config.provider);
+
+                var ds = service.noDataSource(config.tableName, provider, {
+                    serverFiltering: true,
+                    schema: {
+                        model: config.model
+                    }
+                });
+
+                if(config.sort){
+                    ds.sort = config.sort;
+                }       
+               
+               	if(config.filter){
+               		//Check for early binding filters.
+               		var _filters = [];
+               		angular.forEach(config.filter, function(fltr){
+               			if(angular.isObject(fltr.value)){
+               				var source;
+               				if(fltr.value.source === "state"){
+               					source = stateParams;
+               				}else{
+               					source = scope;
+               				}
+               				
+           					var val = window.noInfoPath.getItem(source, fltr.value.property);
+            					val = fltr.value.type === "number" ? Number(val) : val;
+               				_filters.push({field: fltr.field, operator: fltr.operator, value: val});
+         
+               			}else{
+               				_filters.push({field: fltr.field, operator: fltr.operator, value: fltr.value});
+               			}
+               		});
+
+               		ds.filter = _filters;
+               	}
+
+
+               angular.extend(this, ds);
+            }
+
+            function _makeFilters(filters, scope, stateParams){
+                var _filters = [];
+
+                angular.forEach(filters, function(filter){
+                    var ctx, v;
+
+                    if(angular.isObject(filter.value)){
+                        //When it is an object the value is coming
+                        //from a source.
+                        switch(filter.value.source){
+                            case "state":
+                            	ctx = stateParams;
+                                break;
+                            case "scope":
+                               	ctx = scope;
+                                break;
+                        }  
+
+            	        v =  window.noInfoPath.getItem(ctx, filter.value.property);
+            
+                        if(v){
+                            v =  filter.value.type === "number" ? Number(v) : v;
+                            _filters.push({field: filter.field, operator: filter.operator, value: v});                             
+                        }
+                    }else{
+                        //static value
+                        _filters.push(filter);
+                    }
+                });
+
+                return _filters;
+            }
+
 			var noInfoPath = {
 				getItem: _getItem,
 				setItem: _setItem,
+				bindFilters: _makeFilters,
 				noFilterExpression: _noFilterExpression,
 				noFilter: _noFilter,
-				noDataReadRequest: _noDataReadRequest
+				noDataReadRequest: _noDataReadRequest,
+				noDataSource: _noDataSource
 			};
 
 			window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
 		}])
-})(angular);
 
+		.service("noDataService", [function(){
+			this.noDataSource = function(uri, datasvc, options){
+         		if(!uri) throw "uri is a required parameter for makeKendoDataSource";
+         		var _ds = datasvc[uri];
+
+         		return { 
+         			transport: _ds.noCRUD,
+         			table: _ds
+         		};
+         	}
+		}])
+	;
+})(angular);
 
 //storage.js
 (function(){
@@ -1072,10 +1164,14 @@
 			filters = options.data.filter;
 
 		function _filter(table, filter){
+
+
 			function _indexFilter(fields, values){
 				var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
 					v = values.length === 1 ? values[0] : values,
 					collection = table.where(w).equals(v);
+
+				return collection;
 			}
 
 			function _jsFilter(filter){
@@ -1085,7 +1181,11 @@
 							
 
 					angular.forEach(filter.filters, function(fltr){
-						var val = obj[fltr.field].toLowerCase();						
+						var tmp = obj[fltr.field],
+							val = tmp ? tmp : undefined;
+
+						val = angular.isString(val) ? val.toLowerCase() : val;
+
 
 						switch(fltr.operator.toLowerCase()){
 							case "eq":
@@ -1101,7 +1201,7 @@
 					});
 
 					return result;
-				}.bind(filter));
+				});
 
 				return collection;
 			}
