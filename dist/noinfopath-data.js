@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.14
+	@version 0.1.15
 */
 
 //globals.js
@@ -1169,7 +1169,13 @@
 			function _indexFilter(fields, values){
 				var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
 					v = values.length === 1 ? values[0] : values,
-					collection = table.where(w).equals(v);
+					collection;
+
+				if(Number.isNaN(v)){
+					collection = table.toCollection();
+				}else{
+ 					collection = table.where(w).equals(v);					
+				}
 
 				return collection;
 			}
