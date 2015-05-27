@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.15
+	@version 0.1.16
 */
 
 //globals.js
@@ -288,13 +288,51 @@
 		}])
 
 		.service("noDataService", [function(){
+
+			function crudOp(table, operation, options){
+				var 	crud = table.noCRUD,
+						ndrr = new window.noInfoPath.noDataReadRequest(table, options);			
+
+				return crud[operation](ndrr);
+			}
+
 			this.noDataSource = function(uri, datasvc, options){
          		if(!uri) throw "uri is a required parameter for makeKendoDataSource";
          		var _ds = datasvc[uri];
 
          		return { 
-         			transport: _ds.noCRUD,
-         			table: _ds
+         			transport: {
+
+						read: function(options){
+
+							var deferred = _ds.noCRUD.$q.defer();
+							crudOp(_ds, "read", options)
+								.then(function(data){
+									this.data = data;
+									deferred.resolve(data);
+								}.bind(this));
+
+							return deferred.promise;
+						},
+						create: function(options){
+							return crudOp(_ds, "create", options);
+						},
+						update: function(options){
+							return crudOp(_ds, "update", options);
+						},
+						destroy: function(options){
+							return crudOp(_ds, "destroy", options);
+						},
+						one: function(options){
+							return _ds.noCRUD.one(options);
+						},
+						upsert: function(options){
+							return _ds.noCRUD.upsert(options);
+						}
+
+					},
+         			table: _ds,
+         			data: []
          		};
          	}
 		}])

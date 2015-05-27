@@ -418,15 +418,17 @@
 					//console.log("_jsFilter", value[this.field], this.field, value[this.field].indexOf(this.value));
 					var result = false;
 							
-
-					angular.forEach(filter.filters, function(fltr){
-						var tmp = obj[fltr.field],
+					for(var fi in filter.filters){
+						var fltr = filter.filters[fi],
+							tmp = obj[fltr.field],
 							val = tmp ? tmp : undefined;
 
 						val = angular.isString(val) ? val.toLowerCase() : val;
 
-
 						switch(fltr.operator.toLowerCase()){
+							case "neq":
+								result = (val !== fltr.value);
+								break;
 							case "eq":
 								result = (val === fltr.value);
 								break;
@@ -437,7 +439,11 @@
 								result = val.indexOf(fltr.value) === 0;
 								break;
 						}
-					});
+
+						if(!result){
+							break;
+						}
+					}
 
 					return result;
 				});
