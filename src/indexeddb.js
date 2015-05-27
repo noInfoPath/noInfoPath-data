@@ -407,6 +407,9 @@
 				if(Number.isNaN(v)){
 					collection = table.toCollection();
 				}else{
+					if(v === undefined){
+						v = "";
+					}
  					collection = table.where(w).equals(v);					
 				}
 

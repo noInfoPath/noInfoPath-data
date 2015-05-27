@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.16
+	@version 0.1.17
 */
 
 //globals.js
@@ -1212,6 +1212,9 @@
 				if(Number.isNaN(v)){
 					collection = table.toCollection();
 				}else{
+					if(v === undefined){
+						v = "";
+					}
  					collection = table.where(w).equals(v);					
 				}
 
