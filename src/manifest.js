@@ -117,7 +117,7 @@
 				}
 
 				this.load = function (){
-					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest"))
+					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest","$filter=StorageLocation ne ''&$orderby=TableName"))
 						.then(function(data){
 							noLocalStorage.setItem("noManifest", data);
 							_createManifestMap(data);

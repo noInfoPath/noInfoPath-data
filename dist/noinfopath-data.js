@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.17
+	@version 0.1.18
 */
 
 //globals.js
@@ -183,6 +183,8 @@
 						this.data.filter = tmp;				
 					}
 
+
+
 				}else{
 					this.data = {
 						filter: undefined,
@@ -195,7 +197,8 @@
 				}
 
 				this.__proto__.success  = deferred.resolve;
-				this.__proto__.error = deferred.reject;				
+				this.__proto__.error = deferred.reject;	
+				this.expand = options.expand;			
 			}
 
             function _noDataSource(component, config, stateParams, scope){
@@ -237,8 +240,12 @@
                		ds.filter = _filters;
                	}
 
-
-               angular.extend(this, ds);
+               	if(config.expand){
+               		ds.expand = config.expand;
+               		//console.log(ds);
+               	}
+               
+               	angular.extend(this, ds);
             }
 
             function _makeFilters(filters, scope, stateParams){
@@ -302,13 +309,12 @@
 
          		return { 
          			transport: {
-
 						read: function(options){
-
 							var deferred = _ds.noCRUD.$q.defer();
 							crudOp(_ds, "read", options)
 								.then(function(data){
 									this.data = data;
+
 									deferred.resolve(data);
 								}.bind(this));
 
@@ -332,7 +338,8 @@
 
 					},
          			table: _ds,
-         			data: []
+         			data: [],
+         			expand: options.expand
          		};
          	}
 		}])
@@ -747,7 +754,7 @@
 				}
 
 				this.load = function (){
-					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest"))
+					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest","$filter=StorageLocation ne ''&$orderby=TableName"))
 						.then(function(data){
 							noLocalStorage.setItem("noManifest", data);
 							_createManifestMap(data);
@@ -1037,9 +1044,8 @@
 		this.noTable = noTable;
 		this.noTable.IndexedDB = angular.fromJson(this.noTable.IndexedDB);
 		this.querySvc = querySvc;
-	}
 
-		noCRUD.prototype.create = function(options) {
+		this.__proto__.create = function(options) {
 			var deferred = this.$q.defer();
 
 			if(!options) throw "noCRUD::update requires options parameter";
@@ -1074,7 +1080,7 @@
 			return deferred.promise;				
 		};
 
-		noCRUD.prototype.read = function(options) {
+		this.__proto__.read = function(options) {
 			var deferred = this.$q.defer(),
 				tbl = this.dex[this.tableName],
 				THAT = this;
@@ -1082,9 +1088,11 @@
 
 			this.dex.transaction("r", tbl, function(){
 				if(options){
-					THAT.querySvc(tbl, options, THAT.$q)
-						.then(deferred.resolve)
-						.catch(deferred.reject);
+					var q = new THAT.querySvc(tbl, options, THAT.$q, THAT.dex, THAT._);
+
+						q.query()
+							.then(deferred.resolve)
+							.catch(deferred.reject);
 				}else{
 					tbl.toArray()
 						.then(deferred.resolve)
@@ -1104,7 +1112,7 @@
 			return deferred.promise;						
 		};
 
-		noCRUD.prototype.one = function(options){
+		this.__proto__.one = function(options){
 			var deferred = this.$q.defer(), SELF = this;
 
 			this.$timeout(function(){
@@ -1125,7 +1133,7 @@
 			return deferred.promise;
 		};
 
-		noCRUD.prototype.update = function(options) {
+		this.__proto__.update = function(options) {
 			var deferred = this.$q.defer();
 
 			if(!options) throw "noCRUD::update requires options parameter";
@@ -1156,7 +1164,7 @@
 			return deferred.promise;						
 		};
 
-		noCRUD.prototype.destroy = function(options) {
+		this.__proto__.destroy = function(options) {
 			var deferred = this.$q.defer(),
 				tbl = this.dex[this.tableName],
 				key = options.data[this.noTable.IndexedDB.pk];
@@ -1177,7 +1185,7 @@
 			return deferred.promise;		
 		};
 
-		noCRUD.prototype.upsert = function(options){
+		this.__proto__.upsert = function(options){
 			if(!options) throw "noCRUD::update requires options parameter";
 			
 			var tbl = this.dex[this.tableName],
@@ -1190,11 +1198,14 @@
 			}
 		}
 
-	function queryBuilder(table, options, $q){
+
+	}
 
 
-		var deferred = $q.defer(),
-			operators = {
+	function queryBuilder(table, options, $q, dex, _){
+
+
+		var operators = {
 				"eq": function(a, b){
 					return a === b;
 				}
@@ -1204,10 +1215,17 @@
 		function _filter(table, filter){
 
 
-			function _indexFilter(fields, values){
+			function _indexFilter(fields, values, operators){
+				
+
 				var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
 					v = values.length === 1 ? values[0] : values,
+					o = operators.join(""),
 					collection;
+
+				if(w === "[]"){
+					w = table.schema.primKey.keyPath;
+				}
 
 				if(Number.isNaN(v)){
 					collection = table.toCollection();
@@ -1215,7 +1233,16 @@
 					if(v === undefined){
 						v = "";
 					}
- 					collection = table.where(w).equals(v);					
+
+					switch(o){
+						case "startswith":
+		 					collection = table.where(w).startsWithIgnoreCase(v);					
+							break;
+
+						default:
+		 					collection = table.where(w).equals(v);					
+							break;
+					}
 				}
 
 				return collection;
@@ -1229,7 +1256,7 @@
 					for(var fi in filter.filters){
 						var fltr = filter.filters[fi],
 							tmp = obj[fltr.field],
-							val = tmp ? tmp : undefined;
+							val = tmp ? tmp : null;
 
 						val = angular.isString(val) ? val.toLowerCase() : val;
 
@@ -1274,6 +1301,7 @@
 					fields = table.noCRUD._.pluck(filter.filters, "field");
 					values = table.noCRUD._.pluck(filter.filters, "value");
 					types = table.noCRUD._.pluck(filter.filters, "type");
+					operators = table.noCRUD._.pluck(filter.filters, "operator");
 					logic = filter.logic;
 
 					//If any of the filters are type filtered then all
@@ -1282,7 +1310,7 @@
 						deferred.resolve(_jsFilter(filter));
 					}else{
 						//Performing simple primary key lookup
-						deferred.resolve(_indexFilter(fields, values));
+						deferred.resolve(_indexFilter(fields, values, operators));
 					}				
 
 				}else{
@@ -1359,24 +1387,123 @@
 			return deferred.promise;
 		}
 
-		_filter(table, options.data.filter)
-			.then(function(collection){
-				return _count(collection);
-			})
-			.then(function(collection){
-				return _sort(collection,options.data.sort)
-			})
-			.then(function(array){
-				return _page(array, options.data.skip, options.data.take);
-			})
-			.then(function(array){
-				array.__no_total__ = _total;
-				deferred.resolve(array);
-			})
-			.catch(function(err){
-				deferred.reject(err);
-			});
+		function _expand(array) {
+			var promises = [],
+				refData = {};
 
-		return deferred.promise;					
+			for(var i in options.expand){
+				var expand = options.expand[i],
+					table = dex[expand.tableName],
+					_ = table.noCRUD._,
+					keys = _.pluck(array, i);
+
+				if(!keys || keys.length === 0) {
+					continue;
+				}
+
+				promises.push($q(function(resolve, reject){
+					table.where(expand.foreignKey).anyOf(keys).toArray()
+					.then(function(array){
+						var THAT = this,
+							hash = {};
+
+						angular.forEach(array, function(item){
+							hash[item[THAT.options.foreignKey]] = item;
+						});
+
+						//refData[THAT.primaryKey] = hash;
+
+
+						resolve({primaryKey: THAT.primaryKey, hash: hash});
+					}.bind({primaryKey: i, options: expand, data:array}))
+					.catch(function(err){
+						console.error(err);
+						reject(err);
+					});
+				}));
+			}
+
+
+			return $q.all(promises).then(function(data){
+				var tmp, hash = {};
+				do{
+					tmp = data.pop();
+					if(tmp){
+						hash[tmp.primaryKey] = tmp.hash;
+					}
+				}while(tmp);
+
+
+				angular.forEach(array, function(item){
+
+
+					angular.forEach(options.expand, function(expand, pk){
+						var refItem = hash[pk][item[pk]],
+							newRefItem = {};
+
+						if(expand.fields){
+							angular.forEach(expand.fields, function(field){
+								newRefItem[field] = refItem[field];
+							});							
+						}else{
+							newRefItem = refItem;
+						}
+
+
+						if(expand.merge){
+							item = angular.extend(item, newRefItem);
+						}else{
+							item[expand.name] = newRefItem;							
+						}
+
+						
+						//console.log(field, refItem, newRefItem)
+					});
+
+					
+
+				});
+
+				return array;
+				
+			});
+		}
+
+
+
+		this.query = function(){
+			var deferred = $q.defer();
+
+			_filter(table, options.data.filter)
+				.then(function(collection){
+					return _count(collection);
+				})
+				.then(function(collection){
+					return _sort(collection,options.data.sort)
+				})
+				.then(function(array){
+					return _page(array, options.data.skip, options.data.take);
+				})
+				.then(function(array){
+					array.__no_total__ = _total;
+					if(options.expand){
+						_expand(array)
+							.then(function(array){
+								deferred.resolve(array);
+							})
+							.catch(deferred.reject);
+						 //this === dex
+						//deferred.resolve(array);
+					}else{
+						deferred.resolve(array);					
+					}
+
+				})
+				.catch(function(err){
+					deferred.reject(err);
+				});
+
+			return deferred.promise;
+		}	 					
 	};
 })(angular, Dexie);

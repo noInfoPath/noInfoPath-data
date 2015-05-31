@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.17
+	@version 0.1.18
 */
 
 //globals.js
@@ -183,6 +183,8 @@
 						this.data.filter = tmp;				
 					}
 
+
+
 				}else{
 					this.data = {
 						filter: undefined,
@@ -195,7 +197,8 @@
 				}
 
 				this.__proto__.success  = deferred.resolve;
-				this.__proto__.error = deferred.reject;				
+				this.__proto__.error = deferred.reject;	
+				this.expand = options.expand;			
 			}
 
             function _noDataSource(component, config, stateParams, scope){
@@ -237,8 +240,12 @@
                		ds.filter = _filters;
                	}
 
-
-               angular.extend(this, ds);
+               	if(config.expand){
+               		ds.expand = config.expand;
+               		//console.log(ds);
+               	}
+               
+               	angular.extend(this, ds);
             }
 
             function _makeFilters(filters, scope, stateParams){
@@ -302,13 +309,12 @@
 
          		return { 
          			transport: {
-
 						read: function(options){
-
 							var deferred = _ds.noCRUD.$q.defer();
 							crudOp(_ds, "read", options)
 								.then(function(data){
 									this.data = data;
+
 									deferred.resolve(data);
 								}.bind(this));
 
@@ -332,7 +338,8 @@
 
 					},
          			table: _ds,
-         			data: []
+         			data: [],
+         			expand: options.expand
          		};
          	}
 		}])
