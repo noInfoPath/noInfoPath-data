@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.18
+	@version 0.1.19
 */
 
 //globals.js
@@ -209,7 +209,8 @@
                     serverFiltering: true,
                     schema: {
                         model: config.model
-                    }
+                    },
+                    expand: config.expand
                 });
 
                 if(config.sort){
@@ -240,10 +241,7 @@
                		ds.filter = _filters;
                	}
 
-               	if(config.expand){
-               		ds.expand = config.expand;
-               		//console.log(ds);
-               	}
+
                
                	angular.extend(this, ds);
             }
@@ -345,6 +343,7 @@
 		}])
 	;
 })(angular);
+
 
 //storage.js
 (function(){
