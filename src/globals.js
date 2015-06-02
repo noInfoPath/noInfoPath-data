@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.21
+	@version 0.1.22
 */
 
 //globals.js
@@ -208,14 +208,9 @@
                 var service = $injector.get(component),
                     provider = $injector.get(config.provider);
 
-                var ds = service.noDataSource(config.tableName, provider, {
-                    serverFiltering: true,
-                    schema: {
-                        model: config.model
-                    },
-                    expand: config.expand
-                });
-
+                var ds = service.noDataSource(config.tableName, provider, config);
+                ds.expand = config.expand || undefined;
+                
                 if(config.sort){
                     ds.sort = config.sort;
                 }       
