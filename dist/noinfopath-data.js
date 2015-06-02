@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.22
+	@version 0.1.23
 */
 
 //globals.js
@@ -1298,18 +1298,18 @@
 			this.dex.transaction("rw", tbl, function(){
 				//tbl.add(options.data);
 
-				if(THAT.noTable.IndexedDB.pk){
-					tbl.orderBy(THAT.noTable.IndexedDB.pk).last()
-						.then(function(lastOne){
-							//This is a temporary hack.  Will be moving to
-							//using UUID's soon.
-							var newKey =  Number(lastOne[THAT.noTable.IndexedDB.pk]) + 1;
-							options.data[THAT.noTable.IndexedDB.pk] = newKey;
-							tbl.add(options.data);
-						});								
-				}else{
+				// if(THAT.noTable.IndexedDB.pk){
+				// 	tbl.orderBy(THAT.noTable.IndexedDB.pk).last()
+				// 		.then(function(lastOne){
+				// 			//This is a temporary hack.  Will be moving to
+				// 			//using UUID's soon.
+				// 			var newKey =  Number(lastOne[THAT.noTable.IndexedDB.pk]) + 1;
+				// 			options.data[THAT.noTable.IndexedDB.pk] = newKey;
+				// 			tbl.add(options.data);
+				// 		});								
+				// }else{
 					tbl.add(options.data);
-				}
+				// }
 			})
 			.then(function(resp){
 				deferred.resolve(options.data);
@@ -1433,9 +1433,9 @@
 				key = options.data[this.noTable.IndexedDB.pk];
 
 			if(key){
-				return this.create(options);
-			}else{
 				return this.update(options);
+			}else{
+				return this.create(options);
 			}
 		}
 
