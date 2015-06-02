@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.20
+	@version 0.1.21
 */
 
 //globals.js
@@ -1000,7 +1000,7 @@
 				}
 
 				this.load = function (){
-					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest","$filter=StorageLocation ne ''&$orderby=TableName"))
+					return noHTTP.read("NoCacheManifest","$filter=StorageLocation ne ''&$orderby=TableName")
 						.then(function(data){
 							noLocalStorage.setItem("noManifest", data);
 							_createManifestMap(data);
@@ -1195,11 +1195,11 @@
 				var _tasks = [], _datasvc;
 
 				function _queue(manifest){
-					var urls = noUrl.makeResourceUrls(noConfig.current.RESTURI, manifest);
+					//var urls = noUrl.makeResourceUrls(noConfig.current.RESTURI, manifest);
 
-					for(var k in urls){
+					for(var k in manifest){
 						var task = manifest[k];
-						task.url = urls[k];
+						task.url = task.TableName;
 						_tasks.push(task);
 					}
 				}

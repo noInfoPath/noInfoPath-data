@@ -137,11 +137,11 @@
 				var _tasks = [], _datasvc;
 
 				function _queue(manifest){
-					var urls = noUrl.makeResourceUrls(noConfig.current.RESTURI, manifest);
+					//var urls = noUrl.makeResourceUrls(noConfig.current.RESTURI, manifest);
 
-					for(var k in urls){
+					for(var k in manifest){
 						var task = manifest[k];
-						task.url = urls[k];
+						task.url = task.TableName;
 						_tasks.push(task);
 					}
 				}
