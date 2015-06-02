@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.19
+	@version 0.1.20
 */
 
 //globals.js
@@ -64,10 +64,13 @@
 						l = logic;
 					}
 
-					var index = _table.schema.indexes.filter(function(a){ return a.name === k; }),
+					if(_table){
+						var index = _table.schema.indexes.filter(function(a){ return a.name === k; }),
 						isIndexed = index.length == 1 || _table.schema.primKey.name === k,
 						type = isIndexed ? "indexed" : "filtered";
-						
+					}else{
+						type = "odata"
+					}
 					_filters.push( new window.noInfoPath.noFilterExpression(type, k, o, m, l));
 				};
 			}
@@ -292,55 +295,100 @@
 			window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
 		}])
 
-		.service("noDataService", [function(){
-
-			function crudOp(table, operation, options){
-				var 	crud = table.noCRUD,
-						ndrr = new window.noInfoPath.noDataReadRequest(table, options);			
-
-				return crud[operation](ndrr);
-			}
-
+		.service("noDataService", ['$q', function($q){
 			this.noDataSource = function(uri, datasvc, options){
-         		if(!uri) throw "uri is a required parameter for makeKendoDataSource";
-         		var _ds = datasvc[uri];
+         		
+				function _noHTTP(){
 
-         		return { 
-         			transport: {
-						read: function(options){
-							var deferred = _ds.noCRUD.$q.defer();
-							crudOp(_ds, "read", options)
-								.then(function(data){
-									this.data = data;
 
-									deferred.resolve(data);
-								}.bind(this));
-
-							return deferred.promise;
-						},
-						create: function(options){
-							return crudOp(_ds, "create", options);
-						},
-						update: function(options){
-							return crudOp(_ds, "update", options);
-						},
-						destroy: function(options){
-							return crudOp(_ds, "destroy", options);
-						},
-						one: function(options){
-							return _ds.noCRUD.one(options);
-						},
-						upsert: function(options){
-							return _ds.noCRUD.upsert(options);
+					return { 
+	         			transport: {
+							read: function(options){			
+								return datasvc.read(uri, options);
+							},
+							create: function(options){
+								return datasvc.create(uri, options);
+							},
+							update: function(options){
+								return datasvc.update(uri, options);
+							},
+							destroy: function(options){
+								return crudOp(_ds, "destroy", options);
+							},
+							one: function(options){
+								return datasvc.read(uri, options)
+									.then(function(data){
+										if(data.length > 0){
+											return data[0];
+										}else{
+											return {};
+										}
+									});
+							},
+							upsert: function(options){
+								console.warn("TODO: implement noHTTP upsert");
+								return datasvc.update(uri, options);
+							}
 						}
+	         		}
+				}
 
-					},
-         			table: _ds,
-         			data: [],
-         			expand: options.expand
-         		};
+
+				function _noIndexedDB(){
+					function crudOp(table, operation, options){
+						var 	crud = table.noCRUD,
+								ndrr = new window.noInfoPath.noDataReadRequest(table, options);			
+
+						return crud[operation](ndrr);
+					}
+
+	         		if(!uri) throw "uri is a required parameter for makeKendoDataSource";
+	         		var _ds = datasvc[uri];
+
+					return { 
+	         			transport: {
+							read: function(options){
+								var deferred = _ds.noCRUD.$q.defer();
+								crudOp(_ds, "read", options)
+									.then(function(data){
+										this.data = data;
+
+										deferred.resolve(data);
+									}.bind(this));
+
+								return deferred.promise;
+							},
+							create: function(options){
+								return crudOp(_ds, "create", options);
+							},
+							update: function(options){
+								return crudOp(_ds, "update", options);
+							},
+							destroy: function(options){
+								return crudOp(_ds, "destroy", options);
+							},
+							one: function(options){
+								return _ds.noCRUD.one(options);
+							},
+							upsert: function(options){
+								return _ds.noCRUD.upsert(options);
+							}
+						},
+	         			table: _ds,
+	         			data: [],
+	         			expand: options.expand
+	         		}				
+				}
+
+				var ds;
+
+				if(datasvc.name == "NoInfoPath-v3"){
+					ds = _noIndexedDB();
+				}else{
+					ds = _noHTTP();
+				}
+         		return ds; 
          	}
 		}])
 	;
 })(angular);
-
