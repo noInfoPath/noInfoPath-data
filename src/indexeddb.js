@@ -15,6 +15,9 @@
 					var currentItem = 0;
 
 					dex.transaction('rw', table, function (){
+						// Allows the importation of bulk data to not 
+						// be logged to _changes folder in indexedDB.
+						dex.nosync = true;
 						_next();
 					});	
 					
