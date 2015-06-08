@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.24
+	@version 0.1.25
 */
 
 //globals.js
@@ -201,7 +201,9 @@
 
 				this.__proto__.success  = deferred.resolve;
 				this.__proto__.error = deferred.reject;	
-				this.expand = options.expand;			
+				this.expand = options.expand;
+				this.projections = options.projections;	
+				this.aggregators = options.aggregators;		
 			}
 
             function _noDataSource(component, config, stateParams, scope){
@@ -210,7 +212,9 @@
 
                 var ds = service.noDataSource(config.tableName, provider, config);
                 ds.expand = config.expand || undefined;
-                
+                ds.projections = config.projections;
+                ds.aggregators = config.aggregators;
+
                 if(config.sort){
                     ds.sort = config.sort;
                 }       
@@ -371,7 +375,9 @@
 						},
 	         			table: _ds,
 	         			data: [],
-	         			expand: options.expand
+	         			expand: options.expand,
+	         			projections: options.projections,
+	         			aggregators: options.aggregators
 	         		}				
 				}
 
