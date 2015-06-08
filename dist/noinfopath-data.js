@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.25
+	@version 0.1.26
 */
 
 //globals.js
@@ -1398,28 +1398,32 @@
 
 							angular.forEach(array, function(item){
 								angular.forEach(options.expand, function(expand, pk){
-									var refItem = hash[pk][item[pk]],
-										newRefItem = {};
+									var newRefItem = {};
 
-									if(expand.fields){
-										angular.forEach(expand.fields, function(field){
-											newRefItem[field] = refItem[field];
-										});							
-									}else{
-										newRefItem = refItem;
+									if(item[pk] !== null) {
+										var refItem = hash[pk][item[pk]];
+											
+										if(expand.fields){
+											angular.forEach(expand.fields, function(field){
+												newRefItem[field] = refItem[field];
+											});							
+										}else{
+											newRefItem = refItem;
+										}
 									}
 
-
-									if(expand.merge){
+									if(expand.merge) {
 										item = angular.extend(item, newRefItem);
-									}else{
+									} else {
 										item[expand.name] = newRefItem;							
 									}
+
+									
 									//console.log(field, refItem, newRefItem)
 								});
 							});
 
-							return;
+							return array;
 						});					
 				}
 
