@@ -1,6 +1,6 @@
 {
   "name": "noinfopath-data",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "description": "noInfoPath data module",
   "main": "noinfopath-data.js",
   "directories": {
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://git.img.local/noinfopath-data.git"
+    "url": "http://gitlab.imginconline.com/noinfopath/noinfopath-data.git"
   },
   "author": "noInfoPath <info@noInfoPath.org> (http://www.noinfopath.org/)",
   "license": "MIT",
