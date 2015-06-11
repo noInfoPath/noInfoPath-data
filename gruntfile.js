@@ -23,7 +23,7 @@ module.exports = function(grunt) {
 		    		'lib/dexie.observable.js',
 		    		'lib/dexie.syncable.js'
 		    	],
-		    	dest: 'dist/noinfopath-dexis.js'
+		    	dest: 'dist/noinfopath-dexie.js'
 		    }
 	 	},
         karma: {
