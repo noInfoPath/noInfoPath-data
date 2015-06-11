@@ -373,7 +373,7 @@
 									var newRefItem = {};
 
 									if(item[pk] !== null) {
-										var refItem = hash[pk][item[pk]];
+										var refItem = hash[pk][item[pk]] ? hash[pk][item[pk]] : {};
 											
 										if(expand.fields){
 											angular.forEach(expand.fields, function(field){

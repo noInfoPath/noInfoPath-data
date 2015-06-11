@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.30
+	@version 0.1.31
 */
 
 //globals.js
@@ -1432,7 +1432,7 @@
 									var newRefItem = {};
 
 									if(item[pk] !== null) {
-										var refItem = hash[pk][item[pk]];
+										var refItem = hash[pk][item[pk]] ? hash[pk][item[pk]] : {};
 											
 										if(expand.fields){
 											angular.forEach(expand.fields, function(field){
