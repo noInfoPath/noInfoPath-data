@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
-<coverage lines-valid="847"  lines-covered="156"  line-rate="0.18420000000000003"  branches-valid="276"  branches-covered="12"  branch-rate="0.0435"  timestamp="1434239298194" complexity="0" version="0.1">
+<coverage lines-valid="847"  lines-covered="156"  line-rate="0.18420000000000003"  branches-valid="276"  branches-covered="12"  branch-rate="0.0435"  timestamp="1434239818656" complexity="0" version="0.1">
 <sources>
 	<source>/Users/gochinj/ws/noinfopath/noinfopath-data</source>
 </sources>
