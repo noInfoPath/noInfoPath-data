@@ -322,20 +322,50 @@
 					return deferred.promise;
 				}
 
-				function _expand(array, expands){
-					var promises = [];
+				function _expand(array) {
+					var promises = [],
+						refData = {};
 
-					//expands can typicalally happend asynchronously
-					//here at level one so spawn them all now. Any
-					//subqueries will be exected before this promise
-					//returns with the final results
-					angular.forEach(expands, function(expand){
-						promises.push(_expandOne(array, expand));						
-					});	
+					for(var i in options.expand){
+						var expand = options.expand[i],
+							table = dex[expand.tableName],
+							_ = table.noCRUD._,
+							target = {},
+							keys;
+
+						target[i] = null;
+						keys = _.pluck(_.reject(array, target), i);
+
+						if(!keys || keys.length === 0) {
+							continue;
+						}
+
+						promises.push($q(function(resolve, reject){
+							table.where(expand.foreignKey).anyOf(keys).toArray()
+							.then(function(array){
+								var THAT = this,
+									hash = {};
+
+								angular.forEach(array, function(item){
+									hash[item[THAT.options.foreignKey]] = item;
+								});
+
+								//refData[THAT.primaryKey] = hash;
+
+
+								resolve({primaryKey: THAT.primaryKey, hash: hash});
+							}.bind({primaryKey: i, options: expand, data:array}))
+							.catch(function(err){
+								console.error(err);
+								reject(err);
+							});
+						}));
+					}
+
 
 					return $q.all(promises)
 						.then(function(data){
-
+						
 							var tmp, hash = {};
 							do{
 								tmp = data.pop();
@@ -344,31 +374,37 @@
 								}
 							}while(tmp);
 
+
 							angular.forEach(array, function(item){
 								angular.forEach(options.expand, function(expand, pk){
-									var refItem = hash[pk][item[pk]],
-										newRefItem = {};
+									var newRefItem = {};
 
-									if(expand.fields){
-										angular.forEach(expand.fields, function(field){
-											newRefItem[field] = refItem[field];
-										});							
-									}else{
-										newRefItem = refItem;
+									if(item[pk] !== null) {
+										var refItem = hash[pk][item[pk]] ? hash[pk][item[pk]] : {};
+											
+										if(expand.fields){
+											angular.forEach(expand.fields, function(field){
+												newRefItem[field] = refItem[field];
+											});							
+										}else{
+											newRefItem = refItem;
+										}
 									}
 
-
-									if(expand.merge){
+									if(expand.merge) {
 										item = angular.extend(item, newRefItem);
-									}else{
+									} else {
 										item[expand.name] = newRefItem;							
 									}
+
+									
 									//console.log(field, refItem, newRefItem)
 								});
 							});
 
-							return;
-						});					
+						return array;
+						
+					});
 				}
 
 				function _expandOne(array, expand) {

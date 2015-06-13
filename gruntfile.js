@@ -17,6 +17,14 @@ module.exports = function(grunt) {
 		        	'src/create.js'
 		        ],
 		        dest: 'dist/noinfopath-data.js'
+		    },
+		    dexie: {
+		    	src: [
+		    		'lib/dexie.js',
+		    		'lib/dexie.observable.js',
+		    		'lib/dexie.syncable.js'
+		    	],
+		    	dest: 'dist/noinfopath-dexie.js'
 		    }
 	 	},
         karma: {
@@ -50,6 +58,6 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-version');
  
 	//Default task(s).
-	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath']);
+	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath','concat:dexie']);
 
 };
