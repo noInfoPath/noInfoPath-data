@@ -1,6 +1,6 @@
 /*
 	noinfopath-data
-	@version 0.1.25
+	@version 0.1.26
 */
 
 //globals.js

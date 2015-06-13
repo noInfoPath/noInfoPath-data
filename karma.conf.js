@@ -15,22 +15,28 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+        'node_modules/es5-shim/es5-shim.min.js',
         'node_modules/noinfopath-helpers/node_modules/jquery/dist/jquery.js',
         'node_modules/angular/angular.js',
         'node_modules/angular-mocks/angular-mocks.js',
         'bower_components/ng-lodash/build/ng-lodash.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
-        'lib/Dexie.js',
+        //'lib/indexedDB.polyfill.js',
+        'lib/dexie.js',
+        'lib/dexie.observable.js',
+        'lib/dexie.syncable.js',
         'src/globals.js',
         'src/configuration.js',        
         'src/http.js',
         'src/indexeddb.js',
         'src/manifest.js',
         'src/storage.js',
+        'src/create.js',
         'test/mock/*.*',
         'test/storage.spec.js',
         'test/http.spec.js',
-        'test/configuration.spec.js'
+        'test/configuration.spec.js',
+        'test/create.spec.js'
     ],
 
 

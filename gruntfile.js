@@ -13,7 +13,8 @@ module.exports = function(grunt) {
 		        	'src/configuration.js',
 		        	'src/http.js',
 		        	'src/manifest.js',
-		        	'src/indexeddb.js'
+		        	'src/indexeddb.js',
+		        	'src/create.js'
 		        ],
 		        dest: 'dist/noinfopath-data.js'
 		    }

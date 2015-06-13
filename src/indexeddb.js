@@ -82,6 +82,7 @@
 			};
 
 			Dexie.prototype.configure = function(dbinfo, stores){
+
 				var deferred = $q.defer();
 
 				dex.on('error', function(err) {
@@ -116,7 +117,13 @@
 
 				if(!dex.isOpen()){
 					dex.version(dbinfo.version).stores(stores);
-					dex.open();
+					dex.open()
+						.then(function(resp){
+							console.log("hello");
+						})
+						.catch(function(err){
+							console.error(err);
+						});
 				}
 
 				return deferred.promise;
