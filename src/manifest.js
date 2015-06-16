@@ -6,25 +6,6 @@
 		.config([function(){
 		}])
 
-		.run(['$rootScope', 'noConfig', 'noManifest', function($rootScope, noConfig, noManifest){
-			noConfig.whenReady()
-				.then(_start)
-				.catch(function(err){
-					console.error(err);
-				});
-
-			function _start(){	
-				noManifest.load()
-					.then(function(data){
-						$rootScope.noManifest = data;
-						//$rootScope.$emit("noManifest::ready");
-					})
-					.catch(function(){
-						console.log("noManifest connection failed.")
-					});
-			}	
-		}])
-
 		.provider("noManifest",[function(){
 			var _manifestMap = {
 				localStorage:{},
@@ -37,6 +18,8 @@
 			}, _dbConfig, _tableNames = [];
 
 			function noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
+				var SELF = this;
+
 				Object.defineProperties(this, {
 					"current": {
 						"get": function() {return _manifestMap;}
@@ -49,6 +32,12 @@
 					},
 					"lookupTables": {
 						"get": function() {return _tableNames; }
+					},
+					"isCached": {
+						"get": function(){
+							var tmp = noLocalStorage.getItem("noManifest");
+							return tmp && tmp.length > 0;
+						}
 					}
 				});
 
@@ -121,8 +110,14 @@
 					_dbConfig = config;
 				};
 
+				this.fromCache = function(){
+					var tmp = noLocalStorage.getItem("noManifest");
+					_createManifestMap(tmp);
+					_makeDBConfig();
+				}
+
 				this.load = function (){
-					return noHTTP.read(noUrl.makeResourceUrl(noConfig.current.RESTURI, "NoCacheManifest"))
+					return noHTTP.read("NoCacheManifest","$filter=StorageLocation ne ''&$orderby=TableName")
 						.then(function(data){
 							noLocalStorage.setItem("noManifest", data);
 							_createManifestMap(data);
@@ -137,6 +132,7 @@
 								_createManifestMap(data);
 								//this._deltaManifest();
 								_makeDBConfig();
+								$rootScope.noManifestReady = true;
 							}else{
 								throw "No Configuration, please again when online."
 							}
@@ -157,8 +153,12 @@
 									console.log("Manifest Ready");
 									deferred.resolve();									
 								}
+							});	
 
-							});					
+							SELF.load()
+								.catch(function(err){
+									deferred.reject(err);
+								});				
 						}					
 					});	
 
