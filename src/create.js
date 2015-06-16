@@ -85,7 +85,7 @@
 		.factory("noDexie", ['$timeout', '$q', '$rootScope', function($timeout, $q, $rootScope){
 
 			function noTable(){
-				console.log("Hello");
+				console.log("noTable::constructor");
 			}
 
 			function noDexie(db){
@@ -128,7 +128,7 @@
 				}	
 
 				/*
-					The read operation take a complex set of parameters that allow
+					The read operation takes a complex set of parameters that allow
 					for filtering, sorting and paging of data.
 
 						Parameters:
@@ -142,7 +142,7 @@
 					interface INoFilterExpression {
 						column: String,
 						operation: Enum("eq", "ne", "gt", "ge", "lt", "le", "contains", "startswith" )
-						value: String | Number | Date | Boolean
+						value: String | Number | Date | Boolean | Array<primative|Object>
 						logic: Enum("and", "or", undefined)
 					}
 
@@ -156,6 +156,91 @@
 
 				*/
 				db.WriteableTable.prototype.read = function(filters, sort, skip, take){
+					var deferred = $q.defer(),
+						table = this;
+
+					/*
+						This method of filtering goes against a predefined index
+						we can only apply one filter per collection. To this end,
+						we will attept to serialize each step of the filtering.
+						If there are none indexed filters they will be run last.
+					*/
+					function _filterByKeyPath(iNoFilterExpression) {}
+
+					/*
+						This method of filtering looks at the supplied set of
+						filters against each object return in the Dexie colletion.
+						This is a much slower than filtering against and index.
+					*/
+					function _filterByProperties(iNoFilters) {}
+
+					/*
+						_filterHasIndex uses the iNoFilter parameter to determine
+						if there is an index available for the give filter. it returns
+						true if there is, false if not.
+
+						To determine if and index exists, we look at the table.schema.primKey, 
+						and table.schema.indexes properties.
+					*/
+					function _filterHasIndex(iNoFilterExpression) {}
+
+					/*
+						This function splits up the filters by indexed verses not. The
+						return value is a INoFilterHash.
+
+						interface INoFilterHash {
+							indexedFilters: [INoFilterExpression]
+							nonIndexedFilters: [INoFilterExpression]
+						}
+					*/
+					function _sortOutFilters(INoFilters) {}
+
+					/*
+						This function develops a Dexie::Collection that has all of the filters
+						provided in the original request.
+					*/
+					function _applyFilters(INoFilters){}
+
+					/*
+						This function applies the provided sort items to the supplied 
+						Dexie:Collection. It should always sort on indexed columns and
+						return a DexieCollection.
+
+						NOTE: Need to research how to apply multi-column sorting.
+					*/
+					function _applySort(INoSort) {}
+
+					/*
+						Applies the specified skip and take values to the final 
+						Dexie::Collection, if supplied.  
+
+						Note that this is the function returns the final Array of items
+						based on all of the properties applied prior to this call.
+					*/
+					function _applyPaging(skip, take){}
+
+
+					/*
+						Defer the actual exection of this function to give the promise 
+						a heartbeat to return.
+					*/
+					$timeout(function(){
+						_applyFilters(filters)
+							.then(_applySort.bind(table, sort))
+							.then(_applyPaging.bind(table, skip, take))
+							.catch(function(err){
+								console.error(err);
+								deferred.resolve(err);
+								$rootScope.$digest();
+							})
+
+					});
+
+					/*
+						The promise should resolve to a Dexie::Collection that will result in
+						a set of data that matches the supplied filters, reject errors.
+					*/
+					return deferred.promise;
 
 				}				
 
@@ -219,7 +304,7 @@
 				}
 
 				/*
-					Maps the Dexie.Table.get method.
+					Maps to the Dexie.Table.get method.
 				*/
 				db.WriteableTable.prototype.one = function(key){
 					var deferred = $q.defer(),
@@ -254,7 +339,6 @@
 					update is required and calls the appropreiate function.
 				*/
 				db.WriteableTable.prototype.upsert = function(data){
-
 				}
 			}
 
