@@ -168,7 +168,7 @@
 					function _filterByKeyPath(iNoFilterExpression) {}
 
 					/*
-						This method of filtering looks at the supplied set of
+						This method of filtering compares the supplied set of
 						filters against each object return in the Dexie colletion.
 						This is a much slower than filtering against and index.
 					*/
