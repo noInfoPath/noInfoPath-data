@@ -112,6 +112,40 @@ describe("Testing noinfopath-data", function(){
 
 			$timeout.flush();
 		});
+
+		it("noDexie.noTable.read", function(done){
+			noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
+				.then(function(){
+					expect(noDexie.LU_Firmness).toBeDefined();
+					expect(noDexie.LU_Firmness.read).toBeDefined();
+
+					/* Insert Records via noTable.create */
+
+					/* Read Records via noTable.read */
+
+				})
+				.catch(function(err){
+					console.error(err);
+					expect(err).not.toBeDefined();
+				})
+				.finally(function(){
+					done();
+				});
+
+			$timeout.flush();
+		});
+
+		it("noDexie.noTable.update", function(done){
+
+		});
+
+		it("noDexie.noTable.destroy", function(done){
+
+		});
+
+		it("noDexie.noTable.one", function(done){
+
+		});
 	});
 
 
