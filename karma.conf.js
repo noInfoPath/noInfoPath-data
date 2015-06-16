@@ -21,10 +21,10 @@ module.exports = function(config) {
         'node_modules/angular-mocks/angular-mocks.js',
         'bower_components/ng-lodash/build/ng-lodash.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
-        //'lib/indexedDB.polyfill.js',
+        'lib/indexedDB.polyfill.js',
         'lib/dexie.js',
         'lib/dexie.observable.js',
-        'lib/dexie.syncable.js',
+        //'lib/dexie.syncable.js',
         'src/globals.js',
         'src/configuration.js',        
         'src/http.js',
@@ -82,7 +82,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome'],
 
 
     // Continuous Integration mode

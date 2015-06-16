@@ -1,6 +1,6 @@
 //indexeddb.js
 (function(angular, Dexie, undefined){
-	"user strict";
+	"use strict";
 	
 	angular.module("noinfopath.data")
 
