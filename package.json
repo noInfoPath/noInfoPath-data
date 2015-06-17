@@ -30,6 +30,7 @@
     "karma": "^0.12.28",
     "karma-chrome-launcher": "^0.1.7",
     "karma-coverage": "^0.2.7",
+    "karma-firefox-launcher": "^0.1.6",
     "karma-html-reporter": "^0.2.4",
     "karma-ie-launcher": "^0.1.5",
     "karma-jasmine": "^0.3.3",
