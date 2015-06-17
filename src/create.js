@@ -244,8 +244,10 @@
 
 				}				
 
-
-				db.WriteableTable.prototype.update = function(key, data){
+				/*
+					The update function expects the key to be within the update object.
+				*/
+				db.WriteableTable.prototype.noUpdate = function(data){
 					var deferred = $q.defer(),
 						table = this,
 						key = data[table.noInfoPath.primaryKey];
@@ -257,47 +259,42 @@
 						data.ModifiedBy =  _dexie.currentUser.userId; 
 						table.update(key, data)
 							.then(function(data){ 
-								deferred.resolve(data); 
-								$rootScope.$digest();
+								window.noInfoPath.digest(deferred.resolve, data);
 							})
 							.catch(function(err){
-								deferred.reject("noCRUD::update " + err);
-								$rootScope.$digest();
+								window.noInfoPath.digestError(deferred.reject, err);
 							});
-							
+						
 					})
 					.then(angular.noop())
 					.catch(function(err){
-						deferred.reject("noCRUD::updateTrans " + err);
-						$rootScope.$digest();
+						window.noInfoPath.digestError(deferred.reject, err);
 					});
-						
+					
 					return deferred.promise;
 				}
 
-				db.WriteableTable.prototype.destroy = function(key){
+				db.WriteableTable.prototype.noDestroy = function(data){
 					var deferred = $q.defer(),
 						table = this,
 						key = data[table.noInfoPath.primaryKey];
 						
 					//console.log("adding: ", _dexie.currentUser);
-					
+					console.log(key);
 					_dexie.transaction("rw", table, function(){ 
+						
 						table.delete(key)
 							.then(function(data){ 
-								deferred.resolve(data); 
-								$rootScope.$digest();
+								window.noInfoPath.digest(deferred.resolve, data);
 							})
 							.catch(function(err){
-								deferred.reject("noCRUD::destroy " + err);
-								$rootScope.$digest();
+								window.noInfoPath.digestError(deferred.reject, err);
 							});
 							
 					})
 					.then(angular.noop())
 					.catch(function(err){
-						deferred.reject("noCRUD::destroyTrans " + err);
-						$rootScope.$digest();
+						window.noInfoPath.digestError(deferred.reject, err);
 					});
 						
 					return deferred.promise;
@@ -306,40 +303,38 @@
 				/*
 					Maps to the Dexie.Table.get method.
 				*/
-				db.WriteableTable.prototype.one = function(key){
-					var deferred = $q.defer(),
-						table = this,
+				db.WriteableTable.prototype.noOne = function(data){
+				 	var deferred = $q.defer(),
+				 		table = this,
 						key = data[table.noInfoPath.primaryKey];
 						
-					//console.log("adding: ", _dexie.currentUser);
+				 	//console.log("adding: ", _dexie.currentUser);
 					
-					_dexie.transaction("r", table, function(){
-						table.get(key)
-							.then(function(data){ 
-								deferred.resolve(data); 
-								$rootScope.$digest();
-							})
-							.catch(function(err){
-								deferred.reject("noCRUD::one " + err);
-								$rootScope.$digest();
-							});
+				 	_dexie.transaction("r", table, function(){
+				 		table.get(key)
+				 			.then(function(data){ 
+				 				window.noInfoPath.digest(deferred.resolve, data);
+				 			})
+				 			.catch(function(err){
+				 				window.noInfoPath.digestError(deferred.reject, err);
+				 			});
 							
-					})
-					.then(angular.noop())
-					.catch(function(err){
-						deferred.reject("noCRUD::oneTrans " + err);
-						$rootScope.$digest();
-					});
+				 	})
+				 	.then(angular.noop())
+				 	.catch(function(err){
+				 		window.noInfoPath.digestError(deferred.reject, err);
+				 	});
 						
-					return deferred.promise;				}
+				 	return deferred.promise;				
+				}
 
 				/*
 					While Dexie supports a put operation which is similar to upsert,
 					we're going with upsert which decides whether an insert or an
 					update is required and calls the appropreiate function.
 				*/
-				db.WriteableTable.prototype.upsert = function(data){
-				}
+				// db.WriteableTable.prototype.upsert = function(data){
+				// }
 			}
 
 			function _extendDexieTables(dbSchema){

@@ -303,6 +303,26 @@
                                 "nullable": "true",
                                 "type": "int",
                                 "length": 0
+                            },
+                            "ModifiedBy": {
+                                "nullable": "true",
+                                "type": "uniqueidentifier",
+                                "length": 0
+                            },
+                            "ModifiedDate": {
+                                "nullable": "true",
+                                "type": "datetime",
+                                "length": 0
+                            },
+                            "CreatedBy": {
+                                "nullable": "true",
+                                "type": "uniqueidentifier",
+                                "length": 0
+                            },
+                            "DateCreated": {
+                                "nullable": "true",
+                                "type": "datetime",
+                                "length": 0
                             }
                         },
                         "foreignKeys": {},

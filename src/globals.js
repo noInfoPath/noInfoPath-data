@@ -9,7 +9,41 @@
 	
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers'])
 
-		.run(['$injector', '$parse', '$q', function($injector, $parse, $q){
+		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', function($injector, $parse, $timeout, $q, $rootScope, $browser){
+
+			function _digestError(fn, error){
+		        if(angular.isObject(error)){
+		                _digest(fn, error.toString());
+		        } else {
+		                _digest(fn, error);
+		        }
+			}
+
+			function _digest(fn, data){
+			        var message = ["error"];
+
+			        if(angular.isArray(data)){
+			                message = data;
+			        } else {
+			                message = [data];
+			        }
+
+			$timeout(function(){
+			        fn.apply(null, message);
+			        console.log("_digest",$rootScope.$$phase);
+			        if(!$rootScope.$$phase){
+			                $rootScope.$digest();
+			        }
+			});
+
+			_digestTimeout();
+			}
+
+			function _digestTimeout(){
+				if($timeout.flush && $browser.deferredFns.length){
+		        	$timeout.flush();
+				}
+			}
 
 			function _setItem(store, key, value){
 				 var getter = $parse(key),
@@ -288,7 +322,10 @@
 				noFilterExpression: _noFilterExpression,
 				noFilter: _noFilter,
 				noDataReadRequest: _noDataReadRequest,
-				noDataSource: _noDataSource
+				noDataSource: _noDataSource,
+				digest: _digest,
+				digestError: _digestError,
+				digestTimeout: _digestTimeout
 			};
 
 			window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
