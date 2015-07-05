@@ -23,11 +23,16 @@ describe("Testing noinfopath-data", function(){
 		});
 	});	
 
+	// afterEach(function(){
+	// 	if(!$rootScope.$$phase) $rootScope.$digest();
+	// });
+
 	describe("Testing noDbSchema", function(){
 		it("noDbSchema should exist and be initialized.", function(){
 			expect(noDbSchema).toBeDefined();
 			expect(noDbSchema.whenReady).toBeDefined();
 			expect(noDbSchema.load).toBeDefined();
+			//expect(noDbSchema.store).toBeDefined();
 		});
 
 		it("dbJsonMock should exist and be initialized", function(){
@@ -36,7 +41,7 @@ describe("Testing noinfopath-data", function(){
 			expect(dbJsonMock.response).toBeDefined();
 		});
 
-		it("noDbSchema.whenReady shoud load the db.config and return when done", function(done){
+		it("noDbSchema.whenReady should load the db.json (/nodbschema) and return when done", function(done){
 			$httpBackend
 				.when(dbJsonMock.request.method, dbJsonMock.request.url)
 				.respond(dbJsonMock.response.status, dbJsonMock.response.body, dbJsonMock.response.headers);
@@ -48,6 +53,7 @@ describe("Testing noinfopath-data", function(){
 				})
 				.catch(function(err){
 					console.error(err);
+					expect(err).not.toBeDefined();
 				})
 				.finally(function(){
 					done();
@@ -74,16 +80,11 @@ describe("Testing noinfopath-data", function(){
 					done();
 				});
 
-			// noDexie.test()
-			// 	.then(function(msg){
-			// 		console.log(msg);
-			// 		done();
-			// 	});
+			$timeout.flush();
 
-			$timeout.flush();	
 		});
 
-		it("noDexie.noTable.create should return a new record", function(done){
+		it("noDexie.noTable.create should return a new id", function(done){
 			noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
 				.then(function(){
 					expect(noDexie.LU_Firmness).toBeDefined();
@@ -91,9 +92,9 @@ describe("Testing noinfopath-data", function(){
 				
 					noDexie.LU_Firmness.create({Description: "Hello", FirmnessID: "ddf5993e-0c72-417c-83fb-62f5612e191c"})
 						.then(function(data){
-							console.log("Test", data);
 							expect(data).toBeDefined();
 							done();
+
 						})
 						.catch(function(err){
 							console.error(err);
@@ -105,120 +106,14 @@ describe("Testing noinfopath-data", function(){
 					
 				})
 				.catch(function(err){
-					console.error(err);
-					expect(err).not.toBeDefined();
+					console.error("XXX" + err);			
+					expect("Failed to create indexedDB object. See Dexie Error above.").toBe(null);
+		
 					done();
 				});
 
 			$timeout.flush();
 		});
-
-		it("noDexie.noTable.noUpdate", function(done){
-			noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
-				.then(function(){
-					expect(noDexie.LU_Firmness).toBeDefined();
-					expect(noDexie.LU_Firmness.noUpdate).toBeDefined();
-
-					noDexie.LU_Firmness.noUpdate({Description: "UpdateTest", FirmnessID: "ddf5993e-0c72-417c-83fb-62f5612e191c"})
-						.then(function(data){
-							expect(data).toBeDefined();
-							expect(data).toBeTruthy();
-							done();
-						})
-						.catch(function(err){
-							console.error(err);
-							expect(err).not.toBeDefined();
-							done();
-						});
-
-					$timeout.flush();
-
-				})
-				.catch(function(err){
-					console.error(err);
-					expect(err).not.toBeDefined();
-					done();
-				})
-
-			$timeout.flush();
-		});
-
-		// it("noDexie.noTable.read", function(done){
-		// 	noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
-		// 		.then(function(){
-		// 			expect(noDexie.LU_Firmness).toBeDefined();
-		// 			expect(noDexie.LU_Firmness.read).toBeDefined();
-
-
-		// 			/* Read Records via noTable.read */
-
-		// 		})
-		// 		.catch(function(err){
-		// 			console.error(err);
-		// 			expect(err).not.toBeDefined();
-		// 		})
-		// 		.finally(function(){
-		// 			done();
-		// 		});
-
-		// 	$timeout.flush();
-		// });
-
-		it("noDexie.noTable.noOne", function(done){
-			noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
-				.then(function(){
-					expect(noDexie.LU_Firmness).toBeDefined();
-					expect(noDexie.LU_Firmness.noOne).toBeDefined();
-					
-					noDexie.LU_Firmness.noOne({FirmnessID: "ddf5993e-0c72-417c-83fb-62f5612e191c"})
-						.then(function(data){
-							expect(data).toBeDefined();
-							done();
-						})
-						.catch(function(err){
-							console.error(err);
-							done();
-						})
-							
-				})
-				.catch(function(err){
-					console.error(err);
-					expect(err).not.toBeDefined();
-					done();
-				})
-
-			$timeout.flush();
-		});
-
-		it("noDexie.noTable.noDestroy", function(done){
-			noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
-				.then(function(){
-					expect(noDexie.LU_Firmness).toBeDefined();
-					expect(noDexie.LU_Firmness.noDestroy).toBeDefined();
-
-					noDexie.LU_Firmness.noDestroy({FirmnessID: "ddf5993e-0c72-417c-83fb-62f5612e191c"})
-					.then(function(data){
-						expect(data).toBeDefined();
-						expect(data).toBeTruthy();
-						done();
-					})
-					.catch(function(err){
-						console.error(err);
-						expect(err).not.toBeDefined();
-						done();
-					})
-					
-				})
-				.catch(function(err){
-					console.error(err);
-					expect(err).not.toBeDefined();
-					done();
-				})
-
-			$timeout.flush();
-		});
-
-
 	});
 
 

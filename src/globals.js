@@ -1,48 +1,149 @@
+//globals.js
+
 /*
-	noinfopath-data
-	@version 0.1.33
+ *	# noinfopath-data
+ *	@version 0.2.0
+ *
+ *	## Overview
+ *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
+ *
+ *	[no-toc]
+ *
+ *	## Dependencies
+ *
+ *	- AngularJS
+ *	- jQuery
+ *	- ngLodash
+ *	- Dexie
+ *	- Dexie Observable
+ *	- Dexie Syncable
 */
 
-//globals.js
+/**
+ *	## Development Dependencies
+ *
+ *	> See `package.json` for exact version requirements.
+ *
+ *	- indexedDB.polyfill
+ *	- angular-mocks
+ *	- es5-shim
+ *	- grunt
+ *	- grunt-bumpup
+ * - grunt-version
+ *	- grunt-contrib-concat
+ *	- grunt-contrib-copy
+ *	- grunt-contrib-watch
+ *	- grunt-karma
+ *	- jasmine-ajax
+ *	- jasmine-core
+ *	- jshint-stylish
+ *	- karma
+ *	- karma-chrome-launcher
+ *	- karma-coverage
+ *	- karma-firefox-launcher
+ *	- karma-html-reporter
+ *	- karma-ie-launcher
+ *	- karma-jasmine
+ *	- karma-phantomjs-launcher
+ *	- karma-safari-launcher
+ *	- karma-verbose-reporter
+ *	- noinfopath-helpers
+ *	- phantomjs
+*/
+
+/**
+ *	## Developers' Remarks
+ *
+ *	|Who|When|What|
+ *	|---|----|----|
+ *	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
+*/
+
+(noInfoPath = noInfoPath || {});
+(noInfoPath.data = {});
+
 (function(angular, undefined){
-	"use strict";
-	
+ 	"use strict";
+
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers'])
 
-		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', function($injector, $parse, $timeout, $q, $rootScope, $browser){
+		/*
+        * ## @interface noInfoPath
+        *
+        * ### Overview
+        * This interface exposes some useful funtions on the global scope
+        * by attaching it to the `window` object as ```window.noInfoPath```
+        *
+        * ### Methods
+        *
+        * #### getItem
+        *
+        * #### setItem
+        *
+        * #### bindFilters `deprecated`
+        *
+        * #### noFilter `deprecated`
+        *
+        * #### noFilterExpression `deprecated`
+        *
+        * #### noDataReadRequest `deprecated`
+        *
+        * #### noDataSource `deprecated`
+        *
+        * #### digest `deprecated`
+        *
+        * #### digestError `deprecated`
+        *
+        * #### digestTimeout `deprecated`
+		 */
+		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){
 
-			function _digestError(fn, error){
-		        if(angular.isObject(error)){
-		                _digest(fn, error.toString());
-		        } else {
-		                _digest(fn, error);
+			function _digestTimeout(){
+
+
+				if($timeout.flush && $browser.deferredFns.length){
+					if($rootScope.$$phase){
+						setTimeout(function(){
+							$timeout.flush();
+						},10);
+					}else{
+						$timeout.flush();
+					}
+					//console.log($timeout.verifyNoPendingTasks());
+
 		        }
 			}
 
-			function _digest(fn, data){
-			        var message = ["error"];
+			function _digestError(fn, error){
+				var digestError = error;
 
-			        if(angular.isArray(data)){
-			                message = data;
-			        } else {
-			                message = [data];
-			        }
+				if(angular.isObject(error)){
+					digestError = error.toString();
+				}
 
-			$timeout(function(){
-			        fn.apply(null, message);
-			        console.log("_digest",$rootScope.$$phase);
-			        if(!$rootScope.$$phase){
-			                $rootScope.$digest();
-			        }
-			});
+				//console.error(digestError);
 
-			_digestTimeout();
+				_digest(fn, digestError);
 			}
 
-			function _digestTimeout(){
-				if($timeout.flush && $browser.deferredFns.length){
-		        	$timeout.flush();
+			function _digest(fn, data){
+				var message = [];
+
+				if(angular.isArray(data)){
+					message = data;
+				} else {
+					message = [data];
 				}
+
+	        	if(window.jasmine){
+        			$timeout(function(){
+						fn.apply(null, message);
+					});
+					$timeout.flush();
+	        	}else{
+	        		fn.apply(null, message);
+	        	}
+
 			}
 
 			function _setItem(store, key, value){
@@ -113,7 +214,7 @@
 				var deferred = $q.defer(), _table = table;
 
 				Object.defineProperties(this, {
-					"__type": { 
+					"__type": {
 						"get": function () { return "noDataReadRequest"; }
 					},
 					"promise": {
@@ -131,7 +232,7 @@
 					}
 
 					this.data.filter.add(key, operator, match, logic);
-					
+
 
 				};
 
@@ -139,12 +240,12 @@
 					if(!this.data.filter)
 						return;
 
-					
+
 					delete this.data.filter[indexOf];
-				
+
 					if(this.data.filter.length === 0){
 						delete this.data.filter;
-					}	
+					}
 				};
 
 				this.__proto__.indexOfFilter = function(key){
@@ -174,12 +275,12 @@
 					if(!this.data.sort)
 						return;
 
-					
+
 					delete this.data.sort[indexOf];
-				
+
 					if(this.data.sort.length === 0){
 						delete this.data.sort;
-					}	
+					}
 				};
 
 				this.__proto__.indexOfSort = function(key){
@@ -215,9 +316,9 @@
 
 						angular.forEach(this.data.filter.filters, function(filter){
 							tmp.add(filter);
-						},this);	
+						},this);
 
-						this.data.filter = tmp;				
+						this.data.filter = tmp;
 					}
 
 
@@ -234,10 +335,10 @@
 				}
 
 				this.__proto__.success  = deferred.resolve;
-				this.__proto__.error = deferred.reject;	
+				this.__proto__.error = deferred.reject;
 				this.expand = options.expand;
-				this.projections = options.projections;	
-				this.aggregators = options.aggregators;		
+				this.projections = options.projections;
+				this.aggregators = options.aggregators;
 			}
 
             function _noDataSource(component, config, stateParams, scope){
@@ -251,8 +352,8 @@
 
                 if(config.sort){
                     ds.sort = config.sort;
-                }       
-               
+                }
+
                	if(config.filter){
                		//Check for early binding filters.
                		var _filters = [];
@@ -264,11 +365,11 @@
                				}else{
                					source = scope;
                				}
-               				
+
            					var val = window.noInfoPath.getItem(source, fltr.value.property);
             					val = fltr.value.type === "number" ? Number(val) : val;
                				_filters.push({field: fltr.field, operator: fltr.operator, value: val});
-         
+
                			}else{
                				_filters.push({field: fltr.field, operator: fltr.operator, value: fltr.value});
                			}
@@ -278,7 +379,7 @@
                	}
 
 
-               
+
                	angular.extend(this, ds);
             }
 
@@ -298,13 +399,13 @@
                             case "scope":
                                	ctx = scope;
                                 break;
-                        }  
+                        }
 
             	        v =  window.noInfoPath.getItem(ctx, filter.value.property);
-            
+
                         if(v){
                             v =  filter.value.type === "number" ? Number(v) : v;
-                            _filters.push({field: filter.field, operator: filter.operator, value: v});                             
+                            _filters.push({field: filter.field, operator: filter.operator, value: v});
                         }
                     }else{
                         //static value
@@ -315,7 +416,7 @@
                 return _filters;
             }
 
-			var noInfoPath = {
+			var _data = {
 				getItem: _getItem,
 				setItem: _setItem,
 				bindFilters: _makeFilters,
@@ -328,18 +429,20 @@
 				digestTimeout: _digestTimeout
 			};
 
-			window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
+			window.noInfoPath = angular.extend(window.noInfoPath || {}, _data);
 		}])
 
+		/**
+		 * ## @service noDataService `deprecated`
+		 *
+		 */
 		.service("noDataService", ['$q', function($q){
 			this.noDataSource = function(uri, datasvc, options){
-         		
+
 				function _noHTTP(){
-
-
-					return { 
+					return {
 	         			transport: {
-							read: function(options){			
+							read: function(options){
 								return datasvc.read(uri, options);
 							},
 							create: function(options){
@@ -369,11 +472,10 @@
 	         		}
 				}
 
-
 				function _noIndexedDB(){
 					function crudOp(table, operation, options){
 						var 	crud = table.noCRUD,
-								ndrr = new window.noInfoPath.noDataReadRequest(table, options);			
+								ndrr = new window.noInfoPath.noDataReadRequest(table, options);
 
 						return crud[operation](ndrr);
 					}
@@ -381,7 +483,7 @@
 	         		if(!uri) throw "uri is a required parameter for makeKendoDataSource";
 	         		var _ds = datasvc[uri];
 
-					return { 
+					return {
 	         			transport: {
 							read: function(options){
 								var deferred = _ds.noCRUD.$q.defer();
@@ -415,7 +517,7 @@
 	         			expand: options.expand,
 	         			projections: options.projections,
 	         			aggregators: options.aggregators
-	         		}				
+	         		}
 				}
 
 				var ds;
@@ -425,7 +527,7 @@
 				}else{
 					ds = _noHTTP();
 				}
-         		return ds; 
+         		return ds;
          	}
 		}])
 	;
