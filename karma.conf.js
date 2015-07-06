@@ -21,22 +21,27 @@ module.exports = function(config) {
         'node_modules/angular-mocks/angular-mocks.js',
         'bower_components/ng-lodash/build/ng-lodash.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
+        'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
         'lib/indexedDB.polyfill.js',
         'lib/dexie.js',
         'lib/dexie.observable.js',
-        //'lib/dexie.syncable.js',
+        'lib/dexie.syncable.js',
+        'test/mock/noinfopath.mock.js',
+        'test/mock/db.json.mock.js',
         'src/globals.js',
-        'src/configuration.js',        
+        'src/classes.js',
+        //'src/configuration.js',
         'src/http.js',
         'src/indexeddb.js',
         'src/manifest.js',
         'src/storage.js',
-        'src/create.js',
-        'test/mock/*.*',
-        'test/storage.spec.js',
-        'test/http.spec.js',
-        'test/configuration.spec.js',
-        'test/create.spec.js'
+        //'src/dexie.js',
+        'src/query-builder.js',
+
+        //'test/storage.spec.js',
+        'test/http.spec.js'
+        //'test/configuration.spec.js',
+        //'test/query-builder.spec.js'
     ],
 
 
@@ -60,7 +65,7 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['verbose','coverage'],
+    reporters: ['verbose'],
 
 
     // web server port
@@ -82,7 +87,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Firefox'],
+    browsers: ['Chrome'],
 
 
     // Continuous Integration mode

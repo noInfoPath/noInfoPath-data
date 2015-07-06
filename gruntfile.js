@@ -5,16 +5,27 @@ module.exports = function(grunt) {
   	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+        copy: {
+            test: {
+                files: [
+                    //{expand:true, flatten:false, src: [ 'lib/js/noinfopath/*.*'], dest: 'build/'},
+                    {expand:true, flatten:true, src: [ 'dist/*.js'], dest: '../noinfopath-test-server-node/no/lib/js/noinfopath/'},
+                ]
+            }
+        },
 	    concat: {
 		    noinfopath: {
 		        src: [
 		        	'src/globals.js',
+                    'src/classes.js',
+                    'src/query-builder.js',
 		        	'src/storage.js',
 		        	'src/configuration.js',
 		        	'src/http.js',
-		        	'src/manifest.js',
-		        	'src/indexeddb.js',
-		        	'src/create.js'
+                    'src/schema.js',
+		        	'src/import.js',
+		        	// 'src/indexeddb.js',
+		        	'src/dexie.js'
 		        ],
 		        dest: 'dist/noinfopath-data.js'
 		    },
@@ -47,7 +58,27 @@ module.exports = function(grunt) {
     		defaults: {
     			src: ['src/globals.js']
     		}
-    	}		
+    	},
+    	nodocs: {
+    		"internal": {
+    			options: {
+    				src: 'dist/noinfopath-data.js',
+    				dest: 'docs/noinfopath-data.wiki.md',
+    				start: ['/*','/**']
+    			}
+    		},
+    		"public": {
+    			options: {
+    				src: 'dist/noinfopath-data.js',
+    				dest: 'docs/noinfopath-data.md',
+    				start: ['/*']
+    			}
+    		}
+    	},
+        watch: {
+            files: ['src/*.js', 'test/*.spec.js'],
+            tasks: ['test']
+        }
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-concat');
@@ -56,8 +87,13 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-bumpup');
 	grunt.loadNpmTasks('grunt-version');
- 
+ 	grunt.loadNpmTasks('grunt-nodocs');
 	//Default task(s).
 	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath','concat:dexie']);
+
+    grunt.registerTask('test', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'copy:test']);
+
+    grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal']);
+
 
 };

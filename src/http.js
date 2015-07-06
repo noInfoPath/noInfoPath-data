@@ -3,298 +3,212 @@
 	"use strict";
 
 	angular.module('noinfopath.data')
+		/*
+		* ## @service noHTTP
+		*
+		* ### Overview
+		* Provides a RESTful compatible HTTP service.
+		*
+		* ### Methods
+		*
+		* #### create(uri, data)
+		*
+		* ##### Parameters
+		*
+		* |Name|Type|Description|
+		* |----|----|-----------|
+		* |uri|string|unique identifier of the table to operate against|
+		* |data|object|the data to use to create the new obejct in the db|
+		*
+		* #### read(resourceURI, query)
+		*
+		* #### update(resourceURI, formdata)
+		* TODO: Implementation required.
+		*
+		* #### destroy(resourceURI, formdata)
+		* TODO: Implementation required.
+		*/
 		.provider("noHTTP",[function(){
+			this.$get = ['$q', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', function($q, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder){
+				/**
+				* ### @class NoDb
+				*
+				* #### Overview
+				*
+				* Creates and manages a set of NoTable objects.
+				*
+				* #### @constructor NoDb(tables, queryBuilder)
+				*
+				* ##### Parameters
+				*
+				* |Name|Type|Description|
+				* |----|----|-----------|
+				* |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
+				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+				*
+				*/
+				function NoDb(tables, queryBuilder){
 
-			this.configure = function(){
-					angular.noop();
-			}
-
-			this.createTransport = function(){
-				return new noREST();
-			}
-
-			function noREST($q, $http, $filter, noUrl, noConfig){
-				var SELF = this,
-					odataFilters = {
-			            eq: "eq",
-			            neq: "ne",
-			            gt: "gt",
-			            gte: "ge",
-			            lt: "lt",
-			            lte: "le",
-			            contains : "substringof",
-			            doesnotcontain: "substringof",
-			            endswith: "endswith",
-			            startswith: "startswith"
-			        },				
-					mappers = {
-			            pageSize: angular.noop,
-			            page: angular.noop,
-			            filter: function(params, filter, useVersionFour) {
-			                if (filter) {
-			                    params.$filter = toOdataFilter(filter, useVersionFour);
-			                }
-			            },
-			            data: function(params, filter, useVersionFour){
-			            	mappers.filter(params, filter.filter, useVersionFour)
-			            },
-			            // filter: function(params, filter, useVersionFour) {
-			            //     if (filter) {
-			            //         params.$filter = SELF.toOdataFilter(filter, useVersionFour);
-			            //     }
-			            // },
-			            sort: function(params, orderby) {
-			                var sorts = angular.forEach(orderby, function(value) {
-			                    var order = value.field.replace(/\./g, "/");
-
-			                    if (value.dir === "desc") {
-			                        order += " desc";
-			                    }
-
-			                    return order;
-			                }),
-			                expr = sorts ? sorts.join(",") : undefined;
-
-			                if (expr) {
-			                    params.$orderby = expr;
-			                }
-			            },
-			            skip: function(params, skip) {
-			                if (skip) {
-			                    params.$skip = skip;
-			                }
-			            },
-			            take: function(params, take) {
-			                if (take) {
-			                    params.$top = take;
-			                }
-			            }
-			        };
-			    function isGuid(val){
-			    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
-			    }
-				function toOdataFilter (filter, useOdataFour) {
-				    var result = [],
-				        logic = filter.logic || "and",
-				        idx,
-				        length,
-				        field,
-				        type,
-				        format,
-				        operator,
-				        value,
-				        ignoreCase,
-				        filters = filter.filters;
-					
-				    for (idx = 0, length = filters.length; idx < length; idx++) {
-				        filter = filters[idx];
-				        field = filter.field;
-				        value = filter.value;
-				        operator = filter.operator;
-
-				        if (filter.filters) {
-				            filter = toOdataFilter(filter, useOdataFour);
-				        } else {
-				            ignoreCase = filter.ignoreCase;
-				            field = field.replace(/\./g, "/");
-				            filter = odataFilters[operator];
-				            // if (useOdataFour) {
-				            //     filter = odataFiltersVersionFour[operator];
-				            // }
-
-				            if (filter && value !== undefined) {
-				               
-				                if (angular.isString(value)) {
-				                	if(isGuid(value)){
-										format = "guid'{1}'";
-				                	}else{
-				                		format = "'{1}'";
-				                	}
-				                    
-				                    value = value.replace(/'/g, "''");
-
-
-				                    // if (ignoreCase === true) {
-				                    //     field = "tolower(" + field + ")";
-				                    // }
-
-				                } else if (angular.isDate(value)) {
-				                    if (useOdataFour) {
-				                        format = "yyyy-MM-ddTHH:mm:ss+00:00";
-				                    } else {
-				                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
-				                        format = "{1}";
-				                    }
-				                } else {
-				                    format = "{1}";
-				                }
-
-				                if (filter.length > 3) {
-				                    if (filter !== "substringof") {
-				                        format = "{0}({2}," + format + ")";
-				                    } else {
-				                        format = "{0}(" + format + ",{2})";
-				                        if (operator === "doesnotcontain") {
-				                            if (useOdataFour) {
-				                                format = "{0}({2},'{1}') eq -1";
-				                                filter = "indexof";
-				                            } else {
-				                                format += " eq false";
-				                            }
-				                        }
-				                    }
-				                } else {
-				                    format = "{2} {0} " + format;
-				                }
-
-				                filter = $filter("format")(format, filter, value, field);
-				            }
-				        }
-
-				        result.push(filter);
-				    }
-
-			      	filter = result.join(" " + logic + " ");
-
-			        if (result.length > 1) {
-			            filter = "(" + filter + ")";
-			        }
-
-			        return filter;
+					angular.forEach(tables, function(table, name){
+						this[name] = new NoTable(name, table, queryBuilder);
+					}, this);
 				}
 
-				function mapParams (options, type, useVersionFour) {
-	                var params,
-	                    value,
-	                    option,
-	                    dataType;
 
-	                options = options || {};
-	                type = type || "read";
-	                dataType = "json";
+				/**
+				* ### @class NoTable
+				*
+				* #### Overview
+				*
+				* Provides an interface that loosely matches that of the NoTable
+				* class provided by noDexie.  This to ease the integration with
+				* NoInfoPath component that consume data such as noKendo.
+				*
+				* #### @constructor NoTable(tableName, queryBuilder)
+				*
+				* ##### Parameters
+				*
+				* |Name|Type|Description|
+				* |----|----|-----------|
+				* |tableName|string|name of the table that this instance will interact with.|
+				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+				*/
+				function NoTable(tableName, table, queryBuilder){
+					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-	                if (type === "read") {
-	                	if(angular.isNumber(options) || angular.isString(options)){
-	                		return "(" + noUrl.normalizeValue(options) + ")";
-	                	}
+					var url =  noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
 
-	                    params = {
-	                        $inlinecount: "allpages"
-	                    };
+					this.noCreate = function(data){
+						var json = angular.toJson(data);
 
-	                    //params.$format = "json";
+						var deferred = $q.defer(),
+							req = {
+								method: "POST",
+								url: url,
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
 
-	                    for (option in options) {
-	                    	console.log(option, options[option]);
-	                        if (mappers[option]) {
-	                            mappers[option](params, options[option], useVersionFour);
-	                        } else {
-	                            params[option] = options[option];
-	                        }
-	                    }
-	                } else {
-	                    if (dataType !== "json") {
-	                        throw new Error("Only json dataType can be used for " + type + " operation.");
-	                    }
+						$http(req)
+							.success(function(data){
+								//console.log(angular.toJson(data) );
 
-	                    if (type !== "destroy") {
-	                        for (option in options) {
-	                            value = options[option];
-	                            if (typeof value === "number") {
-	                                options[option] = value + "";
-	                            }
-	                        }
+								deferred.resolve(data);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
 
-	                        params = options;
-	                    }
-	                }
+						return deferred.promise;
+					};
 
-	                return noUrl.serialize(params); 
-	            }
-	
-				this.create = function(resourceURI, formdata){
-					var json = angular.toJson(formdata);
-					console.log(resourceURI);
+					this.noRead = function() {
+						var filters, sort, page;
 
-					var deferred = $q.defer(),
-						req = {
-							method: "POST",
-							url: resourceURI,
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-				
-					$http(req)
-						.success(function(data){
-							//console.log(angular.toJson(data) );
+						for(var ai in arguments){
+							var arg = arguments[ai];
 
-							deferred.resolve(data);
-						})
-						.error(function(reason){
-							console.error(reason);
-							deferred.reject(reason);
-						});
+							//success and error must always be first, then
+							if(angular.isObject(arg)){
+								switch(arg.constructor.name){
+									case "NoFilters":
+										filters = arg;
+										break;
+									case "NoSort":
+										sort = arg;
+										break;
+									case "NoPage":
+										page = arg;
+										break;
+								}
+							}
+						}
 
-				
-	
-					return deferred.promise;
+						var deferred = $q.defer(),
+							req = {
+								method: "GET",
+								params: queryBuilder(filters,sort,page),
+								url: url,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function(data){
+								//console.log( angular.toJson(data));
+								deferred.resolve(data.value);
+							})
+							.error(function(reason){
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noUpdate = function(data) {
+						var json = angular.toJson(data);
+
+						var deferred = $q.defer(),
+							req = {
+								method: "PUT",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function(data, status){
+								deferred.resolve(status);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+
+					};
+
+					this.noDestroy = function(data) {
+						var deferred = $q.defer(),
+							req = {
+								method: "DELETE",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function(data, status){
+								deferred.resolve(status);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
 				}
 
-				this.read = function(resourceURI, query){
-					//console.log(!!query);
-					var q = angular.isObject(query) ? mapParams(query.data) : query;
-
-
-					var deferred = $q.defer(),
-						url = noUrl.makeResourceUrl(noConfig.current.RESTURI, resourceURI, q),
-						req = {
-							method: "GET",
-							url: url,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-					
-					$http(req)
-						.success(function(data){
-							//console.log( angular.toJson(data));
-							deferred.resolve(data.value);
-						})
-						.error(function(reason){
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				}
-
-				this.update = function(){
-					var deferred = $q.defer();
-					$timeout(function(){
-						console.warn("TODO: Implement INOCRUD::update.");
-						deferred.resolve();
-					})
-					return deferred.promise;
-				}
-
-				this.destroy = function(){
-					var deferred = $q.defer();
-					$timeout(function(){
-						console.warn("TODO: Implement INOCRUD::destroy.");
-						deferred.resolve();
-					})					
-					return deferred.promise;
-				}
-			}
-
-			this.$get = ['$q', '$http', '$filter', 'noUrl', 'noConfig', function($q, $http, $filter, noUrl, noConfig){
-				return new noREST($q, $http, $filter, noUrl, noConfig)
-			}]
+				//return new noREST($q, $http, $filter, noUrl, noConfig)
+				return new NoDb(noDbSchema.tables, noOdataQueryBuilder.makeQuery);
+			}];
 		}])
 	;
 })(angular);
