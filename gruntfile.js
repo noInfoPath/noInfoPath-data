@@ -5,6 +5,14 @@ module.exports = function(grunt) {
   	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+        copy: {
+            test: {
+                files: [
+                    //{expand:true, flatten:false, src: [ 'lib/js/noinfopath/*.*'], dest: 'build/'},
+                    {expand:true, flatten:true, src: [ 'dist/*.js'], dest: '../noinfopath-test-server-node/no/lib/js/noinfopath/'},
+                ]
+            }
+        },
 	    concat: {
 		    noinfopath: {
 		        src: [
@@ -14,7 +22,8 @@ module.exports = function(grunt) {
 		        	'src/storage.js',
 		        	'src/configuration.js',
 		        	'src/http.js',
-		        	// 'src/manifest.js',
+                    'src/schema.js',
+		        	'src/import.js',
 		        	// 'src/indexeddb.js',
 		        	'src/dexie.js'
 		        ],
@@ -68,7 +77,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['compile']
+            tasks: ['test']
         }
 	});
 
@@ -82,6 +91,9 @@ module.exports = function(grunt) {
 	//Default task(s).
 	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath','concat:dexie']);
 
+    grunt.registerTask('test', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'copy:test']);
+
     grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal']);
+
 
 };

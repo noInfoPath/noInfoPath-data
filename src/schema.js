@@ -7,7 +7,7 @@
 		 * ## noDbSchema
 		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
-		.service("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", function($q, $timeout, $http, $rootScope, _){
+		.service("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", function($q, $timeout, $http, $rootScope, _, noLogService){
 			var _config = {}, _tables = {}, SELF = this;
 
 			/*
@@ -53,7 +53,7 @@
 					_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
 				});
 
-				//console.log(angular.toJson(_config));
+				//noLogService.log(angular.toJson(_config));
 				return;
 			}
 
@@ -78,7 +78,7 @@
 				return $http(req)
 					.then(_processDbJson)
 					.catch(function(resp){
-						console.error(resp);
+						noLogService.error(resp);
 					});
 			}
 
@@ -95,13 +95,13 @@
 				$timeout(function(){
 					if($rootScope.noDbSchemaInitialized)
 					{
-						console.log("noDbSchema Ready.");
+						noLogService.log("noDbSchema Ready.");
 						deferred.resolve();
 					}else{
-						//console.log("noDbSchema is not ready yet.")
+						//noLogService.log("noDbSchema is not ready yet.")
 						$rootScope.$watch("noDbSchemaInitialized", function(newval){
 							if(newval){
-								console.log("noDbSchema ready.");
+								noLogService.log("noDbSchema ready.");
 								deferred.resolve();
 							}
 						});

@@ -1,15 +1,150 @@
+//globals.js
+
 /*
-	noinfopath-data
-	@version 0.1.33
+ *	# noinfopath-data
+ *	@version 0.2.0
+ *
+ *	## Overview
+ *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
+ *
+ *	[no-toc]
+ *
+ *	## Dependencies
+ *
+ *	- AngularJS
+ *	- jQuery
+ *	- ngLodash
+ *	- Dexie
+ *	- Dexie Observable
+ *	- Dexie Syncable
 */
 
-//globals.js
+/**
+ *	## Development Dependencies
+ *
+ *	> See `package.json` for exact version requirements.
+ *
+ *	- indexedDB.polyfill
+ *	- angular-mocks
+ *	- es5-shim
+ *	- grunt
+ *	- grunt-bumpup
+ * - grunt-version
+ *	- grunt-contrib-concat
+ *	- grunt-contrib-copy
+ *	- grunt-contrib-watch
+ *	- grunt-karma
+ *	- jasmine-ajax
+ *	- jasmine-core
+ *	- jshint-stylish
+ *	- karma
+ *	- karma-chrome-launcher
+ *	- karma-coverage
+ *	- karma-firefox-launcher
+ *	- karma-html-reporter
+ *	- karma-ie-launcher
+ *	- karma-jasmine
+ *	- karma-phantomjs-launcher
+ *	- karma-safari-launcher
+ *	- karma-verbose-reporter
+ *	- noinfopath-helpers
+ *	- phantomjs
+*/
+
+/**
+ *	## Developers' Remarks
+ *
+ *	|Who|When|What|
+ *	|---|----|----|
+ *	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
+*/
+
+(noInfoPath = noInfoPath || {});
+(noInfoPath.data = {});
+
 (function(angular, undefined){
-	"use strict";
-	
+ 	"use strict";
+
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers'])
 
-		.run(['$injector', '$parse', '$q', function($injector, $parse, $q){
+		/*
+        * ## @interface noInfoPath
+        *
+        * ### Overview
+        * This interface exposes some useful funtions on the global scope
+        * by attaching it to the `window` object as ```window.noInfoPath```
+        *
+        * ### Methods
+        *
+        * #### getItem
+        *
+        * #### setItem
+        *
+        * #### bindFilters `deprecated`
+        *
+        * #### noFilter `deprecated`
+        *
+        * #### noFilterExpression `deprecated`
+        *
+        * #### noDataReadRequest `deprecated`
+        *
+        * #### noDataSource `deprecated`
+        *
+        * #### digest `deprecated`
+        *
+        * #### digestError `deprecated`
+        *
+        * #### digestTimeout `deprecated`
+		 */
+		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){
+
+			function _digestTimeout(){
+
+
+				if($timeout.flush && $browser.deferredFns.length){
+					if($rootScope.$$phase){
+						setTimeout(function(){
+							$timeout.flush();
+						},10);
+					}else{
+						$timeout.flush();
+					}
+					//console.log($timeout.verifyNoPendingTasks());
+
+		        }
+			}
+
+			function _digestError(fn, error){
+				var digestError = error;
+
+				if(angular.isObject(error)){
+					digestError = error.toString();
+				}
+
+				//console.error(digestError);
+
+				_digest(fn, digestError);
+			}
+
+			function _digest(fn, data){
+				var message = [];
+
+				if(angular.isArray(data)){
+					message = data;
+				} else {
+					message = [data];
+				}
+
+	        	if(window.jasmine){
+        			$timeout(function(){
+						fn.apply(null, message);
+					});
+					$timeout.flush();
+	        	}else{
+	        		fn.apply(null, message);
+	        	}
+
+			}
 
 			function _setItem(store, key, value){
 				 var getter = $parse(key),
@@ -79,7 +214,7 @@
 				var deferred = $q.defer(), _table = table;
 
 				Object.defineProperties(this, {
-					"__type": { 
+					"__type": {
 						"get": function () { return "noDataReadRequest"; }
 					},
 					"promise": {
@@ -97,7 +232,7 @@
 					}
 
 					this.data.filter.add(key, operator, match, logic);
-					
+
 
 				};
 
@@ -105,12 +240,12 @@
 					if(!this.data.filter)
 						return;
 
-					
+
 					delete this.data.filter[indexOf];
-				
+
 					if(this.data.filter.length === 0){
 						delete this.data.filter;
-					}	
+					}
 				};
 
 				this.__proto__.indexOfFilter = function(key){
@@ -140,12 +275,12 @@
 					if(!this.data.sort)
 						return;
 
-					
+
 					delete this.data.sort[indexOf];
-				
+
 					if(this.data.sort.length === 0){
 						delete this.data.sort;
-					}	
+					}
 				};
 
 				this.__proto__.indexOfSort = function(key){
@@ -181,9 +316,9 @@
 
 						angular.forEach(this.data.filter.filters, function(filter){
 							tmp.add(filter);
-						},this);	
+						},this);
 
-						this.data.filter = tmp;				
+						this.data.filter = tmp;
 					}
 
 
@@ -200,10 +335,10 @@
 				}
 
 				this.__proto__.success  = deferred.resolve;
-				this.__proto__.error = deferred.reject;	
+				this.__proto__.error = deferred.reject;
 				this.expand = options.expand;
-				this.projections = options.projections;	
-				this.aggregators = options.aggregators;		
+				this.projections = options.projections;
+				this.aggregators = options.aggregators;
 			}
 
             function _noDataSource(component, config, stateParams, scope){
@@ -217,8 +352,8 @@
 
                 if(config.sort){
                     ds.sort = config.sort;
-                }       
-               
+                }
+
                	if(config.filter){
                		//Check for early binding filters.
                		var _filters = [];
@@ -230,11 +365,11 @@
                				}else{
                					source = scope;
                				}
-               				
+
            					var val = window.noInfoPath.getItem(source, fltr.value.property);
             					val = fltr.value.type === "number" ? Number(val) : val;
                				_filters.push({field: fltr.field, operator: fltr.operator, value: val});
-         
+
                			}else{
                				_filters.push({field: fltr.field, operator: fltr.operator, value: fltr.value});
                			}
@@ -244,7 +379,7 @@
                	}
 
 
-               
+
                	angular.extend(this, ds);
             }
 
@@ -264,13 +399,13 @@
                             case "scope":
                                	ctx = scope;
                                 break;
-                        }  
+                        }
 
             	        v =  window.noInfoPath.getItem(ctx, filter.value.property);
-            
+
                         if(v){
                             v =  filter.value.type === "number" ? Number(v) : v;
-                            _filters.push({field: filter.field, operator: filter.operator, value: v});                             
+                            _filters.push({field: filter.field, operator: filter.operator, value: v});
                         }
                     }else{
                         //static value
@@ -281,28 +416,33 @@
                 return _filters;
             }
 
-			var noInfoPath = {
+			var _data = {
 				getItem: _getItem,
 				setItem: _setItem,
 				bindFilters: _makeFilters,
 				noFilterExpression: _noFilterExpression,
 				noFilter: _noFilter,
 				noDataReadRequest: _noDataReadRequest,
-				noDataSource: _noDataSource
+				noDataSource: _noDataSource,
+				digest: _digest,
+				digestError: _digestError,
+				digestTimeout: _digestTimeout
 			};
 
-			window.noInfoPath = angular.extend(window.noInfoPath || {}, noInfoPath);
+			window.noInfoPath = angular.extend(window.noInfoPath || {}, _data);
 		}])
 
+		/**
+		 * ## @service noDataService `deprecated`
+		 *
+		 */
 		.service("noDataService", ['$q', function($q){
 			this.noDataSource = function(uri, datasvc, options){
-         		
+
 				function _noHTTP(){
-
-
-					return { 
+					return {
 	         			transport: {
-							read: function(options){			
+							read: function(options){
 								return datasvc.read(uri, options);
 							},
 							create: function(options){
@@ -332,11 +472,10 @@
 	         		}
 				}
 
-
 				function _noIndexedDB(){
 					function crudOp(table, operation, options){
 						var 	crud = table.noCRUD,
-								ndrr = new window.noInfoPath.noDataReadRequest(table, options);			
+								ndrr = new window.noInfoPath.noDataReadRequest(table, options);
 
 						return crud[operation](ndrr);
 					}
@@ -344,7 +483,7 @@
 	         		if(!uri) throw "uri is a required parameter for makeKendoDataSource";
 	         		var _ds = datasvc[uri];
 
-					return { 
+					return {
 	         			transport: {
 							read: function(options){
 								var deferred = _ds.noCRUD.$q.defer();
@@ -378,7 +517,7 @@
 	         			expand: options.expand,
 	         			projections: options.projections,
 	         			aggregators: options.aggregators
-	         		}				
+	         		}
 				}
 
 				var ds;
@@ -388,8 +527,522 @@
 				}else{
 					ds = _noHTTP();
 				}
-         		return ds; 
+         		return ds;
          	}
+		}])
+	;
+})(angular);
+
+//classes.js
+
+(function(angular, undefined){
+	"use strict";
+
+	/*
+	* ## @class NoFilterExpression : Object
+	*
+	* Represents an single filter expression that can be applied to an `IDBObjectStore`.
+	*
+	* ### Constructor
+	*
+	* NoFilterExpression(column, operator, value [, logic])
+	*
+	* |Name|Type|Description|
+	* |----|----|-----------|
+	* |column|String|The name of the column filter on.|
+	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	* |logic|String|(Optional) One of the following values: `and`, `or`.|
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |column|String|The name of the column filter on.|
+	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	* |logic|String|(Optional) One of the following values: `and`, `or`.|
+	*/
+	function NoFilterExpression(column, operator, value, logic){
+		if(!column) throw "INoFilterExpression requires a column to filter on.";
+		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
+		if(!value) throw "INoFilterExpression requires a value(s) to filter for.";
+
+		this.column = column;
+		this.operator = operator;
+		this.value = value;
+		this.logic = logic;
+	}
+
+	/*
+	* ## Class NoFilters : Array
+	*
+	* NoFilters is an array of NoFilterExpression objects.
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |length|Number|Number of elements in the array.|
+	*
+	* ### Methods
+	*
+	* #### add(column, operator, value[, logic])
+	*
+	* Creates and adds a new NoFilterExpression into the underlying array that NoFilters represents.
+	*
+	* #### Parameters
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |column|String|The name of the column filter on.|
+	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	* |logic|String|(Optional) One of the following values: `and`, `or`.|
+	*/
+	function NoFilters(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function(){
+					return "NoFilters";
+				}
+			}
+		});
+	}
+	NoFilters.prototype = Object.create(Array.prototype);
+	NoFilters.prototype.add = function(column,operator,value,logic) {
+		if(!column) throw "NoFilters::add requires a column to filter on.";
+		if(!operator) throw "NoFilters::add requires a operator to filter by.";
+		if(!value) throw "NoFilters::add requires a value(s) to filter for.";
+
+		this.unshift(new NoFilterExpression(column,operator,value,logic));
+	};
+
+	/*
+	* ## Class NoSortExpression : Object
+	*
+	* Represents a single sort expression that can be applied to an `IDBObjectStore`.
+	*
+	* ### Constructor
+	*
+	* NoFilterExpression(column[, dir])
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |column|String|The name of the column filter on.|
+	* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
+	*/
+	function NoSortExpression(column, dir){
+
+		if(!column) throw "NoFilters::add requires a column to sort on.";
+
+		this.column = column;
+		this.dir = dir;
+	}
+
+	/*
+	* ## Class NoSort : Array
+	*
+	* NoSort is an array of NoSortExpression objects.
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |length|Number|Number of elements in the array.|
+	*
+	* ### Methods
+	*
+	* #### add(column[, dir])
+	*
+	* Creates and adds a new NoSortExpression into the underlying array that NoSort represents.
+	*
+	* #### Parameters
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |column|String|The name of the column filter on.|
+	* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
+	*/
+	function NoSort() {
+		var arr = [ ];
+
+		Object.defineProperties(arr, {
+			"__type": {
+				"get": function(){
+					return "NoSort";
+				}
+			}
+		});
+
+
+		arr.push.apply(arr, arguments);
+		arr.add = function(column, dir) {
+			if(!column) throw "NoSort::add requires a column to filter on.";
+
+			this.push(new NoSortExpression(column, dir));
+		};
+
+		noInfoPath.setPrototypeOf(this, arr);
+	}
+
+	/*
+	* ## Class NoPage : Object
+	*
+	* NoPage represent that information required to support paging of a data set.
+	*
+	* ### Constructor
+	*
+	* NoPage(skip, take)
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |-|-|-|
+	* |skip|Number|Number of objects to skip before returning the desired amount specified in `take`.|
+	* |take|Number|Number of objects records to return when paging data.|
+	*
+	*/
+	function NoPage(skip, take) {
+		this.skip = skip;
+		this.take = take;
+	}
+
+	/*
+	* ## Class NoResults : Object
+	*
+	* NoResults is a wrapper around a standard JavaScript Array instance. It inherits all properties and method offered by Array, but adds support for paged queries.
+	*
+	* ### @constructor NoResults(arrayOfThings)
+	*
+	* #### Parameters
+	*
+	* |Name|Type|Description|
+	* |-|-|-|
+	* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
+	*
+	* ### Properties
+	*
+	* > Inherited properties are omitted.
+	*
+	* |Name|Type|Description|
+	* |-|-|-|
+	* |total|Number|The total number of items in the array|
+	*
+	* ### Methods
+	*
+	* #### page(options)
+	*
+	* ##### Parameters
+	*
+	* |Name|Type|Description|
+	* |-|-|-|
+	* |options|NoPage|A NoPage object that contains the paging instructions|
+	*
+	* ##### Parameters
+	*
+	* |Name|Type|Description|
+	* |-|-|-|
+	* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
+	*
+	* ##### Returns
+	* void
+	*/
+	function NoResults(arrayOfThings){
+		//Capture the lenght of the arrayOfThings before any changes are made to it.
+		var _total = arrayOfThings.length,
+		 	_page = arrayOfThings,
+			arr = arrayOfThings;
+
+		arr.push.apply(arr, arguments);
+
+		Object.defineProperties(arr, {
+			"total": {
+				"get": function(){
+					return _total;
+				}
+			},
+			"paged": {
+				"get": function(){
+					return _page;
+				}
+			}
+		});
+
+		arr.page = function(nopage){
+			if(!nopage) throw "nopage is a required parameter for NoResults:page";
+			_page = this.slice(nopage.skip, nopage.skip + nopage.take);
+		};
+
+		noInfoPath.setPrototypeOf(this, arr);
+	}
+
+	//Expose these classes on the global namespace so that they can be used by
+	//other modules.
+	var _interface = {
+			NoFilterExpression: NoFilterExpression,
+			NoFilters: NoFilters,
+			NoSortExpression: NoSortExpression,
+			NoSort: NoSort,
+			NoPage: NoPage
+		};
+
+	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
+
+})(angular);
+
+/*
+* ## @interface INoQueryBuilder
+*
+* > INoQueryBuilder is a conceptual entity, it does not really exist
+* > the reality. This is because JavaScript does not implement interfaces
+* > like other languages do. This documentation should be considered as a
+* > guide for creating query providers compatible with NoInfoPath.
+*
+* ### Overview
+* INoQueryBuilder provides a service interface definition for converting a set
+* of NoInfoPath class related to querying data into a given query protocol.
+* An example of this is the ODATA 2.0 specification.
+*
+* ### Methods
+*
+* #### makeQuery(filters, sort, page)
+*
+* ##### Parameters
+*
+* |Name|Type|Descriptions|
+* |----|----|------------|
+* |filters|NoFilters|(Optional) Instance of a NoFilters class|
+* |sort|NoSort|(Optional) Instance of NoSort class|
+* |page|NoPage|(Optional) Instance of NoPage class|
+*
+* ##### Returns
+* Object
+*
+*/
+
+(function(angular, undefined){
+	angular.module("noinfopath.data")
+		/*
+		* ## @service noOdataQueryBuilder : INoQueryBuilder
+		*
+		* ### Overview
+		*
+		* Implements a INoQueryBuilder compatible service that converts NoFilters,
+		* NoSort, NoPage into ODATA compatible query object.
+		*
+		*/
+		.service("noOdataQueryBuilder", ['$filter', function($filter){
+			var odataFilters = {
+					eq: "eq",
+					neq: "ne",
+					gt: "gt",
+					gte: "ge",
+					lt: "lt",
+					lte: "le",
+					contains : "substringof",
+					doesnotcontain: "substringof",
+					endswith: "endswith",
+					startswith: "startswith"
+				},
+				mappers = {
+					pageSize: angular.noop,
+					page: angular.noop,
+					filter: function(params, filter, useVersionFour) {
+						if (filter) {
+							params.$filter = toOdataFilter(filter, useVersionFour);
+						}
+					},
+					data: function(params, filter, useVersionFour){
+						mappers.filter(params, filter.filter, useVersionFour);
+					},
+					// filter: function(params, filter, useVersionFour) {
+					//     if (filter) {
+					//         params.$filter = SELF.toOdataFilter(filter, useVersionFour);
+					//     }
+					// },
+					sort: function(params, orderby) {
+						var sorts = angular.forEach(orderby, function(value) {
+							var order = value.field.replace(/\./g, "/");
+
+							if (value.dir === "desc") {
+								order += " desc";
+							}
+
+							return order;
+						}),
+						expr = sorts ? sorts.join(",") : undefined;
+
+						if (expr) {
+							params.$orderby = expr;
+						}
+					},
+					skip: function(params, skip) {
+						if (skip) {
+							params.$skip = skip;
+						}
+					},
+					take: function(params, take) {
+						if (take) {
+							params.$top = take;
+						}
+					}
+				};
+
+			function isGuid(val){
+		    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+		    }
+
+			function toOdataFilter (filters, useOdataFour) {
+			    var result = [],
+			        idx,
+			        length,
+			        field,
+			        type,
+			        format,
+			        operator,
+			        value,
+			        ignoreCase,
+					filter,
+					origFilter;
+			        //filters = filter.filters;
+
+			    for (idx = 0, length = filters.length; idx < length; idx++) {
+					filter = origFilter = filters[idx];
+			        field = filter.column;
+			        value = filter.value;
+			        operator = filter.operator;
+					logic = filter.logic;
+
+			        if (filter.filters) {
+			            filter = toOdataFilter(filter, useOdataFour);
+			        } else {
+			            ignoreCase = filter.ignoreCase;
+			            field = field.replace(/\./g, "/");
+			            filter = odataFilters[operator];
+
+			            // if (useOdataFour) {
+			            //     filter = odataFiltersVersionFour[operator];
+			            // }
+
+			            if (filter && value !== undefined) {
+
+			                if (angular.isString(value)) {
+			                	if(isGuid(value)){
+									format = "guid'{1}'";
+			                	}else{
+			                		format = "'{1}'";
+			                	}
+
+			                    value = value.replace(/'/g, "''");
+
+
+			                    // if (ignoreCase === true) {
+			                    //     field = "tolower(" + field + ")";
+			                    // }
+
+			                } else if (angular.isDate(value)) {
+			                    if (useOdataFour) {
+			                        format = "yyyy-MM-ddTHH:mm:ss+00:00";
+			                    } else {
+			                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
+			                        format = "{1}";
+			                    }
+			                } else {
+			                    format = "{1}";
+			                }
+
+			                if (filter.length > 3) {
+			                    if (filter !== "substringof") {
+			                        format = "{0}({2}," + format + ")";
+			                    } else {
+			                        format = "{0}(" + format + ",{2})";
+			                        if (operator === "doesnotcontain") {
+			                            if (useOdataFour) {
+			                                format = "{0}({2},'{1}') eq -1";
+			                                filter = "indexof";
+			                            } else {
+			                                format += " eq false";
+			                            }
+			                        }
+			                    }
+			                } else {
+			                    format = "{2} {0} " + format;
+			                }
+
+			                filter = $filter("format")(format, filter, value, field);
+			            }
+			        }
+
+					origFilter.compiledFilter = filter;
+			        result.push(origFilter);
+			    }
+
+				//loop until there are no more filters or logic.
+				var odataFilter = "", f;
+
+				do{
+					f = result.pop();
+
+					odataFilter = odataFilter + "(" + f.compiledFilter + ")";
+
+					if(f.logic){
+						odataFilter = odataFilter + " " + f.logic + " ";
+					}else{
+						f = null;
+					}
+
+				}while(f);
+
+				odataFilter = odataFilter.trim();
+
+		        return odataFilter;
+			}
+
+			function toOdataSort(sort){
+				var sorts = [], expr;
+
+				angular.forEach(sort, function(value) {
+					var order = value.column.replace(/\./g, "/");
+
+					if (value.dir === "desc") {
+						order += " desc";
+					}
+
+					sorts.push(order);
+				});
+
+				expr = sorts ? sorts.join(",") : undefined;
+
+				return expr;
+			}
+
+			this.makeQuery = function(){
+				var query = {};
+
+				for(var ai in arguments){
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if(angular.isObject(arg)){
+						switch(arg.__type){
+							case "NoFilters":
+								query.$filter = toOdataFilter(arg);
+								break;
+							case "NoSort":
+								query.$orderby = toOdataSort(arg);
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
+
+				return query;
+			};
 		}])
 	;
 })(angular);
@@ -398,9 +1051,12 @@
 (function(){
 	"use strict";
 
-	function mockStorage(){
+	/**
+		### @class MockStorage
+	*/
+	function MockStorage(){
 		var _store = {},_len=0;
-	    
+
 		Object.defineProperties(this,{
 	      "length": {
 	        "get": function(){
@@ -410,32 +1066,35 @@
 	        }
 	      }
 	    });
-						
+
 		this.key = function (i){
 			var l=0;
 			for(var x in _store){
 			  if(i==l) return x;
 			}
 		};
-	  
+
 		this.setItem = function (k,v){
 			_store[k] = v;
 		};
-	  
+
 		this.getItem = function (k){
 			return _store[k];
 		};
-	  
+
 		this.removeItem = function (k){
 			delete _store[k];
 		};
-	  
+
 		this.clear = function (){
 			_store = {};
 		};
 	}
 
-	function noStorage(storetype){
+	/**
+		### @class NoStorage
+	*/
+	function NoStorage(storetype){
 		var _store;
 
 
@@ -444,10 +1103,10 @@
 			_store = window[storetype];
 		}else{
 
-			_store = new mockStorage();
-		}	
-	    
-	    
+			_store = new MockStorage();
+		}
+
+
 		Object.defineProperties(this,{
 	      "length": {
 	        "get": function(){
@@ -455,7 +1114,7 @@
 	        }
 	      }
 	    });
-						
+
 		this.key = function (i){
 			return _store.key(i);
 		};
@@ -466,22 +1125,22 @@
 			}else{
 				_store.setItem(k,undefined);
 			}
-			
+
 		};
 
 		this.getItem = function (k){
-			var x = _store.getItem(k)
-			
+			var x = _store.getItem(k);
+
 			if(x === "undefined"){
 				return undefined;
 			}else{
-				return angular.fromJson(x);	
+				return angular.fromJson(x);
 			}
-			
+
 		};
 
 		this.removeItem = function (k){
-			delete _store.removeItem(k);
+			_store.removeItem(k);
 		};
 
 		this.clear = function (){
@@ -491,16 +1150,18 @@
 
 	angular.module("noinfopath.data")
 		.factory("noSessionStorage",[function(){
-			return new noStorage("sessionStorage");
+			return new NoStorage("sessionStorage");
 		}])
 
-		.factory("noLocalStorage",[function(){			
-			return new noStorage("localStorage");
+		.factory("noLocalStorage",[function(){
+			return new NoStorage("localStorage");
 		}])
 		;
 })(angular);
 
 //configuration.js
+
+
 (function(angular, undefined){
 	"use strict";
 
@@ -510,9 +1171,63 @@
 		.config([function(){
 		}])
 
+		/**
+		* ## @service noConfig
+		*
+		* ### Overview
+		* The noConfig service downloads the application's `config.json` and
+		* exposes its contents via the `noConfig.current` property. If the
+		* application's server is offline noConfig will try to load config.json
+		* from `LocalStorage`.
+		*
+		* ### Properties
+		*
+		* |Name|Type|Description|
+		* |----|----|-----------|
+		* |current|object|exposes the entire download `config.json`|
+		*
+		* ### Methods
+		*
+		* #### fromCache()
+		* Loads the configuration from `LocalStorage`.
+		*
+		* ##### Parameters
+		* none
+		*
+		* ##### Returns
+		* String
+		*
+		* #### load(uri)
+		* Loads the conifiguration data from and HTTP endpoint.
+		*
+		* ##### Parameters
+		*
+		* |Name|Type|Description|
+		* |----|----|-----------|
+		* |uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+		*
+		* ##### Returns
+		* AngularJS::promise
+		*
+		* #### whenReady(uri)
+		* Returns a promise to notify when the configuration has been loaded.
+		* If the server is online, whenReady will call load, if not it will try
+		* to load it from `LocalStorage`. If there is no cached version
+		* available then an error is returned.
+		*
+		* ##### Parameters
+		*
+		* |Name|Type|Description|
+		* |----|----|-----------|
+		* |uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+		*
+		* ##### Returns
+		* AngularJS::promise
+		*
+		*/
 		.provider("noConfig", [function(){
 			var _currentConfig, _status;
-			
+
 			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
 				var SELF = this;
 
@@ -525,9 +1240,10 @@
 					}
 				});
 
-				this.load = function (){
-					return $http.get("/config.json")
-						.then(function(resp){ 
+				this.load = function (uri){
+					var url = uri || "/config.json"
+					return $http.get(url)
+						.then(function(resp){
 							noLocalStorage.setItem("noConfig", resp.data);
 						})
 						.catch(function(err){
@@ -539,21 +1255,21 @@
 					_currentConfig = noLocalStorage.getItem("noConfig");
 				}
 
-				this.whenReady = function(){
+				this.whenReady = function(uri){
 					var deferred = $q.defer();
 
 					$timeout(function(){
 						if($rootScope.noConfigReady)
 						{
 							deferred.resolve();
-						}else{	
+						}else{
 							$rootScope.$watch("noConfigReady", function(newval){
 								if(newval){
-									deferred.resolve();								
+									deferred.resolve();
 								}
-							});	
+							});
 
-							SELF.load()
+							SELF.load(uri)
 								.then(function(){
 									_currentConfig = noLocalStorage.getItem("noConfig");
 									$rootScope.noConfigReady = true;
@@ -566,1315 +1282,368 @@
 									}else{
 										deferred.reject("noConfig is offline, and no cached version was available.");
 									}
-								})			
-						}					
-					});	
+								})
+						}
+					});
 
-					return deferred.promise;			
-				};				
+					return deferred.promise;
+				};
 			}
 
 			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
 				return new noConfig($http, $q, $timeout, $rootScope, noLocalStorage);
 			}];
 		}])
-
 	;
 })(angular);
+
 //http.js
 (function(angular, undefined){
 	"use strict";
 
 	angular.module('noinfopath.data')
+		/*
+		* ## @service noHTTP
+		*
+		* ### Overview
+		* Provides a RESTful compatible HTTP service.
+		*
+		* ### Methods
+		*
+		* #### create(uri, data)
+		*
+		* ##### Parameters
+		*
+		* |Name|Type|Description|
+		* |----|----|-----------|
+		* |uri|string|unique identifier of the table to operate against|
+		* |data|object|the data to use to create the new obejct in the db|
+		*
+		* #### read(resourceURI, query)
+		*
+		* #### update(resourceURI, formdata)
+		* TODO: Implementation required.
+		*
+		* #### destroy(resourceURI, formdata)
+		* TODO: Implementation required.
+		*/
 		.provider("noHTTP",[function(){
+			this.$get = ['$q', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', function($q, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder){
+				/**
+				* ### @class NoDb
+				*
+				* #### Overview
+				*
+				* Creates and manages a set of NoTable objects.
+				*
+				* #### @constructor NoDb(tables, queryBuilder)
+				*
+				* ##### Parameters
+				*
+				* |Name|Type|Description|
+				* |----|----|-----------|
+				* |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
+				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+				*
+				*/
+				function NoDb(tables, queryBuilder){
 
-			this.configure = function(){
-					angular.noop();
-			}
-
-			this.createTransport = function(){
-				return new noREST();
-			}
-
-			function noREST($q, $http, $filter, noUrl, noConfig){
-				var SELF = this,
-					odataFilters = {
-			            eq: "eq",
-			            neq: "ne",
-			            gt: "gt",
-			            gte: "ge",
-			            lt: "lt",
-			            lte: "le",
-			            contains : "substringof",
-			            doesnotcontain: "substringof",
-			            endswith: "endswith",
-			            startswith: "startswith"
-			        },				
-					mappers = {
-			            pageSize: angular.noop,
-			            page: angular.noop,
-			            filter: function(params, filter, useVersionFour) {
-			                if (filter) {
-			                    params.$filter = toOdataFilter(filter, useVersionFour);
-			                }
-			            },
-			            data: function(params, filter, useVersionFour){
-			            	mappers.filter(params, filter.filter, useVersionFour)
-			            },
-			            // filter: function(params, filter, useVersionFour) {
-			            //     if (filter) {
-			            //         params.$filter = SELF.toOdataFilter(filter, useVersionFour);
-			            //     }
-			            // },
-			            sort: function(params, orderby) {
-			                var sorts = angular.forEach(orderby, function(value) {
-			                    var order = value.field.replace(/\./g, "/");
-
-			                    if (value.dir === "desc") {
-			                        order += " desc";
-			                    }
-
-			                    return order;
-			                }),
-			                expr = sorts ? sorts.join(",") : undefined;
-
-			                if (expr) {
-			                    params.$orderby = expr;
-			                }
-			            },
-			            skip: function(params, skip) {
-			                if (skip) {
-			                    params.$skip = skip;
-			                }
-			            },
-			            take: function(params, take) {
-			                if (take) {
-			                    params.$top = take;
-			                }
-			            }
-			        };
-			    function isGuid(val){
-			    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
-			    }
-				function toOdataFilter (filter, useOdataFour) {
-				    var result = [],
-				        logic = filter.logic || "and",
-				        idx,
-				        length,
-				        field,
-				        type,
-				        format,
-				        operator,
-				        value,
-				        ignoreCase,
-				        filters = filter.filters;
-					
-				    for (idx = 0, length = filters.length; idx < length; idx++) {
-				        filter = filters[idx];
-				        field = filter.field;
-				        value = filter.value;
-				        operator = filter.operator;
-
-				        if (filter.filters) {
-				            filter = toOdataFilter(filter, useOdataFour);
-				        } else {
-				            ignoreCase = filter.ignoreCase;
-				            field = field.replace(/\./g, "/");
-				            filter = odataFilters[operator];
-				            // if (useOdataFour) {
-				            //     filter = odataFiltersVersionFour[operator];
-				            // }
-
-				            if (filter && value !== undefined) {
-				               
-				                if (angular.isString(value)) {
-				                	if(isGuid(value)){
-										format = "guid'{1}'";
-				                	}else{
-				                		format = "'{1}'";
-				                	}
-				                    
-				                    value = value.replace(/'/g, "''");
-
-
-				                    // if (ignoreCase === true) {
-				                    //     field = "tolower(" + field + ")";
-				                    // }
-
-				                } else if (angular.isDate(value)) {
-				                    if (useOdataFour) {
-				                        format = "yyyy-MM-ddTHH:mm:ss+00:00";
-				                    } else {
-				                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
-				                        format = "{1}";
-				                    }
-				                } else {
-				                    format = "{1}";
-				                }
-
-				                if (filter.length > 3) {
-				                    if (filter !== "substringof") {
-				                        format = "{0}({2}," + format + ")";
-				                    } else {
-				                        format = "{0}(" + format + ",{2})";
-				                        if (operator === "doesnotcontain") {
-				                            if (useOdataFour) {
-				                                format = "{0}({2},'{1}') eq -1";
-				                                filter = "indexof";
-				                            } else {
-				                                format += " eq false";
-				                            }
-				                        }
-				                    }
-				                } else {
-				                    format = "{2} {0} " + format;
-				                }
-
-				                filter = $filter("format")(format, filter, value, field);
-				            }
-				        }
-
-				        result.push(filter);
-				    }
-
-			      	filter = result.join(" " + logic + " ");
-
-			        if (result.length > 1) {
-			            filter = "(" + filter + ")";
-			        }
-
-			        return filter;
+					angular.forEach(tables, function(table, name){
+						this[name] = new NoTable(name, table, queryBuilder);
+					}, this);
 				}
 
-				function mapParams (options, type, useVersionFour) {
-	                var params,
-	                    value,
-	                    option,
-	                    dataType;
 
-	                options = options || {};
-	                type = type || "read";
-	                dataType = "json";
+				/**
+				* ### @class NoTable
+				*
+				* #### Overview
+				*
+				* Provides an interface that loosely matches that of the NoTable
+				* class provided by noDexie.  This to ease the integration with
+				* NoInfoPath component that consume data such as noKendo.
+				*
+				* #### @constructor NoTable(tableName, queryBuilder)
+				*
+				* ##### Parameters
+				*
+				* |Name|Type|Description|
+				* |----|----|-----------|
+				* |tableName|string|name of the table that this instance will interact with.|
+				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+				*/
+				function NoTable(tableName, table, queryBuilder){
+					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-	                if (type === "read") {
-	                	if(angular.isNumber(options) || angular.isString(options)){
-	                		return "(" + noUrl.normalizeValue(options) + ")";
-	                	}
+					var url =  noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
 
-	                    params = {
-	                        $inlinecount: "allpages"
-	                    };
+					this.noCreate = function(data){
+						var json = angular.toJson(data);
 
-	                    //params.$format = "json";
+						var deferred = $q.defer(),
+							req = {
+								method: "POST",
+								url: url,
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
 
-	                    for (option in options) {
-	                    	console.log(option, options[option]);
-	                        if (mappers[option]) {
-	                            mappers[option](params, options[option], useVersionFour);
-	                        } else {
-	                            params[option] = options[option];
-	                        }
-	                    }
-	                } else {
-	                    if (dataType !== "json") {
-	                        throw new Error("Only json dataType can be used for " + type + " operation.");
-	                    }
+						$http(req)
+							.success(function(data){
+								//console.log(angular.toJson(data) );
 
-	                    if (type !== "destroy") {
-	                        for (option in options) {
-	                            value = options[option];
-	                            if (typeof value === "number") {
-	                                options[option] = value + "";
-	                            }
-	                        }
+								deferred.resolve(data);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
 
-	                        params = options;
-	                    }
-	                }
+						return deferred.promise;
+					};
 
-	                return noUrl.serialize(params); 
-	            }
-	
-				this.create = function(resourceURI, formdata){
-					var json = angular.toJson(formdata);
-					console.log(resourceURI);
+					this.noRead = function() {
+						var filters, sort, page;
 
-					var deferred = $q.defer(),
-						req = {
-							method: "POST",
-							url: resourceURI,
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-				
-					$http(req)
-						.success(function(data){
-							//console.log(angular.toJson(data) );
+						for(var ai in arguments){
+							var arg = arguments[ai];
 
-							deferred.resolve(data);
-						})
-						.error(function(reason){
-							console.error(reason);
-							deferred.reject(reason);
-						});
+							//success and error must always be first, then
+							if(angular.isObject(arg)){
+								switch(arg.constructor.name){
+									case "NoFilters":
+										filters = arg;
+										break;
+									case "NoSort":
+										sort = arg;
+										break;
+									case "NoPage":
+										page = arg;
+										break;
+								}
+							}
+						}
 
-				
-	
-					return deferred.promise;
+						var deferred = $q.defer(),
+							req = {
+								method: "GET",
+								params: queryBuilder(filters,sort,page),
+								url: url,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function(data){
+								//console.log( angular.toJson(data));
+								deferred.resolve(data.value);
+							})
+							.error(function(reason){
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noUpdate = function(data) {
+						var json = angular.toJson(data);
+
+						var deferred = $q.defer(),
+							req = {
+								method: "PUT",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function(data, status){
+								deferred.resolve(status);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+
+					};
+
+					this.noDestroy = function(data) {
+						var deferred = $q.defer(),
+							req = {
+								method: "DELETE",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function(data, status){
+								deferred.resolve(status);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
 				}
 
-				this.read = function(resourceURI, query){
-					//console.log(!!query);
-					var q = angular.isObject(query) ? mapParams(query.data) : query;
-
-
-					var deferred = $q.defer(),
-						url = noUrl.makeResourceUrl(noConfig.current.RESTURI, resourceURI, q),
-						req = {
-							method: "GET",
-							url: url,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-					
-					$http(req)
-						.success(function(data){
-							//console.log( angular.toJson(data));
-							deferred.resolve(data.value);
-						})
-						.error(function(reason){
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				}
-
-				this.update = function(){
-					var deferred = $q.defer();
-					$timeout(function(){
-						console.warn("TODO: Implement INOCRUD::update.");
-						deferred.resolve();
-					})
-					return deferred.promise;
-				}
-
-				this.destroy = function(){
-					var deferred = $q.defer();
-					$timeout(function(){
-						console.warn("TODO: Implement INOCRUD::destroy.");
-						deferred.resolve();
-					})					
-					return deferred.promise;
-				}
-			}
-
-			this.$get = ['$q', '$http', '$filter', 'noUrl', 'noConfig', function($q, $http, $filter, noUrl, noConfig){
-				return new noREST($q, $http, $filter, noUrl, noConfig)
-			}]
+				//return new noREST($q, $http, $filter, noUrl, noConfig)
+				return new NoDb(noDbSchema.tables, noOdataQueryBuilder.makeQuery);
+			}];
 		}])
 	;
 })(angular);
 
-//manifest.js
-(function(angular, undefined){
+(function (angular, Dexie, undefined){
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.config([function(){
-		}])
 
-		.provider("noManifest",[function(){
-			var _manifestMap = {
-				localStorage:{},
-				sessionStorage: {},
-				indexedDB: {}
-			}, _deltas = {
-				localStorage: {},
-				sessionStorage: {},
-				indexedDB: {}
-			}, _dbConfig, _tableNames = [];
+		/*
+		 * ## noDbSchema
+		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+		*/
+		.service("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", function($q, $timeout, $http, $rootScope, _, noLogService){
+			var _config = {}, _tables = {}, SELF = this;
 
-			function noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
-				var SELF = this;
+			/*
+				### Properties
 
-				Object.defineProperties(this, {
-					"current": {
-						"get": function() {return _manifestMap;}
-					},
-					"deltas": {
-						"get": function() {return _deltas;}
-					},
-					"dbConfig": {
-						"get": function() {return _dbConfig; }
-					},
-					"lookupTables": {
-						"get": function() {return _tableNames; }
-					},
-					"isCached": {
-						"get": function(){
-							var tmp = noLocalStorage.getItem("noManifest");
-							return tmp && tmp.length > 0;
-						}
-					}
+				|Name|Type|Description|
+				|----|----|-----------|
+				|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+				|tables|Object|A hash table of NoInfoPath database schema definitions|
+				|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+			*/
+			Object.defineProperties(this, {
+				"store": {
+					"get": function() { return _config; }
+				},
+				"tables": {
+					"get": function() { return _tables; }
+				},
+				"isReady": {
+					"get": function() { return _.size(_tables) > 0; }
+				}
+			});
+
+			/**
+				### Methods
+
+				#### _processDbJson
+				Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
+
+				##### Parameters
+				|Name|Type|Descriptions|
+				|resp|Object|The raw HTTP response received from the noinfopath-rest service|
+			*/
+			function _processDbJson(resp){
+				//save reference to the source data from the rest api.
+				_tables = resp.data;
+
+				angular.forEach(_tables, function(table, tableName){
+					var primKey = "$$" + table.primaryKey,
+						foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
+
+					//Prep as a Dexie Store config
+					_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
 				});
 
-				function _createManifestMap(cacheManifest){
-					function _isTable(obj, name){
-						return obj.TableName === name;
-					}
-					var keys =  _.pluck(cacheManifest, "TableName");
-
-					for(var i in keys)
-					{	
-						var tn = keys[i],
-							item =  _.find(cacheManifest, {"TableName": tn});
-						
-						if(tn.indexOf("LU") === 0) {
-							_tableNames.push({ text: item.EntityName, value: tn });
-						}
-						
-
-						_manifestMap[item.StorageLocation][tn] = item;
-					}
-				};
-
-				function _deltaManifest(newManifest){
-
-					var oldCacheManifest = noLocalStorage.getItem("NoCacheManifest") || {
-						localStorage:{},
-						sessionStorage: {},
-						indexedDB: {}					
-					};
-						//oldKeys = _.pluck(oldCacheManifest[storageType], "TableName"),
-						//newKeys = _.pluck(_manifestMap[storageType], "TableName"),
-						//diffOld = _.difference(oldKeys, newKeys),
-						//diffNew = _.difference(newKeys, oldKeys)
-						//;
-
-					_.each(["localStorage", "indexedDB"], function(storageType){
-						var keys = _.pluck(_manifestMap[storageType], "TableName")
-						_.each(keys, function(key){
-							var local = oldCacheManifest[storageType][key],
-								localTime = local ? Date.parse(local.LastTransaction) : null,
-								serv = _manifestMap[storageType][key],
-								servTime =  Date.parse(serv.LastTransaction);
-
-							if(!local){
-								_deltas[storageType][key] = _manifestMap[storageType][key];
-							}else{
-								if(!_.isEqual(local, serv))
-								{
-									if(servTime > localTime)
-									{
-										_deltas[storageType][key] = _deltas[storageType][key] = _manifestMap[key];;
-									}
-								}
-							}
-
-						});					
-					});
-				}
-
-				function _makeDBConfig(){
-					var config = {};
-
-					_.each(_manifestMap.indexedDB, function(table){
-						var cfg = angular.fromJson(table.IndexedDB);
-						config[table.TableName] = cfg.keys;
-					});
-					//console.debug(config);
-					
-					_dbConfig = config;
-				};
-
-				this.fromCache = function(){
-					var tmp = noLocalStorage.getItem("noManifest");
-					_createManifestMap(tmp);
-					_makeDBConfig();
-				}
-
-				this.load = function (){
-					return noHTTP.read("NoCacheManifest","$filter=StorageLocation ne ''&$orderby=TableName")
-						.then(function(data){
-							noLocalStorage.setItem("noManifest", data);
-							_createManifestMap(data);
-							//this._deltaManifest();
-							_makeDBConfig();
-							$rootScope.noManifestReady = true;
-						})
-						.catch(function(){
-							//Assume offline or no connection to REST Service
-							var data = noLocalStorage.getItem("noManifest")
-							if(data){
-								_createManifestMap(data);
-								//this._deltaManifest();
-								_makeDBConfig();
-								$rootScope.noManifestReady = true;
-							}else{
-								throw "No Configuration, please again when online."
-							}
-						});
-				};
-
-				this.whenReady = function(){
-					var deferred = $q.defer();
-
-					$timeout(function(){
-						if($rootScope.noManifestReady)
-						{
-							console.log("Manifest Ready");
-							deferred.resolve();
-						}else{	
-							$rootScope.$watch("noManifestReady", function(newval){
-								if(newval){
-									console.log("Manifest Ready");
-									deferred.resolve();									
-								}
-							});	
-
-							SELF.load()
-								.catch(function(err){
-									deferred.reject(err);
-								});				
-						}					
-					});	
-
-					return deferred.promise;			
-				};				
+				//noLogService.log(angular.toJson(_config));
+				return;
 			}
-	
-			this.$get = ['lodash', 'noHTTP', 'noUrl', 'noLocalStorage', '$rootScope', '$q', '$timeout', 'noConfig', function(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig){
-				return new noManifest(_, noHTTP, noUrl, noLocalStorage, $rootScope, $q, $timeout, noConfig);
-			}]
-		}])
-	;
-})(angular);
 
-//indexeddb.js
-(function(angular, Dexie, undefined){
-	"user strict";
-	
-	angular.module("noinfopath.data")
+			/**
+				### load()
+				Loads and processes the database schema from the noinfopath-rest service.
 
-		.factory("noIndexedDB", ['$parse','$rootScope','lodash', 'noManifest', '$q', '$timeout', function($parse, $rootScope, _, noManifest, $q, $timeout){
-			var SELF = this, dex;
+				#### Returns
+				AngularJS::Promise
+			*/
+			function load(){
+				var req = {
+					method: "GET",
+					url: "/db.json", //TODO: change this to use the real noinfopath-rest endpoint
+					headers: {
+						"Content-Type": "application/json",
+						"Accept": "application/json"
+					},
+					withCredentials: true
+				};
 
-			function _bind(tables){
-				function _import(table, data, deferred, progress){
-					var total = data ? data.length : 0;
-						
-					$timeout(function(){progress.rows.start({max: total})});
-					var currentItem = 0;
+				return $http(req)
+					.then(_processDbJson)
+					.catch(function(resp){
+						noLogService.error(resp);
+					});
+			}
 
-					dex.transaction('rw', table, function (){
-						_next();
-					});	
-					
-					
-					function _next(){
-						if(currentItem < data.length){
-							var datum = data[currentItem];
+			/*
+				### whenReady
+				whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
 
-							table.add(datum).then(function(){
-								$timeout(function(){ progress.rows.update.call(progress.rows); });
-							})
-							.catch(function(err){
-								console.error(err);
-								throw err;
-							})
-							.finally(function(){
-								currentItem++;
-								_next();								
-							});	
-
-						}else{
-							deferred.resolve(table.name);
-						}
-					}											
-				}
-
-				_.each(tables, function(table){
-					var tmp = dex[table.TableName];
-					tmp.noCRUD = new noCRUD(dex, $q, $timeout, _, table, queryBuilder);
-					//tmp.IndexedDB = angular.fromJson(table.IndexedDB);
-					//this[table.TableName].noInfoPath = table;
-					tmp.bulkLoad = function(data, progress){
-						//console.info("bulkLoad: ", table.TableName)
-						var deferred = $q.defer();
-
-						this[table.TableName].clear()
-							.then(function(){
-								_import.call(this, this[table.TableName], data, deferred, progress);
-							}.bind(this));
-
-						return deferred.promise;
-					}.bind(dex);
-				});
-			}			
-
-			Dexie.prototype.whenReady = function(){
+				#### Returns
+				AngularJS::Promise
+			*/
+			this.whenReady = function(){
 				var deferred = $q.defer();
 
 				$timeout(function(){
-					if($rootScope.noIndexedDBReady)
+					if($rootScope.noDbSchemaInitialized)
 					{
-						console.log("IndexedDB Ready");
+						noLogService.log("noDbSchema Ready.");
 						deferred.resolve();
-					}else{	
-						$rootScope.$watch("noIndexedDBReady", function(newval){
+					}else{
+						//noLogService.log("noDbSchema is not ready yet.")
+						$rootScope.$watch("noDbSchemaInitialized", function(newval){
 							if(newval){
-								console.log("IndexedDB Ready");
-								deferred.resolve();								
+								noLogService.log("noDbSchema ready.");
+								deferred.resolve();
 							}
-						});					
-					}					
-				});	
-
-				return deferred.promise;			
-			};
-
-			Dexie.prototype.configure = function(dbinfo, stores){
-
-				var deferred = $q.defer();
-
-				dex.on('error', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.error("Uncaught error: " + err);
-				    deferred.reject(err);
-				});
-				dex.on('blocked', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.warn("IndedexDB is currently execting a blocking operation.");
-				});	
-
-				dex.on('versionchange', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.error("IndexedDB as detected a version change");
-				});
-
-				dex.on('populate', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.warn("IndedexDB populate...  not implemented.");
-				});	
-
-				dex.on('ready', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    console.info("IndedexDB is ready");
-					_bind(noManifest.current.indexedDB);	
-					$rootScope.noIndexedDBReady = true;
-				    deferred.resolve();
-				});	
-
-				if(dbinfo.name !== dex.name) throw "DB Name is invalid.";
-
-				if(!dex.isOpen()){
-					dex.version(dbinfo.version).stores(stores);
-					dex.open()
-						.then(function(resp){
-							console.log("hello");
-						})
-						.catch(function(err){
-							console.error(err);
 						});
-				}
+
+						load()
+							.then(function(resp){
+								$rootScope.noDbSchemaInitialized = true;
+							})
+							.catch(function(err){
+								deferred.reject(err);
+							});
+					}
+				});
 
 				return deferred.promise;
-			}.bind(dex);
-
-			Dexie.prototype.createTransport = function(tableName){
-				if(angular.isObject(tableName)){
-					return new noCrud(tableName);
-				}else{
-					return new noCRUD(noManifest.current.indexedDB[tableName]);
-				}
-			}
-
-			function queryBuilder(table, options){
-
-
-				var operators = {
-						"eq": function(a, b){
-							return a === b;
-						}
-					}, _total = 0, 
-					filters = options.data.filter;
-
-				function _filter(table, filter){
-
-
-					function _indexFilter(fields, values, operators){
-						
-
-						var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
-							v = values.length === 1 ? values[0] : values,
-							o = operators.join(""),
-							collection;
-
-						if(w === "[]"){
-							w = table.schema.primKey.keyPath;
-						}
-
-						if(Number.isNaN(v)){
-							collection = table.toCollection();
-						}else{
-							if(v === undefined){
-								v = "";
-							}
-
-							switch(o){
-								case "startswith":
-				 					collection = table.where(w).startsWithIgnoreCase(v);					
-									break;
-
-								default:
-				 					collection = table.where(w).equals(v);					
-									break;
-							}
-						}
-
-						return collection;
-					}
-
-					function _jsFilter(filter){
-						var collection = table.filter(function(obj){
-							//console.log("_jsFilter", value[this.field], this.field, value[this.field].indexOf(this.value));
-							var result = false;
-									
-							for(var fi in filter.filters){
-								var fltr = filter.filters[fi],
-									tmp = obj[fltr.field],
-									val = tmp ? tmp : null;
-
-								val = angular.isString(val) ? val.toLowerCase() : val;
-
-								switch(fltr.operator.toLowerCase()){
-									case "neq":
-										result = (val !== fltr.value);
-										break;
-									case "eq":
-										result = (val === fltr.value);
-										break;
-									case "contains":
-										result = val.indexOf(fltr.value) > -1;
-										break;
-									case "startswith":
-										result = val.indexOf(fltr.value) === 0;
-										break;
-								}
-
-								if(!result){
-									break;
-								}
-							}
-
-							return result;
-						});
-
-						return collection;
-					}
-
-					var deferred = table.noCRUD.$q.defer(),
-						fields,
-						values,
-						logic,
-						types;
-
-					table.noCRUD.$timeout(function(){
-
-						if(filter)
-						{
-							//console.log("filter", filter);
-							
-							fields = table.noCRUD._.pluck(filter.filters, "field");
-							values = table.noCRUD._.pluck(filter.filters, "value");
-							types = table.noCRUD._.pluck(filter.filters, "type");
-							operators = table.noCRUD._.pluck(filter.filters, "operator");
-							logic = filter.logic;
-
-							//If any of the filters are type filtered then all
-							//must be treated that way.
-							if(types && table.noCRUD._.contains(types, "filtered")){
-								deferred.resolve(_jsFilter(filter));
-							}else{
-								//Performing simple primary key lookup
-								deferred.resolve(_indexFilter(fields, values, operators));
-							}				
-
-						}else{
-							deferred.resolve(table.toCollection());
-						}
-					});
-
-
-					return deferred.promise;
-				}
-
-				function _count(collection){
-					var deferred = table.noCRUD.$q.defer();
-
-					collection.count()
-						.then(function(total){
-							_total = total;
-							deferred.resolve(collection);
-						})
-						.catch(function(err){
-							deferred.reject(err);
-						});
-
-					return deferred.promise;
-				}
-
-				function _sort(collection, sort){	
-					var deferred = table.noCRUD.$q.defer(),
-						arry = [];
-
-					table.noCRUD.$timeout(function(){
-						if(sort && sort.length > 0){
-							if(sort[0].dir === "desc")
-							{
-								collection.reverse();
-							}
-
-							collection.sortBy(sort[0].field)
-								.then(function(array){
-									console.warn("TODO: Implement multi-column sorting.");
-									deferred.resolve(array);
-								})
-								.catch(function(err){
-									console.error(err);
-									deferred.reject(err);
-								})
-						}else{
-							collection.toArray()
-								.then(function(array){
-									deferred.resolve(array);
-								})
-								.catch(function(err){
-									console.error(err);
-									deferred.reject(err);
-								});
-						}
-					});
-
-					return deferred.promise;
-				}
-
-				function _page(array, skip, take){
-					var deferred = table.noCRUD.$q.defer();
-
-					table.noCRUD.$timeout(function(){
-						if(take){	
-
-							deferred.resolve(array.slice(skip, skip+take));
-						}else{
-							deferred.resolve(array);
-						}
-					})
-
-					return deferred.promise;
-				}
-
-				function _expand(array) {
-					var promises = [],
-						refData = {};
-
-					for(var i in options.expand){
-						var expand = options.expand[i],
-							table = dex[expand.tableName],
-							_ = table.noCRUD._,
-							target = {},
-							keys;
-
-						target[i] = null;
-						keys = _.pluck(_.reject(array, target), i);
-
-						if(!keys || keys.length === 0) {
-							continue;
-						}
-
-						promises.push($q(function(resolve, reject){
-							table.where(expand.foreignKey).anyOf(keys).toArray()
-							.then(function(array){
-								var THAT = this,
-									hash = {};
-
-								angular.forEach(array, function(item){
-									hash[item[THAT.options.foreignKey]] = item;
-								});
-
-								//refData[THAT.primaryKey] = hash;
-
-
-								resolve({primaryKey: THAT.primaryKey, hash: hash});
-							}.bind({primaryKey: i, options: expand, data:array}))
-							.catch(function(err){
-								console.error(err);
-								reject(err);
-							});
-						}));
-					}
-
-
-					return $q.all(promises)
-						.then(function(data){
-						
-							var tmp, hash = {};
-							do{
-								tmp = data.pop();
-								if(tmp){
-									hash[tmp.primaryKey] = tmp.hash;
-								}
-							}while(tmp);
-
-
-							angular.forEach(array, function(item){
-								angular.forEach(options.expand, function(expand, pk){
-									var newRefItem = {};
-
-									if(item[pk] !== null) {
-										var refItem = hash[pk][item[pk]] ? hash[pk][item[pk]] : {};
-											
-										if(expand.fields){
-											angular.forEach(expand.fields, function(field){
-												newRefItem[field] = refItem[field];
-											});							
-										}else{
-											newRefItem = refItem;
-										}
-									}
-
-									if(expand.merge) {
-										item = angular.extend(item, newRefItem);
-									} else {
-										item[expand.name] = newRefItem;							
-									}
-
-									
-									//console.log(field, refItem, newRefItem)
-								});
-							});
-
-						return array;
-						
-					});
-				}
-
-				function _expandOne(array, expand) {
-					var table = dex[expand.tableName],
-						_ = table.noCRUD._,
-						keys = _.pluck(array, expand.foreignKey);
-					
-					return $q(function(resolve, reject){
-						table.where(expand.foreignKey).anyOf(keys).toArray()
-							.then(function(array){
-								var hash = {};
-
-								angular.forEach(array, function(item){
-									hash[item[this.options.foreignKey]] = item;
-								}, this);
-
-								resolve({primaryKey: this.primaryKey, hash: hash});
-							}.bind({primaryKey: expand.foreignKey, options: expand, data:array}))
-							.catch(function(err){
-								console.error(err);
-								reject(err);
-							});
-						});
-				}
-
-				function _projection(rootArray, projections){
-					var _results = {}, curRootItem;
-
-					function _waitForProjection(array, projectee){
-						var deferred = $q.defer();
-
-			 			_projectOne(array, projectee)
-							.then(function(data){
-								_results[data.projectee.name] = data;
-
-								if(projectee.projections){
-									_project(data.projected, projectee.projections)
-										.then(function(){
-											deferred.resolve();
-										});
-								}else{
-									deferred.resolve();
-								}
-
-							})
-							.catch(function(err){
-								console.error(err);
-								deferred.reject(err);
-							});
-						
-						return deferred.promise;
-					}
-
-					function _projectOne(array, projectee){
-						var deferred = $q.defer(),
-							table = dex[projectee.tableName],
-							_ = table.noCRUD._,
-							keys = _.pluck(array, projectee.foreignKey);
-						
-						return table.where(projectee.foreignKey).anyOf(keys).toArray()
-							.then(function(projected){
-								var hash = {};
-
-								//hash the projected on primaryKey
-								angular.forEach(projected, function(item){
-									if(!hash[item[this.options.primaryKey]]){
-										hash[item[this.options.primaryKey]] = [];
-									}
-									hash[item[this.options.primaryKey]].push(item);
-								}, this);
-
-								angular.forEach(array, function(item){
-									var key = item[this.primaryKey],
-										projectedItems = hash[key] || [];
-
-
-									item["_" + this.options.name] = projectedItems;
-						
-								}, this);
-
-								return {projectee: projectee, hashed: hash, projected: projected};
-								
-							}.bind({primaryKey: projectee.primaryKey, options: projectee, data:array}))
-							.catch(function(err){
-								console.error(err);
-								deferred.reject(err);
-							});
-					}
-
-					function _project(array, projections){
-						var promises = [];
-
-						angular.forEach(projections, function(projection){
-							promises.push(_waitForProjection(array, projection)
-								.then(function(data){
-									return data;
-								}));
-						});
-
-						return $q.all(promises)
-							.then(function(data){
-								return data;
-							});
-					}	
-
-
-					return _project(rootArray, projections)
-						.then(function(){
-			
-							// angular.forEach(rootArray, function(cooperator){
-							// 	var fieldSites = _aggregate(cooperator.fieldSites, {operation: "count"}),
-							// 		trials = 0,
-							// 		trialPlots = 0,
-							// 		observations = 0;
-
-							// 	angular.forEach(cooperator.fieldSites, function(fieldSite){
-							// 		trials +=  _aggregate(fieldSite.trials, {operation: "count"});
-
-							// 		angular.forEach(fieldSite.trials, function(trial){
-							// 			trialPlots +=  _aggregate(trial.trialPlots, {operation: "count"});
-
-							// 			angular.forEach(trial.trialPlots, function(trialPlot){
-							// 				observations +=  _aggregate(trialPlot.observations, {operation: "count"});
-							// 			});
-							// 		});
-							// 	});
-
-							// 	cooperator.FieldSites = fieldSites;
-							// 	cooperator.Trials = trials;
-							// 	cooperator.TrialPlots = trialPlots;
-							// 	cooperator.Observations = observations;
-							// });
-
-							return _results;
-						});
-				}
-
-				function _aggregator(rootArray, aggregate){
-					var currentRootItem;
-
-					function _aggregate(array, aggregation){
-						var operations = {
-							"count": function(array){
-								return array ? array.length : 0;
-							}
-						}
-
-						return operations[aggregation.operation](array);
-					}
-
-					function _recurseAggregations(item, aggregations){
-						angular.forEach(aggregations, function(aggregation){
-							var items = item[aggregation.path],
-								val = _aggregate(items, aggregation);
-
-							if(!currentRootItem[aggregation.name]) { 
-								currentRootItem[aggregation.name] = 0; 
-							}
-
-							currentRootItem[aggregation.name] += val;
-
-							if(aggregation.aggregations){
-								angular.forEach(items, function(item){
-									_recurseAggregations(item, aggregation.aggregations);
-								});								
-							}
-						});
-					}
-
-					angular.forEach(rootArray, function(item){
-						currentRootItem = item;
-						angular.forEach(aggregate.fields, function(field){
-							currentRootItem[field] = 0;
-						})
-						_recurseAggregations(item, aggregate.aggregations);
-					});
-				}
-
-				function _postProcessing(array, config){
-					var deferred = $q.defer(),
-						promises = [],
-						nothingToDo = !options.expand && !options.projections;
-
-					if(nothingToDo){
-						promises.push($q(function(resolve,reject){
-							resolve(array);
-						}));
-					}else{
-						if(options.expand){
-							promises.push(_expand(array, options.expand));
-						}
-
-						if(options.projections){
-							//Same goes for projections
-							promises.push(_projection(array, options.projections));
-						}
-					}
-
-
-					return $q.all(promises).then(function(data){
-						//console.log(data);
-						if(options.aggregators){
-							_aggregator(array, options.aggregators);
-						}
-						return array;
-					});
-				}
-
-				this.query = function(){
-					var deferred = $q.defer();
-
-					_filter(table, options.data.filter)
-						.then(function(collection){
-							return _count(collection);
-						})
-						.then(function(collection){
-							return _sort(collection,options.data.sort)
-						})
-						.then(function(array){
-							return _page(array, options.data.skip, options.data.take);
-						})
-						.then(function(array){
-							array.__no_total__ = _total;
-							_postProcessing(array, options)
-								.then(function(array){
-									deferred.resolve(array||[]);
-								})
-								.catch(function(err){
-									deferred.reject(err);
-								});
-
-						})
-						.catch(function(err){
-							deferred.reject(err);
-						});
-
-					return deferred.promise;
-				}	 					
 			};
-
-			function noCRUD(dex, $q, $timeout, lodash, noTable, querySvc) {
-				if(!noTable) throw "noTable is a required parameter";
-				
-				this.$q = $q;
-				this.$timeout = $timeout;
-				this._ = lodash;
-				this.dex = dex;
-				this.type = "kendo";
-				this.tableName = noTable.TableName;
-				this.noTable = noTable;
-				this.noTable.IndexedDB = angular.fromJson(this.noTable.IndexedDB);
-				this.querySvc = querySvc;
-
-				this.__proto__.create = function(options) {
-					var deferred = this.$q.defer();
-
-					if(!options) throw "noCRUD::update requires options parameter";
-					
-				
-					var tbl = this.dex[this.tableName],
-						THAT = this;
-
-					this.dex.transaction("rw", tbl, function(){
-						//tbl.add(options.data);
-
-						// if(THAT.noTable.IndexedDB.pk){
-						// 	tbl.orderBy(THAT.noTable.IndexedDB.pk).last()
-						// 		.then(function(lastOne){
-						// 			//This is a temporary hack.  Will be moving to
-						// 			//using UUID's soon.
-						// 			var newKey =  Number(lastOne[THAT.noTable.IndexedDB.pk]) + 1;
-						// 			options.data[THAT.noTable.IndexedDB.pk] = newKey;
-						// 			tbl.add(options.data);
-						// 		});								
-						// }else{
-							tbl.add(options.data);
-						// }
-					})
-					.then(function(resp){
-						deferred.resolve(options.data);
-					})
-					.catch(function(err){
-						deferred.reject(err);
-					})
-						
-					return deferred.promise;				
-				};
-
-				this.__proto__.read = function(options) {
-					var deferred = this.$q.defer(),
-						tbl = this.dex[this.tableName],
-						THAT = this;
-
-
-					this.dex.transaction("r", tbl, function(){
-						if(options){
-							var q = new THAT.querySvc(tbl, options,THAT.$timeout, THAT.$q, THAT.dex, THAT._);
-
-								q.query()
-									.then(deferred.resolve)
-									.catch(deferred.reject);
-						}else{
-							tbl.toArray()
-								.then(deferred.resolve)
-								.catch(deferred.reject);
-						}
-					})
-					.then(function(resp){
-						//console.log("Transaction complete. ", resp || "");
-
-						if(resp) deferred.resolve(resp);
-					})
-					.catch(function(err){
-						console.error(err);
-						deferred.reject(err);
-					})	
-
-					return deferred.promise;						
-				};
-
-				this.__proto__.one = function(options){
-					var deferred = this.$q.defer(), SELF = this;
-
-					this.$timeout(function(){
-						SELF.read(options)
-							.then(function(data){
-								if(data.length > 0){
-									deferred.resolve(data[0]);
-								}else{
-									deferred.reject("Item not found.")
-								}
-							})
-							.catch(function(err){
-								deferred.reject(err);
-							});				
-					});
-
-
-					return deferred.promise;
-				};
-
-				this.__proto__.update = function(options) {
-					var deferred = this.$q.defer();
-
-					if(!options) throw "noCRUD::update requires options parameter";
-					
-					var tbl = this.dex[this.tableName],
-						key = options.data[this.noTable.IndexedDB.pk];
-
-					this.dex.transaction("rw", tbl, function(){
-						tbl.update(key, options.data)
-							.then(function(resp){
-								if(resp === 1)
-								{
-									deferred.resolve(options.data);
-								}else{
-									deferred.reject("Record not updated.");
-								}									
-							});
-					})
-					.then(function(resp){
-						console.log("Transaction complete. ", resp || "");
-					})
-					.catch(function(err){
-						console.error(err);
-						deferred.reject(err);
-					})
-					
-
-					return deferred.promise;						
-				};
-
-				this.__proto__.destroy = function(options) {
-					var deferred = this.$q.defer(),
-						tbl = this.dex[this.tableName],
-						key = options.data[this.noTable.IndexedDB.pk];
-
-					this.dex.transaction("rw", tbl, function(){
-						tbl.delete(key)
-							.then(deferred.resolve)
-							.catch(deferred.reject);
-					})
-					.then(function(resp){
-						console.log("Transaction complete. ", resp || "");
-					})
-					.catch(function(err){
-						console.error(err);
-						deferred.reject(err);
-					})
-
-					return deferred.promise;		
-				};
-
-				this.__proto__.upsert = function(options){
-					if(!options) throw "noCRUD::update requires options parameter";
-					
-					var tbl = this.dex[this.tableName],
-						key = options.data[this.noTable.IndexedDB.pk];
-
-					if(key){
-						return this.update(options);
-					}else{
-						return this.create(options);
-					}
-				}
-			}
-
-			return 	dex = new Dexie("NoInfoPath-v3");
 		}])
 
-		.service("noBulkData", ['$q', '$timeout','noConfig', 'noUrl', 'noIndexedDB', function($q, $timeout, noConfig, noUrl, noIndexedDB){
+	;
+
+})(angular, Dexie);
+
+(function(angular, Dexie, undefined){
+	"use strict";
+
+	angular.module("noinfopath.data")
+
+		.service("noBulkData", ['$q', '$timeout','noConfig', 'noUrl', 'noDexie', function($q, $timeout, noConfig, noUrl, noDexie){
 				var _tasks = [], _datasvc;
 
 				function _queue(manifest){
@@ -1893,18 +1662,18 @@
 					if(task){
 						$timeout(function(){
 							progress.tables.update("Downloading " + task.TableName);
-							progress.tables.changeCss("progress-bar-success progress-bar-striped active");							
-						})
+							progress.tables.changeCss("progress-bar-success progress-bar-striped active");
+						});
 						console.info("Downloading " + task.TableName);
 
-						table = noIndexedDB[task.TableName];
+						table = noDexie[task.TableName];
 
 						if(table)
 						{
 							_datasvc.read(task.url)
 								.then(function(data){
 									if(data){
-										console.info("\t" + data.length + " " + task.TableName + " downloaded.")
+										console.info("\t" + data.length + " " + task.TableName + " downloaded.");
 										$timeout(function(){
 											progress.tables.changeMessage("Importing " + data.length + " items from " + task.TableName, false);
 											progress.tables.changeCss("progress-bar-info progress-bar-striped active");
@@ -1913,7 +1682,7 @@
 										noIndexedDB[task.TableName].bulkLoad(data, progress)
 											.then(function(info){
 												//deferred.notify(info);
-												console.info("\t" + info + " import completed.");									
+												console.info("\t" + info + " import completed.");
 												_recurse(deferred, progress);
 											})
 											.catch(function(err){
@@ -1922,11 +1691,11 @@
 											})
 											.finally(angular.noop, function(info){
 												console.info(info);
-											});								
+											});
 									}else{
 										console.info("\tError downloading " + task.TableName);
 										$timeout(function(){
-											progress.rows.start({min: 1, max: 1, showProgress: false})
+											progress.rows.start({min: 1, max: 1, showProgress: false});
 											progress.rows.update("Error downloading " + task.TableName);
 											progress.rows.changeCss("progress-bar-warning");
 										});
@@ -1935,15 +1704,15 @@
 							})
 							.catch(function(err){
 								$timeout(function(){
-									progress.rows.start({min: 1, max: 1, showProgress: false})
+									progress.rows.start({min: 1, max: 1, showProgress: false});
 									progress.rows.update("Error downloading " + task.TableName);
-									progress.rows.changeCss("progress-bar-warning");												
-								})
+									progress.rows.changeCss("progress-bar-warning");
+								});
 								_recurse(deferred, progress);
 
 							});
 						}
-						
+
 					}else{
 						deferred.resolve();  //Nothing left to do
 					}
@@ -1962,89 +1731,729 @@
 		;
 })(angular, Dexie);
 
-//create.js
-(function(angular, Dexie, undefined){
+(function (angular, Dexie, undefined){
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.service("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", function($q, $timeout, $http, $rootScope, _){
-			var _config = {}, SELF = this;
-
-			Object.defineProperties(this, {
-				"config": {
-					"get": function() { return _config; }
-				}
-			});
-
-			function _processDbJson(resp){
-				//console.log(resp)
-				var tables = resp.data;
-
-				angular.forEach(tables, function(table, tableName){
-					
-					var primKey = "$$" + table.primaryKey,
-						foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
-		
-					_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-				})
-
-				console.log(angular.toJson(_config));
-				return;
+		/*
+			## noDexie
+			The noDexie factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDexie is a Dexie AddOn that extends the query capabilites of Dexie.
+		*/
+		.factory("noDexie", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+			/**
+				### Class noDatum
+				This is a contructor function used by Dexie when creating and returning data objects.
+			*/
+			function noDatum(){
+				noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
 			}
 
+			/**
+				### Class noDexie
+				This is the classed used to construct the Dexie AddOn.
+			*/
+			function noDexie(db){
 
-			this.load = function (){
-				var req = {
-					method: "GET",
-					url: "/db.json",
-					headers: {
-						"Content-Type": "application/json",
-						"Accept": "application/json"
-					},
-					withCredentials: true
+				/*
+					#### noCreate
+					Adds a new record to the database. If the primary key is provided in that will be used when adding otherwise a new UUID will be created by Dexie.
+
+					##### Parameters
+
+					|Name|Type|Description|
+					|data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
+
+					##### Returns
+					AngularJS:Promise
+				*/
+				db.WriteableTable.prototype.noCreate = function(data){
+					var deferred = $q.defer(),
+						table = this;
+
+
+					//noLogService.log("adding: ", _dexie.currentUser);
+
+					_dexie.transaction("rw", table, function(){
+						data.CreatedBy =  _dexie.currentUser.userId;
+						data.DateCreated = new Date(Date.now());
+						data.ModifiedDate = new Date(Date.now());
+						data.ModifiedBy =  _dexie.currentUser.userId;
+
+						table.add(data)
+							.then(function(data){
+								noLogService.log("addSuccessful", data);
+								table.get(data)
+									.then(function(data){
+										//deferred.resolve(data);
+										window.noInfoPath.digest(deferred.resolve, data);
+									})
+									.catch(function(err){
+										//deferred.reject("noCRUD::create::get " + err);
+										window.noInfoPath.digestError(deferred.reject, err);
+									});
+
+							})
+							.catch(function(err){
+								//deferred.reject("noCRUD::create " + err);
+								window.noInfoPath.digestError(deferred.reject, err);
+							});
+					})
+					.then(function(){
+						noLogService.log("transaction successful for Create");
+					})
+					.catch(function(err){
+						deferred.reject("noCRUD::createTrans " + err);
+						window.noInfoPath.digestError(deferred.reject, err);
+					});
+
+					return deferred.promise;
 				};
 
-				return $http(req)
-					.then(_processDbJson)
-					.catch(function(resp){
-						console.error(resp);
-					});
-			};
+				/*
+					#### noRead
 
-			this.whenReady = function(){
+					The read operation takes a complex set of parameters that allow
+					for filtering, sorting and paging of data.
+
+					##### Parameters
+
+					|Name|Type|Descriptions|
+					|----|----|------------|
+					|filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|
+					|sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
+					|page|NoPage|(Optional) Paging information, if paging is reqired by the read operation.|
+
+					##### Returns
+					AngularJS::Promise
+				*/
+				db.Table.prototype.noRead = function(){
+					/**
+						#### Internal Values
+
+						|Name|Type|Description|
+						|------|-----|-------------|
+						|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
+						|_resolve|Function|Call to resolve `Dexie::Promise` upon successful completion of `_applyFilters()`. This function is returned while resolving the underlying IDBObjectStore from the `table` parameter.|
+						|_reject|Function|Call to resolve the `Dexie::Promise` when an unexpected for un recoverable error occurs during processing.|
+						|_store|IDBObjectStore|This underlying `IDBObjectStore` that the `table` parameter represents.|
+						|_trans|IDBTransaction|This is the underlying `IDBTransaction` that the current object store is bound to.|
+					*/
+					var deferred = $q.defer(),
+						table = this,
+						store, _resolve, _reject, _store, _trans,
+						filters, sort, page,
+						indexedOperators = {
+							"eq": "equals",
+							"gt": "above",
+							"ge": "aboveOrEqual",
+							"lt": "below",
+							"le": "belowOrEqual",
+							"startswith": "startsWith",
+							"bt": "between"
+						},
+
+						/**
+							##### nonIndexedOperators
+							This hash table allows for quick access to the operations that can be applied to a property on a target object and the value(s) being filtered on.
+
+							NOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.
+						*/
+						operators = {
+							"in": function(a, b){
+								return _.indexOf(b,a) > -1;
+							},
+							"eq": function(a, b){
+								return a === b;
+							},
+							"neq": function(a, b){
+								return a !== b;
+							},
+							"gt": function(a, b){
+								return a > b;
+							},
+							"ge": function(a, b){
+								return a >= b;
+							},
+							"lt": function(a, b){
+								return a < b;
+							},
+							"le": function(a, b){
+								return a <= b;
+							},
+							"startswith": function(a, b){
+								var a1 = a ? a.toLowerCase() : "",
+									b1 = b ? b.toLowerCase() : "";
+
+								return a1.indexOf(b1) === 0;
+							},
+							"contains": function(a, b){
+								var a1 = a ? a.toLowerCase() : "",
+									b1 = b ? b.toLowerCase() : "";
+
+								return a1.indexOf(b1) >= -1;
+							}
+						}, buckets = {};
+
+
+					//sort out the parameters
+					for(var ai in arguments){
+						var arg = arguments[ai];
+
+						//success and error must always be first, then
+						if(angular.isObject(arg)){
+							switch(arg.constructor.name){
+								case "NoFilters":
+									filters = arg;
+									break;
+								case "NoSort":
+									sort = arg;
+									break;
+								case "NoPage":
+									page = arg;
+									break;
+							}
+						}
+					}
+
+					/**
+						#### _applyFilters
+						This function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.
+
+						##### Parameters
+
+						|Name|Type|Description|
+						|----|----|------|
+						|iNofilters|[iNoFilterExpression]|An array of filter expressions. Contains both indexed and non-indexed filters|
+						|table|Dexie::Table|A reference to the `Dexie::Table` being filtered.
+
+						##### Internal variables
+
+						|Name|Type|Description|
+						|------|-----|-------------|
+						|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
+						|iNoFilterHash|Collection<iNoFilters>|Used to organize the filters received in the `iNoFilters` in to a set of indexed and non-indexed filter object The collection is created by a call to `_sortOutFilters()`.|
+						|resultsKeys|Array\<guid\>|This will be use to collect the final set of results. It will be an array of keys that will be used to query the final result set.|
+
+						##### Returns
+						AngularJS::Promise (Maybe)
+					*/
+					function _applyFilters(iNoFilters, store){
+					    var deferred = $q.defer(),
+					    	iNoFiltersHash = _sortOutFilters(iNoFilters),
+							resultKeys = [];
+
+						if(iNoFilters){
+							//Filter on the indexed filters first.  That should reduce the
+							//set to make the non-indexed filters more performant.
+							_recurseIndexedFilters(iNoFiltersHash.indexedFilters, table)
+								.then(function(data){
+									// _applyNonIndexedFilters()
+									// 	.then(function(data){
+									// 		deferred.resolve(data);
+									// 	});
+									deferred.resolve(new NoResults(data));
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								});
+						}else{
+							table.toArray()
+								.then(deferred.resolve)
+								.catch(deferred.reject);
+						}
+
+
+						return deferred.promise;
+					}
+
+					/**
+						### _recurseIndexedFilters
+					*/
+					function _recurseIndexedFilters(filters, table){
+
+						var deferred = $q.defer(),
+							map = {};
+
+						function _reduce(map){
+							var keys = [], all = [], results = [];
+								// ors = _.filter( _.pluck(map, "filter"), {logic: "or"}),
+								// ands = _.filter( _.pluck(map, "filter"), {logic: "and"}),
+								// mergedOrs = _merge(map, ors)
+							for(var k in map){
+								var items = map[k];
+
+								//noLogService.log(items);
+
+								switch(items.filter.logic){
+									case "or":
+										keys = _.union(keys, _.pluck(items.data, "pk"));
+										break;
+									case "and":
+										keys = _.intersection(keys, _.pluck(items.data, "pk"));
+										break;
+									default:
+										keys = keys.concat(_.pluck(items.data, "pk"));
+										break;
+
+								}
+								//noLogService.log( _.pluck(items.data, "pk").length)
+								all = _.union(all, items.data);
+							}
+
+							for(var ka in all){
+								var item = all[ka].obj,
+									key = item[table.schema.primKey.name];
+
+								if(keys.indexOf(key) > -1){
+									results.push(item);
+								}
+							}
+
+							return results;
+						}
+
+						function _map(){
+							var filter = filters.pop(),
+								promise;
+
+							if(filter){
+								if(table.schema.primKey === filter.column){
+									promise = _filterByPrimaryKey(filter, table);
+								}else{
+									promise = _filterByIndex(filter, table);
+								}
+
+								promise
+									.then(function(data){
+										map[filter.column] = {pk: table.schema.primKey.name, filter: filter, data: data};
+										_map();
+									})
+									.catch(function(err){
+										//deferred.reject(err);
+										noLogService.error(err);
+									});
+							}else{
+								deferred.resolve(_reduce(map));
+							}
+						}
+
+						$timeout(_map);
+
+						window.noInfoPath.digestTimeout();
+
+						return deferred.promise;
+					}
+
+					/**
+						### _filterByPrimaryKey  -- Being Deprecated
+
+						This method of of filterig goes against the `IDBObjectStore`'s primary key.
+					*/
+					function _filterByPrimaryKey(filter, store){
+						var deferred = $q.defer(),
+							req = store.openKeyCursor(),
+							operator = operators[filter.operator],
+							matchedKeys = [];
+
+						req.onsuccess = function(event){
+							var cursor = event.target.result;
+							if(cursor){
+								if(operator(cursor.key, filter.value)){
+									matchedKeys.push(cursor.primaryKey);
+								}
+								cursor.continue();
+							}else{
+								deferred.resolve(matchedKeys);
+							}
+						};
+
+						req.onerror = function(){
+							deferred.reject(req.error);
+						};
+
+						return deferred.promise;
+					}
+
+					/**
+						### _filterByIndex
+
+						This method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.
+
+						#### Parameters
+
+						|Name|Type|Description|
+						|------|-----|-------------|
+						|filter|INoFilterExpression|A single indexed filter the contains the column, operator, and value to apply to the index.|
+
+						#### Returns
+						AngularJS::Promise
+					*/
+					function _filterByIndex(filter, table) {
+						var deferred = $q.defer(),
+							operator = operators[filter.operator],
+							matchedKeys = [];
+
+
+						table._idbstore("readonly", function(resolve, reject, store, trans){
+							var ndx = store.index(filter.column),
+								req = ndx.openCursor();
+
+							req.onsuccess = function(event){
+								var cursor = event.target.result;
+								if(cursor){
+									if(operator(cursor.key, filter.value)){
+										matchedKeys.push({pk: cursor.primaryKey, fk: cursor.key, obj: cursor.value});
+									}
+									cursor.continue();
+								}else{
+									//noLogService.info(matchedKeys);
+									resolve(matchedKeys);
+								}
+							};
+
+							req.onerror = function(event){
+								reject(event);
+							};
+
+							trans.on("complete", function(event){
+								deferred.resolve(matchedKeys);
+							});
+
+							trans.on("error", function(event){
+								deferred.reject(trans.error());
+							});
+						});
+
+						return deferred.promise;
+					}
+
+					function _filterByProperty(iNoFilterExpression, obj){
+						return nonIndexedOperators[iNoFilterExpression.operator](obj, iNoFilter.column, iNoFilter.value);
+					}
+
+					/*
+						This method of filtering compares the supplied set of
+						filters against each object return in the Dexie colletion.
+						This is a much slower than filtering against an index.
+					*/
+					function _filterByProperties(iNoFilters, collection) {
+
+						return collection.and(function(obj){
+							angular.forEach(iNoFilters, function(iNoFilterExpression){
+								_filterByProperty(iNoFilters, obj);
+							});
+						});
+					}
+
+
+					/*
+						_filterHasIndex uses the iNoFilter parameter to determine
+						if there is an index available for the give filter. it returns
+						true if there is, false if not.
+
+						To determine if and index exists, we look at the table.schema.primKey,
+						and table.schema.indexes properties.
+					*/
+					function _filterHasIndex(iNoFilterExpression) {
+						return _.findIndex(table.schema.indexes, {keyPath: iNoFilterExpression.column}) > -1;
+					}
+
+					/*
+						This function splits up the filters by indexed verses not. The
+						return value is a INoFilterHash.
+
+						interface INoFilterHash {
+							indexedFilters: [INoFilterExpression]
+							nonIndexedFilters: [INoFilterExpression]
+						}
+					*/
+					function _sortOutFilters(iNoFilters) {
+						//noLogService.log("Start of sort",table.schema.indexes);
+
+						var iNoFilterHash = {
+							indexedFilters: [],
+							nonIndexedFilters: []
+						};
+
+						angular.forEach(iNoFilters, function(iNoFilterExpression){
+
+							if(table.schema.primKey.keyPath === iNoFilterExpression.column){
+								iNoFilterHash.indexedFilters.push(iNoFilterExpression);
+							} else {
+								if(_filterHasIndex(iNoFilterExpression)){
+									iNoFilterHash.indexedFilters.push(iNoFilterExpression);
+								} else {
+									iNoFilterHash.nonIndexedFilters.push(iNoFilterExpression);
+								}
+							}
+
+						});
+
+						//noLogService.log("Before the return",table.schema.indexes);
+
+						return iNoFilterHash;
+					}
+
+					/*
+						This function applies the provided sort items to the supplied
+						Dexie:Collection. It should always sort on indexed columns and
+						return a DexieCollection.
+
+						NOTE: Need to research how to apply multi-column sorting.
+					*/
+					function _applySort(iNoSort, data) {
+						noLogService.warn("TODO: Fully implement _applySort");
+					}
+
+					/*
+						Applies the specified skip and take values to the final
+						Dexie::Collection, if supplied.
+
+						Note that this is the function returns the final Array of items
+						based on all of the properties applied prior to this call.
+					*/
+					function _applyPaging(page, data){
+						return $q(function(resolve, reject){
+							data.page(page);
+
+							resolve(data);
+						});
+					}
+
+					$timeout(function(){
+						_applyFilters(filters, table)
+							.then(_applyPaging)
+							.catch(function(err){
+								deferred.reject(err);
+							});
+					});
+
+					window.noInfoPath.digestTimeout();
+
+					/*
+						The promise should resolve to a Dexie::Collection that will result in
+						a set of data that matches the supplied filters, reject errors.
+					*/
+					return deferred.promise;
+				};
+
+				/*
+					The update function expects the key to be within the update object.
+				*/
+				db.WriteableTable.prototype.noUpdate = function(data){
+					var deferred = $q.defer(),
+						table = this,
+						key = data[table.noInfoPath.primaryKey];
+
+					//noLogService.log("adding: ", _dexie.currentUser);
+
+					_dexie.transaction("rw", table, function(){
+						data.ModifiedDate = new Date(Date.now());
+						data.ModifiedBy =  _dexie.currentUser.userId;
+						table.update(key, data)
+							.then(function(data){
+								window.noInfoPath.digest(deferred.resolve, data);
+							})
+							.catch(function(err){
+								window.noInfoPath.digestError(deferred.reject, err);
+							});
+
+					})
+					.then(angular.noop())
+					.catch(function(err){
+						window.noInfoPath.digestError(deferred.reject, err);
+					});
+
+					return deferred.promise;
+				};
+
+				db.WriteableTable.prototype.noDestroy = function(data){
+					var deferred = $q.defer(),
+						table = this,
+						key = data[table.noInfoPath.primaryKey];
+
+					//noLogService.log("adding: ", _dexie.currentUser);
+					noLogService.log(key);
+					_dexie.transaction("rw", table, function(){
+
+						table.delete(key)
+							.then(function(data){
+								window.noInfoPath.digest(deferred.resolve, data);
+							})
+							.catch(function(err){
+								window.noInfoPath.digestError(deferred.reject, err);
+							});
+
+					})
+					.then(angular.noop())
+					.catch(function(err){
+						window.noInfoPath.digestError(deferred.reject, err);
+					});
+
+					return deferred.promise;
+				};
+
+				/*
+					Maps to the Dexie.Table.get method.
+				*/
+				db.WriteableTable.prototype.noOne = function(data){
+				 	var deferred = $q.defer(),
+				 		table = this,
+						key = data[table.noInfoPath.primaryKey];
+
+				 	//noLogService.log("adding: ", _dexie.currentUser);
+
+				 	_dexie.transaction("r", table, function(){
+				 		table.get(key)
+				 			.then(function(data){
+				 				window.noInfoPath.digest(deferred.resolve, data);
+				 			})
+				 			.catch(function(err){
+				 				window.noInfoPath.digestError(deferred.reject, err);
+				 			});
+
+				 	})
+				 	.then(angular.noop())
+				 	.catch(function(err){
+				 		window.noInfoPath.digestError(deferred.reject, err);
+				 	});
+
+				 	return deferred.promise;
+				};
+
+				/*
+					While Dexie supports a put operation which is similar to upsert,
+					we're going with upsert which decides whether an insert or an
+					update is required and calls the appropreiate function.
+				*/
+				// db.WriteableTable.prototype.upsert = function(data){
+				// }
+			}
+
+			/**
+				### _extendDexieTables
+			*/
+			function _extendDexieTables(dbSchema){
+				function _toDexieClass(tsqlTableSchema){
+					var _table = {};
+
+					angular.forEach(tsqlTableSchema.columns, function(column,tableName){
+						switch(column.type){
+							case "uniqueidentifier":
+							case "nvarchar":
+							case "varchar":
+								_table[tableName] = "String";
+								break;
+
+							case "date":
+							case "datetime":
+								_table[tableName] = "Date";
+								break;
+
+							case "bit":
+								_table[tableName] = "Boolean";
+								break;
+
+							case "int":
+							case "decimal":
+								_table[tableName] = "Number";
+								break;
+						}
+					});
+
+					return _table;
+				}
+
+				angular.forEach(dbSchema, function(table, tableName){
+					var dexieTable = _dexie[tableName];
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					dexieTable.noInfoPath = table;
+				});
+			}
+
+			/**
+				### configure
+			*/
+			Dexie.prototype.configure = function(noUser, dbVersion, dexieStores, dbSchema){
 				var deferred = $q.defer();
 
 				$timeout(function(){
-					if($rootScope.noDbSchemaInitialized)
+					_dexie.currentUser = noUser;
+					_dexie.on('error', function(err) {
+					    // Log to console or show en error indicator somewhere in your GUI...
+					    noLogService.error("Dexie Error: " + err);
+					   	window.noInfoPath.digestError(deferred.reject, err);
+					});
+
+					_dexie.on('blocked', function(err) {
+					    // Log to console or show en error indicator somewhere in your GUI...
+					    noLogService.warn("IndedexDB is currently execting a blocking o`peration.");
+					   	window.noInfoPath.digestError(deferred.reject, err);
+					});
+
+					_dexie.on('versionchange', function(err) {
+					    // Log to console or show en error indicator somewhere in your GUI...
+					    noLogService.error("IndexedDB as detected a version change");
+					});
+
+					_dexie.on('populate', function(err) {
+					    // Log to console or show en error indicator somewhere in your GUI...
+					    noLogService.warn("IndedexDB populate...  not implemented.");
+					});
+
+					_dexie.on('ready', function(data) {
+						noLogService.log("Dexie ready");
+					    // Log to console or show en error indicator somewhere in your GUI...
+						$rootScope.noIndexedDBReady = true;
+					    window.noInfoPath.digest(deferred.resolve, data);
+					});
+
+					if(_dexie.isOpen()){
+						$timeout(function(){
+							//noLogService.log("Dexie already open.")
+							window.noInfoPath.digest(deferred.resolve);
+						});
+					}else{
+						if(_.size(dexieStores)){
+							_dexie.version(dbVersion.version).stores(dexieStores);
+							_extendDexieTables.call(_dexie, dbSchema);
+							_dexie.open();
+						}else{
+							noLogService.warn("Waiting for noDbSchema data.");
+						}
+
+					}
+				});
+
+				window.noInfoPath.digestTimeout();
+
+				return deferred.promise;
+			};
+
+			Dexie.prototype.whenReady = function(){
+				var deferred = $q.defer();
+
+				$timeout(function(){
+					if($rootScope.noIndexedDBReady)
 					{
-						console.log("noDbSchema Ready.");
 						deferred.resolve();
-					}else{	
-						console.log("noDbSchema is not ready yet.")
-						$rootScope.$watch("noDbSchemaInitialized", function(newval){
+					}else{
+						$rootScope.$watch("noIndexedDBReady", function(newval){
 							if(newval){
-								console.log("noDbSchema ready.");
-								deferred.resolve();									
+								deferred.resolve();
 							}
-						});	
+						});
+					}
+				});
 
-						SELF.load()
-							.then(function(resp){
-								$rootScope.noDbSchemaInitialized = true;
-								//for testing
-								// $timeout(function(){
-								// 	$rootScope.$digest();
-								// });
-								//deferred.resolve();
-							})
-							.catch(function(err){
-								deferred.reject(err);
-							});				
-					}					
-				});	
+				return deferred.promise;
+			};
 
-				return deferred.promise;			
-			};	
+			Dexie.addons.push(noDexie);
+
+			var _dexie = new Dexie("NoInfoPath-v3");
+
+			return  _dexie;
 		}])
 	;
 

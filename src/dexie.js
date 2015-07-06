@@ -6,13 +6,13 @@
 			## noDexie
 			The noDexie factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDexie is a Dexie AddOn that extends the query capabilites of Dexie.
 		*/
-		.factory("noDexie", ['$timeout', '$q', '$rootScope', "lodash", function($timeout, $q, $rootScope, _){
+		.factory("noDexie", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
 			/**
 				### Class noDatum
 				This is a contructor function used by Dexie when creating and returning data objects.
 			*/
 			function noDatum(){
-				console.log("noDatum::constructor"); //NOTE: This never seems to get called.
+				noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
 			}
 
 			/**
@@ -38,7 +38,7 @@
 						table = this;
 
 
-					//console.log("adding: ", _dexie.currentUser);
+					//noLogService.log("adding: ", _dexie.currentUser);
 
 					_dexie.transaction("rw", table, function(){
 						data.CreatedBy =  _dexie.currentUser.userId;
@@ -48,7 +48,7 @@
 
 						table.add(data)
 							.then(function(data){
-								console.log("addSuccessful", data);
+								noLogService.log("addSuccessful", data);
 								table.get(data)
 									.then(function(data){
 										//deferred.resolve(data);
@@ -66,7 +66,7 @@
 							});
 					})
 					.then(function(){
-						console.log("transaction successful for Create");
+						noLogService.log("transaction successful for Create");
 					})
 					.catch(function(err){
 						deferred.reject("noCRUD::createTrans " + err);
@@ -249,7 +249,7 @@
 							for(var k in map){
 								var items = map[k];
 
-								//console.log(items);
+								//noLogService.log(items);
 
 								switch(items.filter.logic){
 									case "or":
@@ -263,7 +263,7 @@
 										break;
 
 								}
-								//console.log( _.pluck(items.data, "pk").length)
+								//noLogService.log( _.pluck(items.data, "pk").length)
 								all = _.union(all, items.data);
 							}
 
@@ -297,7 +297,7 @@
 									})
 									.catch(function(err){
 										//deferred.reject(err);
-										console.error(err);
+										noLogService.error(err);
 									});
 							}else{
 								deferred.resolve(_reduce(map));
@@ -373,7 +373,7 @@
 									}
 									cursor.continue();
 								}else{
-									//console.info(matchedKeys);
+									//noLogService.info(matchedKeys);
 									resolve(matchedKeys);
 								}
 							};
@@ -435,7 +435,7 @@
 						}
 					*/
 					function _sortOutFilters(iNoFilters) {
-						//console.log("Start of sort",table.schema.indexes);
+						//noLogService.log("Start of sort",table.schema.indexes);
 
 						var iNoFilterHash = {
 							indexedFilters: [],
@@ -456,7 +456,7 @@
 
 						});
 
-						//console.log("Before the return",table.schema.indexes);
+						//noLogService.log("Before the return",table.schema.indexes);
 
 						return iNoFilterHash;
 					}
@@ -469,7 +469,7 @@
 						NOTE: Need to research how to apply multi-column sorting.
 					*/
 					function _applySort(iNoSort, data) {
-						console.warn("TODO: Fully implement _applySort");
+						noLogService.warn("TODO: Fully implement _applySort");
 					}
 
 					/*
@@ -512,7 +512,7 @@
 						table = this,
 						key = data[table.noInfoPath.primaryKey];
 
-					//console.log("adding: ", _dexie.currentUser);
+					//noLogService.log("adding: ", _dexie.currentUser);
 
 					_dexie.transaction("rw", table, function(){
 						data.ModifiedDate = new Date(Date.now());
@@ -539,8 +539,8 @@
 						table = this,
 						key = data[table.noInfoPath.primaryKey];
 
-					//console.log("adding: ", _dexie.currentUser);
-					console.log(key);
+					//noLogService.log("adding: ", _dexie.currentUser);
+					noLogService.log(key);
 					_dexie.transaction("rw", table, function(){
 
 						table.delete(key)
@@ -568,7 +568,7 @@
 				 		table = this,
 						key = data[table.noInfoPath.primaryKey];
 
-				 	//console.log("adding: ", _dexie.currentUser);
+				 	//noLogService.log("adding: ", _dexie.currentUser);
 
 				 	_dexie.transaction("r", table, function(){
 				 		table.get(key)
@@ -648,28 +648,28 @@
 					_dexie.currentUser = noUser;
 					_dexie.on('error', function(err) {
 					    // Log to console or show en error indicator somewhere in your GUI...
-					    console.error("Dexie Error: " + err);
+					    noLogService.error("Dexie Error: " + err);
 					   	window.noInfoPath.digestError(deferred.reject, err);
 					});
 
 					_dexie.on('blocked', function(err) {
 					    // Log to console or show en error indicator somewhere in your GUI...
-					    console.warn("IndedexDB is currently execting a blocking o`peration.");
+					    noLogService.warn("IndedexDB is currently execting a blocking o`peration.");
 					   	window.noInfoPath.digestError(deferred.reject, err);
 					});
 
 					_dexie.on('versionchange', function(err) {
 					    // Log to console or show en error indicator somewhere in your GUI...
-					    console.error("IndexedDB as detected a version change");
+					    noLogService.error("IndexedDB as detected a version change");
 					});
 
 					_dexie.on('populate', function(err) {
 					    // Log to console or show en error indicator somewhere in your GUI...
-					    console.warn("IndedexDB populate...  not implemented.");
+					    noLogService.warn("IndedexDB populate...  not implemented.");
 					});
 
 					_dexie.on('ready', function(data) {
-						console.log("Dexie ready");
+						noLogService.log("Dexie ready");
 					    // Log to console or show en error indicator somewhere in your GUI...
 						$rootScope.noIndexedDBReady = true;
 					    window.noInfoPath.digest(deferred.resolve, data);
@@ -677,7 +677,7 @@
 
 					if(_dexie.isOpen()){
 						$timeout(function(){
-							//console.log("Dexie already open.")
+							//noLogService.log("Dexie already open.")
 							window.noInfoPath.digest(deferred.resolve);
 						});
 					}else{
@@ -686,7 +686,7 @@
 							_extendDexieTables.call(_dexie, dbSchema);
 							_dexie.open();
 						}else{
-							console.warn("Waiting for noDbSchema data.");
+							noLogService.warn("Waiting for noDbSchema data.");
 						}
 
 					}

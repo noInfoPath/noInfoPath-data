@@ -10,7 +10,7 @@ describe("Testing noinfopath-data", function(){
 	 //    		noHTTPProvider = _noHTTPProvider_;
 	 //  		}]);
 
-		// module('dummyModule');	
+		// module('dummyModule');
 		module("noinfopath.data", "noinfopath.data.mocks");
 		inject(function($injector){
 			$timeout = $injector.get("$timeout");
@@ -21,7 +21,7 @@ describe("Testing noinfopath-data", function(){
 	       	noUserMock = $injector.get("noUserMock");
 	       	noDexie = $injector.get("noDexie");
 		});
-	});	
+	});
 
 	// afterEach(function(){
 	// 	if(!$rootScope.$$phase) $rootScope.$digest();
@@ -61,7 +61,7 @@ describe("Testing noinfopath-data", function(){
 
 			$timeout.flush();
 			$httpBackend.flush();
-		});		
+		});
 	});
 
 	describe("Testing noDexie", function(){
@@ -89,7 +89,7 @@ describe("Testing noinfopath-data", function(){
 				.then(function(){
 					expect(noDexie.LU_Firmness).toBeDefined();
 					expect(noDexie.LU_Firmness.create).toBeDefined();
-				
+
 					noDexie.LU_Firmness.create({Description: "Hello", FirmnessID: "ddf5993e-0c72-417c-83fb-62f5612e191c"})
 						.then(function(data){
 							expect(data).toBeDefined();
@@ -103,12 +103,12 @@ describe("Testing noinfopath-data", function(){
 
 					//done();
 					$timeout.flush();
-					
+
 				})
 				.catch(function(err){
-					console.error("XXX" + err);			
+					console.error("XXX" + err);
 					expect("Failed to create indexedDB object. See Dexie Error above.").toBe(null);
-		
+
 					done();
 				});
 
@@ -124,14 +124,14 @@ describe("Testing noinfopath-data", function(){
 	// 			tbl.get(data)
 	// 				.then(function(item){
 	// 					item.test();
-	// 					done();	
+	// 					done();
 	// 				})
-				
+
 	// 		})
 	// 		.catch(function(err){
 	// 			console.error(err);
 	// 			done();
-	// 		});					
+	// 		});
 	// 	})
 
 
