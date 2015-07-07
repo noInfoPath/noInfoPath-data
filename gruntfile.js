@@ -36,8 +36,12 @@ module.exports = function(grunt) {
 		    		'lib/dexie.syncable.js'
 		    	],
 		    	dest: 'dist/noinfopath-dexie.js'
-		    }
-	 	},
+		    },
+            readme: {
+                src: ['docs/noinfopath-data.wiki.md'],
+		    	dest: 'readme.md'
+            }
+        },
         karma: {
           unit: {
             configFile: "karma.conf.js"
@@ -93,7 +97,7 @@ module.exports = function(grunt) {
 
     grunt.registerTask('test', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'copy:test']);
 
-    grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal']);
+    grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
 
 };
