@@ -3721,7 +3721,7 @@
                         } else {
                             db.close();
                             console.error("Out of sync"); // TODO: What to do? Reload the page?
-                            if (window.location) window.location.reload(true);
+                            //if (window.location) window.location.reload(true);
                             throw new Error("Out of sync"); // Will make current promise reject
                         }
                     }

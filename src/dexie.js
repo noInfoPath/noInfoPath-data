@@ -595,6 +595,58 @@
 				*/
 				// db.WriteableTable.prototype.upsert = function(data){
 				// }
+
+				db.WriteableTable.prototype.bulkLoad = function(data, progress){
+					var deferred = $q.defer(), table = this;
+				//var table = this;
+					function _import(data, progress){
+						var total = data ? data.length : 0;
+
+						$timeout(function(){
+							//progress.rows.start({max: total});
+							deferred.notify(progress);
+						});
+
+						var currentItem = 0;
+
+						_dexie.transaction('rw', table, function (){
+							_next();
+						});
+
+
+						function _next(){
+							if(currentItem < data.length){
+								var datum = data[currentItem];
+
+								table.add(datum).then(function(){
+									//progress.updateRow(progress.rows);
+									deferred.notify();
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								})
+								.finally(function(){
+									currentItem++;
+									_next();
+								});
+
+							}else{
+								deferred.resolve(table.name);
+							}
+						}
+
+					}
+
+					//console.info("bulkLoad: ", table.TableName)
+
+					table.clear()
+						.then(function(){
+							_import(data, progress);
+						}.bind(this));
+
+					return deferred.promise;
+				};
+
 			}
 
 			/**
@@ -715,6 +767,7 @@
 
 				return deferred.promise;
 			};
+
 
 			Dexie.addons.push(noDexie);
 

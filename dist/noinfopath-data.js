@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.0
+ *	@version 0.2.3
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1328,7 +1328,7 @@
 		* TODO: Implementation required.
 		*/
 		.provider("noHTTP",[function(){
-			this.$get = ['$q', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', function($q, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder){
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', function($rootScope, $q, $timeout, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder, noLogService){
 				/**
 				* ### @class NoDb
 				*
@@ -1346,11 +1346,54 @@
 				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
 				*
 				*/
-				function NoDb(tables, queryBuilder){
+				function NoDb(queryBuilder){
+					var THIS = this;
 
-					angular.forEach(tables, function(table, name){
-						this[name] = new NoTable(name, table, queryBuilder);
-					}, this);
+					this.whenReady = function(){
+						var deferred = $q.defer(),
+							tables = noDbSchema.tables;
+
+						$timeout(function(){
+							if($rootScope.noHTTPInitialized)
+							{
+								noLogService.log("noHTTP Ready.");
+								deferred.resolve();
+							}else{
+								//noLogService.log("noDbSchema is not ready yet.")
+								$rootScope.$watch("noHTTPInitialized", function(newval){
+									if(newval){
+										noLogService.log("noHTTP ready.");
+										deferred.resolve();
+									}
+								});
+
+								configure(tables)
+									.then(function(resp){
+										$rootScope.noHTTPInitialized = true;
+									})
+									.catch(function(err){
+										deferred.reject(err);
+									});
+							}
+						});
+
+						return deferred.promise;
+					};
+
+					function configure(tables){
+						var deferred = $q.defer();
+
+						$timeout(function(){
+							angular.forEach(tables, function(table, name){
+								this[name] = new NoTable(name, table, queryBuilder);
+							}, THIS);
+
+							deferred.resolve();
+						});
+
+						return deferred.promise;
+					}
+
 				}
 
 
@@ -1407,6 +1450,7 @@
 					};
 
 					this.noRead = function() {
+						noLogService.debug("noRead say's, 'swag!'");
 						var filters, sort, page;
 
 						for(var ai in arguments){
@@ -1446,6 +1490,7 @@
 								deferred.resolve(data.value);
 							})
 							.error(function(reason){
+								noLogService.error(arguments);
 								deferred.reject(reason);
 							});
 
@@ -1506,7 +1551,7 @@
 				}
 
 				//return new noREST($q, $http, $filter, noUrl, noConfig)
-				return new NoDb(noDbSchema.tables, noOdataQueryBuilder.makeQuery);
+				return new NoDb(noOdataQueryBuilder.makeQuery);
 			}];
 		}])
 	;
@@ -1521,117 +1566,132 @@
 		 * ## noDbSchema
 		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
-		.service("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", function($q, $timeout, $http, $rootScope, _, noLogService){
-			var _config = {}, _tables = {}, SELF = this;
+		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", function($q, $timeout, $http, $rootScope, _, noLogService){
+			var _interface = new NoDbSchema(),  _config = {}, _tables = {};
 
-			/*
-				### Properties
+			function NoDbSchema(){
 
-				|Name|Type|Description|
-				|----|----|-----------|
-				|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-				|tables|Object|A hash table of NoInfoPath database schema definitions|
-				|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
-			*/
-			Object.defineProperties(this, {
-				"store": {
-					"get": function() { return _config; }
-				},
-				"tables": {
-					"get": function() { return _tables; }
-				},
-				"isReady": {
-					"get": function() { return _.size(_tables) > 0; }
-				}
-			});
 
-			/**
-				### Methods
+				/*
+					### Properties
 
-				#### _processDbJson
-				Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
-
-				##### Parameters
-				|Name|Type|Descriptions|
-				|resp|Object|The raw HTTP response received from the noinfopath-rest service|
-			*/
-			function _processDbJson(resp){
-				//save reference to the source data from the rest api.
-				_tables = resp.data;
-
-				angular.forEach(_tables, function(table, tableName){
-					var primKey = "$$" + table.primaryKey,
-						foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
-
-					//Prep as a Dexie Store config
-					_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-				});
-
-				//noLogService.log(angular.toJson(_config));
-				return;
-			}
-
-			/**
-				### load()
-				Loads and processes the database schema from the noinfopath-rest service.
-
-				#### Returns
-				AngularJS::Promise
-			*/
-			function load(){
-				var req = {
-					method: "GET",
-					url: "/db.json", //TODO: change this to use the real noinfopath-rest endpoint
-					headers: {
-						"Content-Type": "application/json",
-						"Accept": "application/json"
+					|Name|Type|Description|
+					|----|----|-----------|
+					|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+					|tables|Object|A hash table of NoInfoPath database schema definitions|
+					|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+				*/
+				Object.defineProperties(this, {
+					"store": {
+						"get": function() { return _config; }
 					},
-					withCredentials: true
-				};
-
-				return $http(req)
-					.then(_processDbJson)
-					.catch(function(resp){
-						noLogService.error(resp);
-					});
-			}
-
-			/*
-				### whenReady
-				whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
-
-				#### Returns
-				AngularJS::Promise
-			*/
-			this.whenReady = function(){
-				var deferred = $q.defer();
-
-				$timeout(function(){
-					if($rootScope.noDbSchemaInitialized)
-					{
-						noLogService.log("noDbSchema Ready.");
-						deferred.resolve();
-					}else{
-						//noLogService.log("noDbSchema is not ready yet.")
-						$rootScope.$watch("noDbSchemaInitialized", function(newval){
-							if(newval){
-								noLogService.log("noDbSchema ready.");
-								deferred.resolve();
-							}
-						});
-
-						load()
-							.then(function(resp){
-								$rootScope.noDbSchemaInitialized = true;
-							})
-							.catch(function(err){
-								deferred.reject(err);
-							});
+					"tables": {
+						"get": function() { return _tables; }
+					},
+					"isReady": {
+						"get": function() { return _.size(_tables) > 0; }
 					}
 				});
 
-				return deferred.promise;
-			};
+				/**
+					### Methods
+
+					#### _processDbJson
+					Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
+
+					##### Parameters
+					|Name|Type|Descriptions|
+					|resp|Object|The raw HTTP response received from the noinfopath-rest service|
+				*/
+				function _processDbJson(resp){
+					var deferred = $q.defer();
+
+					_tables = resp.data;
+
+					$timeout(function(){
+						//save reference to the source data from the rest api.
+
+						angular.forEach(_tables, function(table, tableName){
+							var primKey = "$$" + table.primaryKey,
+								foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
+
+							//Prep as a Dexie Store config
+							_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+						});
+
+						deferred.resolve();
+					});
+
+					//noLogService.log(angular.toJson(_config));
+					return deferred.promise;
+				}
+
+				/**
+					### load()
+					Loads and processes the database schema from the noinfopath-rest service.
+
+					#### Returns
+					AngularJS::Promise
+				*/
+				function load(){
+					var req = {
+						method: "GET",
+						url: "/db.json", //TODO: change this to use the real noinfopath-rest endpoint
+						headers: {
+							"Content-Type": "application/json",
+							"Accept": "application/json"
+						},
+						withCredentials: true
+					};
+
+					return $http(req)
+						.then(_processDbJson)
+						.catch(function(resp){
+							noLogService.error(resp);
+						});
+				}
+
+				/*
+					### whenReady
+					whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
+
+					#### Returns
+					AngularJS::Promise
+				*/
+
+				this.whenReady = function(){
+					var deferred = $q.defer();
+
+					$timeout(function(){
+						if($rootScope.noDbSchemaInitialized)
+						{
+							noLogService.log("noDbSchema Ready.");
+							deferred.resolve();
+						}else{
+							//noLogService.log("noDbSchema is not ready yet.")
+							$rootScope.$watch("noDbSchemaInitialized", function(newval){
+								if(newval){
+									noLogService.log("noDbSchema ready.");
+									deferred.resolve();
+								}
+							});
+
+							load()
+								.then(function(resp){
+									$rootScope.noDbSchemaInitialized = true;
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								});
+						}
+					});
+
+					return deferred.promise;
+				};
+
+			}
+
+			return _interface;
 		}])
 
 	;
@@ -1643,90 +1703,150 @@
 
 	angular.module("noinfopath.data")
 
-		.service("noBulkData", ['$q', '$timeout','noConfig', 'noUrl', 'noDexie', function($q, $timeout, noConfig, noUrl, noDexie){
-				var _tasks = [], _datasvc;
+		.service("noBulkData", ['$q', '$timeout','noConfig', 'noUrl', 'noDexie', 'noLogService', function($q, $timeout, noConfig, noUrl, noDexie, noLogService){
+			var csss = {
+				"success": "progress-bar-success progress-bar-striped active",
+				"info": "progress-bar-info progress-bar-striped active",
+				"warning": "progress-bar-warning"
+			};
+
+			function BulkImportProgress(){
+				var _proto_ = Object.getPrototypeOf(this);
+
+				this.tables = new noInfoPath.ProgressTracker();
+				this.rows = new noInfoPath.ProgressTracker();
+
+				_proto_.changeTableMessage = function(msg, css, showProgress, deferred){
+					$timeout(function(){
+						this.tables.changeMessage(msg, showProgress);
+						this.tables.changeCss(css);
+						deferred.notify(this);
+					}.bind(this));
+				};
+
+				_proto_.changeRowMessage = function(msg, css, showProgress, deferred){
+					$timeout(function(){
+						this.rows.changeMessage(msg, showProgress);
+						this.rows.changeCss(css);
+						deferred.notify(this);
+					}.bind(this));
+				};
+
+
+				_proto_.updateTable = function(msg, css, deferred) {
+					$timeout(function(){
+						this.tables.update(msg);
+						this.tables.changeCss(css);
+						deferred.notify(this);
+					}.bind(this));
+
+				};
+
+				_proto_.updateRow = function(msg, css, deferred) {
+					$timeout(function(){
+						this.rows.update(msg);
+						this.rows.changeCss(css);
+						deferred.notify(this);
+					}.bind(this));
+
+				};
+			}
+
+			this.load = function(noManifest, datasvc){
+
+				var _tasks = [],
+					_datasvc,
+					deferred = $q.defer(),
+					progress = new BulkImportProgress();
 
 				function _queue(manifest){
 					//var urls = noUrl.makeResourceUrls(noConfig.current.RESTURI, manifest);
 
 					for(var k in manifest){
 						var task = manifest[k];
-						task.url = task.TableName;
+						task.url = k;
 						_tasks.push(task);
 					}
 				}
 
 				function _recurse(deferred, progress) {
-					var task = _tasks.shift(), table;
-
+					var task = _tasks.shift(), table, remote;
 					if(task){
-						$timeout(function(){
-							progress.tables.update("Downloading " + task.TableName);
-							progress.tables.changeCss("progress-bar-success progress-bar-striped active");
-						});
-						console.info("Downloading " + task.TableName);
+						progress.updateTable("Downloading " + task.TableName, csss.success, deferred);
 
-						table = noDexie[task.TableName];
+						noLogService.debug(noDexie.constructor.name);
+						noLogService.debug(_datasvc.constructor.name);
 
-						if(table)
+						table = noDexie[task.url];
+						remote = _datasvc[task.url];
+						if(table && remote)
 						{
-							_datasvc.read(task.url)
+							remote.noRead()
 								.then(function(data){
-									if(data){
-										console.info("\t" + data.length + " " + task.TableName + " downloaded.");
-										$timeout(function(){
-											progress.tables.changeMessage("Importing " + data.length + " items from " + task.TableName, false);
-											progress.tables.changeCss("progress-bar-info progress-bar-striped active");
-										});
-										console.info("\tImporting " + data.length + " items from " + task.TableName);
-										noIndexedDB[task.TableName].bulkLoad(data, progress)
-											.then(function(info){
-												//deferred.notify(info);
-												console.info("\t" + info + " import completed.");
-												_recurse(deferred, progress);
-											})
-											.catch(function(err){
-												console.error(err);
-												_recurse(deferred, progress);
-											})
-											.finally(angular.noop, function(info){
-												console.info(info);
-											});
-									}else{
-										console.info("\tError downloading " + task.TableName);
-										$timeout(function(){
+									try{
+										if(data){
+											//noLogService.info("\t" + data.length + " " + task.url + " downloaded.");
+
+											progress.changeTableMessage("Importing " + data.length + " items from " + task.TableName, csss.info, false, deferred);
+
+											//noLogService.info("\tImporting " + data.length + " items from " + task.TableName);
+
+											noDexie[task.url].bulkLoad(data, progress)
+												.then(function(info){
+													deferred.notify(progress);
+													//noLogService.info("\t" + info + " import completed.");
+													_recurse(deferred, progress);
+												})
+												.catch(function(err){
+													deferred.notify(progress);
+													//noLogService.error(err);
+													_recurse(deferred, progress);
+												})
+												.finally(angular.noop, function(info){
+													deferred.reject(progress);
+													//noLogService.info(info);
+												});
+										}else{
+											//noLogService.info("\tError downloading " + task.TableName);
+											//$timeout(function(){
 											progress.rows.start({min: 1, max: 1, showProgress: false});
-											progress.rows.update("Error downloading " + task.TableName);
-											progress.rows.changeCss("progress-bar-warning");
-										});
-										_recurse(deferred, progress);
+											progress.updateRow("Error downloading " + task.TableName, csss.warning, deferred);
+											deferred.notify(progress);
+											//});
+											_recurse(deferred, progress);
+										}
+									}catch(ex){
+										deferred.reject(ex);
+										//noLogService.error(ex);
 									}
+
 							})
 							.catch(function(err){
-								$timeout(function(){
-									progress.rows.start({min: 1, max: 1, showProgress: false});
-									progress.rows.update("Error downloading " + task.TableName);
-									progress.rows.changeCss("progress-bar-warning");
-								});
+								//noLogService.error(err);
+
+								progress.rows.start({min: 1, max: 1, showProgress: false});
+								progress.updateRow("Error downloading " + task.TableName, csss.warning);
+								deferred.notify(progress);
 								_recurse(deferred, progress);
 
 							});
+						}else{
+
+							throw {message: "table or remote not so swag!", data: [table, remote] };
 						}
 
 					}else{
+						//noLogService.info("Bulk import complete.");
 						deferred.resolve();  //Nothing left to do
 					}
 				}
 
-				this.load = function(noManifest, datasvc, progress){
-					var deferred = $q.defer();
+				_datasvc = datasvc;
+				_queue(noManifest);
+				_recurse(deferred, progress);
 
-					_datasvc = datasvc;
-					_queue(noManifest);
-					_recurse(deferred, progress);
-
-					return deferred.promise;
-				}.bind(this);
+				return deferred.promise;
+			}.bind(this);
 		}])
 		;
 })(angular, Dexie);
@@ -2328,6 +2448,58 @@
 				*/
 				// db.WriteableTable.prototype.upsert = function(data){
 				// }
+
+				db.WriteableTable.prototype.bulkLoad = function(data, progress){
+					var deferred = $q.defer(), table = this;
+				//var table = this;
+					function _import(data, progress){
+						var total = data ? data.length : 0;
+
+						$timeout(function(){
+							//progress.rows.start({max: total});
+							deferred.notify(progress);
+						});
+
+						var currentItem = 0;
+
+						_dexie.transaction('rw', table, function (){
+							_next();
+						});
+
+
+						function _next(){
+							if(currentItem < data.length){
+								var datum = data[currentItem];
+
+								table.add(datum).then(function(){
+									//progress.updateRow(progress.rows);
+									deferred.notify();
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								})
+								.finally(function(){
+									currentItem++;
+									_next();
+								});
+
+							}else{
+								deferred.resolve(table.name);
+							}
+						}
+
+					}
+
+					//console.info("bulkLoad: ", table.TableName)
+
+					table.clear()
+						.then(function(){
+							_import(data, progress);
+						}.bind(this));
+
+					return deferred.promise;
+				};
+
 			}
 
 			/**
@@ -2448,6 +2620,7 @@
 
 				return deferred.promise;
 			};
+
 
 			Dexie.addons.push(noDexie);
 
