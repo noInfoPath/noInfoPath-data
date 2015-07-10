@@ -29,7 +29,7 @@
 		* TODO: Implementation required.
 		*/
 		.provider("noHTTP",[function(){
-			this.$get = ['$q', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', function($q, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder){
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', function($rootScope, $q, $timeout, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder, noLogService){
 				/**
 				* ### @class NoDb
 				*
@@ -47,11 +47,54 @@
 				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
 				*
 				*/
-				function NoDb(tables, queryBuilder){
+				function NoDb(queryBuilder){
+					var THIS = this;
 
-					angular.forEach(tables, function(table, name){
-						this[name] = new NoTable(name, table, queryBuilder);
-					}, this);
+					this.whenReady = function(){
+						var deferred = $q.defer(),
+							tables = noDbSchema.tables;
+
+						$timeout(function(){
+							if($rootScope.noHTTPInitialized)
+							{
+								noLogService.log("noHTTP Ready.");
+								deferred.resolve();
+							}else{
+								//noLogService.log("noDbSchema is not ready yet.")
+								$rootScope.$watch("noHTTPInitialized", function(newval){
+									if(newval){
+										noLogService.log("noHTTP ready.");
+										deferred.resolve();
+									}
+								});
+
+								configure(tables)
+									.then(function(resp){
+										$rootScope.noHTTPInitialized = true;
+									})
+									.catch(function(err){
+										deferred.reject(err);
+									});
+							}
+						});
+
+						return deferred.promise;
+					};
+
+					function configure(tables){
+						var deferred = $q.defer();
+
+						$timeout(function(){
+							angular.forEach(tables, function(table, name){
+								this[name] = new NoTable(name, table, queryBuilder);
+							}, THIS);
+
+							deferred.resolve();
+						});
+
+						return deferred.promise;
+					}
+
 				}
 
 
@@ -108,6 +151,7 @@
 					};
 
 					this.noRead = function() {
+						noLogService.debug("noRead say's, 'swag!'");
 						var filters, sort, page;
 
 						for(var ai in arguments){
@@ -147,6 +191,7 @@
 								deferred.resolve(data.value);
 							})
 							.error(function(reason){
+								noLogService.error(arguments);
 								deferred.reject(reason);
 							});
 
@@ -207,7 +252,7 @@
 				}
 
 				//return new noREST($q, $http, $filter, noUrl, noConfig)
-				return new NoDb(noDbSchema.tables, noOdataQueryBuilder.makeQuery);
+				return new NoDb(noOdataQueryBuilder.makeQuery);
 			}];
 		}])
 	;

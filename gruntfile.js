@@ -95,9 +95,8 @@ module.exports = function(grunt) {
 	//Default task(s).
 	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
-    grunt.registerTask('test', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'copy:test']);
+    grunt.registerTask('test', ['concat:noinfopath', 'copy:test']);
 
     grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
-
 
 };
