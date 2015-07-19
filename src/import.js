@@ -32,7 +32,6 @@
 					}.bind(this));
 				};
 
-
 				_proto_.updateTable = function(msg, css, deferred) {
 					$timeout(function(){
 						this.tables.update(msg);
@@ -72,7 +71,7 @@
 				function _recurse(deferred, progress) {
 					var task = _tasks.shift(), table, remote;
 					if(task){
-						progress.updateTable("Downloading " + task.TableName, csss.success, deferred);
+						progress.updateTable("Downloading " + task.url, csss.success, deferred);
 
 						noLogService.debug(noDexie.constructor.name);
 						noLogService.debug(_datasvc.constructor.name);
@@ -87,7 +86,7 @@
 										if(data){
 											//noLogService.info("\t" + data.length + " " + task.url + " downloaded.");
 
-											progress.changeTableMessage("Importing " + data.length + " items from " + task.TableName, csss.info, false, deferred);
+											progress.changeTableMessage("Importing " + data.length + " items from " + task.url, csss.info, false, deferred);
 
 											//noLogService.info("\tImporting " + data.length + " items from " + task.TableName);
 
@@ -110,7 +109,7 @@
 											//noLogService.info("\tError downloading " + task.TableName);
 											//$timeout(function(){
 											progress.rows.start({min: 1, max: 1, showProgress: false});
-											progress.updateRow("Error downloading " + task.TableName, csss.warning, deferred);
+											progress.updateRow("Error downloading " + task.url, csss.warning, deferred);
 											deferred.notify(progress);
 											//});
 											_recurse(deferred, progress);
@@ -125,7 +124,7 @@
 								//noLogService.error(err);
 
 								progress.rows.start({min: 1, max: 1, showProgress: false});
-								progress.updateRow("Error downloading " + task.TableName, csss.warning);
+								progress.updateRow("Error downloading " + task.url, csss.warning, deferred);
 								deferred.notify(progress);
 								_recurse(deferred, progress);
 

@@ -7,12 +7,10 @@
 		 * ## noDbSchema
 		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
-		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", function($q, $timeout, $http, $rootScope, _, noLogService){
+		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig){
 			var _interface = new NoDbSchema(),  _config = {}, _tables = {};
 
 			function NoDbSchema(){
-
-
 				/*
 					### Properties
 
@@ -77,7 +75,7 @@
 				function load(){
 					var req = {
 						method: "GET",
-						url: "/db.json", //TODO: change this to use the real noinfopath-rest endpoint
+						url: noConfig.current.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
 						headers: {
 							"Content-Type": "application/json",
 							"Accept": "application/json"

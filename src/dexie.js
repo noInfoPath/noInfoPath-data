@@ -3,10 +3,10 @@
 
 	angular.module("noinfopath.data")
 		/*
-			## noDexie
-			The noDexie factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDexie is a Dexie AddOn that extends the query capabilites of Dexie.
+			## noDb
+			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
 		*/
-		.factory("noDexie", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
 			/**
 				### Class noDatum
 				This is a contructor function used by Dexie when creating and returning data objects.
