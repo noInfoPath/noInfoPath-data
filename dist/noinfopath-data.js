@@ -1450,7 +1450,7 @@
 					};
 
 					this.noRead = function() {
-						noLogService.debug("noRead say's, 'swag!'");
+						//noLogService.debug("noRead say's, 'swag!'");
 						var filters, sort, page;
 
 						for(var ai in arguments){
@@ -2404,7 +2404,7 @@
 
 					_dexie.on('blocked', function(err) {
 					    // Log to console or show en error indicator somewhere in your GUI...
-					    noLogService.warn("IndedexDB is currently execting a blocking o`peration.");
+					    noLogService.warn("IndedexDB is currently execting a blocking operation.");
 					   	window.noInfoPath.digestError(deferred.reject, err);
 					});
 
