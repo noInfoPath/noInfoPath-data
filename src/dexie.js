@@ -618,9 +618,9 @@
 							if(currentItem < data.length){
 								var datum = data[currentItem];
 
-								table.add(datum).then(function(){
+								table.add(datum).then(function(data){
 									//progress.updateRow(progress.rows);
-									deferred.notify();
+									deferred.notify(data);
 								})
 								.catch(function(err){
 									deferred.reject(err);
