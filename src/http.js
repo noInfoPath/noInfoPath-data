@@ -151,7 +151,7 @@
 					};
 
 					this.noRead = function() {
-						noLogService.debug("noRead say's, 'swag!'");
+						//noLogService.debug("noRead say's, 'swag!'");
 						var filters, sort, page;
 
 						for(var ai in arguments){

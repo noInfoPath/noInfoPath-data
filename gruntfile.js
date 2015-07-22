@@ -23,7 +23,7 @@ module.exports = function(grunt) {
 		        	'src/configuration.js',
 		        	'src/http.js',
                     'src/schema.js',
-		        	'src/import.js',
+		        	//'src/import.js',
 		        	// 'src/indexeddb.js',
 		        	'src/dexie.js'
 		        ],
@@ -104,6 +104,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-version');
  	grunt.loadNpmTasks('grunt-nodocs');
 	//Default task(s).
+
 	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
     grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);

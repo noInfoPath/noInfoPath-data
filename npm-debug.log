@@ -1,0 +1,119 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'node', '/usr/local/bin/npm', 'publish' ]
+2 info using npm@2.5.1
+3 info using node@v0.12.0
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec { raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/Users/gochinj/ws/noinfopath-v2/noinfopath-data',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /Users/gochinj/.npm/noinfopath-data/0.2.3/package.tgz not in flight; packing
+9 verbose tar pack [ '/Users/gochinj/.npm/noinfopath-data/0.2.3/package.tgz',
+9 verbose tar pack   '/Users/gochinj/ws/noinfopath-v2/noinfopath-data' ]
+10 verbose tarball /Users/gochinj/.npm/noinfopath-data/0.2.3/package.tgz
+11 verbose folder /Users/gochinj/ws/noinfopath-v2/noinfopath-data
+12 info prepublish noinfopath-data@0.2.3
+13 verbose addLocalTarball adding from inside cache /Users/gochinj/.npm/noinfopath-data/0.2.3/package.tgz
+14 silly cache afterAdd noinfopath-data@0.2.3
+15 verbose afterAdd /Users/gochinj/.npm/noinfopath-data/0.2.3/package/package.json not in flight; writing
+16 verbose afterAdd /Users/gochinj/.npm/noinfopath-data/0.2.3/package/package.json written
+17 silly publish { name: 'noinfopath-data',
+17 silly publish   version: '0.2.3',
+17 silly publish   description: 'noInfoPath data module',
+17 silly publish   main: 'noinfopath-data.js',
+17 silly publish   directories: { test: 'test' },
+17 silly publish   scripts: { test: 'echo "Error: no test specified" && exit 1' },
+17 silly publish   repository:
+17 silly publish    { type: 'git',
+17 silly publish      url: 'http://gitlab.imginconline.com/noinfopath/noinfopath-data.git' },
+17 silly publish   author:
+17 silly publish    { name: 'noInfoPath',
+17 silly publish      email: 'info@noInfoPath.org',
+17 silly publish      url: 'http://www.noinfopath.org/' },
+17 silly publish   license: 'MIT',
+17 silly publish   devDependencies:
+17 silly publish    { 'angular-mocks': '^1.3.15',
+17 silly publish      'es5-shim': '^4.1.6',
+17 silly publish      grunt: '^0.4.5',
+17 silly publish      'grunt-contrib-concat': '^0.5.1',
+17 silly publish      'grunt-contrib-copy': '^0.8.0',
+17 silly publish      'grunt-contrib-watch': '^0.6.1',
+17 silly publish      'grunt-karma': '^0.10.1',
+17 silly publish      'grunt-nodocs': '0.0.10',
+17 silly publish      'jasmine-ajax': '^3.0.0',
+17 silly publish      'jasmine-core': '^2.1.3',
+17 silly publish      jsdoc: '^3.3.0-beta1',
+17 silly publish      'jshint-stylish': '^1.0.1',
+17 silly publish      karma: '^0.12.28',
+17 silly publish      'karma-chrome-launcher': '^0.1.7',
+17 silly publish      'karma-coverage': '^0.2.7',
+17 silly publish      'karma-html-reporter': '^0.2.4',
+17 silly publish      'karma-ie-launcher': '^0.1.5',
+17 silly publish      'karma-jasmine': '^0.3.3',
+17 silly publish      'karma-phantomjs-launcher': '^0.1.4',
+17 silly publish      'karma-safari-launcher': '^0.1.1',
+17 silly publish      'karma-verbose-reporter': '0.0.1',
+17 silly publish      'noinfopath-helpers': '0.0.16',
+17 silly publish      phantomjs: '^1.9.15' },
+17 silly publish   dependencies:
+17 silly publish    { angular: '^1.3.15',
+17 silly publish      'grunt-bumpup': '^0.6.2',
+17 silly publish      'grunt-version': '^1.0.0' },
+17 silly publish   readme: '# noinfopath-data\n@version 0.2.3\n\n## Overview\nNoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.\n\n[no-toc]\n\n## Dependencies\n\n- AngularJS\n- jQuery\n- ngLodash\n- Dexie\n- Dexie Observable\n- Dexie Syncable\n\n## Development Dependencies\n\n> See `package.json` for exact version requirements.\n\n- indexedDB.polyfill\n- angular-mocks\n- es5-shim\n- grunt\n- grunt-bumpup\n- grunt-version\n- grunt-contrib-concat\n- grunt-contrib-copy\n- grunt-contrib-watch\n- grunt-karma\n- jasmine-ajax\n- jasmine-core\n- jshint-stylish\n- karma\n- karma-chrome-launcher\n- karma-coverage\n- karma-firefox-launcher\n- karma-html-reporter\n- karma-ie-launcher\n- karma-jasmine\n- karma-phantomjs-launcher\n- karma-safari-launcher\n- karma-verbose-reporter\n- noinfopath-helpers\n- phantomjs\n\n## Developers\' Remarks\n\n|Who|When|What|\n|---|----|----|\n|Jeff|2015-06-20T22:25:00Z|Whaaat?|\n\n## @interface noInfoPath\n\n### Overview\nThis interface exposes some useful funtions on the global scope\nby attaching it to the `window` object as ```window.noInfoPath```\n\n### Methods\n\n#### getItem\n\n#### setItem\n\n#### bindFilters `deprecated`\n\n#### noFilter `deprecated`\n\n#### noFilterExpression `deprecated`\n\n#### noDataReadRequest `deprecated`\n\n#### noDataSource `deprecated`\n\n#### digest `deprecated`\n\n#### digestError `deprecated`\n\n#### digestTimeout `deprecated`\n\n## @service noDataService `deprecated`\n\n\n## @class NoFilterExpression : Object\n\nRepresents an single filter expression that can be applied to an `IDBObjectStore`.\n\n### Constructor\n\nNoFilterExpression(column, operator, value [, logic])\n\n|Name|Type|Description|\n|----|----|-----------|\n|column|String|The name of the column filter on.|\n|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|\n|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|\n|logic|String|(Optional) One of the following values: `and`, `or`.|\n\n### Properties\n\n|Name|Type|Description|\n|----|----|------------|\n|column|String|The name of the column filter on.|\n|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|\n|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|\n|logic|String|(Optional) One of the following values: `and`, `or`.|\n\n## Class NoFilters : Array\n\nNoFilters is an array of NoFilterExpression objects.\n\n### Properties\n\n|Name|Type|Description|\n|----|----|------------|\n|length|Number|Number of elements in the array.|\n\n### Methods\n\n#### add(column, operator, value[, logic])\n\nCreates and adds a new NoFilterExpression into the underlying array that NoFilters represents.\n\n#### Parameters\n\n|Name|Type|Description|\n|----|----|------------|\n|column|String|The name of the column filter on.|\n|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|\n|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|\n|logic|String|(Optional) One of the following values: `and`, `or`.|\n\n## Class NoSortExpression : Object\n\nRepresents a single sort expression that can be applied to an `IDBObjectStore`.\n\n### Constructor\n\nNoFilterExpression(column[, dir])\n\n### Properties\n\n|Name|Type|Description|\n|----|----|------------|\n|column|String|The name of the column filter on.|\n|dir|String|(Optional) One of the following values: `asc`, `desc`.|\n\n## Class NoSort : Array\n\nNoSort is an array of NoSortExpression objects.\n\n### Properties\n\n|Name|Type|Description|\n|----|----|------------|\n|length|Number|Number of elements in the array.|\n\n### Methods\n\n#### add(column[, dir])\n\nCreates and adds a new NoSortExpression into the underlying array that NoSort represents.\n\n#### Parameters\n\n|Name|Type|Description|\n|----|----|------------|\n|column|String|The name of the column filter on.|\n|dir|String|(Optional) One of the following values: `asc`, `desc`.|\n\n## Class NoPage : Object\n\nNoPage represent that information required to support paging of a data set.\n\n### Constructor\n\nNoPage(skip, take)\n\n### Properties\n\n|Name|Type|Description|\n|-|-|-|\n|skip|Number|Number of objects to skip before returning the desired amount specified in `take`.|\n|take|Number|Number of objects records to return when paging data.|\n\n\n## Class NoResults : Object\n\nNoResults is a wrapper around a standard JavaScript Array instance. It inherits all properties and method offered by Array, but adds support for paged queries.\n\n### @constructor NoResults(arrayOfThings)\n\n#### Parameters\n\n|Name|Type|Description|\n|-|-|-|\n|arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|\n\n### Properties\n\n> Inherited properties are omitted.\n\n|Name|Type|Description|\n|-|-|-|\n|total|Number|The total number of items in the array|\n\n### Methods\n\n#### page(options)\n\n##### Parameters\n\n|Name|Type|Description|\n|-|-|-|\n|options|NoPage|A NoPage object that contains the paging instructions|\n\n##### Parameters\n\n|Name|Type|Description|\n|-|-|-|\n|arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|\n\n##### Returns\nvoid\n\n## @interface INoQueryBuilder\n\n> INoQueryBuilder is a conceptual entity, it does not really exist\n> the reality. This is because JavaScript does not implement interfaces\n> like other languages do. This documentation should be considered as a\n> guide for creating query providers compatible with NoInfoPath.\n\n### Overview\nINoQueryBuilder provides a service interface definition for converting a set\nof NoInfoPath class related to querying data into a given query protocol.\nAn example of this is the ODATA 2.0 specification.\n\n### Methods\n\n#### makeQuery(filters, sort, page)\n\n##### Parameters\n\n|Name|Type|Descriptions|\n|----|----|------------|\n|filters|NoFilters|(Optional) Instance of a NoFilters class|\n|sort|NoSort|(Optional) Instance of NoSort class|\n|page|NoPage|(Optional) Instance of NoPage class|\n\n##### Returns\nObject\n\n\n## @service noOdataQueryBuilder : INoQueryBuilder\n\n### Overview\n\nImplements a INoQueryBuilder compatible service that converts NoFilters,\nNoSort, NoPage into ODATA compatible query object.\n\n\n### @class MockStorage\n\n### @class NoStorage\n\n## @service noConfig\n\n### Overview\nThe noConfig service downloads the application\'s `config.json` and\nexposes its contents via the `noConfig.current` property. If the\napplication\'s server is offline noConfig will try to load config.json\nfrom `LocalStorage`.\n\n### Properties\n\n|Name|Type|Description|\n|----|----|-----------|\n|current|object|exposes the entire download `config.json`|\n\n### Methods\n\n#### fromCache()\nLoads the configuration from `LocalStorage`.\n\n##### Parameters\nnone\n\n##### Returns\nString\n\n#### load(uri)\nLoads the conifiguration data from and HTTP endpoint.\n\n##### Parameters\n\n|Name|Type|Description|\n|----|----|-----------|\n|uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|\n\n##### Returns\nAngularJS::promise\n\n#### whenReady(uri)\nReturns a promise to notify when the configuration has been loaded.\nIf the server is online, whenReady will call load, if not it will try\nto load it from `LocalStorage`. If there is no cached version\navailable then an error is returned.\n\n##### Parameters\n\n|Name|Type|Description|\n|----|----|-----------|\n|uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|\n\n##### Returns\nAngularJS::promise\n\n\n## @service noHTTP\n\n### Overview\nProvides a RESTful compatible HTTP service.\n\n### Methods\n\n#### create(uri, data)\n\n##### Parameters\n\n|Name|Type|Description|\n|----|----|-----------|\n|uri|string|unique identifier of the table to operate against|\n|data|object|the data to use to create the new obejct in the db|\n\n#### read(resourceURI, query)\n\n#### update(resourceURI, formdata)\nTODO: Implementation required.\n\n#### destroy(resourceURI, formdata)\nTODO: Implementation required.\n\n### @class NoDb\n\n#### Overview\n\nCreates and manages a set of NoTable objects.\n\n#### @constructor NoDb(tables, queryBuilder)\n\n##### Parameters\n\n|Name|Type|Description|\n|----|----|-----------|\n|tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|\n|queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|\n\n\n### @class NoTable\n\n#### Overview\n\nProvides an interface that loosely matches that of the NoTable\nclass provided by noDexie.  This to ease the integration with\nNoInfoPath component that consume data such as noKendo.\n\n#### @constructor NoTable(tableName, queryBuilder)\n\n##### Parameters\n\n|Name|Type|Description|\n|----|----|-----------|\n|tableName|string|name of the table that this instance will interact with.|\n|queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|\n\n## noDbSchema\nhe noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.\n\n### Properties\n\n\n|Name|Type|Description|\n|----|----|-----------|\n|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|\n|tables|Object|A hash table of NoInfoPath database schema definitions|\n|isReady|Boolean|Returns true if the size of the tables object is greater than zero|\n\n### Methods\n\n\n#### _processDbJson\nConverts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.\n\n\n##### Parameters\n|Name|Type|Descriptions|\n|resp|Object|The raw HTTP response received from the noinfopath-rest service|\n\n### load()\nLoads and processes the database schema from the noinfopath-rest service.\n\n\n#### Returns\nAngularJS::Promise\n\n### whenReady\nwhenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.\n\n\n#### Returns\nAngularJS::Promise\n\n## noDexie\nThe noDexie factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDexie is a Dexie AddOn that extends the query capabilites of Dexie.\n\n### Class noDatum\nThis is a contructor function used by Dexie when creating and returning data objects.\n\n### Class noDexie\nThis is the classed used to construct the Dexie AddOn.\n\n#### noCreate\nAdds a new record to the database. If the primary key is provided in that will be used when adding otherwise a new UUID will be created by Dexie.\n\n\n##### Parameters\n\n\n|Name|Type|Description|\n|data|Object|An object contains the properties that match the schema for the underlying WriteableTable.\n\n\n##### Returns\nAngularJS:Promise\n\n#### noRead\n\n\nThe read operation takes a complex set of parameters that allow\nfor filtering, sorting and paging of data.\n\n\n##### Parameters\n\n\n|Name|Type|Descriptions|\n|----|----|------------|\n|filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|\n|sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|\n|page|NoPage|(Optional) Paging information, if paging is reqired by the read operation.|\n\n\n##### Returns\nAngularJS::Promise\n\n#### Internal Values\n\n\n|Name|Type|Description|\n|------|-----|-------------|\n|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|\n|_resolve|Function|Call to resolve `Dexie::Promise` upon successful completion of `_applyFilters()`. This function is returned while resolving the underlying IDBObjectStore from the `table` parameter.|\n|_reject|Function|Call to resolve the `Dexie::Promise` when an unexpected for un recoverable error occurs during processing.|\n|_store|IDBObjectStore|This underlying `IDBObjectStore` that the `table` parameter represents.|\n|_trans|IDBTransaction|This is the underlying `IDBTransaction` that the current object store is bound to.|\n\n##### nonIndexedOperators\nThis hash table allows for quick access to the operations that can be applied to a property on a target object and the value(s) being filtered on.\n\n\nNOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.\n\n#### _applyFilters\nThis function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.\n\n\n##### Parameters\n\n\n|Name|Type|Description|\n|----|----|------|\n|iNofilters|[iNoFilterExpression]|An array of filter expressions. Contains both indexed and non-indexed filters|\n|table|Dexie::Table|A reference to the `Dexie::Table` being filtered.\n\n\n##### Internal variables\n\n\n|Name|Type|Description|\n|------|-----|-------------|\n|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|\n|iNoFilterHash|Collection<iNoFilters>|Used to organize the filters received in the `iNoFilters` in to a set of indexed and non-indexed filter object The collection is created by a call to `_sortOutFilters()`.|\n|resultsKeys|Array\\<guid\\>|This will be use to collect the final set of results. It will be an array of keys that will be used to query the final result set.|\n\n\n##### Returns\nAngularJS::Promise (Maybe)\n\n### _recurseIndexedFilters\n\n### _filterByPrimaryKey  -- Being Deprecated\n\n\nThis method of of filterig goes against the `IDBObjectStore`\'s primary key.\n\n### _filterByIndex\n\n\nThis method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.\n\n\n#### Parameters\n\n\n|Name|Type|Description|\n|------|-----|-------------|\n|filter|INoFilterExpression|A single indexed filter the contains the column, operator, and value to apply to the index.|\n\n\n#### Returns\nAngularJS::Promise\n\nThis method of filtering compares the supplied set of\nfilters against each object return in the Dexie colletion.\nThis is a much slower than filtering against an index.\n\n_filterHasIndex uses the iNoFilter parameter to determine\nif there is an index available for the give filter. it returns\ntrue if there is, false if not.\n\n\nTo determine if and index exists, we look at the table.schema.primKey,\nand table.schema.indexes properties.\n\nThis function splits up the filters by indexed verses not. The\nreturn value is a INoFilterHash.\n\n\ninterface INoFilterHash {\nindexedFilters: [INoFilterExpression]\nnonIndexedFilters: [INoFilterExpression]\n}\n\nThis function applies the provided sort items to the supplied\nDexie:Collection. It should always sort on indexed columns and\nreturn a DexieCollection.\n\n\nNOTE: Need to research how to apply multi-column sorting.\n\nApplies the specified skip and take values to the final\nDexie::Collection, if supplied.\n\n\nNote that this is the function returns the final Array of items\nbased on all of the properties applied prior to this call.\n\nThe promise should resolve to a Dexie::Collection that will result in\na set of data that matches the supplied filters, reject errors.\n\nThe update function expects the key to be within the update object.\n\nMaps to the Dexie.Table.get method.\n\nWhile Dexie supports a put operation which is similar to upsert,\nwe\'re going with upsert which decides whether an insert or an\nupdate is required and calls the appropreiate function.\n\n### _extendDexieTables\n\n### configure\n\n',
+17 silly publish   readmeFilename: 'README.md',
+17 silly publish   gitHead: '4338a9dc970f3d58d53b3dedea32b91fb310a5c8',
+17 silly publish   _id: 'noinfopath-data@0.2.3',
+17 silly publish   _shasum: '45cbc91a7f5126be86274d53eb57e50eada58092',
+17 silly publish   _from: '.' }
+18 silly mapToRegistry name noinfopath-data
+19 silly mapToRegistry using default registry
+20 silly mapToRegistry registry https://registry.npmjs.org/
+21 silly mapToRegistry uri https://registry.npmjs.org/noinfopath-data
+22 verbose publish registryBase https://registry.npmjs.org/
+23 silly publish uploading /Users/gochinj/.npm/noinfopath-data/0.2.3/package.tgz
+24 verbose request uri https://registry.npmjs.org/noinfopath-data
+25 verbose request sending authorization for write operation
+26 info attempt registry request try #1 at 9:22:02 PM
+27 verbose request id 627344470fe0d794
+28 http request PUT https://registry.npmjs.org/noinfopath-data
+29 http 403 https://registry.npmjs.org/noinfopath-data
+30 verbose headers { 'content-type': 'application/json',
+30 verbose headers   'cache-control': 'max-age=60',
+30 verbose headers   'content-length': '95',
+30 verbose headers   'accept-ranges': 'bytes',
+30 verbose headers   date: 'Fri, 10 Jul 2015 01:22:04 GMT',
+30 verbose headers   via: '1.1 varnish',
+30 verbose headers   connection: 'keep-alive',
+30 verbose headers   'x-served-by': 'cache-iad2141-IAD',
+30 verbose headers   'x-cache': 'MISS',
+30 verbose headers   'x-cache-hits': '0',
+30 verbose headers   'x-timer': 'S1436491322.527320,VS0,VE1538' }
+31 verbose request invalidating /Users/gochinj/.npm/registry.npmjs.org/noinfopath-data on PUT
+32 error publish Failed PUT 403
+33 verbose stack Error: "You cannot publish over the previously published version 0.2.3." : noinfopath-data
+33 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:254:14)
+33 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:178:14)
+33 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:344:22)
+33 verbose stack     at Request.emit (events.js:110:17)
+33 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1239:14)
+33 verbose stack     at Request.emit (events.js:129:20)
+33 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1187:12)
+33 verbose stack     at IncomingMessage.emit (events.js:129:20)
+33 verbose stack     at _stream_readable.js:908:16
+33 verbose stack     at process._tickCallback (node.js:355:11)
+34 verbose statusCode 403
+35 verbose pkgid noinfopath-data
+36 verbose cwd /Users/gochinj/ws/noinfopath-v2/noinfopath-data
+37 error Darwin 14.4.0
+38 error argv "node" "/usr/local/bin/npm" "publish"
+39 error node v0.12.0
+40 error npm  v2.5.1
+41 error code E403
+42 error "You cannot publish over the previously published version 0.2.3." : noinfopath-data
+43 error If you need help, you may report this error at:
+43 error     <http://github.com/npm/npm/issues>
+44 verbose exit [ 1, true ]

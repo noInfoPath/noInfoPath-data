@@ -3,10 +3,10 @@
 
 	angular.module("noinfopath.data")
 		/*
-			## noDexie
-			The noDexie factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDexie is a Dexie AddOn that extends the query capabilites of Dexie.
+			## noDb
+			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
 		*/
-		.factory("noDexie", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
 			/**
 				### Class noDatum
 				This is a contructor function used by Dexie when creating and returning data objects.
@@ -618,9 +618,9 @@
 							if(currentItem < data.length){
 								var datum = data[currentItem];
 
-								table.add(datum).then(function(){
+								table.add(datum).then(function(data){
 									//progress.updateRow(progress.rows);
-									deferred.notify();
+									deferred.notify(data);
 								})
 								.catch(function(err){
 									deferred.reject(err);
@@ -706,7 +706,7 @@
 
 					_dexie.on('blocked', function(err) {
 					    // Log to console or show en error indicator somewhere in your GUI...
-					    noLogService.warn("IndedexDB is currently execting a blocking o`peration.");
+					    noLogService.warn("IndedexDB is currently execting a blocking operation.");
 					   	window.noInfoPath.digestError(deferred.reject, err);
 					});
 
