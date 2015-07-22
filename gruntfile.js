@@ -82,11 +82,22 @@ module.exports = function(grunt) {
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
             tasks: ['test']
+        },
+        uglify: {
+            options: {
+              mangle: false
+            },
+            my_target: {
+                files: {
+                    'dist/noinfopath-data.min.js': ['dist/noinfopath-data.js']
+                }
+            }
         }
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-bumpup');
