@@ -50,6 +50,11 @@ module.exports = function(grunt) {
             configFile: 'karma.conf.js',
             singleRun: true,
             browsers: ['Chrome']
+        },
+          ugly: {
+            configFile: 'karma.ugly.conf.js',
+            singleRun: true,
+            browsers: ['Chrome']
           }
         },
         bumpup: {
@@ -81,7 +86,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['test']
+            tasks: ['uglytest']
         },
         uglify: {
             options: {
@@ -110,6 +115,8 @@ module.exports = function(grunt) {
     grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
     grunt.registerTask('test', ['concat:noinfopath', 'copy:test']);
+
+    grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
     grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
