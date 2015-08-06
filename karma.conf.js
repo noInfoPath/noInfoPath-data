@@ -28,8 +28,11 @@ module.exports = function(config) {
         'lib/dexie.syncable.js',
         'test/mock/noinfopath.mock.js',
         'test/mock/db.json.mock.js',
+        'test/mock/sql-builder.mock.js',
+
         'src/globals.js',
         'src/classes.js',
+        'test/mock/configuration.mock.js',
         //'src/configuration.js',
         'src/http.js',
         'src/indexeddb.js',
@@ -37,11 +40,15 @@ module.exports = function(config) {
         'src/storage.js',
         //'src/dexie.js',
         'src/query-builder.js',
+        'src/websql.js',
+        'src/sql-builder.js',
 
         //'test/storage.spec.js',
-        'test/http.spec.js'
+        //'test/http.spec.js'
         //'test/configuration.spec.js',
-        //'test/query-builder.spec.js'
+        'test/query-builder.spec.js',
+        'test/websql.spec.js',
+        'test/sql-builder.spec.js'
     ],
 
 

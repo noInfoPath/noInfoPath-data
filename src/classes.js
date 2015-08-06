@@ -37,6 +37,24 @@
 		this.operator = operator;
 		this.value = value;
 		this.logic = logic;
+
+		this.toSQL = function()
+		{
+			var sqlOperators = {
+				"eq" : "=",
+				"ne" : "!=",
+				"gt" : ">",
+				"ge" : ">=",
+				"lt" : "<",
+				"le" : "<=",
+				"contains" : "CONTAINS",
+				"startswith": ""
+			}
+
+			// TODO: HAVE WAY TO DIFFERENTIATE BETWEEN DIFFERENT DATA TYPES (STRING, INT, DATE, GUID, ETC ETC ETC)
+
+			return this.column + " " + sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
+		}
 	}
 
 	/*
@@ -73,6 +91,33 @@
 				}
 			}
 		});
+
+		this.toSQL = function(){
+			var where = "WHERE ";
+
+			this.forEach(function(o, index, array){
+
+				if (array.length > (index + 1))
+				{
+					if (o.logic)
+					{
+						where += o.toSQL();
+						where += " ";
+					}
+					else
+					{
+						throw "NoFilters::ToSql requires logic for multiple filters.";
+					}
+				}
+				else
+				{
+					where += o.toSQL();
+				}
+
+			});
+
+			return where;
+		}	
 	}
 	NoFilters.prototype = Object.create(Array.prototype);
 	NoFilters.prototype.add = function(column,operator,value,logic) {
@@ -105,6 +150,10 @@
 
 		this.column = column;
 		this.dir = dir;
+
+		this.toSQL = function(){
+			return this.column + (this.dir ? " " + this.dir : "");
+		};
 	}
 
 	/*
@@ -131,6 +180,9 @@
 	* |column|String|The name of the column filter on.|
 	* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
 	*/
+
+
+
 	function NoSort() {
 		var arr = [ ];
 
@@ -148,6 +200,24 @@
 			if(!column) throw "NoSort::add requires a column to filter on.";
 
 			this.push(new NoSortExpression(column, dir));
+		};
+
+		arr.toSQL = function(){
+			var sqlOrder = "ORDER BY ";
+
+			this.forEach(function(o, index, array){
+
+				sqlOrder += o.toSQL();
+
+				if (array.length > (index + 1))
+
+				{
+					sqlOrder += ", ";
+				}
+
+			});
+
+			return sqlOrder += ";";
 		};
 
 		noInfoPath.setPrototypeOf(this, arr);

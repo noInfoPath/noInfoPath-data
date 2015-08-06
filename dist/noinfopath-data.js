@@ -640,6 +640,8 @@
 
 		this.column = column;
 		this.dir = dir;
+
+		
 	}
 
 	/*
