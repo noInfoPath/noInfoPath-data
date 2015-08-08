@@ -1,0 +1,18 @@
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch master
+# Your branch is up-to-date with 'origin/master'.
+# Changes to be committed:
+# 
+# 	modified:   gruntfile.js
+# 	modified:   karma.conf.js
+# 	modified:   src/classes.js
+# 	renamed:    src/dexie.js -> src/indexeddb.js
+# 	renamed:    src/indexeddb.js -> src/indexeddb.old.js
+# 	new file:   test/date-formatter.spec.js
+# 	modified:   test/http.spec.js
+# 	renamed:    test/dexie.spec.js -> test/indexeddb.spec.js
+# 	new file:   test/mock/noinfopath-data-exchange-map.mock.js
+# 	modified:   test/query-builder.spec.js

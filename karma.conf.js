@@ -22,6 +22,7 @@ module.exports = function(config) {
         'bower_components/ng-lodash/build/ng-lodash.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
         'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
+        'node_modules/noinfopath-logger/dist/noinfopath-logger.js',
         'lib/indexedDB.polyfill.js',
         'lib/dexie.js',
         'lib/dexie.observable.js',
@@ -30,18 +31,18 @@ module.exports = function(config) {
         'test/mock/db.json.mock.js',
         'src/globals.js',
         'src/classes.js',
-        //'src/configuration.js',
+        'src/configuration.js',
         'src/http.js',
         'src/indexeddb.js',
         'src/manifest.js',
         'src/storage.js',
         //'src/dexie.js',
         'src/query-builder.js',
-
-        //'test/storage.spec.js',
-        'test/http.spec.js'
-        //'test/configuration.spec.js',
-        //'test/query-builder.spec.js'
+        //'test/date-formatter.spec.js'
+        'test/storage.spec.js',
+        'test/http.spec.js',
+        'test/configuration.spec.js',
+        'test/query-builder.spec.js'
     ],
 
 

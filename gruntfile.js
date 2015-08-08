@@ -24,8 +24,7 @@ module.exports = function(grunt) {
 		        	'src/http.js',
                     'src/schema.js',
 		        	//'src/import.js',
-		        	// 'src/indexeddb.js',
-		        	'src/dexie.js'
+		        	'src/indexeddb.js'
 		        ],
 		        dest: 'dist/noinfopath-data.js'
 		    },
@@ -86,7 +85,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['uglytest']
+            tasks: ['test']
         },
         uglify: {
             options: {
@@ -114,10 +113,12 @@ module.exports = function(grunt) {
 
     grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
-    grunt.registerTask('test', ['concat:noinfopath', 'copy:test']);
+    grunt.registerTask('notest', ['concat:noinfopath', 'copy:test']);
 
     grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
     grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+
+    grunt.registerTask('test', ['karma:unit']);
 
 };

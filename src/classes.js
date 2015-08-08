@@ -150,6 +150,9 @@
 			this.push(new NoSortExpression(column, dir));
 		};
 
+		arr.toSQL = function(){
+			return "";
+		}
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 

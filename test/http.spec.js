@@ -1,9 +1,10 @@
 //http.spec.js
 describe("Testing noHTTP service", function(){
-	var noHTTP, noHTTPProvider, noDbSchema, $httpBackend, $rootScope, scope, createController, $controller;
+	var noHTTP, noHTTPProvider, noDbSchema, $timeout, $httpBackend, $rootScope, scope, createController, $controller;
 
 	beforeEach(function(){
 		module("noinfopath.helpers");
+		module("noinfopath.logger");
 		module("noinfopath.data");
 		module("noinfopath.data.mocks");
 
@@ -18,6 +19,7 @@ describe("Testing noHTTP service", function(){
 			noDbSchema = $injector.get("noDbSchema");
 			noHTTP = $injector.get("noHTTP");
 			$httpBackend = $injector.get("$httpBackend");
+			$timeout = $injector.get("$timeout");
 
 			// $rootScope = $injector.get("$rootScope");
 			// $controller = $injector.get("$controller");
@@ -32,25 +34,49 @@ describe("Testing noHTTP service", function(){
 			expect(noHTTP).toBeDefined();
 		});
 
-		it("should have added tables specified by noDbSchema to the instance NoDb returned.", function(){
-			expect(noHTTP.Addresses).toBeDefined();
-			expect(noHTTP.CoolerTrials).toBeDefined();
-			expect(noHTTP.Harvests).toBeDefined();
-			expect(noHTTP.LU_Firmness).toBeDefined();
-			expect(noHTTP.LU_Flavor).toBeDefined();
-			expect(noHTTP.Selections).toBeDefined();
+		it("should have added tables specified by noDbSchema to the instance NoDb returned.", function(done){
+			noHTTP.whenReady()
+				.then(function(){
+					expect(noHTTP.Addresses).toBeDefined();
+					expect(noHTTP.CoolerTrials).toBeDefined();
+					expect(noHTTP.Harvests).toBeDefined();
+					expect(noHTTP.LU_Firmness).toBeDefined();
+					expect(noHTTP.LU_Flavor).toBeDefined();
+					expect(noHTTP.Selections).toBeDefined();
+
+				})
+				.catch(function(err){
+					console.error(err);
+				})
+				.finally(function(){
+					done();
+				});
+
+				$timeout.flush();
 		});
 
 		it("Any given table should be a NoTable class. Testing Addrsses.", function(){
-			expect(noHTTP.Addresses.constructor.name).toBe("NoTable");
-			expect(noHTTP.Addresses.noCreate).toBeDefined();
-			expect(noHTTP.Addresses.noRead).toBeDefined();
-			expect(noHTTP.Addresses.noUpdate).toBeDefined();
-			expect(noHTTP.Addresses.noDestroy).toBeDefined();
+			noHTTP.whenReady()
+				.then(function(){
+					expect(noHTTP.Addresses.constructor.name).toBe("NoTable");
+					expect(noHTTP.Addresses.noCreate).toBeDefined();
+					expect(noHTTP.Addresses.noRead).toBeDefined();
+					expect(noHTTP.Addresses.noUpdate).toBeDefined();
+					expect(noHTTP.Addresses.noDestroy).toBeDefined();
+				})
+				.catch(function(err){
+					console.error(err);
+				})
+				.finally(function(){
+					done();
+				});
+
+				$timeout.flush();
+
 		});
 	});
 
-	describe("Testing noCreate (using LU_Flavor for test.)", function(){
+	xdescribe("Testing noCreate (using LU_Flavor for test.)", function(){
 
 		it("should return a new LU_Flavor object", function(done){
 			var expected = {
@@ -59,29 +85,38 @@ describe("Testing noHTTP service", function(){
 			    "Value": 1234,
 			    "FlavorID": "f463c00a-d96e-4786-a7b0-78bd62187143"
 			};
+			noHTTP.whenReady()
+				.then(function(){
+					expect(noHTTP).toBeDefined();
+					expect(noHTTP.LU_Flavor).toBeDefined();
 
-			expect(noHTTP).toBeDefined();
-			expect(noHTTP.LU_Flavor).toBeDefined();
+					$httpBackend
+						.when("POST", "http://fcfn-rest.img.local/odata/LU_Flavor")
+						.respond(expected);
 
-			$httpBackend
-				.when("POST", "http://fcfn-rest.img.local/odata/LU_Flavor")
-				.respond(expected);
+					noHTTP.LU_Flavor.noCreate({Description: "Test",Value: 0})
+						.then(function(data){
+							expect(angular.toJson(data)).toBe(angular.toJson(expected));
+						})
+						.catch(function(err){
+							console.error(err);
+						})
+						.finally(done);
 
-			noHTTP.LU_Flavor.noCreate({Description: "Test",Value: 0})
-				.then(function(data){
-					expect(angular.toJson(data)).toBe(angular.toJson(expected));
+					$httpBackend.flush();
 				})
 				.catch(function(err){
 					console.error(err);
-				})
-				.finally(done);
+				});
 
-			$httpBackend.flush();
+				$timeout.flush();
+
+
 		});
 
 	});
 
-	describe("Testing noUpdate (using LU_Flavor for test.)", function(){
+	xdescribe("Testing noUpdate (using LU_Flavor for test.)", function(){
 
 		it("should return a 204 status to indicate that LU_Flavor object was updated.", function(done){
 			var expected = {
@@ -111,7 +146,7 @@ describe("Testing noHTTP service", function(){
 
 	});
 
-	describe("Testing noDestroy (using LU_Flavor for test.)", function(){
+	xdescribe("Testing noDestroy (using LU_Flavor for test.)", function(){
 
 		it("should return a 204 status to indicate that LU_Flavor object was deleted.", function(done){
 			var expected = {
