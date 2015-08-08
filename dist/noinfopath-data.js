@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.5
+ *	@version 0.2.6
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -685,6 +685,9 @@
 			this.push(new NoSortExpression(column, dir));
 		};
 
+		arr.toSQL = function(){
+			return "";
+		}
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 

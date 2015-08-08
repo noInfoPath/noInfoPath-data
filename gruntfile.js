@@ -121,4 +121,6 @@ module.exports = function(grunt) {
 
     grunt.registerTask('test', ['karma:unit']);
 
+    //grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
+
 };
