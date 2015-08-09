@@ -188,7 +188,7 @@
 	* #### Parameters
 	*
 	* |Name|Type|Description|
-	* |-|-|-|
+	* |----|----|-----------|
 	* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
 	*
 	* ### Properties
