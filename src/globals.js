@@ -517,7 +517,7 @@
 	         			expand: options.expand,
 	         			projections: options.projections,
 	         			aggregators: options.aggregators
-	         		}
+	         		};
 				}
 
 				var ds;
@@ -528,7 +528,7 @@
 					ds = _noHTTP();
 				}
          		return ds;
-         	}
+         	};
 		}])
 	;
 })(angular);

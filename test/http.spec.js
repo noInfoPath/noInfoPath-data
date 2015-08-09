@@ -23,9 +23,6 @@ describe("Testing noHTTP service", function(){
 
 			// $rootScope = $injector.get("$rootScope");
 			// $controller = $injector.get("$controller");
-
-
-
 		});
 	});
 
