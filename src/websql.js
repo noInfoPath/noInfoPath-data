@@ -18,13 +18,13 @@
 						$timeout(function(){
 							if($rootScope.noHTTPInitialized)
 							{
-								noLogService.log("noHTTP Ready.");
+								noLogService.log("noWebSQL Ready.");
 								deferred.resolve();
 							}else{
 								//noLogService.log("noDbSchema is not ready yet.")
-								$rootScope.$watch("noHTTPInitialized", function(newval){
+								$rootScope.$watch("noWebSQLInitialized", function(newval){
 									if(newval){
-										noLogService.log("noHTTP ready.");
+										noLogService.log("noWebSQL Ready.");
 										deferred.resolve();
 									}
 								});
@@ -45,29 +45,29 @@
 					function configure(tables){
 						var deferred = $q.defer();
 
-						$timeout(function(){
-							angular.forEach(tables, function(table, name){
-								this[name] = new NoTable(name, table, queryBuilder);
-							}, THIS);
+						noConfig.whenReady()
+							.then(function(){
+								_db = openDatabase(noConfig.current.WebSQL.name, noConfig.current.WebSQL.version, noConfig.current.WebSQL.description, noConfig.current.WebSQL.size, _createDBSchema);
+							})
+							.then(function(){
+								$timeout(function(){
+									angular.forEach(tables, function(table, name){
+										this[name] = new NoTable(name, table, queryBuilder);
+									}, THIS);
 
-							deferred.resolve();
-						});
+									deferred.resolve();
+								});
+							});
+
+						function _createDBSchema(){
+							
+						}
 
 						return deferred.promise;
 					}
 
 				}
 
-				this.NoDb = function()
-				{
-
-					noConfig.whenReady()
-						.then(function(){
-							_db = openDatabase('s', '1.0', 'noinfopath', 1024 * 1024 * 500);
-						});
-					
-					return deferred.promise;
-				}
 
 				function NoTable(tableName, table, queryBuilder){
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
@@ -81,35 +81,13 @@
 
 						// DATA IS WHAT YOU GET BACK FROM THE KENDO GRID
 
+						var deferred = $q.defer();
 
-						// var deferred = $q.defer(),
-						// 	req = {
-						// 		method: "POST",
-						// 		url: url,
-						// 		data: json,
-						// 		headers: {
-						// 			"Content-Type": "application/json",
-						// 			"Accept": "application/json"
-						// 		},
-						// 		withCredentials: true
-						// 	};
-
-						// $http(req)
-						// 	.success(function(data){
-						// 		//console.log(angular.toJson(data) );
-
-						// 		deferred.resolve(data);
-						// 	})
-						// 	.error(function(reason){
-						// 		console.error(reason);
-						// 		deferred.reject(reason);
-						// 	});
-
-						// return deferred.promise;
+						return deferred.promise;
 					};
 
 					this.noRead = function() {
-						//noLogService.debug("noRead say's, 'swag!'");
+
 						var filters, sort, page;
 
 						for(var ai in arguments){
@@ -134,86 +112,25 @@
 						var queryBuilderString = queryBuilder(filters,sort,page);
 						var command = "SELECT * " + queryBuilderString;
 
-						var deferred = $q.defer(),
+						var deferred = $q.defer();
 
-						// var deferred = $q.defer(),
-						// 	req = {
-						// 		method: "GET",
-						// 		params: queryBuilder(filters,sort,page),
-						// 		url: url,
-						// 		headers: {
-						// 			"Content-Type": "application/json",
-						// 			"Accept": "application/json"
-						// 		},
-						// 		withCredentials: true
-						// 	};
-
-						// $http(req)
-						// 	.success(function(data){
-						// 		//console.log( angular.toJson(data));
-						// 		deferred.resolve(data.value);
-						// 	})
-						// 	.error(function(reason){
-						// 		noLogService.error(arguments);
-						// 		deferred.reject(reason);
-						// 	});
-
-						// return deferred.promise;
+						return deferred.promise;
 					};
 
 					this.noUpdate = function(data) {
 						// UPDATE
 
-						// var json = angular.toJson(data);
+						var deferred = $q.defer();
 
-						// var deferred = $q.defer(),
-						// 	req = {
-						// 		method: "PUT",
-						// 		url: url + "(guid'" + data[table.primaryKey] + "')",
-						// 		data: json,
-						// 		headers: {
-						// 			"Content-Type": "application/json",
-						// 			"Accept": "application/json"
-						// 		},
-						// 		withCredentials: true
-						// 	};
-
-						// $http(req)
-						// 	.success(function(data, status){
-						// 		deferred.resolve(status);
-						// 	})
-						// 	.error(function(reason){
-						// 		console.error(reason);
-						// 		deferred.reject(reason);
-						// 	});
-
-						// return deferred.promise;
+						return deferred.promise;
 
 					};
 
 					this.noDestroy = function(data) {
 						// DELETE FROM TABLE WHERE DATA = FILTER
-						// var deferred = $q.defer(),
-						// 	req = {
-						// 		method: "DELETE",
-						// 		url: url + "(guid'" + data[table.primaryKey] + "')",
-						// 		headers: {
-						// 			"Content-Type": "application/json",
-						// 			"Accept": "application/json"
-						// 		},
-						// 		withCredentials: true
-						// 	};
+						var deferred = $q.defer()
 
-						// $http(req)
-						// 	.success(function(data, status){
-						// 		deferred.resolve(status);
-						// 	})
-						// 	.error(function(reason){
-						// 		console.error(reason);
-						// 		deferred.reject(reason);
-						// 	});
-
-						// return deferred.promise;
+						return deferred.promise;
 					};
 				}
 
