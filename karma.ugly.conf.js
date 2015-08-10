@@ -20,39 +20,24 @@ module.exports = function(config) {
         'node_modules/angular/angular.js',
         'node_modules/angular-mocks/angular-mocks.js',
         'bower_components/ng-lodash/build/ng-lodash.js',
+        'node_modules/noinfopath/dist/noinfopath.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
         'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
-        'node_modules/noinfopath-logger/dist/noinfopath-logger.js',
         'lib/indexedDB.polyfill.js',
-        'lib/dexie.js',
-        'lib/dexie.observable.js',
-        'lib/dexie.syncable.js',
-        'test/mock/noinfopath.mock.js',
-        'test/mock/db.json.mock.js',
-        'test/mock/sql-builder.mock.js',
-
-        'src/globals.js',
-        'src/classes.js',
-
-        'test/mock/configuration.mock.js',
+        'dist/noinfopath-dexie.js',
+        'dist/noinfopath-data.min.js',
         //'src/configuration.js',
-
-        'src/http.js',
-        'src/indexeddb.js',
-        'src/manifest.js',
-        'src/storage.js',
+        //'src/http.js',
+        //'src/indexeddb.js',
+        //'src/manifest.js',
+        //'src/storage.js',
         //'src/dexie.js',
-        'src/query-builder.js',
-        'src/websql.js',
-        'src/sql-builder.js',
-        //'test/date-formatter.spec.js'
-        //'test/storage.spec.js',
-        'test/http.spec.js'
-        'test/configuration.spec.js',
-        'test/query-builder.spec.js',
-        'test/websql.spec.js',
-        'test/sql-builder.spec.js'
+        //'src/query-builder.js',
 
+        //'test/storage.spec.js',
+        //'test/http.spec.js'
+        //'test/configuration.spec.js',
+        'test/query-builder.spec.js'
     ],
 
 

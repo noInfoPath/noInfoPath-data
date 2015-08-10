@@ -203,6 +203,7 @@
 		};
 
 		arr.toSQL = function(){
+
 			var sqlOrder = "ORDER BY ";
 
 			this.forEach(function(o, index, array){
@@ -219,7 +220,6 @@
 
 			return sqlOrder += ";";
 		};
-
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
@@ -255,7 +255,7 @@
 	* #### Parameters
 	*
 	* |Name|Type|Description|
-	* |-|-|-|
+	* |----|----|-----------|
 	* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
 	*
 	* ### Properties

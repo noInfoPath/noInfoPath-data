@@ -1,10 +1,10 @@
 # noinfopath-data
-@version 0.2.4
+@version 0.2.6
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
 
-[no-toc]
+[![Build Status](http://192.168.254.99:8081/job/noinfopath-data/badge/icon)](http://192.168.254.99:8081/job/noinfopath-data)
 
 ## Dependencies
 
@@ -411,8 +411,8 @@ whenReady is used to check if this service has completed its load phase. If it h
 #### Returns
 AngularJS::Promise
 
-## noDexie
-The noDexie factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDexie is a Dexie AddOn that extends the query capabilites of Dexie.
+## noDb
+The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
 
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.
@@ -570,4 +570,3 @@ update is required and calls the appropreiate function.
 ### _extendDexieTables
 
 ### configure
-

@@ -5,6 +5,7 @@ describe("Testing noOdataQueryBuilder", function(){
 	beforeEach(function(){
 		module("noinfopath.helpers");
 		module("noinfopath.filters");
+		module("noinfopath.logger");
 		module("noinfopath.data");
 
 		inject(function($injector){
