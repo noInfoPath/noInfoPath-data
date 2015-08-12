@@ -98,6 +98,10 @@
 		});
 
 		this.toSQL = function(){
+		
+		    //JAG: Things like this are constants, and should be declared as such
+		    //globally at the top of this file. Within the self-callling 
+		    //function, as global within the scope.
 			var where = "WHERE ";
 
 			this.forEach(function(o, index, array){
