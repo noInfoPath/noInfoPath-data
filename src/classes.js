@@ -222,6 +222,11 @@
 				if (array.length > (index + 1))
 
 				{
+				
+				//JAG: This does not work.  You are creating a trialing comma that
+				//will cause an error on the WebSql side.  Better approach,
+				//develop an array of strings then use the `.join` function
+				//outside of the loop.
 					sqlOrder += ", ";
 				}
 
