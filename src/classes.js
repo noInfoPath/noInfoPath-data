@@ -52,6 +52,11 @@
 			}
 
 			// TODO: HAVE WAY TO DIFFERENTIATE BETWEEN DIFFERENT DATA TYPES (STRING, INT, DATE, GUID, ETC ETC ETC)
+			//
+			// JAG: Use angular.isString etc, to do this. You could use typeOf, 
+			// in switch statement, but using angular is safer.  
+			// Also this, "sqlOperators[operator]" is bad.  what if the operator 
+			// does not exist in the hash table.  (i.e. not supported)
 
 			return this.column + " " + sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
 		}
