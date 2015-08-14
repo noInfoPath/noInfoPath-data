@@ -7,10 +7,67 @@
 		 * ## noDbSchema
 		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
-		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig){
-			var _interface = new NoDbSchema(),  _config = {}, _tables = {};
+		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
+			var _interface = new NoDbSchema(),  
+				_config = {}, 
+				_tables = {}, 
+				_sql = {}, 
+				CREATETABLE = "CREATE TABLE IF NOT EXISTS {0} ({1}) ",
+				COLUMNDEF = "{0}"
+				PRIMARYKEY = "PRIMARY KEY ",
+				NULL = "NULL",
+				INTEGER = "INTEGER",
+				REAL = "REAL",
+				TEXT = "TEXT",
+				BLOB = "BLOB",
+				NUMERIC = "NUMERIC",
+				sqlConversion = {
+					"bigint" : INTEGER,
+					"bit" : INTEGER,
+					"decimal" : NUMERIC,
+					"int" : INTEGER,
+					"money" : NUMERIC, // CHECK
+					"numeric" : NUMERIC,
+					"smallint" : INTEGER,
+					"smallmoney" : NUMERIC, // CHECK
+					"tinyint" : INTEGER,
+					"float" : REAL,
+					"real" : REAL,
+					"date" : NUMERIC // CHECK
+					"datetime" : NUMERIC, // CHECK
+					"datetime2" : NUMERIC, // CHECK
+					"datetimeoffset" : NUMERIC, // CHECK
+					"smalldatetime" : NUMERIC, // CHECK
+					"time" : NUMERIC, // CHECK
+					"char" : TEXT,
+					"nchar" : TEXT,
+					"varchar" : TEXT,
+					"nvarchar" : TEXT,
+					"text" : TEXT,
+					"ntext" : TEXT,
+					"binary" : BLOB, // CHECK
+					"varbinary" : BLOB,
+					"image" : BLOB,
+					"uniqueidentifier" : TEXT
+				}
+			;
 
 			function NoDbSchema(){
+				var _interface = {
+					"createTable" : function(tableConfig){return ""},
+					"columnDef" : function(columnName, columnConfig, tableConfig){
+
+						var isPrimaryKey = columnConfig === tableConfig.primaryKey;
+
+
+						return ""
+					},
+					"columnConstraint": function(columnConstraint){return ""},
+					"typeName": function(columnType){return ""},
+					"expr": function(Expr){return ""},
+					"forignKeyClause": function(foreignKeys){return ""}
+				}
+
 				/*
 					### Properties
 
@@ -29,6 +86,9 @@
 					},
 					"isReady": {
 						"get": function() { return _.size(_tables) > 0; }
+					},
+					"sql": {
+						"get": function() { return _sql; }
 					}
 				});
 

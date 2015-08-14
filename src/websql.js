@@ -5,8 +5,17 @@
 	angular.module("noinfopath.data")
 		.provider("noWebSQL", [function(){
 			var _db;
-			this.$get = ['$parse','$rootScope','lodash', '$q', '$timeout', 'noConfig', function($parse, $rootScope, _, $q, $timeout, noConfig)
+			this.$get = ['$parse','$rootScope','lodash', '$q', '$timeout', 'noConfig', 'noQueryBuilder', 'noDbSchema', function($parse, $rootScope, _, $q, $timeout, noConfig, noQueryBuilder, noDbSchema)
 			{
+				var CREATE = "",
+					CREATETABLE = "",
+					SELECT = "",
+					UPDATE = "",
+					DELETE = "",
+					JOIN = "",
+					WHERE = "",
+					ORDERBY = ""
+				;
 
 				function NoDb(queryBuilder){
 					var THIS = this;
@@ -16,12 +25,12 @@
 							tables = noDbSchema.tables;
 
 						$timeout(function(){
-							if($rootScope.noHTTPInitialized)
+							if($rootScope.noWebSQLInitialized)
 							{
 								noLogService.log("noWebSQL Ready.");
 								deferred.resolve();
 							}else{
-								//noLogService.log("noDbSchema is not ready yet.")
+								
 								$rootScope.$watch("noWebSQLInitialized", function(newval){
 									if(newval){
 										noLogService.log("noWebSQL Ready.");
@@ -31,7 +40,7 @@
 
 								configure(tables)
 									.then(function(resp){
-										$rootScope.noHTTPInitialized = true;
+										$rootScope.noWebSQLInitialized = true;
 									})
 									.catch(function(err){
 										deferred.reject(err);
@@ -42,7 +51,7 @@
 						return deferred.promise;
 					};
 
-					function configure(tables){
+					this.configure = function(tables){
 						var deferred = $q.defer();
 
 						noConfig.whenReady()
@@ -68,11 +77,24 @@
 
 				}
 
+				function NoView(){
+				
+				}
 
-				function NoTable(tableName, table, queryBuilder){
-					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-					var url =  noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
+				function NoTable(database, tableName, queryBuilder){
+					if(!database) throw "database is a required parameter";
+					if(!tableName) throw "tableName is a required parameter";
+					if(!queryBuilder) throw "queryBuilder is a required parameter";
+
+					var _db = database,
+						_tableName = tableName,
+						_qb = queryBuilder
+					;
+
+					_db.transaction(function(tx){
+						tx.executeSql('CREATE TABLE IF NOT EXISTS ' + tableName + ' '+ schemaParser(table));
+					});
 
 					this.noCreate = function(data){
 						var command = "INSERT INTO ";
@@ -109,10 +131,23 @@
 							}
 						}
 
-						var queryBuilderString = queryBuilder(filters,sort,page);
+						var queryBuilderObject = queryBuilder(filters,sort,page);
+						var queryBuilderString = queryBuilderObject.toSQL();
 						var command = "SELECT * " + queryBuilderString;
 
 						var deferred = $q.defer();
+
+						_db.transaction(function(tx){
+							tx.executeSql(command, [], success(), failure());
+						});
+
+						function success(){
+							deferred.resolve();
+						}
+
+						function failure(){
+							deferred.reject();
+						}
 
 						return deferred.promise;
 					};
@@ -132,11 +167,22 @@
 
 						return deferred.promise;
 					};
+
+					function _createTable(tableName){
+						noDbSchema.tables
+					}
+
 				}
+					
+				
 
-		      
-		      	return createDatabase();
+					
 
+
+
+		      	var db = new NoDb(noQueryBuilder);
+
+		      	return db;
 			}];
 	    }])
   ;

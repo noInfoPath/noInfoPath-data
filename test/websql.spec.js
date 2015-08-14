@@ -1,14 +1,35 @@
 //websql.spec.js
+var mockTable = 
+{
+	"foo": {
+		 "columns": {
+            "Alpha": {
+                "nullable": "false",
+                "type": "int",
+                "length": 0
+            },
+            "Beta": {
+                "nullable": "true",
+                "type": "nvarchar",
+                "length": 255
+            }
+        }
+	}
+};
+
 describe("Testing websql", function(){
-	var noWebSQL, noConfig, $parse;
+	var noWebSQL, noConfig, $parse, noDbSchema;
 
 	beforeEach(function(){
 		module("noinfopath.helpers");
-		module("noinfopath.filters");	
+		module("noinfopath.filters");
 		module("noinfopath.data");
+		module("noinfopath.data.mocks");
 
 		inject(function($injector){
 			// $parse = $injector.get("$parse");
+			$timeout = $injector.get("$timeout");
+			noDbSchema = $injector.get("noDbSchema");
 			noConfig = $injector.get("noConfig");
 			noWebSQL = $injector.get("noWebSQL");
 		});
@@ -20,24 +41,32 @@ describe("Testing websql", function(){
 		expect(noWebSQL).toBeDefined();
 	});
 
-	it("Should make a table called foo.", function(){
-		
-		noWebSQL.transaction(function (tx){
-			tx.executeSql('CREATE TABLE foo (id UNIQUEIDENTIFIER PRIMARY KEY, alpha text, beta text)');
-		});
-
+	xit("Should make a table called foo.", function(done){
+		noWebSQL.whenReady()
+			.then(function(){
+					expect(noHTTP.Addresses).toBeDefined();
+					expect(noHTTP.CoolerTrials).toBeDefined();
+					expect(noHTTP.Harvests).toBeDefined();
+					expect(noHTTP.LU_Firmness).toBeDefined();
+					expect(noHTTP.LU_Flavor).toBeDefined();
+					expect(noHTTP.Selections).toBeDefined();
+				})
+			.catch(function(err){
+				console.log(err)
+			})
+			.finally(done);
 	});
 
 	//CRUD
 	//CREATE
-	it("Should insert a record to a table.", function(){
+	xit("Should insert a record to a table.", function(){
 		noWebSQL.transaction(function(tx){
 			tx.executeSql('INSERT INTO foo (id, alpha, beta) VALUES (?, ?, ?)', ["5e374fde-843f-457b-a53c-b434cd267690", "THING ONE", "THING TWO"]);
 		});
 	});
 
 	//READ
-	it("should return all records from a table.", function(done){
+	xit("should return all records from a table.", function(done){
 		noWebSQL.transaction(function(tx){
 			tx.executeSql('SELECT * FROM foo', [], testReturn);
 		});
@@ -53,7 +82,7 @@ describe("Testing websql", function(){
 	});
 
 	//UPDATE
-	it("should update a record in a table.", function(done){
+	xit("should update a record in a table.", function(done){
 		noWebSQL.transaction(function(tx){
 			tx.executeSql("UPDATE foo SET alpha = ? WHERE id = ?", ["Pie", "5e374fde-843f-457b-a53c-b434cd267690"], complete);
 		});

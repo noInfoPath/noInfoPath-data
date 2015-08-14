@@ -37,21 +37,21 @@ module.exports = function(config) {
         'test/mock/configuration.mock.js',
         //'src/configuration.js',
 
-        'src/http.js',
-        'src/indexeddb.js',
-        'src/manifest.js',
-        'src/storage.js',
+        //'src/http.js',
+       //'src/indexeddb.js',
+       // 'src/manifest.js',
+      //  'src/storage.js',
         //'src/dexie.js',
         'src/query-builder.js',
         'src/websql.js',
-        'src/sql-builder.js',
+      //  'src/sql-builder.js',
         //'test/date-formatter.spec.js'
         //'test/storage.spec.js',
-        'test/http.spec.js'
-        'test/configuration.spec.js',
-        'test/query-builder.spec.js',
+        //'test/http.spec.js',
+        //'test/configuration.spec.js',
+        //'test/query-builder.spec.js',
         'test/websql.spec.js',
-        'test/sql-builder.spec.js'
+      //  'test/sql-builder.spec.js'
 
     ],
 
