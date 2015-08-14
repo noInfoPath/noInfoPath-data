@@ -93,7 +93,7 @@
 					;
 
 					_db.transaction(function(tx){
-						tx.executeSql('CREATE TABLE IF NOT EXISTS ' + tableName + ' '+ schemaParser(table));
+						tx.executeSql('CREATE TABLE IF NOT EXISTS ' + tableName);
 					});
 
 					this.noCreate = function(data){
@@ -169,7 +169,7 @@
 					};
 
 					function _createTable(tableName){
-						noDbSchema.tables
+						_db.transaction()
 					}
 
 				}

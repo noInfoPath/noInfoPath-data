@@ -13,14 +13,16 @@
 				_tables = {}, 
 				_sql = {}, 
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS {0} ({1}) ",
-				COLUMNDEF = "{0}"
-				PRIMARYKEY = "PRIMARY KEY ",
+				COLUMNDEF = "{0}",
+				PRIMARYKEY = "PRIMARY KEY ASC",
+				FOREIGNKEY = "REFERENCES ",
 				NULL = "NULL",
 				INTEGER = "INTEGER",
 				REAL = "REAL",
 				TEXT = "TEXT",
 				BLOB = "BLOB",
 				NUMERIC = "NUMERIC",
+				WITHOUTROWID = "WITHOUT ROWID",
 				sqlConversion = {
 					"bigint" : INTEGER,
 					"bit" : INTEGER,
@@ -33,7 +35,7 @@
 					"tinyint" : INTEGER,
 					"float" : REAL,
 					"real" : REAL,
-					"date" : NUMERIC // CHECK
+					"date" : NUMERIC, // CHECK
 					"datetime" : NUMERIC, // CHECK
 					"datetime2" : NUMERIC, // CHECK
 					"datetimeoffset" : NUMERIC, // CHECK
@@ -49,23 +51,79 @@
 					"varbinary" : BLOB,
 					"image" : BLOB,
 					"uniqueidentifier" : TEXT
+				},
+				toSqlConversionFunctions = {
+					"TEXT" : function(s){return angular.isString(s) ? "'"+s+"'" : "";},
+					"BLOB" : function(b){return b;},
+					"INTEGER" : function(i){return angular.isNumber(i) ? i : "";},
+					"NUMERIC" : function(n){return angular.isNumber(n) ? n : "";},
+					"REAL" : function(r){return r;}
+				},
+				fromSqlConversionFunctions = {
+					"bigint" : function(i){return i;},
+					"bit" : function(i){return i;},
+					"decimal" : function(n){},
+					"int" : function(i){return i;},
+					"money" : function(i){return i;}, 
+					"numeric" : function(i){return i;},
+					"smallint" : function(i){return i;},
+					"smallmoney" : function(n){}, 
+					"tinyint" : function(i){},
+					"float" : function(r){},
+					"real" : function(r){},
+					"date" : function(n){return angular.isDate(n) ? Date.UTC(n) : new Date(n)}, 
+					"datetime" : function(n){}, 
+					"datetime2" : function(n){},
+					"datetimeoffset" : function(n){}, 
+					"smalldatetime" : function(n){},
+					"time" : function(n){}, 
+					"char" : function(t){},
+					"nchar" : function(t){},
+					"varchar" : function(t){},
+					"nvarchar" : function(t){},
+					"text" : function(t){},
+					"ntext" : function(t){},
+					"binary" : function(b){}, 
+					"varbinary" : function(b){},
+					"image" : function(b){},
+					"uniqueidentifier" : function(t){}
 				}
 			;
 
 			function NoDbSchema(){
 				var _interface = {
-					"createTable" : function(tableConfig){return ""},
+					"createTable" : function(tableConfig){return CREATETABLE},
 					"columnDef" : function(columnName, columnConfig, tableConfig){
-
-						var isPrimaryKey = columnConfig === tableConfig.primaryKey;
-
-
-						return ""
+						return columnName + " " + this.typeName(columnConfig) + this.columnConstraint(columnName, columnConfig, tableConfig);
 					},
-					"columnConstraint": function(columnConstraint){return ""},
-					"typeName": function(columnType){return ""},
+					"columnConstraint": function(columnName, columnConfig, tableConfig){
+						var isPrimaryKey = (columnName === tableConfig.primaryKey),
+							isForeignKey = !!tableConfig.foreignKeys[columnName],
+							isNullable = (columnConfig.nullable === "true"),
+							returnString = ""
+
+						if (isPrimaryKey)
+						{
+							returnString += " " + PRIMARYKEY; 
+						} 
+						if (isForeignKey)
+						{
+							returnString += " " + this.foreignKeyClause(columnName, tableConfig.foreignKeys);
+						}
+						if (isNullable)
+						{
+							returnString += " " + NULL;
+						}
+
+						return returnString;
+					},
+					"typeName": function(columnConfig){
+						return sqlConversion[columnConfig.type];
+					},
 					"expr": function(Expr){return ""},
-					"forignKeyClause": function(foreignKeys){return ""}
+					"foreignKeyClause": function(columnName, foreignKeys){
+						return FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
+					}
 				}
 
 				/*
@@ -187,6 +245,8 @@
 
 					return deferred.promise;
 				};
+
+				this.test = _interface;
 
 			}
 

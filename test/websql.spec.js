@@ -41,7 +41,11 @@ describe("Testing websql", function(){
 		expect(noWebSQL).toBeDefined();
 	});
 
-	xit("Should make a table called foo.", function(done){
+	it("should make a table", function(){
+		
+	});
+
+	it("Should make a series of tables.", function(done){
 		noWebSQL.whenReady()
 			.then(function(){
 					expect(noHTTP.Addresses).toBeDefined();

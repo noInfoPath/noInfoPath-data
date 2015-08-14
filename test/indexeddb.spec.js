@@ -27,42 +27,43 @@ describe("Testing noinfopath-data", function(){
 	// 	if(!$rootScope.$$phase) $rootScope.$digest();
 	// });
 
-	describe("Testing noDbSchema", function(){
-		it("noDbSchema should exist and be initialized.", function(){
-			expect(noDbSchema).toBeDefined();
-			expect(noDbSchema.whenReady).toBeDefined();
-			expect(noDbSchema.load).toBeDefined();
-			//expect(noDbSchema.store).toBeDefined();
-		});
-
-		it("dbJsonMock should exist and be initialized", function(){
-			expect(dbJsonMock).toBeDefined();
-			expect(dbJsonMock.request).toBeDefined();
-			expect(dbJsonMock.response).toBeDefined();
-		});
-
-		it("noDbSchema.whenReady should load the db.json (/nodbschema) and return when done", function(done){
-			$httpBackend
-				.when(dbJsonMock.request.method, dbJsonMock.request.url)
-				.respond(dbJsonMock.response.status, dbJsonMock.response.body, dbJsonMock.response.headers);
-
-			noDbSchema.whenReady()
-				.then(function(){
-					expect(noDbSchema.store).toBeDefined();
-					expect(dbJsonMock.config, angular.toJson(noDbSchema.store));
-				})
-				.catch(function(err){
-					console.error(err);
-					expect(err).not.toBeDefined();
-				})
-				.finally(function(){
-					done();
-				});
-
-			$timeout.flush();
-			$httpBackend.flush();
-		});
+	it("noDbSchema should exist and be initialized.", function(){
+		expect(noDbSchema).toBeDefined();
+		expect(noDbSchema.whenReady).toBeDefined();
+		expect(noDbSchema.load).toBeDefined();
+		//expect(noDbSchema.store).toBeDefined();
 	});
+
+	it("dbJsonMock should exist and be initialized", function(){
+		expect(dbJsonMock).toBeDefined();
+		expect(dbJsonMock.request).toBeDefined();
+		expect(dbJsonMock.response).toBeDefined();
+	});
+
+	it("noDbSchema.whenReady should load the db.json (/nodbschema) and return when done", function(done){
+		$httpBackend
+			.when(dbJsonMock.request.method, dbJsonMock.request.url)
+			.respond(dbJsonMock.response.status, dbJsonMock.response.body, dbJsonMock.response.headers);
+
+		noDbSchema.whenReady()
+			.then(function(){
+				expect(noDbSchema.store).toBeDefined();
+				expect(dbJsonMock.config, angular.toJson(noDbSchema.store));
+			})
+			.catch(function(err){
+				console.error(err);
+				expect(err).not.toBeDefined();
+			})
+			.finally(function(){
+				done();
+			});
+
+		$timeout.flush();
+		$httpBackend.flush();
+	});
+
+
+	
 
 	describe("Testing noDexie", function(){
 		it("Configure noDexie", function(done){
