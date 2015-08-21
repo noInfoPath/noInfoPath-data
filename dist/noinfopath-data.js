@@ -7,7 +7,7 @@
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
  *
- *	[no-toc]
+ *	[![Build Status](http://192.168.254.99:8081/job/noinfopath-data/badge/icon)](http://192.168.254.99:8081/job/noinfopath-data)
  *
  *	## Dependencies
  *
@@ -517,7 +517,7 @@
 	         			expand: options.expand,
 	         			projections: options.projections,
 	         			aggregators: options.aggregators
-	         		}
+	         		};
 				}
 
 				var ds;
@@ -528,11 +528,10 @@
 					ds = _noHTTP();
 				}
          		return ds;
-         	}
+         	};
 		}])
 	;
 })(angular);
-
 //classes.js
 
 (function(angular, undefined){
@@ -723,7 +722,7 @@
 	* #### Parameters
 	*
 	* |Name|Type|Description|
-	* |-|-|-|
+	* |----|----|-----------|
 	* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
 	*
 	* ### Properties
@@ -759,7 +758,7 @@
 		 	_page = arrayOfThings,
 			arr = arrayOfThings;
 
-		arr.push.apply(arr, arguments);
+		//arr.push.apply(arr, arguments);
 
 		Object.defineProperties(arr, {
 			"total": {
@@ -789,7 +788,8 @@
 			NoFilters: NoFilters,
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
-			NoPage: NoPage
+			NoPage: NoPage,
+			NoResults: NoResults
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
@@ -1869,7 +1869,7 @@
 
 						//success and error must always be first, then
 						if(angular.isObject(arg)){
-							switch(arg.constructor.name){
+							switch(arg.__type){
 								case "NoFilters":
 									filters = arg;
 									break;
@@ -1919,7 +1919,7 @@
 									// 	.then(function(data){
 									// 		deferred.resolve(data);
 									// 	});
-									deferred.resolve(new NoResults(data));
+									deferred.resolve(new noInfoPath.data.NoResults(data));
 								})
 								.catch(function(err){
 									deferred.reject(err);
@@ -2182,7 +2182,7 @@
 					*/
 					function _applyPaging(page, data){
 						return $q(function(resolve, reject){
-							data.page(page);
+							if(page) data.page(page);
 
 							resolve(data);
 						});
@@ -2190,7 +2190,11 @@
 
 					$timeout(function(){
 						_applyFilters(filters, table)
-							.then(_applyPaging)
+							.then(function(data){
+								_applyPaging(page, data)
+									.then(deferred.resolve)
+								;
+							})
 							.catch(function(err){
 								deferred.reject(err);
 							});

@@ -168,7 +168,7 @@
 
 						//success and error must always be first, then
 						if(angular.isObject(arg)){
-							switch(arg.constructor.name){
+							switch(arg.__type){
 								case "NoFilters":
 									filters = arg;
 									break;
@@ -218,7 +218,7 @@
 									// 	.then(function(data){
 									// 		deferred.resolve(data);
 									// 	});
-									deferred.resolve(new NoResults(data));
+									deferred.resolve(new noInfoPath.data.NoResults(data));
 								})
 								.catch(function(err){
 									deferred.reject(err);
@@ -481,7 +481,7 @@
 					*/
 					function _applyPaging(page, data){
 						return $q(function(resolve, reject){
-							data.page(page);
+							if(page) data.page(page);
 
 							resolve(data);
 						});
@@ -489,7 +489,11 @@
 
 					$timeout(function(){
 						_applyFilters(filters, table)
-							.then(_applyPaging)
+							.then(function(data){
+								_applyPaging(page, data)
+									.then(deferred.resolve)
+								;
+							})
 							.catch(function(err){
 								deferred.reject(err);
 							});

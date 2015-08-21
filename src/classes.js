@@ -224,7 +224,7 @@
 		 	_page = arrayOfThings,
 			arr = arrayOfThings;
 
-		arr.push.apply(arr, arguments);
+		//arr.push.apply(arr, arguments);
 
 		Object.defineProperties(arr, {
 			"total": {
@@ -254,7 +254,8 @@
 			NoFilters: NoFilters,
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
-			NoPage: NoPage
+			NoPage: NoPage,
+			NoResults: NoResults
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
