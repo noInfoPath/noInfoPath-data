@@ -194,7 +194,7 @@ NoResults is a wrapper around a standard JavaScript Array instance. It inherits 
 #### Parameters
 
 |Name|Type|Description|
-|-|-|-|
+|----|----|-----------|
 |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
 
 ### Properties
@@ -570,3 +570,4 @@ update is required and calls the appropreiate function.
 ### _extendDexieTables
 
 ### configure
+

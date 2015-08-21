@@ -85,7 +85,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['test']
+            tasks: ['notest']
         },
         uglify: {
             options: {
@@ -118,6 +118,8 @@ module.exports = function(grunt) {
     grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
     grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+
+    grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
     grunt.registerTask('test', ['karma:unit']);
 
