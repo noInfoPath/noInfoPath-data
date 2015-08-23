@@ -1,3 +1,5 @@
+var GloboTest = {};
+
 (function (angular, Dexie, undefined){
 	"use strict";
 
@@ -12,7 +14,8 @@
 				_config = {}, 
 				_tables = {}, 
 				_sql = {}, 
-				CREATETABLE = "CREATE TABLE IF NOT EXISTS {0} ({1}) ",
+				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
+				INSERT = "INSERT INTO ",
 				COLUMNDEF = "{0}",
 				PRIMARYKEY = "PRIMARY KEY ASC",
 				FOREIGNKEY = "REFERENCES ",
@@ -52,68 +55,70 @@
 					"image" : BLOB,
 					"uniqueidentifier" : TEXT
 				},
-				toSqlConversionFunctions = {
-					"TEXT" : function(s){return angular.isString(s) ? "'"+s+"'" : "";},
+				toSqlLiteConversionFunctions = {
+					"TEXT" : function(s){return angular.isString(s) ? "'"+s+"'" : null;},
 					"BLOB" : function(b){return b;},
-					"INTEGER" : function(i){return angular.isNumber(i) ? i : "";},
-					"NUMERIC" : function(n){return angular.isNumber(n) ? n : "";},
+					"INTEGER" : function(i){return angular.isNumber(i) ? i : null;},
+					"NUMERIC" : function(n){return angular.isNumber(n) ? n : null;},
 					"REAL" : function(r){return r;}
 				},
-				fromSqlConversionFunctions = {
-					"bigint" : function(i){return i;},
-					"bit" : function(i){return i;},
-					"decimal" : function(n){},
-					"int" : function(i){return i;},
-					"money" : function(i){return i;}, 
-					"numeric" : function(i){return i;},
-					"smallint" : function(i){return i;},
-					"smallmoney" : function(n){}, 
-					"tinyint" : function(i){},
-					"float" : function(r){},
-					"real" : function(r){},
-					"date" : function(n){return angular.isDate(n) ? Date.UTC(n) : new Date(n)}, 
-					"datetime" : function(n){}, 
-					"datetime2" : function(n){},
-					"datetimeoffset" : function(n){}, 
-					"smalldatetime" : function(n){},
-					"time" : function(n){}, 
-					"char" : function(t){},
-					"nchar" : function(t){},
-					"varchar" : function(t){},
-					"nvarchar" : function(t){},
-					"text" : function(t){},
-					"ntext" : function(t){},
-					"binary" : function(b){}, 
-					"varbinary" : function(b){},
-					"image" : function(b){},
-					"uniqueidentifier" : function(t){}
+				fromSqlLiteConversionFunctions = {
+					"bigint" : function(i){return angular.isNumber(i) ? i : null;},
+					"bit" : function(i){return angular.isNumber(i) ? i : null;},
+					"decimal" : function(n){return angular.isNumber(n) ? n : null;},
+					"int" : function(i){return angular.isNumber(i) ? i : null;},
+					"money" : function(n){return angular.isNumber(n) ? n : null;}, 
+					"numeric" : function(n){return angular.isNumber(n) ? n : null;},
+					"smallint" : function(i){return angular.isNumber(i) ? i : null;},
+					"smallmoney" : function(n){return angular.isNumber(n) ? n : null;}, 
+					"tinyint" : function(i){return angular.isNumber(i) ? i : null;},
+					"float" : function(r){return r;},
+					"real" : function(r){return r;},
+					"date" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"datetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"datetime2" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"datetimeoffset" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"smalldatetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"time" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"char" : function(t){return angular.isString(t) ? t : null;},
+					"nchar" : function(t){return angular.isString(t) ? t : null;},
+					"varchar" : function(t){return angular.isString(t) ? t : null;},
+					"nvarchar" : function(t){return angular.isString(t) ? t : null;},
+					"text" : function(t){return angular.isString(t) ? t : null;},
+					"ntext" : function(t){return angular.isString(t) ? t : null;},
+					"binary" : function(b){return b;}, 
+					"varbinary" : function(b){return b;},
+					"image" : function(b){return b;},
+					"uniqueidentifier" : function(t){return angular.isString(t) ? t : null;}
 				}
 			;
 
+			GloboTest.fromSqlLiteConversionFunctions = fromSqlLiteConversionFunctions;
+			GloboTest.toSqlLiteConversionFunctions = toSqlLiteConversionFunctions;
+			GloboTest.sqlConversion = sqlConversion;
+
 			function NoDbSchema(){
 				var _interface = {
-					"createTable" : function(tableConfig){return CREATETABLE},
+					"createTable" : function(tableName, tableConfig){
+						var rs = CREATETABLE;
+
+						rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
+
+						return rs;
+					},
 					"columnDef" : function(columnName, columnConfig, tableConfig){
 						return columnName + " " + this.typeName(columnConfig) + this.columnConstraint(columnName, columnConfig, tableConfig);
 					},
 					"columnConstraint": function(columnName, columnConfig, tableConfig){
-						var isPrimaryKey = (columnName === tableConfig.primaryKey),
-							isForeignKey = !!tableConfig.foreignKeys[columnName],
-							isNullable = (columnConfig.nullable === "true"),
+						var isPrimaryKey = this.isPrimaryKey(columnName, tableConfig),
+							isForeignKey = this.isForeignKey(columnName, tableConfig),
+							isNullable = this.isNullable(columnConfig),
 							returnString = ""
+						;
 
-						if (isPrimaryKey)
-						{
-							returnString += " " + PRIMARYKEY; 
-						} 
-						if (isForeignKey)
-						{
-							returnString += " " + this.foreignKeyClause(columnName, tableConfig.foreignKeys);
-						}
-						if (isNullable)
-						{
-							returnString += " " + NULL;
-						}
+						returnString += this.primaryKeyClause(isPrimaryKey && (!isForeignKey && !isNullable)); // A PK cannot be a FK or nullable.
+						returnString += this.foreignKeyClause((isForeignKey && !isPrimaryKey), columnName, tableConfig.foreignKeys); // A FK cannot be a PK
+						returnString += this.nullableClause(isNullable && !isPrimaryKey); // A nullable field cannot be a PK
 
 						return returnString;
 					},
@@ -121,9 +126,74 @@
 						return sqlConversion[columnConfig.type];
 					},
 					"expr": function(Expr){return ""},
-					"foreignKeyClause": function(columnName, foreignKeys){
-						return FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
+					"foreignKeyClause": function(isForeignKey, columnName, foreignKeys){
+						var rs = "";
+						if(isForeignKey){
+							rs = " " + FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
+						}
+						return rs;
+					},
+					"primaryKeyClause": function(isPrimaryKey){
+						var rs = "";
+						if(isPrimaryKey){
+							rs = " " + PRIMARYKEY;
+						}
+						return rs;
+					},
+					"nullableClause": function(isNullable){
+						var rs = "";
+						if(isNullable){
+							rs = " " + NULL;
+						}
+						return rs;
+					},
+					"columnConstraints": function(tableConfig){
+						var colConst = [];
+						angular.forEach(tableConfig.columns, function(value, key){
+							colConst.push(this.columnDef(key, value, tableConfig));
+						}, this);
+						return colConst.join(",");
+					},
+					"isPrimaryKey": function(columnName, tableConfig){
+						return (columnName === tableConfig.primaryKey);
+					},
+					"isForeignKey": function(columnName, tableConfig){
+						return !!tableConfig.foreignKeys[columnName];
+					},
+					"isNullable": function(columnConfig){
+						return columnConfig.nullable;
+					},
+					"sqlInsert": function(tableName, data){
+						var columns = [],
+							values = [],
+							columnString = "",
+							valuesString = ""
+						;
+
+						angular.forEach(data, function(value, key){
+							columns.push(key);
+
+							if(angular.isString(value))
+							{
+								values.push("'" + value + "'");
+							} else {
+								values.push(value);
+							}
+						});
+
+						columnString = columns.join(",");
+						valuesString = values.join(",");
+
+						return INSERT + tableName + " (" + columnString + ") VALUES (" + valuesString + ");";
 					}
+				}
+
+				this.createSqlTable = function(tableName, tableConfig){
+					return _interface.createTable(tableName, tableConfig);
+				}
+
+				this.createSqlInsert = function(tableName, tableConfig){
+					return _interface.SqlInsert(tableName, tableConfig);
 				}
 
 				/*

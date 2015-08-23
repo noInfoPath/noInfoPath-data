@@ -335,7 +335,8 @@
 			NoFilters: NoFilters,
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
-			NoPage: NoPage
+			NoPage: NoPage,
+			NoResults: NoResults
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);

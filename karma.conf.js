@@ -35,6 +35,7 @@ module.exports = function(config) {
         'src/classes.js',
 
         'test/mock/configuration.mock.js',
+        'test/mock/schema.mock.js',
         //'src/configuration.js',
 
         //'src/http.js',
@@ -44,15 +45,17 @@ module.exports = function(config) {
         //'src/dexie.js',
         'src/schema.js',
         'src/query-builder.js',
+        'src/sql-builder.js',
         'src/websql.js',
-      //  'src/sql-builder.js',
+        
         //'test/date-formatter.spec.js'
         //'test/storage.spec.js',
         //'test/http.spec.js',
         //'test/configuration.spec.js',
         //'test/query-builder.spec.js',
-        //'test/websql.spec.js',
-        'test/schema.spec.js'
+        
+        'test/schema.spec.js',
+        'test/websql.spec.js'
       //  'test/sql-builder.spec.js'
 
     ],

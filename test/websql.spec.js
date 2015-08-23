@@ -24,7 +24,7 @@ describe("Testing websql", function(){
 		module("noinfopath.helpers");
 		module("noinfopath.filters");
 		module("noinfopath.data");
-		module("noinfopath.data.mocks");
+		module("noinfopath.logger");
 
 		inject(function($injector){
 			// $parse = $injector.get("$parse");
@@ -37,15 +37,19 @@ describe("Testing websql", function(){
 		
 	});
 
-	it("noWebSQL should be instanciated.", function(){
+	xit("noWebSQL should be instanciated.", function(){
 		expect(noWebSQL).toBeDefined();
 	});
 
-	it("should make a table", function(){
+	xit("should make a database when instanciated", function(){
+		expect().toBeDefined();
+	});
+
+	xit("should make a table", function(){
 		
 	});
 
-	it("Should make a series of tables.", function(done){
+	xit("Should make a series of tables.", function(done){
 		noWebSQL.whenReady()
 			.then(function(){
 					expect(noHTTP.Addresses).toBeDefined();

@@ -5,7 +5,7 @@
 	angular.module("noinfopath.data")
 		.provider("noWebSQL", [function(){
 			var _db;
-			this.$get = ['$parse','$rootScope','lodash', '$q', '$timeout', 'noConfig', 'noQueryBuilder', 'noDbSchema', function($parse, $rootScope, _, $q, $timeout, noConfig, noQueryBuilder, noDbSchema)
+			this.$get = ['$parse','$rootScope','lodash', '$q', '$timeout', 'noConfig', 'noSQLQueryBuilder', 'noDbSchema', 'noLogService', function($parse, $rootScope, _, $q, $timeout, noConfig, noSQLQueryBuilder, noDbSchema, noLogService)
 			{
 				var CREATE = "",
 					CREATETABLE = "",
@@ -16,6 +16,8 @@
 					WHERE = "",
 					ORDERBY = ""
 				;
+
+				var noQueryBuilder = noSQLQueryBuilder;
 
 				function NoDb(queryBuilder){
 					var THIS = this;
@@ -38,7 +40,7 @@
 									}
 								});
 
-								configure(tables)
+								THIS.configure(tables)
 									.then(function(resp){
 										$rootScope.noWebSQLInitialized = true;
 									})
@@ -61,7 +63,7 @@
 							.then(function(){
 								$timeout(function(){
 									angular.forEach(tables, function(table, name){
-										this[name] = new NoTable(name, table, queryBuilder);
+										this[name] = new NoTable(table, name, queryBuilder);
 									}, THIS);
 
 									deferred.resolve();
@@ -73,7 +75,7 @@
 						}
 
 						return deferred.promise;
-					}
+					};
 
 				}
 
@@ -82,22 +84,33 @@
 				}
 
 
-				function NoTable(database, tableName, queryBuilder){
-					if(!database) throw "database is a required parameter";
+				function NoTable(table, tableName, queryBuilder){
+					if(!table) throw "table is a required parameter";
 					if(!tableName) throw "tableName is a required parameter";
 					if(!queryBuilder) throw "queryBuilder is a required parameter";
 
-					var _db = database,
+					var _table = table,
 						_tableName = tableName,
 						_qb = queryBuilder
 					;
 
-					_db.transaction(function(tx){
-						tx.executeSql('CREATE TABLE IF NOT EXISTS ' + tableName);
-					});
+					this.noCreateTable = function(){
+
+						var deferred = $q.defer();
+
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlTable(_tableName, _table), [], function(t, r){
+								console.log(r);
+							}, function(t, e){
+								console.log(e);
+							}); 
+						});
+
+						return deferred.promise;
+
+					}
 
 					this.noCreate = function(data){
-						var command = "INSERT INTO ";
 
 						command = command + tableName;
 
@@ -168,17 +181,9 @@
 						return deferred.promise;
 					};
 
-					function _createTable(tableName){
-						_db.transaction()
-					}
+					this.noCreateTable();
 
 				}
-					
-				
-
-					
-
-
 
 		      	var db = new NoDb(noQueryBuilder);
 

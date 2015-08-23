@@ -23,6 +23,8 @@ module.exports = function(grunt) {
 		        	'src/configuration.js',
 		        	'src/http.js',
                     'src/schema.js',
+                    'src/sql-builder.js',
+                    'src/websql.js',
 		        	//'src/import.js',
 		        	'src/indexeddb.js'
 		        ],
