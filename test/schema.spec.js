@@ -1133,5 +1133,13 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 	});
+
+	describe("Testing SQL delete strings", function(){
+
+	});
+
+	describe("Testing SQL update strings", function(){
+
+	});
 	
 });

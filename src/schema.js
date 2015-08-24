@@ -16,6 +16,7 @@ var GloboTest = {};
 				_sql = {}, 
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
+				UPDATE = "UPDATE ",
 				COLUMNDEF = "{0}",
 				PRIMARYKEY = "PRIMARY KEY ASC",
 				FOREIGNKEY = "REFERENCES ",
@@ -185,6 +186,36 @@ var GloboTest = {};
 						valuesString = values.join(",");
 
 						return INSERT + tableName + " (" + columnString + ") VALUES (" + valuesString + ");";
+					},
+					"sqlUpdate": function(tableName, data, noFilter){
+						var nvp = [],
+							nvpString
+						;
+
+						angular.forEach(data, function(value, key){
+
+							nvp.push(this.sqlUpdateNameValuePair(value, key));
+
+						});
+
+						nvpString = nvp.join(",");
+
+						return UPDATE + tableName + " SET " + nvpString + " WHERE " + noFilter.toSql();
+						
+					},
+					"sqlUpdateNameValuePair": function(value, key){
+						var rs = "";
+
+						if(angular.isString(value))
+						{
+							rs = key + " = '"  + value + "'";
+						} 
+						else 
+						{
+							rs = key + " = " + value;
+						}
+
+						return rs
 					}
 				}
 

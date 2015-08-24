@@ -28,12 +28,11 @@
 	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 	* |logic|String|(Optional) One of the following values: `and`, `or`.|
 	*/
-	function NoFilterExpression(column, operator, value, logic){
-		if(!column) throw "INoFilterExpression requires a column to filter on.";
+	function NoFilterExpression(operator, value, logic){
+
 		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
 		if(!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
-		this.column = column;
 		this.operator = operator;
 		this.value = value;
 		this.logic = logic;
@@ -41,15 +40,16 @@
 		this.toSQL = function()
 		{
 			var sqlOperators = {
-				"eq" : "=",
-				"ne" : "!=",
-				"gt" : ">",
-				"ge" : ">=",
-				"lt" : "<",
-				"le" : "<=",
-				"contains" : "CONTAINS",
-				"startswith": ""
-			}
+					"eq" : "=",
+					"ne" : "!=",
+					"gt" : ">",
+					"ge" : ">=",
+					"lt" : "<",
+					"le" : "<=",
+					"contains" : "CONTAINS",
+					"startswith": ""
+				},
+				rs = "";
 
 			// TODO: HAVE WAY TO DIFFERENTIATE BETWEEN DIFFERENT DATA TYPES (STRING, INT, DATE, GUID, ETC ETC ETC)
 			//
@@ -57,8 +57,15 @@
 			// in switch statement, but using angular is safer.  
 			// Also this, "sqlOperators[operator]" is bad.  what if the operator 
 			// does not exist in the hash table.  (i.e. not supported)
+			if(!sqlOperators[operator]) throw "NoFilters::NoFilterExpression required a valid operator";
 
-			return this.column + " " + sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
+			if(angular.isString(value)){
+				rs = sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
+			} else {
+				rs = sqlOperators[operator] + " " + this.value + "" + (this.logic ? " " + this.logic : "");
+			}
+
+			return rs;
 		}
 	}
 
@@ -98,44 +105,78 @@
 		});
 
 		this.toSQL = function(){
-		
-		    //JAG: Things like this are constants, and should be declared as such
-		    //globally at the top of this file. Within the self-callling 
-		    //function, as global within the scope.
-			var where = "WHERE ";
+			var rs = "",
+				rsArray = [];
 
-			this.forEach(function(o, index, array){
-
-				if (array.length > (index + 1))
-				{
-					if (o.logic)
-					{
-						where += o.toSQL();
-						where += " ";
-					}
-					else
-					{
-						throw "NoFilters::ToSql requires logic for multiple filters.";
-					}
-				}
-				else
-				{
-					where += o.toSQL();
-				}
-
+			angular.forEach(this, function(value, key){
+				rsArray.push(value.toSQL());
 			});
 
-			return where;
+			rs = rsArray.join("");
+
+			return rs;
 		}	
 	}
 	NoFilters.prototype = Object.create(Array.prototype);
-	NoFilters.prototype.add = function(column,operator,value,logic) {
+	NoFilters.prototype.add = function(column, logic, beginning, end, filters) {
 		if(!column) throw "NoFilters::add requires a column to filter on.";
-		if(!operator) throw "NoFilters::add requires a operator to filter by.";
-		if(!value) throw "NoFilters::add requires a value(s) to filter for.";
+		if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
 
-		this.unshift(new NoFilterExpression(column,operator,value,logic));
+		this.unshift(new NoFilter(column, logic, beginning, end, filters));
 	};
+
+
+	function NoFilter(column, logic, beginning, end, filters){
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function(){
+					return "NoFilter";
+				}
+			}
+		});
+
+		this.column = column;
+		this.logic = logic
+		this.beginning = beginning;
+		this.end = end;
+		this.filters = [];
+
+		angular.forEach(filters, function(value, key){
+			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
+		}, this);
+
+		this.toSQL = function(){
+			var rs = "",
+				filterArray = [],
+				filterArrayString = "";
+
+			angular.forEach(this.filters, function(value, key){
+				filterArray.push(this.column + " " + value.toSQL());
+			}, this);
+
+			filterArrayString = filterArray.join(" ");
+
+			if(!!this.beginning) rs = "(";
+			rs += filterArrayString;
+			if(!!this.end) rs += ")";
+			if(!!this.logic) rs += " " + logic + " ";
+
+			return rs;
+		}
+
+		// this.add = function(column, logic, beginning, end, filters) {
+		// 	this.column = column;
+		// 	this.logic = logic;
+		// 	this.beginning = beginning;
+		// 	this.end = end;
+		// 	this.filters = [];
+
+		// 	angular.forEach(filters, function(value, key){
+		// 		this.filters.add(new NoFilterExpression(value.operator, value.value, value.logic));
+		// 	});
+
+		// }
+	}
 
 	/*
 	* ## Class NoSortExpression : Object
@@ -332,6 +373,7 @@
 	//other modules.
 	var _interface = {
 			NoFilterExpression: NoFilterExpression,
+			NoFilter: NoFilter,
 			NoFilters: NoFilters,
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
