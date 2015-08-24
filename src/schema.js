@@ -202,9 +202,9 @@ var GloboTest = {};
 
 							nvp.push(this.sqlUpdateNameValuePair(value, key));
 
-						});
+						}, this);
 
-						nvpString = nvp.join(",");
+						nvpString = nvp.join(", ");
 
 						return UPDATE + tableName + " SET " + nvpString + " WHERE " + noFilters.toSQL();
 						

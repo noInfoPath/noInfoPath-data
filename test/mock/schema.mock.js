@@ -43,4 +43,12 @@ var insertData = {
 	"barID": null,
 	"number": 12,
 	"price": 4.87
+};
+
+var updateData = {
+	"Description": "noTest",
+	"barID": "128f28ca-e926-4259-d202-b754fe5b11c7",
+	"number": 42,
+	"price": 19.95
 }
+

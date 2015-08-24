@@ -47,7 +47,7 @@
 					"lt" : "<",
 					"le" : "<=",
 					"contains" : "CONTAINS",
-					"startswith": ""
+					"startswith": "" // TODO: FIND SQL EQUIVILANT OF STARTS WITH
 				},
 				rs = "";
 
