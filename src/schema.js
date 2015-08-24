@@ -190,13 +190,7 @@ var GloboTest = {};
 					},
 					"sqlUpdate": function(tableName, data, filters){
 						var nvp = [],
-							nvpString,
-							noFilters = new noInfoPath.data.NoFilters()
-						;
-
-						angular.forEach(filters, function(value, key){
-							noFilters.add(value.name, value.logic, value.beginning, value.end, value.filters);
-						});
+							nvpString;
 
 						angular.forEach(data, function(value, key){
 
@@ -206,7 +200,7 @@ var GloboTest = {};
 
 						nvpString = nvp.join(", ");
 
-						return UPDATE + tableName + " SET " + nvpString + " WHERE " + noFilters.toSQL();
+						return UPDATE + tableName + " SET " + nvpString + " WHERE " + filters.toSQL();
 						
 					},
 					"sqlUpdateNameValuePair": function(value, key){
@@ -234,14 +228,21 @@ var GloboTest = {};
 					}
 				}
 
-				this.createSqlTable = function(tableName, tableConfig){
+				this.createSqlTableStmt = function(tableName, tableConfig){
 					return _interface.createTable(tableName, tableConfig);
 				}
 
-				this.createSqlInsert = function(tableName, tableConfig){
+				this.createSqlInsertStmt = function(tableName, tableConfig){
 					return _interface.SqlInsert(tableName, tableConfig);
 				}
 
+				this.createSqlUpdateStmt = function(tableName, data, filters){
+					return _interface.sqlUpdate(tableName, data, filters);
+				}
+
+				this.createSqlDeleteStmt = function(tableName, filters){
+					return _interface.sqlDelete(tableName, filters);
+				}
 				/*
 					### Properties
 

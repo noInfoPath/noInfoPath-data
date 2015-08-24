@@ -94,17 +94,36 @@
 						_qb = queryBuilder
 					;
 
+					// Russ and I were discussing if the following commented out function was worth doing to avoid Dry because we're basically wrapping a wrapper.
+
+					// function _executeSQLTrans(sqlStatement, params, callback, errorCallback){
+					// 	_db.transaction(function(tx){
+					// 		tx.executeSql(sqlStatement, params, callback, errorCallback); 
+					// 	});
+					// }
+
 					this.noCreateTable = function(){
 
 						var deferred = $q.defer();
 
 						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlTable(_tableName, _table), [], function(t, r){
-								console.log(r);
-							}, function(t, e){
-								console.log(e);
-							}); 
+							tx.executeSql(noDbSchema.createSqlTableStmt(_tableName, _table), [],
+						 	function(t, r){
+								deferred.resolve();
+						 	}, 
+							function(t, e){
+						 		deferred.reject();
+						 	});  
 						});
+
+						// _executeSQLTrans(noDbSchema.createSqlTableStmt(_tableName, _table), [], 
+						// 	function(t, r){
+						// 		deferred.resolve();
+						// 	},
+						// 	function(t, e){
+						// 		deferred.reject();
+						// 	});
+
 
 						return deferred.promise;
 
@@ -114,7 +133,15 @@
 
 						command = command + tableName;
 
-						// DATA IS WHAT YOU GET BACK FROM THE KENDO GRID
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlInsertStmt(_tableName, _table), [],
+						 	function(t, r){
+								deferred.resolve();
+						 	}, 
+							function(t, e){
+						 		deferred.reject();
+						 	});  
+						});
 
 						var deferred = $q.defer();
 
@@ -170,6 +197,16 @@
 
 						var deferred = $q.defer();
 
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlUpdateStmt(_tableName, _table), [],
+						 	function(t, r){
+								deferred.resolve();
+						 	}, 
+							function(t, e){
+						 		deferred.reject();
+						 	});  
+						});
+
 						return deferred.promise;
 
 					};
@@ -177,6 +214,16 @@
 					this.noDestroy = function(data) {
 						// DELETE FROM TABLE WHERE DATA = FILTER
 						var deferred = $q.defer()
+
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlDeleteStmt(_tableName, _table), [],
+						 	function(t, r){
+								deferred.resolve();
+						 	}, 
+							function(t, e){
+						 		deferred.reject();
+						 	});  
+						});
 
 						return deferred.promise;
 					};

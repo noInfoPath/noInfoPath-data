@@ -1160,21 +1160,18 @@ describe("Testing noDbSchema", function(){
 	describe("Testing SQL update strings", function(){
 		it("should make a sql update statement from a mock", function(){
 			var result,
-				expected = "UPDATE foo SET Description = 'noTest', barID = '128f28ca-e926-4259-d202-b754fe5b11c7', number = 42, price = 19.95 WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')";
+				expected = "UPDATE foo SET Description = 'noTest', barID = '128f28ca-e926-4259-d202-b754fe5b11c7', number = 42, price = 19.95 WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')",
+				noFilters = new noInfoPath.data.NoFilters();
 
-			result = noDbSchema.test.sqlUpdate("foo", updateData, [
-					{
-						"name" : "FooID",
-						"logic" : null,
-						"beginning": true,
-						"end" : true,
-						"filters" : [{
-							"operator" : "eq",
-							"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
-							"logic" : null
-						}]
-					}
-				]);
+			noFilters.add("FooID",null,true,true,
+					[{
+						"operator" : "eq",
+						"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
+						"logic" : null
+					}]
+				);
+
+			result = noDbSchema.test.sqlUpdate("foo", updateData, noFilters);
 
 			expect(result).toEqual(expected);
 		});
