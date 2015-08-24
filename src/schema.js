@@ -17,6 +17,7 @@ var GloboTest = {};
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
+				DELETE = "DELETE FROM ",
 				COLUMNDEF = "{0}",
 				PRIMARYKEY = "PRIMARY KEY ASC",
 				FOREIGNKEY = "REFERENCES ",
@@ -187,10 +188,15 @@ var GloboTest = {};
 
 						return INSERT + tableName + " (" + columnString + ") VALUES (" + valuesString + ");";
 					},
-					"sqlUpdate": function(tableName, data, noFilter){
+					"sqlUpdate": function(tableName, data, filters){
 						var nvp = [],
-							nvpString
+							nvpString,
+							noFilters = new noInfoPath.data.NoFilters()
 						;
+
+						angular.forEach(filters, function(value, key){
+							noFilters.add(value.name, value.logic, value.beginning, value.end, value.filters);
+						});
 
 						angular.forEach(data, function(value, key){
 
@@ -200,7 +206,7 @@ var GloboTest = {};
 
 						nvpString = nvp.join(",");
 
-						return UPDATE + tableName + " SET " + nvpString + " WHERE " + noFilter.toSql();
+						return UPDATE + tableName + " SET " + nvpString + " WHERE " + noFilters.toSQL();
 						
 					},
 					"sqlUpdateNameValuePair": function(value, key){
@@ -216,6 +222,15 @@ var GloboTest = {};
 						}
 
 						return rs
+					},
+					"sqlDelete": function(tableName, filters){
+						var noFilters = new noInfoPath.data.NoFilters();
+
+						angular.forEach(filters, function(value, key){
+							noFilters.add(value.name, value.logic, value.beginning, value.end, value.filters);
+						});
+
+						return DELETE + tableName + " WHERE " + noFilters.toSQL();
 					}
 				}
 
