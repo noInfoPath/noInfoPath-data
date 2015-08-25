@@ -104,6 +104,9 @@
 			}
 		});
 
+		var arr = [];
+		arr.push.apply(arr, arguments);
+		
 		this.toSQL = function(){
 			var rs = "",
 				rsArray = [];
@@ -115,17 +118,45 @@
 			rs = rsArray.join("");
 
 			return rs;
-		}	
+		};
+
+		this.add = function(column, logic, beginning, end, filters) {
+			if(!column) throw "NoFilters::add requires a column to filter on.";
+			if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
+
+			this.unshift(new NoFilter(column, logic, beginning, end, filters));
+		};
+
+		noInfoPath.setPrototypeOf(this, arr);
 	}
-	NoFilters.prototype = Object.create(Array.prototype);
-	NoFilters.prototype.add = function(column, logic, beginning, end, filters) {
-		if(!column) throw "NoFilters::add requires a column to filter on.";
-		if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
+	
 
-		this.unshift(new NoFilter(column, logic, beginning, end, filters));
-	};
-
-
+/*
+	* ## Class NoFilter : Object
+	*
+	* NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |length|Number|Number of elements in the array.|
+	*
+	* ### Methods
+	*
+	* #### toSQL()
+	*
+	* Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression 
+	*
+	* #### Parameters
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |column|String|The name of the column filter on.|
+	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	* |logic|String|(Optional) One of the following values: `and`, `or`.|
+	*/
 	function NoFilter(column, logic, beginning, end, filters){
 		Object.defineProperties(this, {
 			"__type": {
@@ -369,6 +400,78 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
+	function NoTransactions(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoTransactions";
+				}
+			}
+		});
+
+		this.add = function(){
+			this.unshift(new NoTransaction());
+		}
+	}
+	NoTransactions.prototype = Object.create(Array.prototype);
+
+	function NoTransaction(userID){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoTransaction";
+				}
+			}
+		});
+
+		// this.transactionID = new GUID(); GET THIS CODE MIGRATED INTO NOINFOPATH DATA
+		this.timestamp = new Date();
+		this.userID = userID;
+		this.changeset = new NoChangeSet(tableName);
+	}
+
+	function NoChangeSet(tableName){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChangeSet";
+				}
+			}
+		});
+
+		this.tableName = tableName;
+		
+	}
+
+	function NoChanges(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChanges";
+				}
+			}
+		});
+
+		this.add = function(){
+			this.unshift(new NoChange(changeType, changeObject, relatedChangeSet));
+		}
+	}
+	NoChanges.prototype = Object.create(Array.prototype);
+
+	function NoChange(changeType, changeObject, relatedChangeSet){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChange";
+				}
+			}
+		});	
+
+		this.changeType = changeType;
+		this.changeObject = changeObject;
+		this.relatedChangeSet = new noChangeSet(tableName);
+	}
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
@@ -378,7 +481,12 @@
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
 			NoPage: NoPage,
-			NoResults: NoResults
+			NoResults: NoResults,
+			NoTransactions: NoTransactions,
+			NoTransaction: NoTransaction,
+			NoChangeSet: NoChangeSet,
+			NoChanges: NoChanges,
+			NoChange: NoChange
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);

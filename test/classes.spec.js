@@ -151,4 +151,30 @@ describe("Testing noOdataQueryBuilder", function(){
 			expect(page.take).toBe(10);
 		});
 	});
+
+	describe("Testing transactions", function(){
+		it("should have all relevant classes exposed", function(){
+			expect(noInfoPath.data.NoTransactions).toBeDefined();
+			expect(noInfoPath.data.NoTransaction).toBeDefined();
+			expect(noInfoPath.data.NoChangeSet).toBeDefined();
+			expect(noInfoPath.data.NoChanges).toBeDefined();
+			expect(noInfoPath.data.NoChange).toBeDefined();
+		});
+
+		it("should create a NoChange object with the proper properties", function(){
+			var result = new noInfoPath.data.NoChange();
+
+			expect(result.changeType).toBeDefined();
+			expect(result.changeObject).toBeDefined();
+			expect(result.relatedChangeSet).toBeDefined();
+		});
+
+		it("should create a NoChanges array", function(){
+			var result = new noInfoPath.data.NoChanges();
+
+			expect(result).toBeDefined();
+		});
+
+		it("is a new test");
+	});
 });

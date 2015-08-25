@@ -1137,21 +1137,18 @@ describe("Testing noDbSchema", function(){
 	describe("Testing SQL delete strings", function(){
 		it("should make a sql delete statement from a mock", function(){
 			var result,
-				expected = "DELETE FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')";
+				expected = "DELETE FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')",
+				noFilters = new noInfoPath.data.NoFilters();
 
-			result = noDbSchema.test.sqlDelete("foo", [
-					{
-						"name" : "FooID",
-						"logic" : null,
-						"beginning": true,
-						"end" : true,
-						"filters" : [{
-							"operator" : "eq",
-							"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
-							"logic" : null
-						}]
-					}
-				]);
+			noFilters.add("FooID",null,true,true,
+					[{
+						"operator" : "eq",
+						"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
+						"logic" : null
+					}]
+				);
+
+			result = noDbSchema.test.sqlDelete("foo", noFilters);
 
 			expect(result).toEqual(expected);
 		});

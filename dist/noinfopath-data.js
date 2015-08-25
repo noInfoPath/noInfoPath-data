@@ -562,12 +562,11 @@
 	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 	* |logic|String|(Optional) One of the following values: `and`, `or`.|
 	*/
-	function NoFilterExpression(column, operator, value, logic){
-		if(!column) throw "INoFilterExpression requires a column to filter on.";
+	function NoFilterExpression(operator, value, logic){
+
 		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
 		if(!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
-		this.column = column;
 		this.operator = operator;
 		this.value = value;
 		this.logic = logic;
@@ -575,15 +574,16 @@
 		this.toSQL = function()
 		{
 			var sqlOperators = {
-				"eq" : "=",
-				"ne" : "!=",
-				"gt" : ">",
-				"ge" : ">=",
-				"lt" : "<",
-				"le" : "<=",
-				"contains" : "CONTAINS",
-				"startswith": ""
-			}
+					"eq" : "=",
+					"ne" : "!=",
+					"gt" : ">",
+					"ge" : ">=",
+					"lt" : "<",
+					"le" : "<=",
+					"contains" : "CONTAINS",
+					"startswith": "" // TODO: FIND SQL EQUIVILANT OF STARTS WITH
+				},
+				rs = "";
 
 			// TODO: HAVE WAY TO DIFFERENTIATE BETWEEN DIFFERENT DATA TYPES (STRING, INT, DATE, GUID, ETC ETC ETC)
 			//
@@ -591,8 +591,15 @@
 			// in switch statement, but using angular is safer.  
 			// Also this, "sqlOperators[operator]" is bad.  what if the operator 
 			// does not exist in the hash table.  (i.e. not supported)
+			if(!sqlOperators[operator]) throw "NoFilters::NoFilterExpression required a valid operator";
 
-			return this.column + " " + sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
+			if(angular.isString(value)){
+				rs = sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
+			} else {
+				rs = sqlOperators[operator] + " " + this.value + "" + (this.logic ? " " + this.logic : "");
+			}
+
+			return rs;
 		}
 	}
 
@@ -632,44 +639,78 @@
 		});
 
 		this.toSQL = function(){
-		
-		    //JAG: Things like this are constants, and should be declared as such
-		    //globally at the top of this file. Within the self-callling 
-		    //function, as global within the scope.
-			var where = "WHERE ";
+			var rs = "",
+				rsArray = [];
 
-			this.forEach(function(o, index, array){
-
-				if (array.length > (index + 1))
-				{
-					if (o.logic)
-					{
-						where += o.toSQL();
-						where += " ";
-					}
-					else
-					{
-						throw "NoFilters::ToSql requires logic for multiple filters.";
-					}
-				}
-				else
-				{
-					where += o.toSQL();
-				}
-
+			angular.forEach(this, function(value, key){
+				rsArray.push(value.toSQL());
 			});
 
-			return where;
+			rs = rsArray.join("");
+
+			return rs;
 		}	
 	}
 	NoFilters.prototype = Object.create(Array.prototype);
-	NoFilters.prototype.add = function(column,operator,value,logic) {
+	NoFilters.prototype.add = function(column, logic, beginning, end, filters) {
 		if(!column) throw "NoFilters::add requires a column to filter on.";
-		if(!operator) throw "NoFilters::add requires a operator to filter by.";
-		if(!value) throw "NoFilters::add requires a value(s) to filter for.";
+		if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
 
-		this.unshift(new NoFilterExpression(column,operator,value,logic));
+		this.unshift(new NoFilter(column, logic, beginning, end, filters));
 	};
+
+
+	function NoFilter(column, logic, beginning, end, filters){
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function(){
+					return "NoFilter";
+				}
+			}
+		});
+
+		this.column = column;
+		this.logic = logic
+		this.beginning = beginning;
+		this.end = end;
+		this.filters = [];
+
+		angular.forEach(filters, function(value, key){
+			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
+		}, this);
+
+		this.toSQL = function(){
+			var rs = "",
+				filterArray = [],
+				filterArrayString = "";
+
+			angular.forEach(this.filters, function(value, key){
+				filterArray.push(this.column + " " + value.toSQL());
+			}, this);
+
+			filterArrayString = filterArray.join(" ");
+
+			if(!!this.beginning) rs = "(";
+			rs += filterArrayString;
+			if(!!this.end) rs += ")";
+			if(!!this.logic) rs += " " + logic + " ";
+
+			return rs;
+		}
+
+		// this.add = function(column, logic, beginning, end, filters) {
+		// 	this.column = column;
+		// 	this.logic = logic;
+		// 	this.beginning = beginning;
+		// 	this.end = end;
+		// 	this.filters = [];
+
+		// 	angular.forEach(filters, function(value, key){
+		// 		this.filters.add(new NoFilterExpression(value.operator, value.value, value.logic));
+		// 	});
+
+		// }
+	}
 
 	/*
 	* ## Class NoSortExpression : Object
@@ -866,6 +907,7 @@
 	//other modules.
 	var _interface = {
 			NoFilterExpression: NoFilterExpression,
+			NoFilter: NoFilter,
 			NoFilters: NoFilters,
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
@@ -1658,6 +1700,8 @@ var GloboTest = {};
 				_sql = {}, 
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
+				UPDATE = "UPDATE ",
+				DELETE = "DELETE FROM ",
 				COLUMNDEF = "{0}",
 				PRIMARYKEY = "PRIMARY KEY ASC",
 				FOREIGNKEY = "REFERENCES ",
@@ -1805,19 +1849,78 @@ var GloboTest = {};
 					"isNullable": function(columnConfig){
 						return columnConfig.nullable;
 					},
-					"sqlInsert": function(tableName, tableConfig){
-						var 
+					"sqlInsert": function(tableName, data){
+						var columns = [],
+							values = [],
+							columnString = "",
+							valuesString = ""
+						;
+
+						angular.forEach(data, function(value, key){
+							columns.push(key);
+
+							if(angular.isString(value))
+							{
+								values.push("'" + value + "'");
+							} else {
+								values.push(value);
+							}
+						});
+
+						columnString = columns.join(",");
+						valuesString = values.join(",");
+
+						return INSERT + tableName + " (" + columnString + ") VALUES (" + valuesString + ");";
+					},
+					"sqlUpdate": function(tableName, data, filters){
+						var nvp = [],
+							nvpString;
+
+						angular.forEach(data, function(value, key){
+
+							nvp.push(this.sqlUpdateNameValuePair(value, key));
+
+						}, this);
+
+						nvpString = nvp.join(", ");
+
+						return UPDATE + tableName + " SET " + nvpString + " WHERE " + filters.toSQL();
+						
+					},
+					"sqlUpdateNameValuePair": function(value, key){
+						var rs = "";
+
+						if(angular.isString(value))
+						{
+							rs = key + " = '"  + value + "'";
+						} 
+						else 
+						{
+							rs = key + " = " + value;
+						}
+
+						return rs
+					},
+					"sqlDelete": function(tableName, filters){
+						return DELETE + tableName + " WHERE " + filters.toSQL();
 					}
 				}
 
-				this.createSqlTable = function(tableName, tableConfig){
+				this.createSqlTableStmt = function(tableName, tableConfig){
 					return _interface.createTable(tableName, tableConfig);
 				}
 
-				this.createSqlInsert = function(tableName, tableConfig){
-					return _interface.SqlInsert(tableName, tableConfig);
+				this.createSqlInsertStmt = function(tableName, tableConfig){
+					return _interface.sqlInsert(tableName, tableConfig);
 				}
 
+				this.createSqlUpdateStmt = function(tableName, data, filters){
+					return _interface.sqlUpdate(tableName, data, filters);
+				}
+
+				this.createSqlDeleteStmt = function(tableName, filters){
+					return _interface.sqlDelete(tableName, filters);
+				}
 				/*
 					### Properties
 
@@ -2282,17 +2385,36 @@ var GloboTest = {};
 						_qb = queryBuilder
 					;
 
+					// Russ and I were discussing if the following commented out function was worth doing to avoid Dry because we're basically wrapping a wrapper.
+
+					// function _executeSQLTrans(sqlStatement, params, callback, errorCallback){
+					// 	_db.transaction(function(tx){
+					// 		tx.executeSql(sqlStatement, params, callback, errorCallback); 
+					// 	});
+					// }
+
 					this.noCreateTable = function(){
 
 						var deferred = $q.defer();
 
 						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlTable(_tableName, _table), [], function(t, r){
-								console.log(r);
-							}, function(t, e){
-								console.log(e);
-							}); 
+							tx.executeSql(noDbSchema.createSqlTableStmt(_tableName, _table), [],
+						 	function(t, r){
+								deferred.resolve();
+						 	}, 
+							function(t, e){
+						 		deferred.reject();
+						 	});  
 						});
+
+						// _executeSQLTrans(noDbSchema.createSqlTableStmt(_tableName, _table), [], 
+						// 	function(t, r){
+						// 		deferred.resolve();
+						// 	},
+						// 	function(t, e){
+						// 		deferred.reject();
+						// 	});
+
 
 						return deferred.promise;
 
@@ -2300,9 +2422,15 @@ var GloboTest = {};
 
 					this.noCreate = function(data){
 
-						command = command + tableName;
-
-						// DATA IS WHAT YOU GET BACK FROM THE KENDO GRID
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlInsertStmt(_tableName, data), [],
+						 	function(t, r){
+								deferred.resolve(r);
+						 	}, 
+							function(t, e){
+						 		deferred.reject(e);
+						 	});  
+						});
 
 						var deferred = $q.defer();
 
@@ -2353,18 +2481,38 @@ var GloboTest = {};
 						return deferred.promise;
 					};
 
-					this.noUpdate = function(data) {
+					this.noUpdate = function(data, filters) {
 						// UPDATE
 
 						var deferred = $q.defer();
+
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlUpdateStmt(_tableName, data, filters), [],
+						 	function(t, r){
+								deferred.resolve(r);
+						 	}, 
+							function(t, e){
+						 		deferred.reject(e);
+						 	});  
+						});
 
 						return deferred.promise;
 
 					};
 
-					this.noDestroy = function(data) {
+					this.noDestroy = function(filters) {
 						// DELETE FROM TABLE WHERE DATA = FILTER
 						var deferred = $q.defer()
+
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlDeleteStmt(_tableName, filters), [],
+						 	function(t, r){
+								deferred.resolve(r);
+						 	}, 
+							function(t, e){
+						 		deferred.reject(e);
+						 	});  
+						});
 
 						return deferred.promise;
 					};

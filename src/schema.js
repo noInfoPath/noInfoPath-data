@@ -218,13 +218,7 @@ var GloboTest = {};
 						return rs
 					},
 					"sqlDelete": function(tableName, filters){
-						var noFilters = new noInfoPath.data.NoFilters();
-
-						angular.forEach(filters, function(value, key){
-							noFilters.add(value.name, value.logic, value.beginning, value.end, value.filters);
-						});
-
-						return DELETE + tableName + " WHERE " + noFilters.toSQL();
+						return DELETE + tableName + " WHERE " + filters.toSQL();
 					}
 				}
 
@@ -233,7 +227,7 @@ var GloboTest = {};
 				}
 
 				this.createSqlInsertStmt = function(tableName, tableConfig){
-					return _interface.SqlInsert(tableName, tableConfig);
+					return _interface.sqlInsert(tableName, tableConfig);
 				}
 
 				this.createSqlUpdateStmt = function(tableName, data, filters){
@@ -243,6 +237,8 @@ var GloboTest = {};
 				this.createSqlDeleteStmt = function(tableName, filters){
 					return _interface.sqlDelete(tableName, filters);
 				}
+
+				
 				/*
 					### Properties
 

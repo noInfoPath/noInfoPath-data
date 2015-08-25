@@ -131,15 +131,13 @@
 
 					this.noCreate = function(data){
 
-						command = command + tableName;
-
 						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlInsertStmt(_tableName, _table), [],
+							tx.executeSql(noDbSchema.createSqlInsertStmt(_tableName, data), [],
 						 	function(t, r){
-								deferred.resolve();
+								deferred.resolve(r);
 						 	}, 
 							function(t, e){
-						 		deferred.reject();
+						 		deferred.reject(e);
 						 	});  
 						});
 
@@ -192,18 +190,18 @@
 						return deferred.promise;
 					};
 
-					this.noUpdate = function(data) {
+					this.noUpdate = function(data, filters) {
 						// UPDATE
 
 						var deferred = $q.defer();
 
 						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlUpdateStmt(_tableName, _table), [],
+							tx.executeSql(noDbSchema.createSqlUpdateStmt(_tableName, data, filters), [],
 						 	function(t, r){
-								deferred.resolve();
+								deferred.resolve(r);
 						 	}, 
 							function(t, e){
-						 		deferred.reject();
+						 		deferred.reject(e);
 						 	});  
 						});
 
@@ -211,17 +209,17 @@
 
 					};
 
-					this.noDestroy = function(data) {
+					this.noDestroy = function(filters) {
 						// DELETE FROM TABLE WHERE DATA = FILTER
 						var deferred = $q.defer()
 
 						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlDeleteStmt(_tableName, _table), [],
+							tx.executeSql(noDbSchema.createSqlDeleteStmt(_tableName, filters), [],
 						 	function(t, r){
-								deferred.resolve();
+								deferred.resolve(r);
 						 	}, 
 							function(t, e){
-						 		deferred.reject();
+						 		deferred.reject(e);
 						 	});  
 						});
 

@@ -53,8 +53,8 @@ module.exports = function(config) {
         //'test/http.spec.js',
         //'test/configuration.spec.js',
         //'test/query-builder.spec.js',
-        'test/classes.spec.js',
-        'test/schema.spec.js'
+        'test/classes.spec.js'
+        //'test/schema.spec.js'
         //'test/websql.spec.js'
       //  'test/sql-builder.spec.js'
 
