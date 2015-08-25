@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.6
+ *	@version 0.2.7
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -59,9 +59,9 @@
  *	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
 */
 
-(noInfoPath = noInfoPath || {});
+//(noInfoPath = noInfoPath || {});
 (noInfoPath.data = {});
-
+console.log(noInfoPath);
 (function(angular, undefined){
  	"use strict";
 
@@ -532,6 +532,7 @@
 		}])
 	;
 })(angular);
+
 //classes.js
 
 (function(angular, undefined){
@@ -894,10 +895,6 @@
 					}
 				};
 
-			function isGuid(val){
-		    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
-		    }
-
 			function toOdataFilter (filters, useOdataFour) {
 			    var result = [],
 			        idx,
@@ -933,7 +930,7 @@
 			            if (filter && value !== undefined) {
 
 			                if (angular.isString(value)) {
-			                	if(isGuid(value)){
+			                	if(noInfoPath.isGuid(value)){
 									format = "guid'{1}'";
 			                	}else{
 			                		format = "'{1}'";
