@@ -409,11 +409,13 @@
 			}
 		});
 
-		this.add = function(){
-			this.unshift(new NoTransaction());
+		var arr = [];
+		noInfoPath.setPrototypeOf(this, arr);
+
+		this.add = function(userID){
+			this.unshift(new NoTransaction(userID));
 		}
 	}
-	NoTransactions.prototype = Object.create(Array.prototype);
 
 	function NoTransaction(userID){
 		Object.defineProperties(this, {
@@ -424,13 +426,13 @@
 			}
 		});
 
-		// this.transactionID = new GUID(); GET THIS CODE MIGRATED INTO NOINFOPATH DATA
+		this.transactionID = ""; // This needs to be a GUID, find new GUID code.
 		this.timestamp = new Date();
 		this.userID = userID;
-		this.changeset = new NoChangeSet(tableName);
+		this.changeset = new NoChangeSet();
 	}
 
-	function NoChangeSet(tableName){
+	function NoChangeSet(){
 		Object.defineProperties(this, {
 			"__type": {
 				"get" : function(){
@@ -439,7 +441,12 @@
 			}
 		});
 
-		this.tableName = tableName;
+		this.add = function(tableName){
+			this[tableName] = {
+				"tableName" : tableName,
+				changes : new NoChanges()
+			}
+		}
 		
 	}
 
@@ -451,12 +458,12 @@
 				}
 			}
 		});
-
-		this.add = function(){
+		var arr = [];
+		noInfoPath.setPrototypeOf(this, arr);
+		this.add = function(changeType, changeObject, relatedChangeSet){
 			this.unshift(new NoChange(changeType, changeObject, relatedChangeSet));
 		}
 	}
-	NoChanges.prototype = Object.create(Array.prototype);
 
 	function NoChange(changeType, changeObject, relatedChangeSet){
 		Object.defineProperties(this, {
@@ -469,7 +476,7 @@
 
 		this.changeType = changeType;
 		this.changeObject = changeObject;
-		this.relatedChangeSet = new noChangeSet(tableName);
+		//this.relatedChangeSet = new noChangeSet(tableName);
 	}
 
 	//Expose these classes on the global namespace so that they can be used by
