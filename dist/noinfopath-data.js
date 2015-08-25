@@ -517,7 +517,7 @@
 	         			expand: options.expand,
 	         			projections: options.projections,
 	         			aggregators: options.aggregators
-	         		}
+	         		};
 				}
 
 				var ds;
@@ -528,7 +528,7 @@
 					ds = _noHTTP();
 				}
          		return ds;
-         	}
+         	};
 		}])
 	;
 })(angular);
@@ -880,7 +880,7 @@
 		 	_page = arrayOfThings,
 			arr = arrayOfThings;
 
-		arr.push.apply(arr, arguments);
+		//arr.push.apply(arr, arguments);
 
 		Object.defineProperties(arr, {
 			"total": {
@@ -3012,7 +3012,7 @@ var GloboTest = {};
 					*/
 					function _applyPaging(page, data){
 						return $q(function(resolve, reject){
-							data.page(page);
+							if(page) data.page(page);
 
 							resolve(data);
 						});
@@ -3020,7 +3020,11 @@ var GloboTest = {};
 
 					$timeout(function(){
 						_applyFilters(filters, table)
-							.then(_applyPaging)
+							.then(function(data){
+								_applyPaging(page, data)
+									.then(deferred.resolve)
+								;
+							})
 							.catch(function(err){
 								deferred.reject(err);
 							});

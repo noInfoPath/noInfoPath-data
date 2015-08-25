@@ -377,7 +377,7 @@
 		 	_page = arrayOfThings,
 			arr = arrayOfThings;
 
-		arr.push.apply(arr, arguments);
+		//arr.push.apply(arr, arguments);
 
 		Object.defineProperties(arr, {
 			"total": {

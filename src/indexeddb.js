@@ -481,7 +481,7 @@
 					*/
 					function _applyPaging(page, data){
 						return $q(function(resolve, reject){
-							data.page(page);
+							if(page) data.page(page);
 
 							resolve(data);
 						});
@@ -489,7 +489,11 @@
 
 					$timeout(function(){
 						_applyFilters(filters, table)
-							.then(_applyPaging)
+							.then(function(data){
+								_applyPaging(page, data)
+									.then(deferred.resolve)
+								;
+							})
 							.catch(function(err){
 								deferred.reject(err);
 							});
