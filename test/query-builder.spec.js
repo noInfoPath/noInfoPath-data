@@ -3,6 +3,7 @@ describe("Testing noOdataQueryBuilder", function(){
 	var noOdataQueryBuilder;
 
 	beforeEach(function(){
+		module("noinfopath");
 		module("noinfopath.helpers");
 		module("noinfopath.filters");
 		module("noinfopath.logger");

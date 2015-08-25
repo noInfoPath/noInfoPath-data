@@ -59,9 +59,9 @@
  *	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
 */
 
-(noInfoPath = noInfoPath || {});
+//(noInfoPath = noInfoPath || {});
 (noInfoPath.data = {});
-
+console.log(noInfoPath);
 (function(angular, undefined){
  	"use strict";
 

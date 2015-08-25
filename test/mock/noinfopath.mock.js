@@ -1,6 +1,6 @@
 //noinfopath-mock.js
 
-var noInfoPath = {};
+//var noInfoPath = {};
 
 //Polyfill that I did not want to make public just yet.
 noInfoPath.setPrototypeOf = Object.setPrototypeOf || function(obj, proto) {

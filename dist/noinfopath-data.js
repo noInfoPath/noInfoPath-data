@@ -894,10 +894,6 @@
 					}
 				};
 
-			function isGuid(val){
-		    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
-		    }
-
 			function toOdataFilter (filters, useOdataFour) {
 			    var result = [],
 			        idx,
@@ -933,7 +929,7 @@
 			            if (filter && value !== undefined) {
 
 			                if (angular.isString(value)) {
-			                	if(isGuid(value)){
+			                	if(noInfoPath.isGuid(value)){
 									format = "guid'{1}'";
 			                	}else{
 			                		format = "'{1}'";
