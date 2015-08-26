@@ -28,15 +28,45 @@
 	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 	* |logic|String|(Optional) One of the following values: `and`, `or`.|
 	*/
-	function NoFilterExpression(column, operator, value, logic){
-		if(!column) throw "INoFilterExpression requires a column to filter on.";
+	function NoFilterExpression(operator, value, logic){
+
 		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
 		if(!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
-		this.column = column;
 		this.operator = operator;
 		this.value = value;
 		this.logic = logic;
+
+		this.toSQL = function()
+		{
+			var sqlOperators = {
+					"eq" : "=",
+					"ne" : "!=",
+					"gt" : ">",
+					"ge" : ">=",
+					"lt" : "<",
+					"le" : "<=",
+					"contains" : "CONTAINS",
+					"startswith": "" // TODO: FIND SQL EQUIVILANT OF STARTS WITH
+				},
+				rs = "";
+
+			// TODO: HAVE WAY TO DIFFERENTIATE BETWEEN DIFFERENT DATA TYPES (STRING, INT, DATE, GUID, ETC ETC ETC)
+			//
+			// JAG: Use angular.isString etc, to do this. You could use typeOf, 
+			// in switch statement, but using angular is safer.  
+			// Also this, "sqlOperators[operator]" is bad.  what if the operator 
+			// does not exist in the hash table.  (i.e. not supported)
+			if(!sqlOperators[operator]) throw "NoFilters::NoFilterExpression required a valid operator";
+
+			if(angular.isString(value)){
+				rs = sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
+			} else {
+				rs = sqlOperators[operator] + " " + this.value + "" + (this.logic ? " " + this.logic : "");
+			}
+
+			return rs;
+		}
 	}
 
 	/*
@@ -73,15 +103,111 @@
 				}
 			}
 		});
-	}
-	NoFilters.prototype = Object.create(Array.prototype);
-	NoFilters.prototype.add = function(column,operator,value,logic) {
-		if(!column) throw "NoFilters::add requires a column to filter on.";
-		if(!operator) throw "NoFilters::add requires a operator to filter by.";
-		if(!value) throw "NoFilters::add requires a value(s) to filter for.";
 
-		this.unshift(new NoFilterExpression(column,operator,value,logic));
-	};
+		var arr = [];
+		arr.push.apply(arr, arguments);
+		
+		this.toSQL = function(){
+			var rs = "",
+				rsArray = [];
+
+			angular.forEach(this, function(value, key){
+				rsArray.push(value.toSQL());
+			});
+
+			rs = rsArray.join("");
+
+			return rs;
+		};
+
+		this.add = function(column, logic, beginning, end, filters) {
+			if(!column) throw "NoFilters::add requires a column to filter on.";
+			if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
+
+			this.unshift(new NoFilter(column, logic, beginning, end, filters));
+		};
+
+		noInfoPath.setPrototypeOf(this, arr);
+	}
+	
+
+/*
+	* ## Class NoFilter : Object
+	*
+	* NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |length|Number|Number of elements in the array.|
+	*
+	* ### Methods
+	*
+	* #### toSQL()
+	*
+	* Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression 
+	*
+	* #### Parameters
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |column|String|The name of the column filter on.|
+	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	* |logic|String|(Optional) One of the following values: `and`, `or`.|
+	*/
+	function NoFilter(column, logic, beginning, end, filters){
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function(){
+					return "NoFilter";
+				}
+			}
+		});
+
+		this.column = column;
+		this.logic = logic
+		this.beginning = beginning;
+		this.end = end;
+		this.filters = [];
+
+		angular.forEach(filters, function(value, key){
+			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
+		}, this);
+
+		this.toSQL = function(){
+			var rs = "",
+				filterArray = [],
+				filterArrayString = "";
+
+			angular.forEach(this.filters, function(value, key){
+				filterArray.push(this.column + " " + value.toSQL());
+			}, this);
+
+			filterArrayString = filterArray.join(" ");
+
+			if(!!this.beginning) rs = "(";
+			rs += filterArrayString;
+			if(!!this.end) rs += ")";
+			if(!!this.logic) rs += " " + logic + " ";
+
+			return rs;
+		}
+
+		// this.add = function(column, logic, beginning, end, filters) {
+		// 	this.column = column;
+		// 	this.logic = logic;
+		// 	this.beginning = beginning;
+		// 	this.end = end;
+		// 	this.filters = [];
+
+		// 	angular.forEach(filters, function(value, key){
+		// 		this.filters.add(new NoFilterExpression(value.operator, value.value, value.logic));
+		// 	});
+
+		// }
+	}
 
 	/*
 	* ## Class NoSortExpression : Object
@@ -105,6 +231,10 @@
 
 		this.column = column;
 		this.dir = dir;
+
+		this.toSQL = function(){
+			return this.column + (this.dir ? " " + this.dir : "");
+		};
 	}
 
 	/*
@@ -131,6 +261,9 @@
 	* |column|String|The name of the column filter on.|
 	* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
 	*/
+
+
+
 	function NoSort() {
 		var arr = [ ];
 
@@ -151,8 +284,28 @@
 		};
 
 		arr.toSQL = function(){
-			return "";
-		}
+
+			var sqlOrder = "ORDER BY ";
+
+			this.forEach(function(o, index, array){
+
+				sqlOrder += o.toSQL();
+
+				if (array.length > (index + 1))
+
+				{
+				
+				//JAG: This does not work.  You are creating a trialing comma that
+				//will cause an error on the WebSql side.  Better approach,
+				//develop an array of strings then use the `.join` function
+				//outside of the loop.
+					sqlOrder += ", ";
+				}
+
+			});
+
+			return sqlOrder += ";";
+		};
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
@@ -247,15 +400,100 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
+	function NoTransactions(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoTransactions";
+				}
+			}
+		});
+
+		var arr = [];
+		noInfoPath.setPrototypeOf(this, arr);
+
+		this.add = function(userID){
+			this.unshift(new NoTransaction(userID));
+		}
+	}
+
+	function NoTransaction(userID){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoTransaction";
+				}
+			}
+		});
+
+		this.transactionID = ""; // This needs to be a GUID, find new GUID code.
+		this.timestamp = new Date();
+		this.userID = userID;
+		this.changeset = new NoChangeSet();
+	}
+
+	function NoChangeSet(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChangeSet";
+				}
+			}
+		});
+
+		this.add = function(tableName){
+			this[tableName] = {
+				"tableName" : tableName,
+				changes : new NoChanges()
+			}
+		}
+		
+	}
+
+	function NoChanges(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChanges";
+				}
+			}
+		});
+		var arr = [];
+		noInfoPath.setPrototypeOf(this, arr);
+		this.add = function(changeType, changeObject, relatedChangeSet){
+			this.unshift(new NoChange(changeType, changeObject, relatedChangeSet));
+		}
+	}
+
+	function NoChange(changeType, changeObject, relatedChangeSet){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChange";
+				}
+			}
+		});	
+
+		this.changeType = changeType;
+		this.changeObject = changeObject;
+		//this.relatedChangeSet = new noChangeSet(tableName);
+	}
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
 			NoFilterExpression: NoFilterExpression,
+			NoFilter: NoFilter,
 			NoFilters: NoFilters,
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
 			NoPage: NoPage,
-			NoResults: NoResults
+			NoResults: NoResults,
+			NoTransactions: NoTransactions,
+			NoTransaction: NoTransaction,
+			NoChangeSet: NoChangeSet,
+			NoChanges: NoChanges,
+			NoChange: NoChange
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);

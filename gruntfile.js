@@ -23,6 +23,8 @@ module.exports = function(grunt) {
 		        	'src/configuration.js',
 		        	'src/http.js',
                     'src/schema.js',
+                    'src/sql-builder.js',
+                    'src/websql.js',
 		        	//'src/import.js',
 		        	'src/indexeddb.js'
 		        ],
@@ -85,7 +87,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['notest']
+            tasks: ['karmatest']
         },
         uglify: {
             options: {
