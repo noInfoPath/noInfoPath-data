@@ -18,6 +18,7 @@ var GloboTest = {};
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
 				DELETE = "DELETE FROM ",
+				READ = "SELECT * FROM ",
 				COLUMNDEF = "{0}",
 				PRIMARYKEY = "PRIMARY KEY ASC",
 				FOREIGNKEY = "REFERENCES ",
@@ -219,6 +220,16 @@ var GloboTest = {};
 					},
 					"sqlDelete": function(tableName, filters){
 						return DELETE + tableName + " WHERE " + filters.toSQL();
+					},
+					"sqlRead": function(tableName, filters, sort, page){
+						var fs, ss, ps;
+						fs = !!filters ? " WHERE " + filters.toSQL() : "";
+						ss = !!sort ? " " + sort.toSQL() : "";
+						ps = !!page ? " " + page.toSQL() : "";
+						return READ + tableName + fs + ss + ps;
+					},
+					"sqlOne": function(tableName, primKey, value){
+						return READ + tableName + " WHERE " + primKey + " = '" + value + "'";
 					}
 				}
 
@@ -238,7 +249,14 @@ var GloboTest = {};
 					return _interface.sqlDelete(tableName, filters);
 				}
 
-				
+				this.createSqlReadStmt = function(tableName, filters, sort, page){
+					return _interface.sqlRead(tableName, filters, sort, page);
+				}
+
+				this.createSqlOneStmt = function(tableName, primKey, value){
+					return _interface.sqlOne(tableName, primKey, value);
+				}
+
 				/*
 					### Properties
 

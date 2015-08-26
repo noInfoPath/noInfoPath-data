@@ -285,26 +285,18 @@
 
 		arr.toSQL = function(){
 
-			var sqlOrder = "ORDER BY ";
+			var sqlOrder = "ORDER BY ",
+				sortExpressions = [];
 
 			this.forEach(function(o, index, array){
 
-				sqlOrder += o.toSQL();
-
-				if (array.length > (index + 1))
-
-				{
-				
-				//JAG: This does not work.  You are creating a trialing comma that
-				//will cause an error on the WebSql side.  Better approach,
-				//develop an array of strings then use the `.join` function
-				//outside of the loop.
-					sqlOrder += ", ";
-				}
+				sortExpressions.push(o.toSQL());
 
 			});
 
-			return sqlOrder += ";";
+
+
+			return sqlOrder + sortExpressions.join(',');
 		};
 		noInfoPath.setPrototypeOf(this, arr);
 	}
@@ -329,6 +321,10 @@
 	function NoPage(skip, take) {
 		this.skip = skip;
 		this.take = take;
+
+		this.toSQL = function(){
+			return "LIMIT " + this.skip + "," + this.take;
+		}
 	}
 
 	/*
@@ -426,7 +422,7 @@
 			}
 		});
 
-		this.transactionID = ""; // This needs to be a GUID, find new GUID code.
+		this.transactionID = noInfoPath.createUUID();
 		this.timestamp = new Date();
 		this.userID = userID;
 		this.changeset = new NoChangeSet();

@@ -638,6 +638,9 @@
 			}
 		});
 
+		var arr = [];
+		arr.push.apply(arr, arguments);
+		
 		this.toSQL = function(){
 			var rs = "",
 				rsArray = [];
@@ -649,17 +652,45 @@
 			rs = rsArray.join("");
 
 			return rs;
-		}	
+		};
+
+		this.add = function(column, logic, beginning, end, filters) {
+			if(!column) throw "NoFilters::add requires a column to filter on.";
+			if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
+
+			this.unshift(new NoFilter(column, logic, beginning, end, filters));
+		};
+
+		noInfoPath.setPrototypeOf(this, arr);
 	}
-	NoFilters.prototype = Object.create(Array.prototype);
-	NoFilters.prototype.add = function(column, logic, beginning, end, filters) {
-		if(!column) throw "NoFilters::add requires a column to filter on.";
-		if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
+	
 
-		this.unshift(new NoFilter(column, logic, beginning, end, filters));
-	};
-
-
+/*
+	* ## Class NoFilter : Object
+	*
+	* NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+	*
+	* ### Properties
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |length|Number|Number of elements in the array.|
+	*
+	* ### Methods
+	*
+	* #### toSQL()
+	*
+	* Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression 
+	*
+	* #### Parameters
+	*
+	* |Name|Type|Description|
+	* |----|----|------------|
+	* |column|String|The name of the column filter on.|
+	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	* |logic|String|(Optional) One of the following values: `and`, `or`.|
+	*/
 	function NoFilter(column, logic, beginning, end, filters){
 		Object.defineProperties(this, {
 			"__type": {
@@ -832,6 +863,10 @@
 	function NoPage(skip, take) {
 		this.skip = skip;
 		this.take = take;
+
+		this.toSQL = function(){
+			return "LIMIT " + this.skip + "," + this.take;
+		}
 	}
 
 	/*
@@ -903,6 +938,85 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
+	function NoTransactions(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoTransactions";
+				}
+			}
+		});
+
+		var arr = [];
+		noInfoPath.setPrototypeOf(this, arr);
+
+		this.add = function(userID){
+			this.unshift(new NoTransaction(userID));
+		}
+	}
+
+	function NoTransaction(userID){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoTransaction";
+				}
+			}
+		});
+
+		this.transactionID = noInfoPath.createUUID();
+		this.timestamp = new Date();
+		this.userID = userID;
+		this.changeset = new NoChangeSet();
+	}
+
+	function NoChangeSet(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChangeSet";
+				}
+			}
+		});
+
+		this.add = function(tableName){
+			this[tableName] = {
+				"tableName" : tableName,
+				changes : new NoChanges()
+			}
+		}
+		
+	}
+
+	function NoChanges(){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChanges";
+				}
+			}
+		});
+		var arr = [];
+		noInfoPath.setPrototypeOf(this, arr);
+		this.add = function(changeType, changeObject, relatedChangeSet){
+			this.unshift(new NoChange(changeType, changeObject, relatedChangeSet));
+		}
+	}
+
+	function NoChange(changeType, changeObject, relatedChangeSet){
+		Object.defineProperties(this, {
+			"__type": {
+				"get" : function(){
+					return "NoChange";
+				}
+			}
+		});	
+
+		this.changeType = changeType;
+		this.changeObject = changeObject;
+		//this.relatedChangeSet = new noChangeSet(tableName);
+	}
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
@@ -912,12 +1026,18 @@
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
 			NoPage: NoPage,
-			NoResults: NoResults
+			NoResults: NoResults,
+			NoTransactions: NoTransactions,
+			NoTransaction: NoTransaction,
+			NoChangeSet: NoChangeSet,
+			NoChanges: NoChanges,
+			NoChange: NoChange
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
 
 })(angular);
+
 /*
 * ## @interface INoQueryBuilder
 *
@@ -1702,6 +1822,7 @@ var GloboTest = {};
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
 				DELETE = "DELETE FROM ",
+				READ = "SELECT * FROM ",
 				COLUMNDEF = "{0}",
 				PRIMARYKEY = "PRIMARY KEY ASC",
 				FOREIGNKEY = "REFERENCES ",
@@ -1903,6 +2024,16 @@ var GloboTest = {};
 					},
 					"sqlDelete": function(tableName, filters){
 						return DELETE + tableName + " WHERE " + filters.toSQL();
+					},
+					"sqlRead": function(tableName, filters, sort, page){
+						var fs, ss, ps;
+						fs = !!fs ? filters.toSQL() : "";
+						ss = !!ss ? sort.toSQL() : "";
+						ps = !!ps ? page.toSQL() : "";
+						return READ + tableName + " " + fs + " " + ss + " " + ps;
+					},
+					"sqlOne": function(tableName, primKey, value){
+						return READ + tableName + " WHERE " + primKey + " = '" + value + "'";
 					}
 				}
 
@@ -1921,6 +2052,15 @@ var GloboTest = {};
 				this.createSqlDeleteStmt = function(tableName, filters){
 					return _interface.sqlDelete(tableName, filters);
 				}
+
+				this.createSqlReadStmt = function(tableName, filters, sort, page){
+					return _interface.sqlRead(tableName, filters, sort, page);
+				}
+
+				this.createSqlOneStmt = function(tableName, primKey, value){
+					return _interface.sqlOne(tableName, primKey, value);
+				}
+
 				/*
 					### Properties
 
@@ -2460,23 +2600,22 @@ var GloboTest = {};
 							}
 						}
 
-						var queryBuilderObject = queryBuilder(filters,sort,page);
-						var queryBuilderString = queryBuilderObject.toSQL();
-						var command = "SELECT * " + queryBuilderString;
+						// var queryBuilderObject = queryBuilder(filters,sort,page);
+						// var queryBuilderString = queryBuilderObject.toSQL();
+
+						// var command = "SELECT * " + queryBuilderString;
 
 						var deferred = $q.defer();
 
 						_db.transaction(function(tx){
-							tx.executeSql(command, [], success(), failure());
+							tx.executeSql(noDbSchema.createSqlReadStmt(_tableName, filters, sort, page), [], 
+								function(t, r){
+									deferred.resolve(r);
+								}, 
+								function(t, e){
+									deferred.reject(e);
+								});
 						});
-
-						function success(){
-							deferred.resolve();
-						}
-
-						function failure(){
-							deferred.reject();
-						}
 
 						return deferred.promise;
 					};
@@ -2516,6 +2655,24 @@ var GloboTest = {};
 
 						return deferred.promise;
 					};
+
+					this.noOne = function(data) {
+						var deferred = $q.defer(),
+				 		table = this,
+						key = data[_table.primaryKey];
+
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlOneStmt(_tableName, _table.primaryKey, key), [], 
+								function(t, r){
+									deferred.resolve(r);
+								}, 
+								function(t, e){
+									deferred.reject(e);
+								});
+						});
+
+					 	return deferred.promise;
+					}
 
 					this.noCreateTable();
 

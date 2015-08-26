@@ -169,23 +169,22 @@
 							}
 						}
 
-						var queryBuilderObject = queryBuilder(filters,sort,page);
-						var queryBuilderString = queryBuilderObject.toSQL();
-						var command = "SELECT * " + queryBuilderString;
+						// var queryBuilderObject = queryBuilder(filters,sort,page);
+						// var queryBuilderString = queryBuilderObject.toSQL();
+
+						// var command = "SELECT * " + queryBuilderString;
 
 						var deferred = $q.defer();
 
 						_db.transaction(function(tx){
-							tx.executeSql(command, [], success(), failure());
+							tx.executeSql(noDbSchema.createSqlReadStmt(_tableName, filters, sort, page), [], 
+								function(t, r){
+									deferred.resolve(r);
+								}, 
+								function(t, e){
+									deferred.reject(e);
+								});
 						});
-
-						function success(){
-							deferred.resolve();
-						}
-
-						function failure(){
-							deferred.reject();
-						}
 
 						return deferred.promise;
 					};
@@ -225,6 +224,24 @@
 
 						return deferred.promise;
 					};
+
+					this.noOne = function(data) {
+						var deferred = $q.defer(),
+				 		table = this,
+						key = data[_table.primaryKey];
+
+						_db.transaction(function(tx){
+							tx.executeSql(noDbSchema.createSqlOneStmt(_tableName, _table.primaryKey, key), [], 
+								function(t, r){
+									deferred.resolve(r);
+								}, 
+								function(t, e){
+									deferred.reject(e);
+								});
+						});
+
+					 	return deferred.promise;
+					}
 
 					this.noCreateTable();
 

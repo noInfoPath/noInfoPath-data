@@ -1173,5 +1173,141 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 	});
+
+	describe("testing SQL Read strings", function(){
+		it("should create a sql select statement to read one record based on the PK", function(){
+			var result,
+				expected = "SELECT * FROM foo WHERE FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083'";
+
+			result = noDbSchema.test.sqlOne("foo", "FooID", "0eec54c3-1c7e-48af-a9da-d7da62820083");
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statement to read all records from a table", function(){
+			var result,
+				expected = "SELECT * FROM foo";
+
+			result = noDbSchema.test.sqlRead("foo");
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statement to read all records from a table with a NoFilter", function(){
+			var result,
+				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')",
+				noFilters = new noInfoPath.data.NoFilters();
+
+				noFilters.add("FooID",null,true,true,
+					[{
+						"operator" : "eq",
+						"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
+						"logic" : null
+					}]
+				);
+
+			result = noDbSchema.test.sqlRead("foo", noFilters);
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statement to read all records from a table with a NoSort", function(){
+			var result,
+				expected = "SELECT * FROM foo ORDER BY FooID desc",
+				noSort = new noInfoPath.data.NoSort();
+
+				noSort.add("FooID", "desc");
+
+			result = noDbSchema.test.sqlRead("foo", null, noSort);
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statement to read all records from a table with a NoPage", function(){
+			var result,
+				expected = "SELECT * FROM foo LIMIT 10,10",
+				noPage = new noInfoPath.data.NoPage(10,10);
+
+
+			result = noDbSchema.test.sqlRead("foo", null, null, noPage);
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statement to read all records from a table with a NoFilter and a NoPage", function(){
+			var result,
+				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') LIMIT 10,10",
+				noFilters = new noInfoPath.data.NoFilters(),
+				noPage = new noInfoPath.data.NoPage(10,10);
+
+				noFilters.add("FooID",null,true,true,
+					[{
+						"operator" : "eq",
+						"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
+						"logic" : null
+					}]
+				);
+
+			result = noDbSchema.test.sqlRead("foo", noFilters, null, noPage);
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statment to read all records from a table with a NoFilter and a NoSort", function(){
+			var result,
+				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') ORDER BY FooID desc",
+				noFilters = new noInfoPath.data.NoFilters(),
+				noSort = new noInfoPath.data.NoSort();
+
+				noSort.add("FooID", "desc");
+
+				noFilters.add("FooID",null,true,true,
+					[{
+						"operator" : "eq",
+						"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
+						"logic" : null
+					}]
+				);
+
+			result = noDbSchema.test.sqlRead("foo", noFilters, noSort);
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statment to read all records from a table with a NoSort and a NoPage", function(){
+			var result,
+				expected = "SELECT * FROM foo ORDER BY FooID desc LIMIT 10,10",
+				noSort = new noInfoPath.data.NoSort(),
+				noPage = new noInfoPath.data.NoPage(10,10);
+
+				noSort.add("FooID", "desc");
+
+			result = noDbSchema.test.sqlRead("foo", null, noSort, noPage);
+
+			expect(result).toEqual(expected);
+		});
+
+		it("should create a sql select statement to read all records from a table with a NoFilter, a NoSort, and a NoPage", function(){
+			var result,
+				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') ORDER BY FooID desc LIMIT 10,10",
+				noFilters = new noInfoPath.data.NoFilters(),
+				noSort = new noInfoPath.data.NoSort(),
+				noPage = new noInfoPath.data.NoPage(10,10);
+
+				noSort.add("FooID", "desc");
+
+				noFilters.add("FooID",null,true,true,
+					[{
+						"operator" : "eq",
+						"value" : "0eec54c3-1c7e-48af-a9da-d7da62820083",
+						"logic" : null
+					}]
+				);
+
+			result = noDbSchema.test.sqlRead("foo", noFilters, noSort, noPage);
+
+			expect(result).toEqual(expected);
+		});
+	});
 	
 });
