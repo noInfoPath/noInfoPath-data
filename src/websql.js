@@ -7,17 +7,99 @@
 			var _db;
 			this.$get = ['$parse','$rootScope','lodash', '$q', '$timeout', 'noConfig', 'noSQLQueryBuilder', 'noDbSchema', 'noLogService', function($parse, $rootScope, _, $q, $timeout, noConfig, noSQLQueryBuilder, noDbSchema, noLogService)
 			{
-				var CREATE = "",
-					CREATETABLE = "",
-					SELECT = "",
-					UPDATE = "",
-					DELETE = "",
-					JOIN = "",
-					WHERE = "",
-					ORDERBY = ""
-				;
 
 				var noQueryBuilder = noSQLQueryBuilder;
+
+				function NoTransactions(){
+					Object.defineProperties(this, {
+						"__type": {
+							"get" : function(){
+								return "NoTransactions";
+							}
+						}
+					});
+
+					var arr = [];
+					noInfoPath.setPrototypeOf(this, arr);
+
+					this.add = function(db, userID){
+						this.unshift(new NoTransaction(userID));
+					}
+				}
+
+				function NoTransaction(db, userID){
+					var SELF = this,
+						_db = db,
+						_tx;
+
+					Object.defineProperties(this, {
+						"__type": {
+							"get" : function(){
+								return "NoTransaction";
+							}
+						},
+						"webSQLTrans": {
+							"get": function(){
+								return _tx;
+							}
+						}
+					});
+
+					this.transactionID = noInfoPath.createUUID();
+					this.timestamp = new Date(); //TODO: NEeds to be UTC date
+					this.userID = userID;
+					this.changes = new NoChanges();
+
+					this.beginTransaction = function(){
+
+						var deferred = $q.defer();
+
+						_db.transaction(function(tx){
+							_tx = tx;
+
+							deferred.resolve(SELF);
+						});
+
+						return deferred.promise;
+					}
+
+					this.addChange = function(tableName, data, changeType){
+						this.changes.add(tableName, data, changeType);
+					}
+
+					this.endTransaction = function(){
+						// commit angular.toJson(this) to the noinfopath _changes table
+					}
+				}
+
+				function NoChanges(){
+					Object.defineProperties(this, {
+						"__type": {
+							"get" : function(){
+								return "NoChanges";
+							}
+						}
+					});
+					var arr = [];
+					noInfoPath.setPrototypeOf(this, arr);
+					this.add = function(tableName, data, changeType){
+						this.unshift(new NoChange(tableName, data, changeType));
+					}
+				}
+
+				function NoChange(tableName, data, changeType){
+					Object.defineProperties(this, {
+						"__type": {
+							"get" : function(){
+								return "NoChange";
+							}
+						}
+					});	
+
+					this.tableName = tableName;
+					this.data = data;
+					this.changeType = changeType;
+				}
 
 				function NoDb(queryBuilder){
 					var THIS = this;
@@ -79,11 +161,6 @@
 
 				}
 
-				function NoView(){
-				
-				}
-
-
 				function NoTable(table, tableName, queryBuilder){
 					if(!table) throw "table is a required parameter";
 					if(!tableName) throw "tableName is a required parameter";
@@ -93,14 +170,6 @@
 						_tableName = tableName,
 						_qb = queryBuilder
 					;
-
-					// Russ and I were discussing if the following commented out function was worth doing to avoid Dry because we're basically wrapping a wrapper.
-
-					// function _executeSQLTrans(sqlStatement, params, callback, errorCallback){
-					// 	_db.transaction(function(tx){
-					// 		tx.executeSql(sqlStatement, params, callback, errorCallback); 
-					// 	});
-					// }
 
 					this.noCreateTable = function(){
 
@@ -127,28 +196,34 @@
 
 						return deferred.promise;
 
-					}
+					};
 
-					this.noCreate = function(data){
+					this.noCreate = function(data, noTransaction){
+						// noTransaction is not required, but is needed to track transactions
+						var deferred = $q.defer();
 
-						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlInsertStmt(_tableName, data), [],
+						noTransaction.webSQLTrans.executeSql(
+							noDbSchema.createSqlInsertStmt(_tableName, data), 
+							[],
 						 	function(t, r){
-								deferred.resolve(r);
+						 		var result = r.rows[0];
+
+						 		noTransaction.addChange(_tableName, result, "C");
+
+								deferred.resolve(result);
 						 	}, 
 							function(t, e){
 						 		deferred.reject(e);
-						 	});  
-						});
-
-						var deferred = $q.defer();
+						 	}
+						);
 
 						return deferred.promise;
 					};
 
 					this.noRead = function() {
 
-						var filters, sort, page;
+						var filters, sort, page,
+							deferred = $q.defer();
 
 						for(var ai in arguments){
 							var arg = arguments[ai];
@@ -174,7 +249,7 @@
 
 						// var command = "SELECT * " + queryBuilderString;
 
-						var deferred = $q.defer();
+						
 
 						_db.transaction(function(tx){
 							tx.executeSql(noDbSchema.createSqlReadStmt(_tableName, filters, sort, page), [], 
@@ -205,7 +280,6 @@
 						});
 
 						return deferred.promise;
-
 					};
 
 					this.noDestroy = function(filters) {
@@ -241,7 +315,7 @@
 						});
 
 					 	return deferred.promise;
-					}
+					};
 
 					this.noCreateTable();
 

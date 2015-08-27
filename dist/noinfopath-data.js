@@ -819,26 +819,16 @@
 
 		arr.toSQL = function(){
 
-			var sqlOrder = "ORDER BY ";
+			var sqlOrder = "ORDER BY ",
+				sortExpressions = [];
 
 			this.forEach(function(o, index, array){
 
-				sqlOrder += o.toSQL();
-
-				if (array.length > (index + 1))
-
-				{
-				
-				//JAG: This does not work.  You are creating a trialing comma that
-				//will cause an error on the WebSql side.  Better approach,
-				//develop an array of strings then use the `.join` function
-				//outside of the loop.
-					sqlOrder += ", ";
-				}
+				sortExpressions.push(o.toSQL());
 
 			});
 
-			return sqlOrder += ";";
+			return sqlOrder + sortExpressions.join(',');
 		};
 		noInfoPath.setPrototypeOf(this, arr);
 	}
@@ -2027,10 +2017,10 @@ var GloboTest = {};
 					},
 					"sqlRead": function(tableName, filters, sort, page){
 						var fs, ss, ps;
-						fs = !!fs ? filters.toSQL() : "";
-						ss = !!ss ? sort.toSQL() : "";
-						ps = !!ps ? page.toSQL() : "";
-						return READ + tableName + " " + fs + " " + ss + " " + ps;
+						fs = !!filters ? " WHERE " + filters.toSQL() : "";
+						ss = !!sort ? " " + sort.toSQL() : "";
+						ps = !!page ? " " + page.toSQL() : "";
+						return READ + tableName + fs + ss + ps;
 					},
 					"sqlOne": function(tableName, primKey, value){
 						return READ + tableName + " WHERE " + primKey + " = '" + value + "'";

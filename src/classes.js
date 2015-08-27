@@ -294,8 +294,6 @@
 
 			});
 
-
-
 			return sqlOrder + sortExpressions.join(',');
 		};
 		noInfoPath.setPrototypeOf(this, arr);
@@ -396,84 +394,7 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-	function NoTransactions(){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoTransactions";
-				}
-			}
-		});
-
-		var arr = [];
-		noInfoPath.setPrototypeOf(this, arr);
-
-		this.add = function(userID){
-			this.unshift(new NoTransaction(userID));
-		}
-	}
-
-	function NoTransaction(userID){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoTransaction";
-				}
-			}
-		});
-
-		this.transactionID = noInfoPath.createUUID();
-		this.timestamp = new Date();
-		this.userID = userID;
-		this.changeset = new NoChangeSet();
-	}
-
-	function NoChangeSet(){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoChangeSet";
-				}
-			}
-		});
-
-		this.add = function(tableName){
-			this[tableName] = {
-				"tableName" : tableName,
-				changes : new NoChanges()
-			}
-		}
-		
-	}
-
-	function NoChanges(){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoChanges";
-				}
-			}
-		});
-		var arr = [];
-		noInfoPath.setPrototypeOf(this, arr);
-		this.add = function(changeType, changeObject, relatedChangeSet){
-			this.unshift(new NoChange(changeType, changeObject, relatedChangeSet));
-		}
-	}
-
-	function NoChange(changeType, changeObject, relatedChangeSet){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoChange";
-				}
-			}
-		});	
-
-		this.changeType = changeType;
-		this.changeObject = changeObject;
-		//this.relatedChangeSet = new noChangeSet(tableName);
-	}
+	
 
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
