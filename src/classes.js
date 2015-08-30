@@ -405,12 +405,7 @@
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
 			NoPage: NoPage,
-			NoResults: NoResults,
-			NoTransactions: NoTransactions,
-			NoTransaction: NoTransaction,
-			NoChangeSet: NoChangeSet,
-			NoChanges: NoChanges,
-			NoChange: NoChange
+			NoResults: NoResults
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);

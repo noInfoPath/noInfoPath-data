@@ -25,6 +25,7 @@ module.exports = function(grunt) {
                     'src/schema.js',
                     'src/sql-builder.js',
                     'src/websql.js',
+                    'src/transaction-cache.js',
 		        	//'src/import.js',
 		        	'src/indexeddb.js'
 		        ],
@@ -87,7 +88,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['karmatest']
+            tasks: ['notest']
         },
         uglify: {
             options: {

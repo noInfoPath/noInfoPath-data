@@ -1,12 +1,7 @@
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	angular.module("noinfopath.data")
-		/*
-			## noDb
-			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
-		*/
-		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+	function noDbService($timeout, $q, $rootScope, _, noLogService, databaseName){
 			/**
 				### Class noDatum
 				This is a contructor function used by Dexie when creating and returning data objects.
@@ -775,9 +770,21 @@
 
 			Dexie.addons.push(noDexie);
 
-			var _dexie = new Dexie("NoInfoPath-v3");
+			var _dexie = new Dexie(databaseName);
 
 			return  _dexie;
+		}
+
+	angular.module("noinfopath.data")
+		/*
+			## noDb
+			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+		*/
+		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+			return noDbService($timeout, $q, $rootScope, _, noLogService, "NoInfoPath-v3");
+		}])
+		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+			return noDbService($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc-v1");
 		}])
 	;
 

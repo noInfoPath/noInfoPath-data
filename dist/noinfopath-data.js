@@ -929,84 +929,7 @@ console.log(noInfoPath);
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-	function NoTransactions(){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoTransactions";
-				}
-			}
-		});
-
-		var arr = [];
-		noInfoPath.setPrototypeOf(this, arr);
-
-		this.add = function(userID){
-			this.unshift(new NoTransaction(userID));
-		}
-	}
-
-	function NoTransaction(userID){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoTransaction";
-				}
-			}
-		});
-
-		this.transactionID = noInfoPath.createUUID();
-		this.timestamp = new Date();
-		this.userID = userID;
-		this.changeset = new NoChangeSet();
-	}
-
-	function NoChangeSet(){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoChangeSet";
-				}
-			}
-		});
-
-		this.add = function(tableName){
-			this[tableName] = {
-				"tableName" : tableName,
-				changes : new NoChanges()
-			}
-		}
-		
-	}
-
-	function NoChanges(){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoChanges";
-				}
-			}
-		});
-		var arr = [];
-		noInfoPath.setPrototypeOf(this, arr);
-		this.add = function(changeType, changeObject, relatedChangeSet){
-			this.unshift(new NoChange(changeType, changeObject, relatedChangeSet));
-		}
-	}
-
-	function NoChange(changeType, changeObject, relatedChangeSet){
-		Object.defineProperties(this, {
-			"__type": {
-				"get" : function(){
-					return "NoChange";
-				}
-			}
-		});	
-
-		this.changeType = changeType;
-		this.changeObject = changeObject;
-		//this.relatedChangeSet = new noChangeSet(tableName);
-	}
+	
 
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
@@ -1017,12 +940,7 @@ console.log(noInfoPath);
 			NoSortExpression: NoSortExpression,
 			NoSort: NoSort,
 			NoPage: NoPage,
-			NoResults: NoResults,
-			NoTransactions: NoTransactions,
-			NoTransaction: NoTransaction,
-			NoChangeSet: NoChangeSet,
-			NoChanges: NoChanges,
-			NoChange: NoChange
+			NoResults: NoResults
 		};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
@@ -2420,268 +2338,338 @@ var GloboTest = {};
 (function(angular, undefined){
 	"use strict";
 
-	angular.module("noinfopath.data")
-		.provider("noWebSQL", [function(){
-			var _db;
-			this.$get = ['$parse','$rootScope','lodash', '$q', '$timeout', 'noConfig', 'noSQLQueryBuilder', 'noDbSchema', 'noLogService', function($parse, $rootScope, _, $q, $timeout, noConfig, noSQLQueryBuilder, noDbSchema, noLogService)
-			{
-				var CREATE = "",
-					CREATETABLE = "",
-					SELECT = "",
-					UPDATE = "",
-					DELETE = "",
-					JOIN = "",
-					WHERE = "",
-					ORDERBY = ""
-				;
+	function noDbService($parse, $rootScope, _, $q, $timeout, noConfig, noSQLQueryBuilder, noDbSchema, noLogService){
+		var _webSQL = openDatabase(noConfig.current.WebSQL.name, noConfig.current.WebSQL.version, noConfig.current.WebSQL.description, noConfig.current.WebSQL.size);
 
-				var noQueryBuilder = noSQLQueryBuilder;
+		_webSQL.whenReady = function(){
+			var deferred = $q.defer(),
+				tables = noDbSchema.tables;
 
-				function NoDb(queryBuilder){
-					var THIS = this;
-
-					this.whenReady = function(){
-						var deferred = $q.defer(),
-							tables = noDbSchema.tables;
-
-						$timeout(function(){
-							if($rootScope.noWebSQLInitialized)
-							{
-								noLogService.log("noWebSQL Ready.");
-								deferred.resolve();
-							}else{
-								
-								$rootScope.$watch("noWebSQLInitialized", function(newval){
-									if(newval){
-										noLogService.log("noWebSQL Ready.");
-										deferred.resolve();
-									}
-								});
-
-								THIS.configure(tables)
-									.then(function(resp){
-										$rootScope.noWebSQLInitialized = true;
-									})
-									.catch(function(err){
-										deferred.reject(err);
-									});
-							}
-						});
-
-						return deferred.promise;
-					};
-
-					this.configure = function(tables){
-						var deferred = $q.defer();
-
-						noConfig.whenReady()
-							.then(function(){
-								_db = openDatabase(noConfig.current.WebSQL.name, noConfig.current.WebSQL.version, noConfig.current.WebSQL.description, noConfig.current.WebSQL.size, _createDBSchema);
-							})
-							.then(function(){
-								$timeout(function(){
-									angular.forEach(tables, function(table, name){
-										this[name] = new NoTable(table, name, queryBuilder);
-									}, THIS);
-
-									deferred.resolve();
-								});
-							});
-
-						function _createDBSchema(){
-							
+			$timeout(function(){
+				if($rootScope.noWebSQLInitialized)
+				{
+					noLogService.log("noWebSQL Ready.");
+					deferred.resolve();
+				}else{
+					
+					$rootScope.$watch("noWebSQLInitialized", function(newval){
+						if(newval){
+							noLogService.log("noWebSQL Ready.");
+							deferred.resolve();
 						}
+					});
 
-						return deferred.promise;
-					};
-
+					this.configure(tables)
+						.then(function(resp){
+							$rootScope.noWebSQLInitialized = true;
+						})
+						.catch(function(err){
+							deferred.reject(err);
+						});
 				}
+			}.bind(this));
 
-				function NoView(){
+			return deferred.promise;
+		}.bind(_webSQL);
+
+		_webSQL.configure = function(tables){
+			var promises = [];
+		
+			angular.forEach(tables, function(table, name){
+				var t = new NoTable(table, name, noSQLQueryBuilder, _webSQL);
+				this[name] = t;
+				promises.push(createTable(name, table));
+			}, this);
+			
+			return $q.all(promises);
+		}.bind(_webSQL);
+
+		var createTable = function(tableName, table){
+
+			var deferred = $q.defer();
+
+			this.transaction(function(tx){
+				tx.executeSql(noDbSchema.createSqlTableStmt(tableName, table), [],
+			 	function(t, r){
+					deferred.resolve();
+			 	}, 
+				function(t, e){
+			 		deferred.reject();
+			 	});  
+			});
+
+			// _executeSQLTrans(noDbSchema.createSqlTableStmt(_tableName, _table), [], 
+			// 	function(t, r){
+			// 		deferred.resolve();
+			// 	},
+			// 	function(t, e){
+			// 		deferred.reject();
+			// 	});
+
+
+			return deferred.promise;
+
+		}.bind(_webSQL);
+
+		function NoTable(table, tableName, queryBuilder, database){
+			if(!table) throw "table is a required parameter";
+			if(!tableName) throw "tableName is a required parameter";
+			if(!queryBuilder) throw "queryBuilder is a required parameter";
+
+			var _table = table,
+				_tableName = tableName,
+				_qb = queryBuilder
+			;
+
+			
+
+			this.noCreate = function(data, noTransaction){
+				// noTransaction is not required, but is needed to track transactions
+				var deferred = $q.defer();
+
+				noTransaction.webSQLTrans.executeSql(
+					noDbSchema.createSqlInsertStmt(_tableName, data), 
+					[],
+				 	function(t, r){
+				 		var result = r.rows[0];
+
+				 		noTransaction.addChange(_tableName, result, "C");
+
+						deferred.resolve(result);
+				 	}, 
+					function(t, e){
+				 		deferred.reject(e);
+				 	}
+				);
+
+				return deferred.promise;
+			};
+
+			// this.noRead = function() {
+
+			// 	var filters, sort, page,
+			// 		deferred = $q.defer();
+
+			// 	for(var ai in arguments){
+			// 		var arg = arguments[ai];
+
+			// 		//success and error must always be first, then
+			// 		if(angular.isObject(arg)){
+			// 			switch(arg.constructor.name){
+			// 				case "NoFilters":
+			// 					filters = arg;
+			// 					break;
+			// 				case "NoSort":
+			// 					sort = arg;
+			// 					break;
+			// 				case "NoPage":
+			// 					page = arg;
+			// 					break;
+			// 			}
+			// 		}
+			// 	}
+
+			// 	// var queryBuilderObject = queryBuilder(filters,sort,page);
+			// 	// var queryBuilderString = queryBuilderObject.toSQL();
+
+			// 	// var command = "SELECT * " + queryBuilderString;
+
 				
-				}
 
+			// 	_db.transaction(function(tx){
+			// 		tx.executeSql(noDbSchema.createSqlReadStmt(_tableName, filters, sort, page), [], 
+			// 			function(t, r){
+			// 				deferred.resolve(r);
+			// 			}, 
+			// 			function(t, e){
+			// 				deferred.reject(e);
+			// 			});
+			// 	});
 
-				function NoTable(table, tableName, queryBuilder){
-					if(!table) throw "table is a required parameter";
-					if(!tableName) throw "tableName is a required parameter";
-					if(!queryBuilder) throw "queryBuilder is a required parameter";
+			// 	return deferred.promise;
+			// };
 
-					var _table = table,
-						_tableName = tableName,
-						_qb = queryBuilder
-					;
+			// this.noUpdate = function(data, filters) {
+			// 	// UPDATE
 
-					// Russ and I were discussing if the following commented out function was worth doing to avoid Dry because we're basically wrapping a wrapper.
+			// 	var deferred = $q.defer();
 
-					// function _executeSQLTrans(sqlStatement, params, callback, errorCallback){
-					// 	_db.transaction(function(tx){
-					// 		tx.executeSql(sqlStatement, params, callback, errorCallback); 
-					// 	});
-					// }
+			// 	_db.transaction(function(tx){
+			// 		tx.executeSql(noDbSchema.createSqlUpdateStmt(_tableName, data, filters), [],
+			// 	 	function(t, r){
+			// 			deferred.resolve(r);
+			// 	 	}, 
+			// 		function(t, e){
+			// 	 		deferred.reject(e);
+			// 	 	});  
+			// 	});
 
-					this.noCreateTable = function(){
+			// 	return deferred.promise;
+			// };
 
-						var deferred = $q.defer();
+			// this.noDestroy = function(filters) {
+			// 	// DELETE FROM TABLE WHERE DATA = FILTER
+			// 	var deferred = $q.defer()
 
-						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlTableStmt(_tableName, _table), [],
-						 	function(t, r){
-								deferred.resolve();
-						 	}, 
-							function(t, e){
-						 		deferred.reject();
-						 	});  
-						});
+			// 	_db.transaction(function(tx){
+			// 		tx.executeSql(noDbSchema.createSqlDeleteStmt(_tableName, filters), [],
+			// 	 	function(t, r){
+			// 			deferred.resolve(r);
+			// 	 	}, 
+			// 		function(t, e){
+			// 	 		deferred.reject(e);
+			// 	 	});  
+			// 	});
 
-						// _executeSQLTrans(noDbSchema.createSqlTableStmt(_tableName, _table), [], 
-						// 	function(t, r){
-						// 		deferred.resolve();
-						// 	},
-						// 	function(t, e){
-						// 		deferred.reject();
-						// 	});
+			// 	return deferred.promise;
+			// };
 
+			// this.noOne = function(data) {
+			// 	var deferred = $q.defer(),
+		 // 		table = this,
+			// 	key = data[_table.primaryKey];
 
-						return deferred.promise;
+			// 	_db.transaction(function(tx){
+			// 		tx.executeSql(noDbSchema.createSqlOneStmt(_tableName, _table.primaryKey, key), [], 
+			// 			function(t, r){
+			// 				deferred.resolve(r);
+			// 			}, 
+			// 			function(t, e){
+			// 				deferred.reject(e);
+			// 			});
+			// 	});
 
-					}
+			//  	return deferred.promise;
+			// };
 
-					this.noCreate = function(data){
+		}
+		
+		return _webSQL;
+	}
 
-						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlInsertStmt(_tableName, data), [],
-						 	function(t, r){
-								deferred.resolve(r);
-						 	}, 
-							function(t, e){
-						 		deferred.reject(e);
-						 	});  
-						});
+	
 
-						var deferred = $q.defer();
-
-						return deferred.promise;
-					};
-
-					this.noRead = function() {
-
-						var filters, sort, page;
-
-						for(var ai in arguments){
-							var arg = arguments[ai];
-
-							//success and error must always be first, then
-							if(angular.isObject(arg)){
-								switch(arg.constructor.name){
-									case "NoFilters":
-										filters = arg;
-										break;
-									case "NoSort":
-										sort = arg;
-										break;
-									case "NoPage":
-										page = arg;
-										break;
-								}
-							}
-						}
-
-						// var queryBuilderObject = queryBuilder(filters,sort,page);
-						// var queryBuilderString = queryBuilderObject.toSQL();
-
-						// var command = "SELECT * " + queryBuilderString;
-
-						var deferred = $q.defer();
-
-						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlReadStmt(_tableName, filters, sort, page), [], 
-								function(t, r){
-									deferred.resolve(r);
-								}, 
-								function(t, e){
-									deferred.reject(e);
-								});
-						});
-
-						return deferred.promise;
-					};
-
-					this.noUpdate = function(data, filters) {
-						// UPDATE
-
-						var deferred = $q.defer();
-
-						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlUpdateStmt(_tableName, data, filters), [],
-						 	function(t, r){
-								deferred.resolve(r);
-						 	}, 
-							function(t, e){
-						 		deferred.reject(e);
-						 	});  
-						});
-
-						return deferred.promise;
-
-					};
-
-					this.noDestroy = function(filters) {
-						// DELETE FROM TABLE WHERE DATA = FILTER
-						var deferred = $q.defer()
-
-						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlDeleteStmt(_tableName, filters), [],
-						 	function(t, r){
-								deferred.resolve(r);
-						 	}, 
-							function(t, e){
-						 		deferred.reject(e);
-						 	});  
-						});
-
-						return deferred.promise;
-					};
-
-					this.noOne = function(data) {
-						var deferred = $q.defer(),
-				 		table = this,
-						key = data[_table.primaryKey];
-
-						_db.transaction(function(tx){
-							tx.executeSql(noDbSchema.createSqlOneStmt(_tableName, _table.primaryKey, key), [], 
-								function(t, r){
-									deferred.resolve(r);
-								}, 
-								function(t, e){
-									deferred.reject(e);
-								});
-						});
-
-					 	return deferred.promise;
-					}
-
-					this.noCreateTable();
-
-				}
-
-		      	var db = new NoDb(noQueryBuilder);
-
-		      	return db;
-			}];
-	    }])
-  ;
+	angular.module("noinfopath.data")
+		.factory("noWebSQL",['$parse','$rootScope','lodash', '$q', '$timeout', 'noConfig', 'noSQLQueryBuilder', 'noDbSchema', 'noLogService', function($parse, $rootScope, _, $q, $timeout, noConfig, noSQLQueryBuilder, noDbSchema, noLogService)
+		{
+	      	return noDbService($parse, $rootScope, _, $q, $timeout, noConfig, noSQLQueryBuilder, noDbSchema, noLogService);
+		}])
+		;
 })(angular);
+
+(function(angular, undefined){
+	"use strict";
+	angular.module("noinfopath.data")
+		.run(["noDataTransactionCache", "noLoginService", function(noDataTransactionCache, noLoginService){
+			var user = noLoginService.user, 
+				version = {"name":"NoInfoPath-Changes-v1","version":1}, 
+				store = {"NoInfoPath_Changes": "$$ChangeID"}, 
+				tables = {
+					"NoInfoPath_Changes": {
+						"primaryKey": "ChangeID"
+					}
+				};
+
+			noDataTransactionCache.configure(user, version, store, tables)
+				.catch(function(err){
+					console.error(err);
+				});
+		}])
+		.factory("noTransactionCache", ["$q", "noDataTransactionCache", "noLoginService", function($q, noDataTransactionCache, noLoginService){
+
+			function NoTransaction(userID, transaction){
+				var SELF = this,
+					_tx = transaction;
+
+				Object.defineProperties(this, {
+					"__type": {
+						"get" : function(){
+							return "NoTransaction";
+						}
+					},
+					"webSQLTrans": {
+						"get": function(){
+							return _tx;
+						}
+					}
+				});
+
+				this.transactionID = noInfoPath.createUUID();
+				this.timestamp = new Date().valueOf();
+				this.userID = userID;
+				this.changes = new NoChanges();
+			
+				this.addChange = function(tableName, data, changeType){
+					this.changes.add(tableName, data, changeType);
+				}
+
+			}
+
+			function NoChanges(){
+				Object.defineProperties(this, {
+					"__type": {
+						"get" : function(){
+							return "NoChanges";
+						}
+					}
+				});
+				var arr = [];
+				noInfoPath.setPrototypeOf(this, arr);
+				this.add = function(tableName, data, changeType){
+					this.unshift(new NoChange(tableName, data, changeType));
+				}
+			}
+
+			function NoChange(tableName, data, changeType){
+				Object.defineProperties(this, {
+					"__type": {
+						"get" : function(){
+							return "NoChange";
+						}
+					}
+				});	
+
+				this.tableName = tableName;
+				this.data = data;
+				this.changeType = changeType;
+			}
+
+			function _noTransactionCache($q, noDataTransactionCache, noLoginService){
+				var SELF = this;
+
+				this.beginTransaction = function(db){
+
+					var deferred = $q.defer();
+
+					db.transaction(function(tx){
+						var t = new NoTransaction(noLoginService.user.userId, tx);
+
+						deferred.resolve(t);
+					});
+
+					return deferred.promise;
+				}
+
+				this.addChange = function(tableName, data, changeType){
+					_transaction.addChange(tableName, data, changeType);
+				}
+
+				this.endTransaction = function(){
+					noDataTransactionCache.NoInfoPath_Changes.noCreate(_transaction);
+				}
+			}
+
+			return new _noTransactionCache($q, noDataTransactionCache, noLoginService);
+
+		}])
+		;	
+})(angular);
+
 
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	angular.module("noinfopath.data")
-		/*
-			## noDb
-			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
-		*/
-		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+	function noDbService($timeout, $q, $rootScope, _, noLogService, databaseName){
 			/**
 				### Class noDatum
 				This is a contructor function used by Dexie when creating and returning data objects.
@@ -3450,9 +3438,21 @@ var GloboTest = {};
 
 			Dexie.addons.push(noDexie);
 
-			var _dexie = new Dexie("NoInfoPath-v3");
+			var _dexie = new Dexie(databaseName);
 
 			return  _dexie;
+		}
+
+	angular.module("noinfopath.data")
+		/*
+			## noDb
+			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+		*/
+		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+			return noDbService($timeout, $q, $rootScope, _, noLogService, "NoInfoPath-v3");
+		}])
+		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+			return noDbService($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc-v1");
 		}])
 	;
 
