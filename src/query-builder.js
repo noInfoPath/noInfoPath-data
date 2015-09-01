@@ -28,17 +28,19 @@
 *
 */
 
+/*
+* ## @service noOdataQueryBuilder : INoQueryBuilder
+*
+* ### Overview
+*
+* Implements a INoQueryBuilder compatible service that converts NoFilters,
+* NoSort, NoPage into ODATA compatible query object.
+*
+*/
+
 (function(angular, undefined){
 	angular.module("noinfopath.data")
-		/*
-		* ## @service noOdataQueryBuilder : INoQueryBuilder
-		*
-		* ### Overview
-		*
-		* Implements a INoQueryBuilder compatible service that converts NoFilters,
-		* NoSort, NoPage into ODATA compatible query object.
-		*
-		*/
+
 		.service("noOdataQueryBuilder", ['$filter', function($filter){
 			var odataFilters = {
 					eq: "eq",

@@ -1,38 +1,195 @@
+/*
+	## noDb
+	The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+*/
+
+/**
+	### Class noDatum
+	This is a contructor function used by Dexie when creating and returning data objects.
+*/
+
+/**
+	### Class noDexie
+	This is the classed used to construct the Dexie AddOn.
+*/
+
+/*
+	#### noCreate
+	Adds a new record to the database. If the primary key is provided in that will be used when adding otherwise a new UUID will be created by Dexie.
+
+	##### Parameters
+
+	|Name|Type|Description|
+	|data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
+
+	##### Returns
+	AngularJS:Promise
+*/
+
+/*
+	#### noRead
+
+	The read operation takes a complex set of parameters that allow
+	for filtering, sorting and paging of data.
+
+	##### Parameters
+
+	|Name|Type|Descriptions|
+	|----|----|------------|
+	|filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|
+	|sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
+	|page|NoPage|(Optional) Paging information, if paging is reqired by the read operation.|
+
+	##### Returns
+	AngularJS::Promise
+*/
+
+/**
+	#### Internal Values
+
+	|Name|Type|Description|
+	|------|-----|-------------|
+	|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
+	|_resolve|Function|Call to resolve `Dexie::Promise` upon successful completion of `_applyFilters()`. This function is returned while resolving the underlying IDBObjectStore from the `table` parameter.|
+	|_reject|Function|Call to resolve the `Dexie::Promise` when an unexpected for un recoverable error occurs during processing.|
+	|_store|IDBObjectStore|This underlying `IDBObjectStore` that the `table` parameter represents.|
+	|_trans|IDBTransaction|This is the underlying `IDBTransaction` that the current object store is bound to.|
+*/
+
+/**
+	##### nonIndexedOperators
+	This hash table allows for quick access to the operations that can be applied to a property on a target object and the value(s) being filtered on.
+
+	NOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.
+*/
+
+/**
+	#### _applyFilters
+	This function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.
+
+	##### Parameters
+
+	|Name|Type|Description|
+	|----|----|------|
+	|iNofilters|[iNoFilterExpression]|An array of filter expressions. Contains both indexed and non-indexed filters|
+	|table|Dexie::Table|A reference to the `Dexie::Table` being filtered.
+
+	##### Internal variables
+
+	|Name|Type|Description|
+	|------|-----|-------------|
+	|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
+	|iNoFilterHash|Collection<iNoFilters>|Used to organize the filters received in the `iNoFilters` in to a set of indexed and non-indexed filter object The collection is created by a call to `_sortOutFilters()`.|
+	|resultsKeys|Array\<guid\>|This will be use to collect the final set of results. It will be an array of keys that will be used to query the final result set.|
+
+	##### Returns
+	AngularJS::Promise (Maybe)
+*/
+
+/**
+	### _filterByIndex
+
+	This method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.
+
+	#### Parameters
+
+	|Name|Type|Description|
+	|------|-----|-------------|
+	|filter|INoFilterExpression|A single indexed filter the contains the column, operator, and value to apply to the index.|
+
+	#### Returns
+	AngularJS::Promise
+*/
+
+/**
+	### _filterByPrimaryKey  -- Being Deprecated
+
+	This method of of filterig goes against the `IDBObjectStore`'s primary key.
+*/
+
+/*
+	_filterHasIndex uses the iNoFilter parameter to determine
+	if there is an index available for the give filter. it returns
+	true if there is, false if not.
+
+	To determine if and index exists, we look at the table.schema.primKey,
+	and table.schema.indexes properties.
+*/
+
+/**
+	### _recurseIndexedFilters
+*/
+
+/*
+	This method of filtering compares the supplied set of
+	filters against each object return in the Dexie colletion.
+	This is a much slower than filtering against an index.
+*/
+
+/*
+	While Dexie supports a put operation which is similar to upsert,
+	we're going with upsert which decides whether an insert or an
+	update is required and calls the appropreiate function.
+*/
+
+/**
+	### configure
+*/
+
+/*
+	This function splits up the filters by indexed verses not. The
+	return value is a INoFilterHash.
+
+	interface INoFilterHash {
+		indexedFilters: [INoFilterExpression]
+		nonIndexedFilters: [INoFilterExpression]
+	}
+*/
+/*
+	This function applies the provided sort items to the supplied
+	Dexie:Collection. It should always sort on indexed columns and
+	return a DexieCollection.
+
+	NOTE: Need to research how to apply multi-column sorting.
+*/
+/*
+	Applies the specified skip and take values to the final
+	Dexie::Collection, if supplied.
+
+	Note that this is the function returns the final Array of items
+	based on all of the properties applied prior to this call.
+*/
+/*
+	The promise should resolve to a Dexie::Collection that will result in
+	a set of data that matches the supplied filters, reject errors.
+*/
+
+/*
+The update function expects the key to be within the update object.
+*/
+/*
+Maps to the Dexie.Table.get method.
+*/
+/**
+### _extendDexieTables
+*/
+
+
 (function (angular, Dexie, undefined){
 	"use strict";
 
 	angular.module("noinfopath.data")
-		/*
-			## noDb
-			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
-		*/
+
 		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			/**
-				### Class noDatum
-				This is a contructor function used by Dexie when creating and returning data objects.
-			*/
+
 			function noDatum(){
 				noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
 			}
 
-			/**
-				### Class noDexie
-				This is the classed used to construct the Dexie AddOn.
-			*/
+
 			function noDexie(db){
 
-				/*
-					#### noCreate
-					Adds a new record to the database. If the primary key is provided in that will be used when adding otherwise a new UUID will be created by Dexie.
 
-					##### Parameters
-
-					|Name|Type|Description|
-					|data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
-
-					##### Returns
-					AngularJS:Promise
-				*/
 				db.WriteableTable.prototype.noCreate = function(data){
 					var deferred = $q.defer(),
 						table = this;
@@ -76,35 +233,9 @@
 					return deferred.promise;
 				};
 
-				/*
-					#### noRead
 
-					The read operation takes a complex set of parameters that allow
-					for filtering, sorting and paging of data.
-
-					##### Parameters
-
-					|Name|Type|Descriptions|
-					|----|----|------------|
-					|filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|
-					|sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
-					|page|NoPage|(Optional) Paging information, if paging is reqired by the read operation.|
-
-					##### Returns
-					AngularJS::Promise
-				*/
 				db.Table.prototype.noRead = function(){
-					/**
-						#### Internal Values
 
-						|Name|Type|Description|
-						|------|-----|-------------|
-						|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
-						|_resolve|Function|Call to resolve `Dexie::Promise` upon successful completion of `_applyFilters()`. This function is returned while resolving the underlying IDBObjectStore from the `table` parameter.|
-						|_reject|Function|Call to resolve the `Dexie::Promise` when an unexpected for un recoverable error occurs during processing.|
-						|_store|IDBObjectStore|This underlying `IDBObjectStore` that the `table` parameter represents.|
-						|_trans|IDBTransaction|This is the underlying `IDBTransaction` that the current object store is bound to.|
-					*/
 					var deferred = $q.defer(),
 						table = this,
 						store, _resolve, _reject, _store, _trans,
@@ -119,12 +250,7 @@
 							"bt": "between"
 						},
 
-						/**
-							##### nonIndexedOperators
-							This hash table allows for quick access to the operations that can be applied to a property on a target object and the value(s) being filtered on.
 
-							NOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.
-						*/
 						operators = {
 							"in": function(a, b){
 								return _.indexOf(b,a) > -1;
@@ -182,28 +308,6 @@
 						}
 					}
 
-					/**
-						#### _applyFilters
-						This function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.
-
-						##### Parameters
-
-						|Name|Type|Description|
-						|----|----|------|
-						|iNofilters|[iNoFilterExpression]|An array of filter expressions. Contains both indexed and non-indexed filters|
-						|table|Dexie::Table|A reference to the `Dexie::Table` being filtered.
-
-						##### Internal variables
-
-						|Name|Type|Description|
-						|------|-----|-------------|
-						|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
-						|iNoFilterHash|Collection<iNoFilters>|Used to organize the filters received in the `iNoFilters` in to a set of indexed and non-indexed filter object The collection is created by a call to `_sortOutFilters()`.|
-						|resultsKeys|Array\<guid\>|This will be use to collect the final set of results. It will be an array of keys that will be used to query the final result set.|
-
-						##### Returns
-						AngularJS::Promise (Maybe)
-					*/
 					function _applyFilters(iNoFilters, store){
 					    var deferred = $q.defer(),
 					    	iNoFiltersHash = _sortOutFilters(iNoFilters),
@@ -233,9 +337,6 @@
 						return deferred.promise;
 					}
 
-					/**
-						### _recurseIndexedFilters
-					*/
 					function _recurseIndexedFilters(filters, table){
 
 						var deferred = $q.defer(),
@@ -311,11 +412,7 @@
 						return deferred.promise;
 					}
 
-					/**
-						### _filterByPrimaryKey  -- Being Deprecated
 
-						This method of of filterig goes against the `IDBObjectStore`'s primary key.
-					*/
 					function _filterByPrimaryKey(filter, store){
 						var deferred = $q.defer(),
 							req = store.openKeyCursor(),
@@ -341,20 +438,7 @@
 						return deferred.promise;
 					}
 
-					/**
-						### _filterByIndex
 
-						This method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.
-
-						#### Parameters
-
-						|Name|Type|Description|
-						|------|-----|-------------|
-						|filter|INoFilterExpression|A single indexed filter the contains the column, operator, and value to apply to the index.|
-
-						#### Returns
-						AngularJS::Promise
-					*/
 					function _filterByIndex(filter, table) {
 						var deferred = $q.defer(),
 							operator = operators[filter.operator],
@@ -398,11 +482,6 @@
 						return nonIndexedOperators[iNoFilterExpression.operator](obj, iNoFilter.column, iNoFilter.value);
 					}
 
-					/*
-						This method of filtering compares the supplied set of
-						filters against each object return in the Dexie colletion.
-						This is a much slower than filtering against an index.
-					*/
 					function _filterByProperties(iNoFilters, collection) {
 
 						return collection.and(function(obj){
@@ -412,28 +491,11 @@
 						});
 					}
 
-
-					/*
-						_filterHasIndex uses the iNoFilter parameter to determine
-						if there is an index available for the give filter. it returns
-						true if there is, false if not.
-
-						To determine if and index exists, we look at the table.schema.primKey,
-						and table.schema.indexes properties.
-					*/
 					function _filterHasIndex(iNoFilterExpression) {
 						return _.findIndex(table.schema.indexes, {keyPath: iNoFilterExpression.column}) > -1;
 					}
 
-					/*
-						This function splits up the filters by indexed verses not. The
-						return value is a INoFilterHash.
 
-						interface INoFilterHash {
-							indexedFilters: [INoFilterExpression]
-							nonIndexedFilters: [INoFilterExpression]
-						}
-					*/
 					function _sortOutFilters(iNoFilters) {
 						//noLogService.log("Start of sort",table.schema.indexes);
 
@@ -461,24 +523,12 @@
 						return iNoFilterHash;
 					}
 
-					/*
-						This function applies the provided sort items to the supplied
-						Dexie:Collection. It should always sort on indexed columns and
-						return a DexieCollection.
 
-						NOTE: Need to research how to apply multi-column sorting.
-					*/
 					function _applySort(iNoSort, data) {
 						noLogService.warn("TODO: Fully implement _applySort");
 					}
 
-					/*
-						Applies the specified skip and take values to the final
-						Dexie::Collection, if supplied.
 
-						Note that this is the function returns the final Array of items
-						based on all of the properties applied prior to this call.
-					*/
 					function _applyPaging(page, data){
 						return $q(function(resolve, reject){
 							if(page) data.page(page);
@@ -501,16 +551,10 @@
 
 					window.noInfoPath.digestTimeout();
 
-					/*
-						The promise should resolve to a Dexie::Collection that will result in
-						a set of data that matches the supplied filters, reject errors.
-					*/
+
 					return deferred.promise;
 				};
 
-				/*
-					The update function expects the key to be within the update object.
-				*/
 				db.WriteableTable.prototype.noUpdate = function(data){
 					var deferred = $q.defer(),
 						table = this,
@@ -564,9 +608,7 @@
 					return deferred.promise;
 				};
 
-				/*
-					Maps to the Dexie.Table.get method.
-				*/
+
 				db.WriteableTable.prototype.noOne = function(data){
 				 	var deferred = $q.defer(),
 				 		table = this,
@@ -592,11 +634,6 @@
 				 	return deferred.promise;
 				};
 
-				/*
-					While Dexie supports a put operation which is similar to upsert,
-					we're going with upsert which decides whether an insert or an
-					update is required and calls the appropreiate function.
-				*/
 				// db.WriteableTable.prototype.upsert = function(data){
 				// }
 
@@ -653,9 +690,7 @@
 
 			}
 
-			/**
-				### _extendDexieTables
-			*/
+
 			function _extendDexieTables(dbSchema){
 				function _toDexieClass(tsqlTableSchema){
 					var _table = {};
@@ -694,9 +729,7 @@
 				});
 			}
 
-			/**
-				### configure
-			*/
+
 			Dexie.prototype.configure = function(noUser, dbVersion, dexieStores, dbSchema){
 				var deferred = $q.defer();
 

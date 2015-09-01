@@ -59,6 +59,37 @@
  *	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
 */
 
+
+/*
+* ## @interface noInfoPath
+*
+* ### Overview
+* This interface exposes some useful funtions on the global scope
+* by attaching it to the `window` object as ```window.noInfoPath```
+*
+* ### Methods
+*
+* #### getItem
+*
+* #### setItem
+*
+* #### bindFilters `deprecated`
+*
+* #### noFilter `deprecated`
+*
+* #### noFilterExpression `deprecated`
+*
+* #### noDataReadRequest `deprecated`
+*
+* #### noDataSource `deprecated`
+*
+* #### digest `deprecated`
+*
+* #### digestError `deprecated`
+*
+* #### digestTimeout `deprecated`
+ */
+
 //(noInfoPath = noInfoPath || {});
 (noInfoPath.data = {});
 console.log(noInfoPath);
@@ -67,35 +98,7 @@ console.log(noInfoPath);
 
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers'])
 
-		/*
-        * ## @interface noInfoPath
-        *
-        * ### Overview
-        * This interface exposes some useful funtions on the global scope
-        * by attaching it to the `window` object as ```window.noInfoPath```
-        *
-        * ### Methods
-        *
-        * #### getItem
-        *
-        * #### setItem
-        *
-        * #### bindFilters `deprecated`
-        *
-        * #### noFilter `deprecated`
-        *
-        * #### noFilterExpression `deprecated`
-        *
-        * #### noDataReadRequest `deprecated`
-        *
-        * #### noDataSource `deprecated`
-        *
-        * #### digest `deprecated`
-        *
-        * #### digestError `deprecated`
-        *
-        * #### digestTimeout `deprecated`
-		 */
+
 		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){
 
 			function _digestTimeout(){

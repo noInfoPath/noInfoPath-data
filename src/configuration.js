@@ -1,15 +1,6 @@
 //configuration.js
 
 
-(function(angular, undefined){
-	"use strict";
-
-	var noODATAProv;
-
-	angular.module("noinfopath.data")
-		.config([function(){
-		}])
-
 		/**
 		* ## @service noConfig
 		*
@@ -64,6 +55,16 @@
 		* AngularJS::promise
 		*
 		*/
+
+(function(angular, undefined){
+	"use strict";
+
+	var noODATAProv;
+
+	angular.module("noinfopath.data")
+		.config([function(){
+		}])
+
 		.provider("noConfig", [function(){
 			var _currentConfig, _status;
 
