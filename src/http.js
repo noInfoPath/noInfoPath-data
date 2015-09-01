@@ -1,52 +1,76 @@
 //http.js
+
+/*
+* ## @service noHTTP
+*
+* ### Overview
+* Provides a RESTful compatible HTTP service.
+*
+* ### Methods
+*
+* #### create(uri, data)
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|unique identifier of the table to operate against|
+* |data|object|the data to use to create the new obejct in the db|
+*
+* #### read(resourceURI, query)
+*
+* #### update(resourceURI, formdata)
+* TODO: Implementation required.
+*
+* #### destroy(resourceURI, formdata)
+* TODO: Implementation required.
+*/
+
+/**
+* ### @class NoDb
+*
+* #### Overview
+*
+* Creates and manages a set of NoTable objects.
+*
+* #### @constructor NoDb(tables, queryBuilder)
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
+* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+*
+*/
+
+/**
+* ### @class NoTable
+*
+* #### Overview
+*
+* Provides an interface that loosely matches that of the NoTable
+* class provided by noDexie.  This to ease the integration with
+* NoInfoPath component that consume data such as noKendo.
+*
+* #### @constructor NoTable(tableName, queryBuilder)
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |tableName|string|name of the table that this instance will interact with.|
+* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+*/
+
 (function(angular, undefined){
 	"use strict";
 
 	angular.module('noinfopath.data')
-		/*
-		* ## @service noHTTP
-		*
-		* ### Overview
-		* Provides a RESTful compatible HTTP service.
-		*
-		* ### Methods
-		*
-		* #### create(uri, data)
-		*
-		* ##### Parameters
-		*
-		* |Name|Type|Description|
-		* |----|----|-----------|
-		* |uri|string|unique identifier of the table to operate against|
-		* |data|object|the data to use to create the new obejct in the db|
-		*
-		* #### read(resourceURI, query)
-		*
-		* #### update(resourceURI, formdata)
-		* TODO: Implementation required.
-		*
-		* #### destroy(resourceURI, formdata)
-		* TODO: Implementation required.
-		*/
+
 		.provider("noHTTP",[function(){
 			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', function($rootScope, $q, $timeout, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder, noLogService){
-				/**
-				* ### @class NoDb
-				*
-				* #### Overview
-				*
-				* Creates and manages a set of NoTable objects.
-				*
-				* #### @constructor NoDb(tables, queryBuilder)
-				*
-				* ##### Parameters
-				*
-				* |Name|Type|Description|
-				* |----|----|-----------|
-				* |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
-				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
-				*
-				*/
+
 				function NoDb(queryBuilder){
 					var THIS = this;
 
@@ -98,24 +122,7 @@
 				}
 
 
-				/**
-				* ### @class NoTable
-				*
-				* #### Overview
-				*
-				* Provides an interface that loosely matches that of the NoTable
-				* class provided by noDexie.  This to ease the integration with
-				* NoInfoPath component that consume data such as noKendo.
-				*
-				* #### @constructor NoTable(tableName, queryBuilder)
-				*
-				* ##### Parameters
-				*
-				* |Name|Type|Description|
-				* |----|----|-----------|
-				* |tableName|string|name of the table that this instance will interact with.|
-				* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
-				*/
+
 				function NoTable(tableName, table, queryBuilder){
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 

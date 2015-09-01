@@ -1,33 +1,163 @@
 //classes.js
 
+/*
+* ## @class NoFilterExpression : Object
+*
+* Represents an single filter expression that can be applied to an `IDBObjectStore`.
+*
+* ### Constructor
+*
+* NoFilterExpression(column, operator, value [, logic])
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |column|String|The name of the column filter on.|
+* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+* |logic|String|(Optional) One of the following values: `and`, `or`.|
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |----|----|------------|
+* |column|String|The name of the column filter on.|
+* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+* |logic|String|(Optional) One of the following values: `and`, `or`.|
+*/
+
+/*
+* ## Class NoFilters : Array
+*
+* NoFilters is an array of NoFilterExpression objects.
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |----|----|------------|
+* |length|Number|Number of elements in the array.|
+*
+* ### Methods
+*
+* #### add(column, operator, value[, logic])
+*
+* Creates and adds a new NoFilterExpression into the underlying array that NoFilters represents.
+*
+* #### Parameters
+*
+* |Name|Type|Description|
+* |----|----|------------|
+* |column|String|The name of the column filter on.|
+* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+* |logic|String|(Optional) One of the following values: `and`, `or`.|
+*/
+
+/*
+* ## Class NoSortExpression : Object
+*
+* Represents a single sort expression that can be applied to an `IDBObjectStore`.
+*
+* ### Constructor
+*
+* NoFilterExpression(column[, dir])
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |----|----|------------|
+* |column|String|The name of the column filter on.|
+* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
+*/
+
+/*
+* ## Class NoSort : Array
+*
+* NoSort is an array of NoSortExpression objects.
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |----|----|------------|
+* |length|Number|Number of elements in the array.|
+*
+* ### Methods
+*
+* #### add(column[, dir])
+*
+* Creates and adds a new NoSortExpression into the underlying array that NoSort represents.
+*
+* #### Parameters
+*
+* |Name|Type|Description|
+* |----|----|------------|
+* |column|String|The name of the column filter on.|
+* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
+*/
+
+/*
+* ## Class NoPage : Object
+*
+* NoPage represent that information required to support paging of a data set.
+*
+* ### Constructor
+*
+* NoPage(skip, take)
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |-|-|-|
+* |skip|Number|Number of objects to skip before returning the desired amount specified in `take`.|
+* |take|Number|Number of objects records to return when paging data.|
+*
+*/
+
+/*
+* ## Class NoResults : Object
+*
+* NoResults is a wrapper around a standard JavaScript Array instance. It inherits all properties and method offered by Array, but adds support for paged queries.
+*
+* ### @constructor NoResults(arrayOfThings)
+*
+* #### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
+*
+* ### Properties
+*
+* > Inherited properties are omitted.
+*
+* |Name|Type|Description|
+* |-|-|-|
+* |total|Number|The total number of items in the array|
+*
+* ### Methods
+*
+* #### page(options)
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |-|-|-|
+* |options|NoPage|A NoPage object that contains the paging instructions|
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |-|-|-|
+* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
+*
+* ##### Returns
+* void
+*/
+
+
 (function(angular, undefined){
 	"use strict";
 
-	/*
-	* ## @class NoFilterExpression : Object
-	*
-	* Represents an single filter expression that can be applied to an `IDBObjectStore`.
-	*
-	* ### Constructor
-	*
-	* NoFilterExpression(column, operator, value [, logic])
-	*
-	* |Name|Type|Description|
-	* |----|----|-----------|
-	* |column|String|The name of the column filter on.|
-	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
-	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
-	* |logic|String|(Optional) One of the following values: `and`, `or`.|
-	*
-	* ### Properties
-	*
-	* |Name|Type|Description|
-	* |----|----|------------|
-	* |column|String|The name of the column filter on.|
-	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
-	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
-	* |logic|String|(Optional) One of the following values: `and`, `or`.|
-	*/
 	function NoFilterExpression(column, operator, value, logic){
 		if(!column) throw "INoFilterExpression requires a column to filter on.";
 		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
@@ -39,32 +169,6 @@
 		this.logic = logic;
 	}
 
-	/*
-	* ## Class NoFilters : Array
-	*
-	* NoFilters is an array of NoFilterExpression objects.
-	*
-	* ### Properties
-	*
-	* |Name|Type|Description|
-	* |----|----|------------|
-	* |length|Number|Number of elements in the array.|
-	*
-	* ### Methods
-	*
-	* #### add(column, operator, value[, logic])
-	*
-	* Creates and adds a new NoFilterExpression into the underlying array that NoFilters represents.
-	*
-	* #### Parameters
-	*
-	* |Name|Type|Description|
-	* |----|----|------------|
-	* |column|String|The name of the column filter on.|
-	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
-	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
-	* |logic|String|(Optional) One of the following values: `and`, `or`.|
-	*/
 	function NoFilters(){
 		Object.defineProperties(this, {
 			"__type": {
@@ -83,22 +187,6 @@
 		this.unshift(new NoFilterExpression(column,operator,value,logic));
 	};
 
-	/*
-	* ## Class NoSortExpression : Object
-	*
-	* Represents a single sort expression that can be applied to an `IDBObjectStore`.
-	*
-	* ### Constructor
-	*
-	* NoFilterExpression(column[, dir])
-	*
-	* ### Properties
-	*
-	* |Name|Type|Description|
-	* |----|----|------------|
-	* |column|String|The name of the column filter on.|
-	* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
-	*/
 	function NoSortExpression(column, dir){
 
 		if(!column) throw "NoFilters::add requires a column to sort on.";
@@ -107,30 +195,6 @@
 		this.dir = dir;
 	}
 
-	/*
-	* ## Class NoSort : Array
-	*
-	* NoSort is an array of NoSortExpression objects.
-	*
-	* ### Properties
-	*
-	* |Name|Type|Description|
-	* |----|----|------------|
-	* |length|Number|Number of elements in the array.|
-	*
-	* ### Methods
-	*
-	* #### add(column[, dir])
-	*
-	* Creates and adds a new NoSortExpression into the underlying array that NoSort represents.
-	*
-	* #### Parameters
-	*
-	* |Name|Type|Description|
-	* |----|----|------------|
-	* |column|String|The name of the column filter on.|
-	* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
-	*/
 	function NoSort() {
 		var arr = [ ];
 
@@ -152,72 +216,16 @@
 
 		arr.toSQL = function(){
 			return "";
-		}
+		};
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-	/*
-	* ## Class NoPage : Object
-	*
-	* NoPage represent that information required to support paging of a data set.
-	*
-	* ### Constructor
-	*
-	* NoPage(skip, take)
-	*
-	* ### Properties
-	*
-	* |Name|Type|Description|
-	* |-|-|-|
-	* |skip|Number|Number of objects to skip before returning the desired amount specified in `take`.|
-	* |take|Number|Number of objects records to return when paging data.|
-	*
-	*/
+
 	function NoPage(skip, take) {
 		this.skip = skip;
 		this.take = take;
 	}
 
-	/*
-	* ## Class NoResults : Object
-	*
-	* NoResults is a wrapper around a standard JavaScript Array instance. It inherits all properties and method offered by Array, but adds support for paged queries.
-	*
-	* ### @constructor NoResults(arrayOfThings)
-	*
-	* #### Parameters
-	*
-	* |Name|Type|Description|
-	* |----|----|-----------|
-	* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
-	*
-	* ### Properties
-	*
-	* > Inherited properties are omitted.
-	*
-	* |Name|Type|Description|
-	* |-|-|-|
-	* |total|Number|The total number of items in the array|
-	*
-	* ### Methods
-	*
-	* #### page(options)
-	*
-	* ##### Parameters
-	*
-	* |Name|Type|Description|
-	* |-|-|-|
-	* |options|NoPage|A NoPage object that contains the paging instructions|
-	*
-	* ##### Parameters
-	*
-	* |Name|Type|Description|
-	* |-|-|-|
-	* |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
-	*
-	* ##### Returns
-	* void
-	*/
 	function NoResults(arrayOfThings){
 		//Capture the lenght of the arrayOfThings before any changes are made to it.
 		var _total = arrayOfThings.length,

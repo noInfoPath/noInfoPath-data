@@ -1,10 +1,12 @@
 //storage.js
+
+/**
+	### @class MockStorage
+*/
+
 (function(){
 	"use strict";
 
-	/**
-		### @class MockStorage
-	*/
 	function MockStorage(){
 		var _store = {},_len=0;
 
