@@ -38,7 +38,7 @@ module.exports = function(config) {
         'src/manifest.js',
         'src/storage.js',
         //'src/dexie.js',
-        'src/query-builder.js',
+        //'src/query-builder.js',
         //'test/date-formatter.spec.js'
         'test/storage.spec.js',
         'test/http.spec.js',
