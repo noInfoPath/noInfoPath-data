@@ -4,7 +4,7 @@
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
 
-[![Build Status](http://192.168.254.99:8081/buildStatus/icon?job=noinfopath-data&build=82)](http://192.168.254.99:8081/job/noinfopath-data/82/)
+[![Build Status](http://192.168.254.94:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://192.168.254.94:8081/job/noinfopath-data/6/)
 
 ## Dependencies
 
