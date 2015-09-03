@@ -5,27 +5,28 @@ module.exports = function(grunt) {
   	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-        copy: {
-            test: {
-                files: [
-                    //{expand:true, flatten:false, src: [ 'lib/js/noinfopath/*.*'], dest: 'build/'},
-                    {expand:true, flatten:true, src: [ 'dist/*.js'], dest: '../noinfopath-test-server-node/no/lib/js/noinfopath/'},
-                ]
-            }
-        },
+      copy: {
+          test: {
+              files: [
+                  //{expand:true, flatten:false, src: [ 'lib/js/noinfopath/*.*'], dest: 'build/'},
+                  {expand:true, flatten:true, src: [ 'dist/*.js'], dest: '../noinfopath-test-server-node/no/lib/js/noinfopath/'},
+              ]
+          }
+      },
 	    concat: {
 		    noinfopath: {
 		        src: [
 		        	'src/globals.js',
-                    'src/classes.js',
-                    'src/query-builder.js',
+              'src/classes.js',
+              'src/query-builder.js',
 		        	'src/storage.js',
 		        	'src/configuration.js',
 		        	'src/http.js',
-                    'src/schema.js',
-                    'src/sql-builder.js',
-                    'src/websql.js',
-                    'src/transaction-cache.js',
+              'src/schema.js',
+              'src/sql-builder.js',
+              'src/websql.js',
+              //'src/manifest.js',
+              'src/transaction-cache.js',
 		        	//'src/import.js',
 		        	'src/indexeddb.js'
 		        ],
@@ -39,8 +40,8 @@ module.exports = function(grunt) {
 		    	],
 		    	dest: 'dist/noinfopath-dexie.js'
 		    },
-            readme: {
-                src: ['docs/noinfopath-data.wiki.md'],
+        readme: {
+          src: ['docs/noinfopath-data.md'],
 		    	dest: 'readme.md'
             }
         },
@@ -74,7 +75,7 @@ module.exports = function(grunt) {
     		"internal": {
     			options: {
     				src: 'dist/noinfopath-data.js',
-    				dest: 'docs/noinfopath-data.wiki.md',
+    				dest: 'docs/noinfopath-data.md',
     				start: ['/*','/**']
     			}
     		},
@@ -104,7 +105,7 @@ module.exports = function(grunt) {
 
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-bumpup');
@@ -114,18 +115,18 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
-    grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
+  grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
-    grunt.registerTask('notest', ['concat:noinfopath', 'copy:test']);
+  grunt.registerTask('notest', ['concat:noinfopath', 'copy:test']);
 
-    grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
+  grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
-    grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+  grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
-    grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+  grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
-    grunt.registerTask('test', ['karma:unit']);
+  grunt.registerTask('test', ['karma:unit']);
 
-    grunt.registerTask('jenkins', ['karma:continuous']);
+  grunt.registerTask('jenkins', ['karma:continuous']);
 
 };

@@ -51,12 +51,6 @@
 				},
 				rs = "";
 
-			// TODO: HAVE WAY TO DIFFERENTIATE BETWEEN DIFFERENT DATA TYPES (STRING, INT, DATE, GUID, ETC ETC ETC)
-			//
-			// JAG: Use angular.isString etc, to do this. You could use typeOf, 
-			// in switch statement, but using angular is safer.  
-			// Also this, "sqlOperators[operator]" is bad.  what if the operator 
-			// does not exist in the hash table.  (i.e. not supported)
 			if(!sqlOperators[operator]) throw "NoFilters::NoFilterExpression required a valid operator";
 
 			if(angular.isString(value)){
@@ -72,7 +66,17 @@
 	/*
 	* ## Class NoFilters : Array
 	*
-	* NoFilters is an array of NoFilterExpression objects.
+	* NoFilters is an array of NoFilter objects.
+	*
+	* ### Constructors
+	*
+	* ####NoFilters()
+	*
+	* ##### Usage
+	*
+	* ```js
+	* var x = new noInfoPath.data.NoFilters()
+	* ```
 	*
 	* ### Properties
 	*
@@ -82,18 +86,27 @@
 	*
 	* ### Methods
 	*
-	* #### add(column, operator, value[, logic])
+	* #### add(column, logic, beginning, end, filters)
 	*
-	* Creates and adds a new NoFilterExpression into the underlying array that NoFilters represents.
+	* Creates and adds a new NoFilter into the underlying array that NoFilters represents.
 	*
-	* #### Parameters
+	* ##### Parameters
 	*
 	* |Name|Type|Description|
 	* |----|----|------------|
-	* |column|String|The name of the column filter on.|
-	* |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
-	* |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
-	* |logic|String|(Optional) One of the following values: `and`, `or`.|
+	* |column|String|The name of the column to filter on.|
+	* |logic|String|One of the following values: 'and', 'or'|
+	* |beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+	* |end|Boolean|If the NoFilter is the end of the filter expression|
+	* |filters|Array|Array of NoFilterExpressions|
+	*
+	* #### toSQL()
+	*
+	* Converts the NoFilters array to a partial SQL statement. It calls the toSQL() method on every NoFilter object within the NoFilters array.
+	*
+	* ##### Parameters
+	*
+	* None
 	*/
 	function NoFilters(){
 		Object.defineProperties(this, {
@@ -140,13 +153,17 @@
 	*
 	* |Name|Type|Description|
 	* |----|----|------------|
-	* |length|Number|Number of elements in the array.|
+	* |column|String|The column that will be filtered on|
+	* |logic|String|One of the following values: 'and', 'or'|
+	* |beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+	* |end|Boolean|If the NoFilter is the end of the filter expression|
+	* |filters|Array|Array of NoFilterExpressions|
 	*
 	* ### Methods
 	*
 	* #### toSQL()
 	*
-	* Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression 
+	* Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression within the filters array.
 	*
 	* #### Parameters
 	*

@@ -167,69 +167,80 @@ var GloboTest = {};
 						return columnConfig.nullable;
 					},
 					"sqlInsert": function(tableName, data){
-						var columns = [],
-							values = [],
-							columnString = "",
-							valuesString = ""
+						var columnString = "",
+							placeholdersString = "",
+							returnObject = {},
+							val = {}
 						;
 
-						angular.forEach(data, function(value, key){
-							columns.push(key);
+						val = this.parseData(data);
 
-							if(angular.isString(value))
-							{
-								values.push("'" + value + "'");
-							} else {
-								values.push(value);
-							}
-						});
+						columnString = val.columns.join(",");
+						placeholdersString = val.placeholders.join(",");
 
-						columnString = columns.join(",");
-						valuesString = values.join(",");
+						returnObject.queryString = INSERT + tableName + " (" + columnString + ") VALUES (" + placeholdersString + ");";
+						returnObject.valueArray = val.values;
 
-						return INSERT + tableName + " (" + columnString + ") VALUES (" + valuesString + ");";
+						return returnObject;
 					},
 					"sqlUpdate": function(tableName, data, filters){
-						var nvp = [],
-							nvpString;
+						var val = {},
+							nvps = [],
+							nvpsString = "",
+							returnObject = {};
 
-						angular.forEach(data, function(value, key){
+						val = this.parseData(data);
 
-							nvp.push(this.sqlUpdateNameValuePair(value, key));
+						nvps = this.sqlUpdateNameValuePairs(val);
 
-						}, this);
+						nvpsString = nvps.join(", ");
 
-						nvpString = nvp.join(", ");
+						returnObject.queryString = UPDATE + tableName + " SET " + nvpsString + " WHERE " + filters.toSQL();
+						returnObject.valueArray = val.values;
 
-						return UPDATE + tableName + " SET " + nvpString + " WHERE " + filters.toSQL();
+						return returnObject;
 						
 					},
-					"sqlUpdateNameValuePair": function(value, key){
-						var rs = "";
+					"sqlUpdateNameValuePair": function(values){
+						var nvps = [];
 
-						if(angular.isString(value))
-						{
-							rs = key + " = '"  + value + "'";
-						} 
-						else 
-						{
-							rs = key + " = " + value;
-						}
+						angular.forEach(values.columns, function(col, key){
+							nvps.push(col + " = ?");
+						});
 
-						return rs
+						return nvps;
 					},
 					"sqlDelete": function(tableName, filters){
-						return DELETE + tableName + " WHERE " + filters.toSQL();
+						var returnObject = {};
+						returnObject.queryString = DELETE + tableName + " WHERE " + filters.toSQL();
+						return returnObject;
 					},
 					"sqlRead": function(tableName, filters, sort, page){
-						var fs, ss, ps;
+						var fs, ss, ps, returnObject = {};
 						fs = !!filters ? " WHERE " + filters.toSQL() : "";
 						ss = !!sort ? " " + sort.toSQL() : "";
 						ps = !!page ? " " + page.toSQL() : "";
-						return READ + tableName + fs + ss + ps;
+						returnObject.queryString = READ + tableName + fs + ss + ps;
+						return returnObject;
 					},
 					"sqlOne": function(tableName, primKey, value){
-						return READ + tableName + " WHERE " + primKey + " = '" + value + "'";
+						var returnObject = {};
+						returnObject.queryString = READ + tableName + " WHERE " + primKey + " = '" + value + "'";
+						return returnObject;
+					},
+					"parseData": function(data){
+						var values = [], placeholders = [], columns = [], r = {};
+						angular.forEach(data, function(value, key){
+							columns.push(key);
+							placeholders.push("?");
+							values.push(value);
+						});
+
+						r.values = values;
+						r.placeholders = placeholders;
+						r.columns = columns;
+
+						return r;
 					}
 				}
 
@@ -237,15 +248,15 @@ var GloboTest = {};
 					return _interface.createTable(tableName, tableConfig);
 				}
 
-				this.createSqlInsertStmt = function(tableName, tableConfig){
-					return _interface.sqlInsert(tableName, tableConfig);
+				this.createSqlInsertStmt = function(tableName, data, filters){
+					return _interface.sqlInsert(tableName, data);
 				}
 
 				this.createSqlUpdateStmt = function(tableName, data, filters){
 					return _interface.sqlUpdate(tableName, data, filters);
 				}
 
-				this.createSqlDeleteStmt = function(tableName, filters){
+				this.createSqlDeleteStmt = function(tableName, data, filters){
 					return _interface.sqlDelete(tableName, filters);
 				}
 
