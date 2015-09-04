@@ -28,22 +28,39 @@ module.exports = function(config) {
         'lib/dexie.js',
         'lib/dexie.observable.js',
         'lib/dexie.syncable.js',
-        'test/mock/noinfopath.mock.js',
+
+
+
+        //'test/mock/noinfopath.mock.js',
         'test/mock/db.json.mock.js',
-        'src/globals.js',
-        'src/classes.js',
-        'src/configuration.js',
+        'test/mock/sql-builder.mock.js',
+        //'test/mock/configuration.mock.js',
+        'test/mock/schema.mock.js',
+
+
+		'src/globals.js',
+		'src/classes.js',
+		'src/configuration.js',
         'src/http.js',
-        'src/indexeddb.js',
-        'src/manifest.js',
+       'src/indexeddb.js',
+       // 'src/manifest.js',
         'src/storage.js',
         //'src/dexie.js',
+        'src/schema.js',
         'src/query-builder.js',
+        'src/sql-builder.js',
+        'src/websql.js',
+		'src/transaction-cache.js',
+
         //'test/date-formatter.spec.js'
         'test/storage.spec.js',
         'test/http.spec.js',
-        'test/configuration.spec.js'
-        //'test/query-builder.spec.js'
+        'test/configuration.spec.js',
+        'test/query-builder.spec.js',
+        'test/classes.spec.js',
+        'test/schema.spec.js'
+        //'test/websql.spec.js'
+      //  'test/sql-builder.spec.js'
     ],
 
 

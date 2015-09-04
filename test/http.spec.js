@@ -31,7 +31,7 @@ describe("Testing noHTTP service", function(){
 			expect(noHTTP).toBeDefined();
 		});
 
-		it("should have added tables specified by noDbSchema to the instance NoDb returned.", function(done){
+		xit("should have added tables specified by noDbSchema to the instance NoDb returned.", function(done){
 			noHTTP.whenReady()
 				.then(function(){
 					expect(noHTTP.Addresses).toBeDefined();
@@ -52,7 +52,7 @@ describe("Testing noHTTP service", function(){
 				$timeout.flush();
 		});
 
-		it("Any given table should be a NoTable class. Testing Addrsses.", function(){
+		xit("Any given table should be a NoTable class. Testing Addrsses.", function(){
 			noHTTP.whenReady()
 				.then(function(){
 					expect(noHTTP.Addresses.constructor.name).toBe("NoTable");

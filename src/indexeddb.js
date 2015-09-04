@@ -178,639 +178,655 @@ Maps to the Dexie.Table.get method.
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	angular.module("noinfopath.data")
-
-		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-
-			function noDatum(){
-				noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
-			}
-
-
-			function noDexie(db){
+	function noIndexedDb($timeout, $q, $rootScope, _, noLogService, databaseName){
+		/**
+			### Class noDatum
+			This is a contructor function used by Dexie when creating and returning data objects.
+		*/
+		function noDatum(){
+			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
+		}
 
 
-				db.WriteableTable.prototype.noCreate = function(data){
-					var deferred = $q.defer(),
-						table = this;
+		function noDexie(db){
 
 
-					//noLogService.log("adding: ", _dexie.currentUser);
-
-					_dexie.transaction("rw", table, function(){
-						data.CreatedBy =  _dexie.currentUser.userId;
-						data.DateCreated = new Date(Date.now());
-						data.ModifiedDate = new Date(Date.now());
-						data.ModifiedBy =  _dexie.currentUser.userId;
-
-						table.add(data)
-							.then(function(data){
-								noLogService.log("addSuccessful", data);
-								table.get(data)
-									.then(function(data){
-										//deferred.resolve(data);
-										window.noInfoPath.digest(deferred.resolve, data);
-									})
-									.catch(function(err){
-										//deferred.reject("noCRUD::create::get " + err);
-										window.noInfoPath.digestError(deferred.reject, err);
-									});
-
-							})
-							.catch(function(err){
-								//deferred.reject("noCRUD::create " + err);
-								window.noInfoPath.digestError(deferred.reject, err);
-							});
-					})
-					.then(function(){
-						noLogService.log("transaction successful for Create");
-					})
-					.catch(function(err){
-						deferred.reject("noCRUD::createTrans " + err);
-						window.noInfoPath.digestError(deferred.reject, err);
-					});
-
-					return deferred.promise;
-				};
+			db.WriteableTable.prototype.noCreate = function(data){
+				var deferred = $q.defer(),
+					table = this;
 
 
-				db.Table.prototype.noRead = function(){
+				//noLogService.log("adding: ", _dexie.currentUser);
 
-					var deferred = $q.defer(),
-						table = this,
-						store, _resolve, _reject, _store, _trans,
-						filters, sort, page,
-						indexedOperators = {
-							"eq": "equals",
-							"gt": "above",
-							"ge": "aboveOrEqual",
-							"lt": "below",
-							"le": "belowOrEqual",
-							"startswith": "startsWith",
-							"bt": "between"
-						},
+				_dexie.transaction("rw", table, function(){
+					data.CreatedBy =  _dexie.currentUser.userId;
+					data.DateCreated = new Date(Date.now());
+					data.ModifiedDate = new Date(Date.now());
+					data.ModifiedBy =  _dexie.currentUser.userId;
 
-
-						operators = {
-							"in": function(a, b){
-								return _.indexOf(b,a) > -1;
-							},
-							"eq": function(a, b){
-								return a === b;
-							},
-							"neq": function(a, b){
-								return a !== b;
-							},
-							"gt": function(a, b){
-								return a > b;
-							},
-							"ge": function(a, b){
-								return a >= b;
-							},
-							"lt": function(a, b){
-								return a < b;
-							},
-							"le": function(a, b){
-								return a <= b;
-							},
-							"startswith": function(a, b){
-								var a1 = a ? a.toLowerCase() : "",
-									b1 = b ? b.toLowerCase() : "";
-
-								return a1.indexOf(b1) === 0;
-							},
-							"contains": function(a, b){
-								var a1 = a ? a.toLowerCase() : "",
-									b1 = b ? b.toLowerCase() : "";
-
-								return a1.indexOf(b1) >= -1;
-							}
-						}, buckets = {};
-
-
-					//sort out the parameters
-					for(var ai in arguments){
-						var arg = arguments[ai];
-
-						//success and error must always be first, then
-						if(angular.isObject(arg)){
-							switch(arg.__type){
-								case "NoFilters":
-									filters = arg;
-									break;
-								case "NoSort":
-									sort = arg;
-									break;
-								case "NoPage":
-									page = arg;
-									break;
-							}
-						}
-					}
-
-					function _applyFilters(iNoFilters, store){
-					    var deferred = $q.defer(),
-					    	iNoFiltersHash = _sortOutFilters(iNoFilters),
-							resultKeys = [];
-
-						if(iNoFilters){
-							//Filter on the indexed filters first.  That should reduce the
-							//set to make the non-indexed filters more performant.
-							_recurseIndexedFilters(iNoFiltersHash.indexedFilters, table)
+					table.add(data)
+						.then(function(data){
+							noLogService.log("addSuccessful", data);
+							table.get(data)
 								.then(function(data){
-									// _applyNonIndexedFilters()
-									// 	.then(function(data){
-									// 		deferred.resolve(data);
-									// 	});
-									deferred.resolve(new noInfoPath.data.NoResults(data));
+									//deferred.resolve(data);
+									window.noInfoPath.digest(deferred.resolve, data);
 								})
 								.catch(function(err){
-									deferred.reject(err);
+									//deferred.reject("noCRUD::create::get " + err);
+									window.noInfoPath.digestError(deferred.reject, err);
+								});
+
+						})
+						.catch(function(err){
+							//deferred.reject("noCRUD::create " + err);
+							window.noInfoPath.digestError(deferred.reject, err);
+						});
+				})
+				.then(function(){
+					noLogService.log("transaction successful for Create");
+				})
+				.catch(function(err){
+					deferred.reject("noCRUD::createTrans " + err);
+					window.noInfoPath.digestError(deferred.reject, err);
+				});
+
+				return deferred.promise;
+			};
+
+
+			db.Table.prototype.noRead = function(){
+
+				var deferred = $q.defer(),
+					table = this,
+					store, _resolve, _reject, _store, _trans,
+					filters, sort, page,
+					indexedOperators = {
+						"eq": "equals",
+						"gt": "above",
+						"ge": "aboveOrEqual",
+						"lt": "below",
+						"le": "belowOrEqual",
+						"startswith": "startsWith",
+						"bt": "between"
+					},
+
+
+					operators = {
+						"in": function(a, b){
+							return _.indexOf(b,a) > -1;
+						},
+						"eq": function(a, b){
+							return a === b;
+						},
+						"neq": function(a, b){
+							return a !== b;
+						},
+						"gt": function(a, b){
+							return a > b;
+						},
+						"ge": function(a, b){
+							return a >= b;
+						},
+						"lt": function(a, b){
+							return a < b;
+						},
+						"le": function(a, b){
+							return a <= b;
+						},
+						"startswith": function(a, b){
+							var a1 = a ? a.toLowerCase() : "",
+								b1 = b ? b.toLowerCase() : "";
+
+							return a1.indexOf(b1) === 0;
+						},
+						"contains": function(a, b){
+							var a1 = a ? a.toLowerCase() : "",
+								b1 = b ? b.toLowerCase() : "";
+
+							return a1.indexOf(b1) >= -1;
+						}
+					}, buckets = {};
+
+
+				//sort out the parameters
+				for(var ai in arguments){
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if(angular.isObject(arg)){
+						switch(arg.__type){
+							case "NoFilters":
+								filters = arg;
+								break;
+							case "NoSort":
+								sort = arg;
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
+
+				function _applyFilters(iNoFilters, store){
+				    var deferred = $q.defer(),
+				    	iNoFiltersHash = _sortOutFilters(iNoFilters),
+						resultKeys = [];
+
+					if(iNoFilters){
+						//Filter on the indexed filters first.  That should reduce the
+						//set to make the non-indexed filters more performant.
+						_recurseIndexedFilters(iNoFiltersHash.indexedFilters, table)
+							.then(function(data){
+								// _applyNonIndexedFilters()
+								// 	.then(function(data){
+								// 		deferred.resolve(data);
+								// 	});
+								deferred.resolve(new noInfoPath.data.NoResults(data));
+							})
+							.catch(function(err){
+								deferred.reject(err);
+							});
+					}else{
+						table.toArray()
+							.then(deferred.resolve)
+							.catch(deferred.reject);
+					}
+
+
+					return deferred.promise;
+				}
+
+				function _recurseIndexedFilters(filters, table){
+
+					var deferred = $q.defer(),
+						map = {};
+
+					function _reduce(map){
+						var keys = [], all = [], results = [];
+							// ors = _.filter( _.pluck(map, "filter"), {logic: "or"}),
+							// ands = _.filter( _.pluck(map, "filter"), {logic: "and"}),
+							// mergedOrs = _merge(map, ors)
+						for(var k in map){
+							var items = map[k];
+
+							//noLogService.log(items);
+
+							switch(items.filter.logic){
+								case "or":
+									keys = _.union(keys, _.pluck(items.data, "pk"));
+									break;
+								case "and":
+									keys = _.intersection(keys, _.pluck(items.data, "pk"));
+									break;
+								default:
+									keys = keys.concat(_.pluck(items.data, "pk"));
+									break;
+
+							}
+							//noLogService.log( _.pluck(items.data, "pk").length)
+							all = _.union(all, items.data);
+						}
+
+						for(var ka in all){
+							var item = all[ka].obj,
+								key = item[table.schema.primKey.name];
+
+							if(keys.indexOf(key) > -1){
+								results.push(item);
+							}
+						}
+
+						return results;
+					}
+
+					function _map(){
+						var filter = filters.pop(),
+							promise;
+
+						if(filter){
+							if(table.schema.primKey === filter.column){
+								promise = _filterByPrimaryKey(filter, table);
+							}else{
+								promise = _filterByIndex(filter, table);
+							}
+
+							promise
+								.then(function(data){
+									map[filter.column] = {pk: table.schema.primKey.name, filter: filter, data: data};
+									_map();
+								})
+								.catch(function(err){
+									//deferred.reject(err);
+									noLogService.error(err);
 								});
 						}else{
-							table.toArray()
-								.then(deferred.resolve)
-								.catch(deferred.reject);
+							deferred.resolve(_reduce(map));
 						}
-
-
-						return deferred.promise;
 					}
 
-					function _recurseIndexedFilters(filters, table){
+					$timeout(_map);
 
-						var deferred = $q.defer(),
-							map = {};
+					window.noInfoPath.digestTimeout();
 
-						function _reduce(map){
-							var keys = [], all = [], results = [];
-								// ors = _.filter( _.pluck(map, "filter"), {logic: "or"}),
-								// ands = _.filter( _.pluck(map, "filter"), {logic: "and"}),
-								// mergedOrs = _merge(map, ors)
-							for(var k in map){
-								var items = map[k];
+					return deferred.promise;
+				}
 
-								//noLogService.log(items);
 
-								switch(items.filter.logic){
-									case "or":
-										keys = _.union(keys, _.pluck(items.data, "pk"));
-										break;
-									case "and":
-										keys = _.intersection(keys, _.pluck(items.data, "pk"));
-										break;
-									default:
-										keys = keys.concat(_.pluck(items.data, "pk"));
-										break;
+				function _filterByPrimaryKey(filter, store){
+					var deferred = $q.defer(),
+						req = store.openKeyCursor(),
+						operator = operators[filter.operator],
+						matchedKeys = [];
 
-								}
-								//noLogService.log( _.pluck(items.data, "pk").length)
-								all = _.union(all, items.data);
+					req.onsuccess = function(event){
+						var cursor = event.target.result;
+						if(cursor){
+							if(operator(cursor.key, filter.value)){
+								matchedKeys.push(cursor.primaryKey);
 							}
-
-							for(var ka in all){
-								var item = all[ka].obj,
-									key = item[table.schema.primKey.name];
-
-								if(keys.indexOf(key) > -1){
-									results.push(item);
-								}
-							}
-
-							return results;
+							cursor.continue();
+						}else{
+							deferred.resolve(matchedKeys);
 						}
+					};
 
-						function _map(){
-							var filter = filters.pop(),
-								promise;
+					req.onerror = function(){
+						deferred.reject(req.error);
+					};
 
-							if(filter){
-								if(table.schema.primKey === filter.column){
-									promise = _filterByPrimaryKey(filter, table);
-								}else{
-									promise = _filterByIndex(filter, table);
-								}
-
-								promise
-									.then(function(data){
-										map[filter.column] = {pk: table.schema.primKey.name, filter: filter, data: data};
-										_map();
-									})
-									.catch(function(err){
-										//deferred.reject(err);
-										noLogService.error(err);
-									});
-							}else{
-								deferred.resolve(_reduce(map));
-							}
-						}
-
-						$timeout(_map);
-
-						window.noInfoPath.digestTimeout();
-
-						return deferred.promise;
-					}
+					return deferred.promise;
+				}
 
 
-					function _filterByPrimaryKey(filter, store){
-						var deferred = $q.defer(),
-							req = store.openKeyCursor(),
-							operator = operators[filter.operator],
-							matchedKeys = [];
+				function _filterByIndex(filter, table) {
+					var deferred = $q.defer(),
+						operator = operators[filter.operator],
+						matchedKeys = [];
+
+
+					table._idbstore("readonly", function(resolve, reject, store, trans){
+						var ndx = store.index(filter.column),
+							req = ndx.openCursor();
 
 						req.onsuccess = function(event){
 							var cursor = event.target.result;
 							if(cursor){
 								if(operator(cursor.key, filter.value)){
-									matchedKeys.push(cursor.primaryKey);
+									matchedKeys.push({pk: cursor.primaryKey, fk: cursor.key, obj: cursor.value});
 								}
 								cursor.continue();
 							}else{
-								deferred.resolve(matchedKeys);
+								//noLogService.info(matchedKeys);
+								resolve(matchedKeys);
 							}
 						};
 
-						req.onerror = function(){
-							deferred.reject(req.error);
+						req.onerror = function(event){
+							reject(event);
 						};
 
-						return deferred.promise;
-					}
-
-
-					function _filterByIndex(filter, table) {
-						var deferred = $q.defer(),
-							operator = operators[filter.operator],
-							matchedKeys = [];
-
-
-						table._idbstore("readonly", function(resolve, reject, store, trans){
-							var ndx = store.index(filter.column),
-								req = ndx.openCursor();
-
-							req.onsuccess = function(event){
-								var cursor = event.target.result;
-								if(cursor){
-									if(operator(cursor.key, filter.value)){
-										matchedKeys.push({pk: cursor.primaryKey, fk: cursor.key, obj: cursor.value});
-									}
-									cursor.continue();
-								}else{
-									//noLogService.info(matchedKeys);
-									resolve(matchedKeys);
-								}
-							};
-
-							req.onerror = function(event){
-								reject(event);
-							};
-
-							trans.on("complete", function(event){
-								deferred.resolve(matchedKeys);
-							});
-
-							trans.on("error", function(event){
-								deferred.reject(trans.error());
-							});
+						trans.on("complete", function(event){
+							deferred.resolve(matchedKeys);
 						});
 
-						return deferred.promise;
-					}
-
-					function _filterByProperty(iNoFilterExpression, obj){
-						return nonIndexedOperators[iNoFilterExpression.operator](obj, iNoFilter.column, iNoFilter.value);
-					}
-
-					function _filterByProperties(iNoFilters, collection) {
-
-						return collection.and(function(obj){
-							angular.forEach(iNoFilters, function(iNoFilterExpression){
-								_filterByProperty(iNoFilters, obj);
-							});
+						trans.on("error", function(event){
+							deferred.reject(trans.error());
 						});
-					}
-
-					function _filterHasIndex(iNoFilterExpression) {
-						return _.findIndex(table.schema.indexes, {keyPath: iNoFilterExpression.column}) > -1;
-					}
-
-
-					function _sortOutFilters(iNoFilters) {
-						//noLogService.log("Start of sort",table.schema.indexes);
-
-						var iNoFilterHash = {
-							indexedFilters: [],
-							nonIndexedFilters: []
-						};
-
-						angular.forEach(iNoFilters, function(iNoFilterExpression){
-
-							if(table.schema.primKey.keyPath === iNoFilterExpression.column){
-								iNoFilterHash.indexedFilters.push(iNoFilterExpression);
-							} else {
-								if(_filterHasIndex(iNoFilterExpression)){
-									iNoFilterHash.indexedFilters.push(iNoFilterExpression);
-								} else {
-									iNoFilterHash.nonIndexedFilters.push(iNoFilterExpression);
-								}
-							}
-
-						});
-
-						//noLogService.log("Before the return",table.schema.indexes);
-
-						return iNoFilterHash;
-					}
-
-
-					function _applySort(iNoSort, data) {
-						noLogService.warn("TODO: Fully implement _applySort");
-					}
-
-
-					function _applyPaging(page, data){
-						return $q(function(resolve, reject){
-							if(page) data.page(page);
-
-							resolve(data);
-						});
-					}
-
-					$timeout(function(){
-						_applyFilters(filters, table)
-							.then(function(data){
-								_applyPaging(page, data)
-									.then(deferred.resolve)
-								;
-							})
-							.catch(function(err){
-								deferred.reject(err);
-							});
-					});
-
-					window.noInfoPath.digestTimeout();
-
-
-					return deferred.promise;
-				};
-
-				db.WriteableTable.prototype.noUpdate = function(data){
-					var deferred = $q.defer(),
-						table = this,
-						key = data[table.noInfoPath.primaryKey];
-
-					//noLogService.log("adding: ", _dexie.currentUser);
-
-					_dexie.transaction("rw", table, function(){
-						data.ModifiedDate = new Date(Date.now());
-						data.ModifiedBy =  _dexie.currentUser.userId;
-						table.update(key, data)
-							.then(function(data){
-								window.noInfoPath.digest(deferred.resolve, data);
-							})
-							.catch(function(err){
-								window.noInfoPath.digestError(deferred.reject, err);
-							});
-
-					})
-					.then(angular.noop())
-					.catch(function(err){
-						window.noInfoPath.digestError(deferred.reject, err);
 					});
 
 					return deferred.promise;
-				};
-
-				db.WriteableTable.prototype.noDestroy = function(data){
-					var deferred = $q.defer(),
-						table = this,
-						key = data[table.noInfoPath.primaryKey];
-
-					//noLogService.log("adding: ", _dexie.currentUser);
-					noLogService.log(key);
-					_dexie.transaction("rw", table, function(){
-
-						table.delete(key)
-							.then(function(data){
-								window.noInfoPath.digest(deferred.resolve, data);
-							})
-							.catch(function(err){
-								window.noInfoPath.digestError(deferred.reject, err);
-							});
-
-					})
-					.then(angular.noop())
-					.catch(function(err){
-						window.noInfoPath.digestError(deferred.reject, err);
-					});
-
-					return deferred.promise;
-				};
-
-
-				db.WriteableTable.prototype.noOne = function(data){
-				 	var deferred = $q.defer(),
-				 		table = this,
-						key = data[table.noInfoPath.primaryKey];
-
-				 	//noLogService.log("adding: ", _dexie.currentUser);
-
-				 	_dexie.transaction("r", table, function(){
-				 		table.get(key)
-				 			.then(function(data){
-				 				window.noInfoPath.digest(deferred.resolve, data);
-				 			})
-				 			.catch(function(err){
-				 				window.noInfoPath.digestError(deferred.reject, err);
-				 			});
-
-				 	})
-				 	.then(angular.noop())
-				 	.catch(function(err){
-				 		window.noInfoPath.digestError(deferred.reject, err);
-				 	});
-
-				 	return deferred.promise;
-				};
-
-				// db.WriteableTable.prototype.upsert = function(data){
-				// }
-
-				db.WriteableTable.prototype.bulkLoad = function(data, progress){
-					var deferred = $q.defer(), table = this;
-				//var table = this;
-					function _import(data, progress){
-						var total = data ? data.length : 0;
-
-						$timeout(function(){
-							//progress.rows.start({max: total});
-							deferred.notify(progress);
-						});
-
-						var currentItem = 0;
-
-						_dexie.transaction('rw', table, function (){
-							_next();
-						});
-
-
-						function _next(){
-							if(currentItem < data.length){
-								var datum = data[currentItem];
-
-								table.add(datum).then(function(data){
-									//progress.updateRow(progress.rows);
-									deferred.notify(data);
-								})
-								.catch(function(err){
-									deferred.reject(err);
-								})
-								.finally(function(){
-									currentItem++;
-									_next();
-								});
-
-							}else{
-								deferred.resolve(table.name);
-							}
-						}
-
-					}
-
-					//console.info("bulkLoad: ", table.TableName)
-
-					table.clear()
-						.then(function(){
-							_import(data, progress);
-						}.bind(this));
-
-					return deferred.promise;
-				};
-
-			}
-
-
-			function _extendDexieTables(dbSchema){
-				function _toDexieClass(tsqlTableSchema){
-					var _table = {};
-
-					angular.forEach(tsqlTableSchema.columns, function(column,tableName){
-						switch(column.type){
-							case "uniqueidentifier":
-							case "nvarchar":
-							case "varchar":
-								_table[tableName] = "String";
-								break;
-
-							case "date":
-							case "datetime":
-								_table[tableName] = "Date";
-								break;
-
-							case "bit":
-								_table[tableName] = "Boolean";
-								break;
-
-							case "int":
-							case "decimal":
-								_table[tableName] = "Number";
-								break;
-						}
-					});
-
-					return _table;
 				}
 
-				angular.forEach(dbSchema, function(table, tableName){
-					var dexieTable = _dexie[tableName];
-					dexieTable.mapToClass(noDatum, _toDexieClass(table));
-					dexieTable.noInfoPath = table;
-				});
-			}
+				function _filterByProperty(iNoFilterExpression, obj){
+					return nonIndexedOperators[iNoFilterExpression.operator](obj, iNoFilter.column, iNoFilter.value);
+				}
 
+				function _filterByProperties(iNoFilters, collection) {
 
-			Dexie.prototype.configure = function(noUser, dbVersion, dexieStores, dbSchema){
-				var deferred = $q.defer();
-
-				$timeout(function(){
-					_dexie.currentUser = noUser;
-					_dexie.on('error', function(err) {
-					    // Log to console or show en error indicator somewhere in your GUI...
-					    noLogService.error("Dexie Error: " + err);
-					   	window.noInfoPath.digestError(deferred.reject, err);
-					});
-
-					_dexie.on('blocked', function(err) {
-					    // Log to console or show en error indicator somewhere in your GUI...
-					    noLogService.warn("IndedexDB is currently execting a blocking operation.");
-					   	window.noInfoPath.digestError(deferred.reject, err);
-					});
-
-					_dexie.on('versionchange', function(err) {
-					    // Log to console or show en error indicator somewhere in your GUI...
-					    noLogService.error("IndexedDB as detected a version change");
-					});
-
-					_dexie.on('populate', function(err) {
-					    // Log to console or show en error indicator somewhere in your GUI...
-					    noLogService.warn("IndedexDB populate...  not implemented.");
-					});
-
-					_dexie.on('ready', function(data) {
-						noLogService.log("Dexie ready");
-					    // Log to console or show en error indicator somewhere in your GUI...
-						$rootScope.noIndexedDBReady = true;
-					    window.noInfoPath.digest(deferred.resolve, data);
-					});
-
-					if(_dexie.isOpen()){
-						$timeout(function(){
-							//noLogService.log("Dexie already open.")
-							window.noInfoPath.digest(deferred.resolve);
+					return collection.and(function(obj){
+						angular.forEach(iNoFilters, function(iNoFilterExpression){
+							_filterByProperty(iNoFilters, obj);
 						});
-					}else{
-						if(_.size(dexieStores)){
-							_dexie.version(dbVersion.version).stores(dexieStores);
-							_extendDexieTables.call(_dexie, dbSchema);
-							_dexie.open();
-						}else{
-							noLogService.warn("Waiting for noDbSchema data.");
+					});
+				}
+
+				function _filterHasIndex(iNoFilterExpression) {
+					return _.findIndex(table.schema.indexes, {keyPath: iNoFilterExpression.column}) > -1;
+				}
+
+
+				function _sortOutFilters(iNoFilters) {
+					//noLogService.log("Start of sort",table.schema.indexes);
+
+					var iNoFilterHash = {
+						indexedFilters: [],
+						nonIndexedFilters: []
+					};
+
+					angular.forEach(iNoFilters, function(iNoFilterExpression){
+
+						if(table.schema.primKey.keyPath === iNoFilterExpression.column){
+							iNoFilterHash.indexedFilters.push(iNoFilterExpression);
+						} else {
+							if(_filterHasIndex(iNoFilterExpression)){
+								iNoFilterHash.indexedFilters.push(iNoFilterExpression);
+							} else {
+								iNoFilterHash.nonIndexedFilters.push(iNoFilterExpression);
+							}
 						}
 
-					}
+					});
+
+					//noLogService.log("Before the return",table.schema.indexes);
+
+					return iNoFilterHash;
+				}
+
+
+				function _applySort(iNoSort, data) {
+					noLogService.warn("TODO: Fully implement _applySort");
+				}
+
+
+				function _applyPaging(page, data){
+					return $q(function(resolve, reject){
+						if(page) data.page(page);
+
+						resolve(data);
+					});
+				}
+
+				$timeout(function(){
+					_applyFilters(filters, table)
+						.then(function(data){
+							_applyPaging(page, data)
+								.then(deferred.resolve)
+							;
+						})
+						.catch(function(err){
+							deferred.reject(err);
+						});
 				});
 
 				window.noInfoPath.digestTimeout();
 
+
 				return deferred.promise;
 			};
 
-			Dexie.prototype.whenReady = function(){
-				var deferred = $q.defer();
+			db.WriteableTable.prototype.noUpdate = function(data){
+				var deferred = $q.defer(),
+					table = this,
+					key = data[table.noInfoPath.primaryKey];
 
-				$timeout(function(){
-					if($rootScope.noIndexedDBReady)
-					{
-						deferred.resolve();
-					}else{
-						$rootScope.$watch("noIndexedDBReady", function(newval){
-							if(newval){
-								deferred.resolve();
-							}
+				//noLogService.log("adding: ", _dexie.currentUser);
+
+				_dexie.transaction("rw", table, function(){
+					data.ModifiedDate = new Date(Date.now());
+					data.ModifiedBy =  _dexie.currentUser.userId;
+					table.update(key, data)
+						.then(function(data){
+							window.noInfoPath.digest(deferred.resolve, data);
+						})
+						.catch(function(err){
+							window.noInfoPath.digestError(deferred.reject, err);
 						});
-					}
+
+				})
+				.then(angular.noop())
+				.catch(function(err){
+					window.noInfoPath.digestError(deferred.reject, err);
+				});
+
+				return deferred.promise;
+			};
+
+			db.WriteableTable.prototype.noDestroy = function(data){
+				var deferred = $q.defer(),
+					table = this,
+					key = data[table.noInfoPath.primaryKey];
+
+				//noLogService.log("adding: ", _dexie.currentUser);
+				noLogService.log(key);
+				_dexie.transaction("rw", table, function(){
+
+					table.delete(key)
+						.then(function(data){
+							window.noInfoPath.digest(deferred.resolve, data);
+						})
+						.catch(function(err){
+							window.noInfoPath.digestError(deferred.reject, err);
+						});
+
+				})
+				.then(angular.noop())
+				.catch(function(err){
+					window.noInfoPath.digestError(deferred.reject, err);
 				});
 
 				return deferred.promise;
 			};
 
 
-			Dexie.addons.push(noDexie);
+			db.WriteableTable.prototype.noOne = function(data){
+			 	var deferred = $q.defer(),
+			 		table = this,
+					key = data[table.noInfoPath.primaryKey];
 
-			var _dexie = new Dexie("NoInfoPath-v3");
+			 	//noLogService.log("adding: ", _dexie.currentUser);
 
-			return  _dexie;
+			 	_dexie.transaction("r", table, function(){
+			 		table.get(key)
+			 			.then(function(data){
+			 				window.noInfoPath.digest(deferred.resolve, data);
+			 			})
+			 			.catch(function(err){
+			 				window.noInfoPath.digestError(deferred.reject, err);
+			 			});
+
+			 	})
+			 	.then(angular.noop())
+			 	.catch(function(err){
+			 		window.noInfoPath.digestError(deferred.reject, err);
+			 	});
+
+			 	return deferred.promise;
+			};
+
+			// db.WriteableTable.prototype.upsert = function(data){
+			// }
+
+			db.WriteableTable.prototype.bulkLoad = function(data, progress){
+				var deferred = $q.defer(), table = this;
+			//var table = this;
+				function _import(data, progress){
+					var total = data ? data.length : 0;
+
+					$timeout(function(){
+						//progress.rows.start({max: total});
+						deferred.notify(progress);
+					});
+
+					var currentItem = 0;
+
+					_dexie.transaction('rw', table, function (){
+						_next();
+					});
+
+
+					function _next(){
+						if(currentItem < data.length){
+							var datum = data[currentItem];
+
+							table.add(datum).then(function(data){
+								//progress.updateRow(progress.rows);
+								deferred.notify(data);
+							})
+							.catch(function(err){
+								deferred.reject(err);
+							})
+							.finally(function(){
+								currentItem++;
+								_next();
+							});
+
+						}else{
+							deferred.resolve(table.name);
+						}
+					}
+
+				}
+
+				//console.info("bulkLoad: ", table.TableName)
+
+				table.clear()
+					.then(function(){
+						_import(data, progress);
+					}.bind(this));
+
+				return deferred.promise;
+			};
+
+		}
+
+
+		function _extendDexieTables(dbSchema){
+			function _toDexieClass(tsqlTableSchema){
+				var _table = {};
+
+				angular.forEach(tsqlTableSchema.columns, function(column,tableName){
+					switch(column.type){
+						case "uniqueidentifier":
+						case "nvarchar":
+						case "varchar":
+							_table[tableName] = "String";
+							break;
+
+						case "date":
+						case "datetime":
+							_table[tableName] = "Date";
+							break;
+
+						case "bit":
+							_table[tableName] = "Boolean";
+							break;
+
+						case "int":
+						case "decimal":
+							_table[tableName] = "Number";
+							break;
+					}
+				});
+
+				return _table;
+			}
+
+			angular.forEach(dbSchema, function(table, tableName){
+				var dexieTable = _dexie[tableName];
+				dexieTable.mapToClass(noDatum, _toDexieClass(table));
+				dexieTable.noInfoPath = table;
+			});
+		}
+
+
+		Dexie.prototype.configure = function(noUser, dbVersion, dexieStores, dbSchema){
+			var deferred = $q.defer();
+
+			$timeout(function(){
+				_dexie.currentUser = noUser;
+				_dexie.on('error', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.error("Dexie Error: " + err);
+				   	window.noInfoPath.digestError(deferred.reject, err);
+				});
+
+				_dexie.on('blocked', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.warn("IndedexDB is currently execting a blocking operation.");
+				   	window.noInfoPath.digestError(deferred.reject, err);
+				});
+
+				_dexie.on('versionchange', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.error("IndexedDB as detected a version change");
+				});
+
+				_dexie.on('populate', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.warn("IndedexDB populate...  not implemented.");
+				});
+
+				_dexie.on('ready', function(data) {
+					noLogService.log("Dexie ready");
+				    // Log to console or show en error indicator somewhere in your GUI...
+					$rootScope.noIndexedDBReady = true;
+				    window.noInfoPath.digest(deferred.resolve, data);
+				});
+
+				if(_dexie.isOpen()){
+					$timeout(function(){
+						//noLogService.log("Dexie already open.")
+						window.noInfoPath.digest(deferred.resolve);
+					});
+				}else{
+					if(_.size(dexieStores)){
+						_dexie.version(dbVersion.version).stores(dexieStores);
+						_extendDexieTables.call(_dexie, dbSchema);
+						_dexie.open();
+					}else{
+						noLogService.warn("Waiting for noDbSchema data.");
+					}
+
+				}
+			});
+
+			window.noInfoPath.digestTimeout();
+
+			return deferred.promise;
+		};
+
+		Dexie.prototype.whenReady = function(){
+			var deferred = $q.defer();
+
+			$timeout(function(){
+				if($rootScope.noIndexedDBReady)
+				{
+					deferred.resolve();
+				}else{
+					$rootScope.$watch("noIndexedDBReady", function(newval){
+						if(newval){
+							deferred.resolve();
+						}
+					});
+				}
+			});
+
+			return deferred.promise;
+		};
+
+
+		Dexie.addons.push(noDexie);
+
+		var _dexie = new Dexie(databaseName);
+
+		return  _dexie;
+	}
+
+	noInfoPath.data.noIndexedDb = noIndexedDb;
+
+	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
+	angular.module("noinfopath.data")
+		/*
+			## noDb
+			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+		*/
+		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+			return noIndexedDb($timeout, $q, $rootScope, _, noLogService, "NoInfoPath-v3");
+		}])
+		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
+			return noIndexedDb($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc-v1");
 		}])
 	;
 
