@@ -1,22 +1,9 @@
 (function(angular, undefined){
 	"use strict";
-	angular.module("noinfopath.data")
-		.run(["noDataTransactionCache", "noLoginService", function(noDataTransactionCache, noLoginService){
-			var user = noLoginService.user,
-				version = {"name":"NoInfoPath-Changes-v1","version":1},
-				store = {"NoInfoPath_Changes": "$$ChangeID"},
-				tables = {
-					"NoInfoPath_Changes": {
-						"primaryKey": "ChangeID"
-					}
-				};
 
-			noDataTransactionCache.configure(user, version, store, tables)
-				.catch(function(err){
-					console.error(err);
-				});
-		}])
-		.factory("noTransactionCache", ["$q", "noDataTransactionCache", "noLoginService", "lodash", function($q, noDataTransactionCache, noLoginService, _){
+	angular.module("noinfopath.data")
+		.factory("noTransactionCache", ["$q", "noDataTransactionCache", "lodash", function($q, noDataTransactionCache, _){
+
 
 			function NoTransaction(userID, transaction){
 				var SELF = this;
@@ -47,6 +34,7 @@
 
 			}
 
+
 			function NoChanges(){
 				Object.defineProperties(this, {
 					"__type": {
@@ -62,6 +50,7 @@
 				};
 			}
 
+
 			function NoChange(tableName, data, changeType){
 				Object.defineProperties(this, {
 					"__type": {
@@ -76,15 +65,16 @@
 				this.changeType = changeType;
 			}
 
-			function _noTransactionCache($q, noDataTransactionCache, noLoginService){
+
+			function NoTransactionCache($q, noDataTransactionCache){
 				var SELF = this;
 
-				this.beginTransaction = function(db){
+				this.beginTransaction = function(db, userId){
 
 					var deferred = $q.defer();
 
 					db.transaction(function(tx){
-						var t = new NoTransaction(noLoginService.user.userId, tx);
+						var t = new NoTransaction(userId, tx);
 
 						deferred.resolve(t);
 					}, function(err){
@@ -103,8 +93,13 @@
 				};
 			}
 
-			return new _noTransactionCache($q, noDataTransactionCache, noLoginService);
+			// These classes are exposed for testing purposes
+			noInfoPath.data.NoTransaction = NoTransaction;
+			noInfoPath.data.NoChanges = NoChanges;
+			noInfoPath.data.NoChange = NoChange;
+			noInfoPath.data.NoTransactionCache = NoTransactionCache;
 
+			return new NoTransactionCache($q, noDataTransactionCache);
 		}])
 		;
 })(angular);

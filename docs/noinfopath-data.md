@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.8
+@version 0.2.9
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -438,7 +438,6 @@ he noDbSchema service provides access to the database configuration that defines
 
 
 #### _processDbJson
-
 Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
 
 
@@ -745,3 +744,4 @@ update is required and calls the appropreiate function.
 
 ## noDb
 The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+

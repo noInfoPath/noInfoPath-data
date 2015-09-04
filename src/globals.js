@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.8
+ *	@version 0.2.9
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -61,7 +61,7 @@
 
 //(noInfoPath = noInfoPath || {});
 (noInfoPath.data = {});
-console.log(noInfoPath);
+
 (function(angular, undefined){
  	"use strict";
 

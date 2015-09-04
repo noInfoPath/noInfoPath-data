@@ -1,6 +1,6 @@
 // User clicks save button
 
-var trans = ,	
+var trans = ,
 	addressRecord = {
 		"Address Line 1": "404 Road rd"
 	},
@@ -18,7 +18,7 @@ var trans = ,
 
 	angular.module("sudo", ["noinfopath.data", "noinfopath.user"])
 		.controller("contactFormController", ["noWebSQL", "noLoginService", "$q", "noTransactionCache", "$scope", function(noWebSQL, noLoginService, $q, noTransactionCache, $scope){
-			
+
 
 			// save
 			$scope.save = function(){
@@ -54,11 +54,24 @@ var trans = ,
 					})
 					.catch(function(err){
 						console.error(err);
-					});				
+					});
 				}
 		}])
 		;
 })(angular);
 
-
-
+// .run(["noDataTransactionCache", function(noDataTransactionCache){
+// 	var user = noLoginService.user,
+// 		version = {"name":"NoInfoPath-Changes-v1","version":1},
+// 		store = {"NoInfoPath_Changes": "$$ChangeID"},
+// 		tables = {
+// 			"NoInfoPath_Changes": {
+// 				"primaryKey": "ChangeID"
+// 			}
+// 		};
+//
+// 	noDataTransactionCache.configure(user, version, store, tables)
+// 		.catch(function(err){
+// 			console.error(err);
+// 		});
+// }])
