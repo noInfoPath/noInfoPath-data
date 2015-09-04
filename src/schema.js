@@ -10,10 +10,10 @@ var GloboTest = {};
 		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
 		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
-			var _interface = new NoDbSchema(),  
-				_config = {}, 
-				_tables = {}, 
-				_sql = {}, 
+			var _interface = new NoDbSchema(),
+				_config = {},
+				_tables = {},
+				_sql = {},
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
@@ -70,26 +70,26 @@ var GloboTest = {};
 					"bit" : function(i){return angular.isNumber(i) ? i : null;},
 					"decimal" : function(n){return angular.isNumber(n) ? n : null;},
 					"int" : function(i){return angular.isNumber(i) ? i : null;},
-					"money" : function(n){return angular.isNumber(n) ? n : null;}, 
+					"money" : function(n){return angular.isNumber(n) ? n : null;},
 					"numeric" : function(n){return angular.isNumber(n) ? n : null;},
 					"smallint" : function(i){return angular.isNumber(i) ? i : null;},
-					"smallmoney" : function(n){return angular.isNumber(n) ? n : null;}, 
+					"smallmoney" : function(n){return angular.isNumber(n) ? n : null;},
 					"tinyint" : function(i){return angular.isNumber(i) ? i : null;},
 					"float" : function(r){return r;},
 					"real" : function(r){return r;},
-					"date" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
-					"datetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"date" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"datetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
 					"datetime2" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
-					"datetimeoffset" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"datetimeoffset" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
 					"smalldatetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
-					"time" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"time" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
 					"char" : function(t){return angular.isString(t) ? t : null;},
 					"nchar" : function(t){return angular.isString(t) ? t : null;},
 					"varchar" : function(t){return angular.isString(t) ? t : null;},
 					"nvarchar" : function(t){return angular.isString(t) ? t : null;},
 					"text" : function(t){return angular.isString(t) ? t : null;},
 					"ntext" : function(t){return angular.isString(t) ? t : null;},
-					"binary" : function(b){return b;}, 
+					"binary" : function(b){return b;},
 					"varbinary" : function(b){return b;},
 					"image" : function(b){return b;},
 					"uniqueidentifier" : function(t){return angular.isString(t) ? t : null;}
@@ -128,7 +128,7 @@ var GloboTest = {};
 					"typeName": function(columnConfig){
 						return sqlConversion[columnConfig.type];
 					},
-					"expr": function(Expr){return ""},
+					"expr": function(Expr){return "";},
 					"foreignKeyClause": function(isForeignKey, columnName, foreignKeys){
 						var rs = "";
 						if(isForeignKey){
@@ -191,7 +191,7 @@ var GloboTest = {};
 
 						val = this.parseData(data);
 
-						nvps = this.sqlUpdateNameValuePairs(val);
+						nvps = this.sqlUpdateNameValuePair(val);
 
 						nvpsString = nvps.join(", ");
 
@@ -199,7 +199,7 @@ var GloboTest = {};
 						returnObject.valueArray = val.values;
 
 						return returnObject;
-						
+
 					},
 					"sqlUpdateNameValuePair": function(values){
 						var nvps = [];

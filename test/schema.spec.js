@@ -1,6 +1,6 @@
 var customMatchers = {
 	toBeCloseToTime: function(util, customEqualityTesters) {
-		return { 
+		return {
 			compare: function(actual, expected) {
 
 				var result = {};
@@ -15,19 +15,19 @@ var customMatchers = {
 				{
 
 					result.message = "Expected " + this.actual + "to be close to " + this.expected;
-				
+
 				}
 				else
 				{
 					result.message = "Expected " + this.actual + "to be close to " + this.expected + ", but it was not";
 				}
-		
+
 				return result;
 
 			}
-		}
+		};
 	}
-}
+};
 
 
 
@@ -62,7 +62,7 @@ describe("Testing noDbSchema", function(){
 		expect(noDbSchema.test.typeName).toBeDefined();
 		expect(noDbSchema.test.expr).toBeDefined();
 		expect(noDbSchema.test.foreignKeyClause).toBeDefined();
-		//expect(noDbSchema.store).toBeDefined(); 
+		//expect(noDbSchema.store).toBeDefined();
 	});
 
 	describe("Testing SQL conversion functions", function(){
@@ -518,7 +518,7 @@ describe("Testing noDbSchema", function(){
 
 				result = GloboTest.fromSqlLiteConversionFunctions.time(input);
 
-				expect(result).toBeCloseToTime(expected); 
+				expect(result).toBeCloseToTime(expected);
 			});
 
 			it("Testing char with proper datatype and value, expecting a string to be returned", function(){
@@ -984,7 +984,7 @@ describe("Testing noDbSchema", function(){
 
 	});
 
-	describe("Testing SQL Create Table Strings", function(){	
+	describe("Testing SQL Create Table Strings", function(){
 
 		it("given a sql varchar type, should convert and return a sqllite TEXT type", function(){
 			var result,
@@ -1076,7 +1076,7 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 
-		it("should return a column with it's type", function(){			
+		it("should return a column with it's type", function(){
 			var result,
 				expected = "price NUMERIC";
 
@@ -1085,7 +1085,7 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 
-		it("should return a column with it's type thats nullable", function(){			
+		it("should return a column with it's type thats nullable", function(){
 			var result,
 				expected = "number INTEGER NULL";
 
@@ -1094,7 +1094,7 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 
-		it("should return a column with a foreign key constraint definition", function(){			
+		it("should return a column with a foreign key constraint definition", function(){
 			var result,
 				expected = "barID TEXT REFERENCES bar (barID) NULL";
 
@@ -1103,7 +1103,7 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 
-		it("should return a series of column definition", function(){			
+		it("should return a series of column definition", function(){
 			var result,
 				expected = "Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC";
 
@@ -1124,9 +1124,12 @@ describe("Testing noDbSchema", function(){
 	});
 
 	describe("Testing SQL Insert Strings", function(){
-		it("should make a sql insert statement from a mock", function(){
+		it("should make a sql insert object from a mock", function(){
 			var result,
-				expected = "INSERT INTO foo (fooID,Description,barID,number,price) VALUES ('0eec54c3-1c7e-48af-a9da-d7da62820083','Test',,12,4.87);";
+				expected = {
+					"queryString" : "INSERT INTO foo (fooID,Description,barID,number,price) VALUES (?,?,?,?,?);",
+					"valueArray" : ['0eec54c3-1c7e-48af-a9da-d7da62820083','Test',null,12,4.87]
+				};
 
 			result = noDbSchema.test.sqlInsert("foo", insertData);
 
@@ -1137,7 +1140,9 @@ describe("Testing noDbSchema", function(){
 	describe("Testing SQL delete strings", function(){
 		it("should make a sql delete statement from a mock", function(){
 			var result,
-				expected = "DELETE FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')",
+				expected = {
+					"queryString" : "DELETE FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')"
+				},
 				noFilters = new noInfoPath.data.NoFilters();
 
 			noFilters.add("FooID",null,true,true,
@@ -1157,7 +1162,10 @@ describe("Testing noDbSchema", function(){
 	describe("Testing SQL update strings", function(){
 		it("should make a sql update statement from a mock", function(){
 			var result,
-				expected = "UPDATE foo SET Description = 'noTest', barID = '128f28ca-e926-4259-d202-b754fe5b11c7', number = 42, price = 19.95 WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')",
+				expected = {
+					"queryString" : "UPDATE foo SET Description = ?, barID = ?, number = ?, price = ? WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')",
+					"valueArray" : ['noTest','128f28ca-e926-4259-d202-b754fe5b11c7',42,19.95]
+				},
 				noFilters = new noInfoPath.data.NoFilters();
 
 			noFilters.add("FooID",null,true,true,
@@ -1177,7 +1185,9 @@ describe("Testing noDbSchema", function(){
 	describe("testing SQL Read strings", function(){
 		it("should create a sql select statement to read one record based on the PK", function(){
 			var result,
-				expected = "SELECT * FROM foo WHERE FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083'";
+				expected = {
+					"queryString" :"SELECT * FROM foo WHERE FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083'"
+				};
 
 			result = noDbSchema.test.sqlOne("foo", "FooID", "0eec54c3-1c7e-48af-a9da-d7da62820083");
 
@@ -1186,7 +1196,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statement to read all records from a table", function(){
 			var result,
-				expected = "SELECT * FROM foo";
+				expected = {
+					"queryString" :"SELECT * FROM foo"
+				};
 
 			result = noDbSchema.test.sqlRead("foo");
 
@@ -1195,7 +1207,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statement to read all records from a table with a NoFilter", function(){
 			var result,
-				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')",
+				expected = {
+					"queryString" :"SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')"
+				},
 				noFilters = new noInfoPath.data.NoFilters();
 
 				noFilters.add("FooID",null,true,true,
@@ -1213,7 +1227,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statement to read all records from a table with a NoSort", function(){
 			var result,
-				expected = "SELECT * FROM foo ORDER BY FooID desc",
+				expected = {
+					"queryString" :"SELECT * FROM foo ORDER BY FooID desc",
+				},
 				noSort = new noInfoPath.data.NoSort();
 
 				noSort.add("FooID", "desc");
@@ -1225,7 +1241,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statement to read all records from a table with a NoPage", function(){
 			var result,
-				expected = "SELECT * FROM foo LIMIT 10,10",
+				expected = {
+					"queryString" :"SELECT * FROM foo LIMIT 10,10",
+				},
 				noPage = new noInfoPath.data.NoPage(10,10);
 
 
@@ -1236,7 +1254,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statement to read all records from a table with a NoFilter and a NoPage", function(){
 			var result,
-				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') LIMIT 10,10",
+				expected = {
+					"queryString" :"SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') LIMIT 10,10",
+				},
 				noFilters = new noInfoPath.data.NoFilters(),
 				noPage = new noInfoPath.data.NoPage(10,10);
 
@@ -1255,7 +1275,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statment to read all records from a table with a NoFilter and a NoSort", function(){
 			var result,
-				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') ORDER BY FooID desc",
+				expected = {
+					"queryString" : "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') ORDER BY FooID desc"
+				},
 				noFilters = new noInfoPath.data.NoFilters(),
 				noSort = new noInfoPath.data.NoSort();
 
@@ -1276,7 +1298,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statment to read all records from a table with a NoSort and a NoPage", function(){
 			var result,
-				expected = "SELECT * FROM foo ORDER BY FooID desc LIMIT 10,10",
+				expected = {
+					"queryString" : "SELECT * FROM foo ORDER BY FooID desc LIMIT 10,10"
+				},
 				noSort = new noInfoPath.data.NoSort(),
 				noPage = new noInfoPath.data.NoPage(10,10);
 
@@ -1289,7 +1313,9 @@ describe("Testing noDbSchema", function(){
 
 		it("should create a sql select statement to read all records from a table with a NoFilter, a NoSort, and a NoPage", function(){
 			var result,
-				expected = "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') ORDER BY FooID desc LIMIT 10,10",
+				expected = {
+					"queryString" : "SELECT * FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083') ORDER BY FooID desc LIMIT 10,10"
+				},
 				noFilters = new noInfoPath.data.NoFilters(),
 				noSort = new noInfoPath.data.NoSort(),
 				noPage = new noInfoPath.data.NoPage(10,10);
@@ -1309,5 +1335,5 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 	});
-	
+
 });

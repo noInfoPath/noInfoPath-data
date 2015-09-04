@@ -40,16 +40,16 @@
 		this.toSQL = function()
 		{
 			var sqlOperators = {
-					"eq" : "=",
-					"ne" : "!=",
-					"gt" : ">",
-					"ge" : ">=",
-					"lt" : "<",
-					"le" : "<=",
-					"contains" : "CONTAINS",
-					"startswith": "" // TODO: FIND SQL EQUIVILANT OF STARTS WITH
-				},
-				rs = "";
+				"eq" : "=",
+				"ne" : "!=",
+				"gt" : ">",
+				"ge" : ">=",
+				"lt" : "<",
+				"le" : "<=",
+				"contains" : "CONTAINS",
+				"startswith": "" // TODO: FIND SQL EQUIVILANT OF STARTS WITH
+			},
+			rs = "";
 
 			if(!sqlOperators[operator]) throw "NoFilters::NoFilterExpression required a valid operator";
 
@@ -60,7 +60,7 @@
 			}
 
 			return rs;
-		}
+		};
 	}
 
 	/*
@@ -108,7 +108,9 @@
 	*
 	* None
 	*/
-	function NoFilters(){
+	function NoFilters(kendoFilter){
+		var arr = [];
+
 		Object.defineProperties(this, {
 			"__type": {
 				"get": function(){
@@ -117,12 +119,23 @@
 			}
 		});
 
-		var arr = [];
-		arr.push.apply(arr, arguments);
-		
+		//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
+		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
+
+		if(kendoFilter){
+			for(var i in kendoFilter.filters){
+				var filter = kendoFilter.filters[i],
+					fe = new NoFilterExpression(filter.operator, filter.value),
+					f = new NoFilter(filter.field, kendoFilter.logic, true, true, [fe]);
+
+					this.unshift(f);
+			}
+		}
+		//arr.push.apply(arr, arguments);
+
 		this.toSQL = function(){
 			var rs = "",
-				rsArray = [];
+			rsArray = [];
 
 			angular.forEach(this, function(value, key){
 				rsArray.push(value.toSQL());
@@ -142,9 +155,8 @@
 
 		noInfoPath.setPrototypeOf(this, arr);
 	}
-	
 
-/*
+	/*
 	* ## Class NoFilter : Object
 	*
 	* NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
@@ -184,7 +196,7 @@
 		});
 
 		this.column = column;
-		this.logic = logic
+		this.logic = logic;
 		this.beginning = beginning;
 		this.end = end;
 		this.filters = [];
@@ -195,8 +207,8 @@
 
 		this.toSQL = function(){
 			var rs = "",
-				filterArray = [],
-				filterArrayString = "";
+			filterArray = [],
+			filterArrayString = "";
 
 			angular.forEach(this.filters, function(value, key){
 				filterArray.push(this.column + " " + value.toSQL());
@@ -210,7 +222,7 @@
 			if(!!this.logic) rs += " " + logic + " ";
 
 			return rs;
-		}
+		};
 
 		// this.add = function(column, logic, beginning, end, filters) {
 		// 	this.column = column;
@@ -292,8 +304,7 @@
 			}
 		});
 
-
-		arr.push.apply(arr, arguments);
+		arr.push.apply(arr, arguments.length ? arguments[0] : []);
 		arr.add = function(column, dir) {
 			if(!column) throw "NoSort::add requires a column to filter on.";
 
@@ -303,7 +314,7 @@
 		arr.toSQL = function(){
 
 			var sqlOrder = "ORDER BY ",
-				sortExpressions = [];
+			sortExpressions = [];
 
 			this.forEach(function(o, index, array){
 
@@ -339,7 +350,7 @@
 
 		this.toSQL = function(){
 			return "LIMIT " + this.skip + "," + this.take;
-		}
+		};
 	}
 
 	/*
@@ -385,8 +396,8 @@
 	function NoResults(arrayOfThings){
 		//Capture the lenght of the arrayOfThings before any changes are made to it.
 		var _total = arrayOfThings.length,
-		 	_page = arrayOfThings,
-			arr = arrayOfThings;
+		_page = arrayOfThings,
+		arr = arrayOfThings;
 
 		//arr.push.apply(arr, arguments);
 
@@ -411,19 +422,19 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-	
+
 
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
-			NoFilterExpression: NoFilterExpression,
-			NoFilter: NoFilter,
-			NoFilters: NoFilters,
-			NoSortExpression: NoSortExpression,
-			NoSort: NoSort,
-			NoPage: NoPage,
-			NoResults: NoResults
-		};
+		NoFilterExpression: NoFilterExpression,
+		NoFilter: NoFilter,
+		NoFilters: NoFilters,
+		NoSortExpression: NoSortExpression,
+		NoSort: NoSort,
+		NoPage: NoPage,
+		NoResults: NoResults
+	};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
 

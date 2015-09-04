@@ -1,5 +1,5 @@
 //websql.spec.js
-var mockTable = 
+var mockTable =
 {
 	"foo": {
 		 "columns": {
@@ -34,7 +34,7 @@ describe("Testing websql", function(){
 			noWebSQL = $injector.get("noWebSQL");
 		});
 
-		
+
 	});
 
 	xit("noWebSQL should be instanciated.", function(){
@@ -46,11 +46,11 @@ describe("Testing websql", function(){
 	});
 
 	xit("should make a table", function(){
-		
+
 	});
 
 	xit("Should make a series of tables.", function(done){
-		noWebSQL.whenReady()
+		noWebSQL.whenReady(noConfig.webSQL, noDbSchema)
 			.then(function(){
 					expect(noHTTP.Addresses).toBeDefined();
 					expect(noHTTP.CoolerTrials).toBeDefined();
@@ -60,7 +60,7 @@ describe("Testing websql", function(){
 					expect(noHTTP.Selections).toBeDefined();
 				})
 			.catch(function(err){
-				console.log(err)
+				console.log(err);
 			})
 			.finally(done);
 	});
