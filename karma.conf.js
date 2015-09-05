@@ -48,12 +48,12 @@ module.exports = function(config) {
         'src/query-builder.js',
         'src/sql-builder.js',
         'src/websql.js',
-        
+
         //'test/date-formatter.spec.js'
         //'test/storage.spec.js',
         //'test/http.spec.js',
         //'test/configuration.spec.js',
-        //'test/query-builder.spec.js',
+        'test/query-builder.spec.js',
         'test/classes.spec.js'
         //'test/schema.spec.js'
         //'test/websql.spec.js'

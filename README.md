@@ -131,6 +131,31 @@ Creates and adds a new NoFilterExpression into the underlying array that NoFilte
 |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 |logic|String|(Optional) One of the following values: `and`, `or`.|
 
+## Class NoFilter : Object
+
+NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+
+### Properties
+
+|Name|Type|Description|
+|----|----|------------|
+|length|Number|Number of elements in the array.|
+
+### Methods
+
+#### toSQL()
+
+Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The name of the column filter on.|
+|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+|logic|String|(Optional) One of the following values: `and`, `or`.|
+
 ## Class NoSortExpression : Object
 
 Represents a single sort expression that can be applied to an `IDBObjectStore`.
@@ -410,6 +435,42 @@ whenReady is used to check if this service has completed its load phase. If it h
 
 #### Returns
 AngularJS::Promise
+
+## @interface INoQueryBuilder
+
+> INoQueryBuilder is a conceptual entity, it does not really exist
+> the reality. This is because JavaScript does not implement interfaces
+> like other languages do. This documentation should be considered as a
+> guide for creating query providers compatible with NoInfoPath.
+
+### Overview
+INoQueryBuilder provides a service interface definition for converting a set
+of NoInfoPath class related to querying data into a given query protocol.
+An example of this is the ODATA 2.0 specification.
+
+### Methods
+
+#### makeQuery(filters, sort, page)
+
+##### Parameters
+
+|Name|Type|Descriptions|
+|----|----|------------|
+|filters|NoFilters|(Optional) Instance of a NoFilters class|
+|sort|NoSort|(Optional) Instance of NoSort class|
+|page|NoPage|(Optional) Instance of NoPage class|
+
+##### Returns
+Object
+
+
+## @service noSQLQueryBuilder : INoQueryBuilder
+
+### Overview
+
+Implements a INoQueryBuilder compatible service that converts NoFilters,
+NoSort, NoPage into a WebSQL compatible query string.
+
 
 ## noDb
 The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
