@@ -179,6 +179,31 @@ Converts the current NoFilter object to a partial SQL statement. It calls the No
 |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 |logic|String|(Optional) One of the following values: `and`, `or`.|
 
+## Class NoFilter : Object
+
+NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+
+### Properties
+
+|Name|Type|Description|
+|----|----|------------|
+|length|Number|Number of elements in the array.|
+
+### Methods
+
+#### toSQL()
+
+Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The name of the column filter on.|
+|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+|logic|String|(Optional) One of the following values: `and`, `or`.|
+
 ## Class NoSortExpression : Object
 
 Represents a single sort expression that can be applied to an `IDBObjectStore`.
@@ -495,6 +520,10 @@ Implements a INoQueryBuilder compatible service that converts NoFilters,
 NoSort, NoPage into a WebSQL compatible query string.
 
 
+<<<<<<< HEAD
+## noDb
+The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+=======
 ### createTable(tableName, table)
 
 #### Parameters
@@ -584,6 +613,7 @@ Reads a record from the websql database based on the Primary Key of the data pro
 |Name|Type|Description|
 |----|----|-----------|
 |data|Object|Name Value Pairs|
+>>>>>>> cb46a89fd69da5d4b4385e0374c081e552ba367b
 
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.

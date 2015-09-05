@@ -92,7 +92,7 @@
 			;
 
 			/**
-			* ### _getOne(rowid)
+			* ### \_getOne(rowid)
 			*
 			* #### Parameters
 			*
@@ -135,7 +135,7 @@
 			}
 
 			/**
-			* ### _exec(sqlExpressionData)
+			* ### \_exec(sqlExpressionData)
 			*
 			* #### Parameters
 			*

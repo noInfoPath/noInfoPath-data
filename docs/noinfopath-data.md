@@ -4,7 +4,7 @@
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
 
-[![Build Status](http://192.168.254.99:8081/job/noinfopath-data/badge/icon)](http://192.168.254.99:8081/job/noinfopath-data)
+[![Build Status](http://192.168.254.94:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://192.168.254.94:8081/job/noinfopath-data/6/)
 
 ## Dependencies
 
@@ -79,9 +79,6 @@ by attaching it to the `window` object as ```window.noInfoPath```
 
 #### digestTimeout `deprecated`
 
-## @service noDataService `deprecated`
-
-
 ## @class NoFilterExpression : Object
 
 Represents an single filter expression that can be applied to an `IDBObjectStore`.
@@ -108,17 +105,7 @@ NoFilterExpression(column, operator, value [, logic])
 
 ## Class NoFilters : Array
 
-NoFilters is an array of NoFilter objects.
-
-### Constructors
-
-####NoFilters()
-
-##### Usage
-
-```js
-var x = new noInfoPath.data.NoFilters()
-```
+NoFilters is an array of NoFilterExpression objects.
 
 ### Properties
 
@@ -128,47 +115,9 @@ var x = new noInfoPath.data.NoFilters()
 
 ### Methods
 
-#### add(column, logic, beginning, end, filters)
+#### add(column, operator, value[, logic])
 
-Creates and adds a new NoFilter into the underlying array that NoFilters represents.
-
-##### Parameters
-
-|Name|Type|Description|
-|----|----|------------|
-|column|String|The name of the column to filter on.|
-|logic|String|One of the following values: 'and', 'or'|
-|beginning|Boolean|If the NoFilter is the beginning of the filter expression|
-|end|Boolean|If the NoFilter is the end of the filter expression|
-|filters|Array|Array of NoFilterExpressions|
-
-#### toSQL()
-
-Converts the NoFilters array to a partial SQL statement. It calls the toSQL() method on every NoFilter object within the NoFilters array.
-
-##### Parameters
-
-None
-
-## Class NoFilter : Object
-
-NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
-
-### Properties
-
-|Name|Type|Description|
-|----|----|------------|
-|column|String|The column that will be filtered on|
-|logic|String|One of the following values: 'and', 'or'|
-|beginning|Boolean|If the NoFilter is the beginning of the filter expression|
-|end|Boolean|If the NoFilter is the end of the filter expression|
-|filters|Array|Array of NoFilterExpressions|
-
-### Methods
-
-#### toSQL()
-
-Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression within the filters array.
+Creates and adds a new NoFilterExpression into the underlying array that NoFilters represents.
 
 #### Parameters
 
@@ -271,6 +220,126 @@ NoResults is a wrapper around a standard JavaScript Array instance. It inherits 
 
 ##### Returns
 void
+
+## @class NoFilterExpression : Object
+
+Represents an single filter expression that can be applied to an `IDBObjectStore`.
+
+### Constructor
+
+NoFilterExpression(column, operator, value [, logic])
+
+|Name|Type|Description|
+|----|----|-----------|
+|column|String|The name of the column filter on.|
+|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+|logic|String|(Optional) One of the following values: `and`, `or`.|
+
+### Properties
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The name of the column filter on.|
+|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+|logic|String|(Optional) One of the following values: `and`, `or`.|
+
+## Class NoFilters : Array
+
+NoFilters is an array of NoFilter objects.
+
+### Constructors
+
+####NoFilters()
+
+##### Usage
+
+```js
+var x = new noInfoPath.data.NoFilters()
+```
+
+### Properties
+
+|Name|Type|Description|
+|----|----|------------|
+|length|Number|Number of elements in the array.|
+
+### Methods
+
+#### add(column, logic, beginning, end, filters)
+
+Creates and adds a new NoFilter into the underlying array that NoFilters represents.
+
+##### Parameters
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The name of the column to filter on.|
+|logic|String|One of the following values: 'and', 'or'|
+|beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+|end|Boolean|If the NoFilter is the end of the filter expression|
+|filters|Array|Array of NoFilterExpressions|
+
+#### toSQL()
+
+Converts the NoFilters array to a partial SQL statement. It calls the toSQL() method on every NoFilter object within the NoFilters array.
+
+##### Parameters
+
+None
+
+## Class NoFilter : Object
+
+NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+
+### Properties
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The column that will be filtered on|
+|logic|String|One of the following values: 'and', 'or'|
+|beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+|end|Boolean|If the NoFilter is the end of the filter expression|
+|filters|Array|Array of NoFilterExpressions|
+
+### Methods
+
+#### toSQL()
+
+Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression within the filters array.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The name of the column filter on.|
+|operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+|value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+|logic|String|(Optional) One of the following values: `and`, `or`.|
+
+## Class NoSort : Array
+
+NoSort is an array of NoSortExpression objects.
+
+### Properties
+
+|Name|Type|Description|
+|----|----|------------|
+|length|Number|Number of elements in the array.|
+
+### Methods
+
+#### add(column[, dir])
+
+Creates and adds a new NoSortExpression into the underlying array that NoSort represents.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The name of the column filter on.|
+|dir|String|(Optional) One of the following values: `asc`, `desc`.|
 
 ## @interface INoQueryBuilder
 
@@ -437,13 +506,15 @@ he noDbSchema service provides access to the database configuration that defines
 ### Methods
 
 
-#### _processDbJson
+#### \_processDbJson
 Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
 
 
 ##### Parameters
 |Name|Type|Descriptions|
+|----|----|------------|
 |resp|Object|The raw HTTP response received from the noinfopath-rest service|
+
 
 ### load()
 Loads and processes the database schema from the noinfopath-rest service.
@@ -458,6 +529,18 @@ whenReady is used to check if this service has completed its load phase. If it h
 
 #### Returns
 AngularJS::Promise
+
+## noDbSchema
+The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+
+### Properties
+
+
+|Name|Type|Description|
+|----|----|-----------|
+|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+|tables|Object|A hash table of NoInfoPath database schema definitions|
+|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 
 ## @interface INoQueryBuilder
 
@@ -504,7 +587,7 @@ NoSort, NoPage into a WebSQL compatible query string.
 |tableName|String|The table's name|
 |table|Object|The table schema|
 
-### _getOne(rowid)
+### \_getOne(rowid)
 
 #### Parameters
 
@@ -512,7 +595,7 @@ NoSort, NoPage into a WebSQL compatible query string.
 |----|----|-----------|
 |rowid|Number or Object| When a number assume that you are filtering on "rowId". When an Object the object will have a key, and value property.|
 
-### _exec(sqlExpressionData)
+### \_exec(sqlExpressionData)
 
 #### Parameters
 
@@ -585,6 +668,9 @@ Reads a record from the websql database based on the Primary Key of the data pro
 |----|----|-----------|
 |data|Object|Name Value Pairs|
 
+## noDb
+The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.
 
@@ -642,7 +728,7 @@ This hash table allows for quick access to the operations that can be applied to
 
 NOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.
 
-#### _applyFilters
+#### \_applyFilters
 This function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.
 
 
@@ -668,14 +754,7 @@ This function develops an array of objects that has had all of the filters provi
 ##### Returns
 AngularJS::Promise (Maybe)
 
-### _recurseIndexedFilters
-
-### _filterByPrimaryKey  -- Being Deprecated
-
-
-This method of of filterig goes against the `IDBObjectStore`'s primary key.
-
-### _filterByIndex
+### \_filterByIndex
 
 
 This method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.
@@ -692,11 +771,12 @@ This method of filtering goes against a predefined index. Basically we are doing
 #### Returns
 AngularJS::Promise
 
-This method of filtering compares the supplied set of
-filters against each object return in the Dexie colletion.
-This is a much slower than filtering against an index.
+### \_filterByPrimaryKey  -- Being Deprecated
 
-_filterHasIndex uses the iNoFilter parameter to determine
+
+This method of of filterig goes against the `IDBObjectStore`'s primary key.
+
+\_filterHasIndex uses the iNoFilter parameter to determine
 if there is an index available for the give filter. it returns
 true if there is, false if not.
 
@@ -704,13 +784,25 @@ true if there is, false if not.
 To determine if and index exists, we look at the table.schema.primKey,
 and table.schema.indexes properties.
 
+### \_recurseIndexedFilters
+
+This method of filtering compares the supplied set of
+filters against each object return in the Dexie colletion.
+This is a much slower than filtering against an index.
+
+While Dexie supports a put operation which is similar to upsert,
+we're going with upsert which decides whether an insert or an
+update is required and calls the appropreiate function.
+
+### configure
+
 This function splits up the filters by indexed verses not. The
 return value is a INoFilterHash.
 
 
 interface INoFilterHash {
-indexedFilters: [INoFilterExpression]
-nonIndexedFilters: [INoFilterExpression]
+	indexedFilters: [INoFilterExpression]
+	nonIndexedFilters: [INoFilterExpression]
 }
 
 This function applies the provided sort items to the supplied
@@ -734,14 +826,8 @@ The update function expects the key to be within the update object.
 
 Maps to the Dexie.Table.get method.
 
-While Dexie supports a put operation which is similar to upsert,
-we're going with upsert which decides whether an insert or an
-update is required and calls the appropreiate function.
+### \_extendDexieTables
 
-### _extendDexieTables
-
-### configure
-
-## noDb
-The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+### Class noDatum
+This is a contructor function used by Dexie when creating and returning data objects.
 

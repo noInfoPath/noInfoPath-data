@@ -17,16 +17,16 @@ module.exports = function(grunt) {
 		    noinfopath: {
 		        src: [
 		        	'src/globals.js',
-              'src/classes.js',
-              'src/query-builder.js',
+                    'src/classes.js',
+                    'src/query-builder.js',
 		        	'src/storage.js',
 		        	'src/configuration.js',
 		        	'src/http.js',
-              'src/schema.js',
-              'src/sql-builder.js',
-              'src/websql.js',
-              //'src/manifest.js',
-              'src/transaction-cache.js',
+                    'src/schema.js',
+                    'src/sql-builder.js',
+                    'src/websql.js',
+                    //'src/manifest.js',
+                    'src/transaction-cache.js',
 		        	//'src/import.js',
 		        	'src/indexeddb.js'
 		        ],

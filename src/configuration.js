@@ -1,60 +1,59 @@
 //configuration.js
 
-
-		/**
-		* ## @service noConfig
-		*
-		* ### Overview
-		* The noConfig service downloads the application's `config.json` and
-		* exposes its contents via the `noConfig.current` property. If the
-		* application's server is offline noConfig will try to load config.json
-		* from `LocalStorage`.
-		*
-		* ### Properties
-		*
-		* |Name|Type|Description|
-		* |----|----|-----------|
-		* |current|object|exposes the entire download `config.json`|
-		*
-		* ### Methods
-		*
-		* #### fromCache()
-		* Loads the configuration from `LocalStorage`.
-		*
-		* ##### Parameters
-		* none
-		*
-		* ##### Returns
-		* String
-		*
-		* #### load(uri)
-		* Loads the conifiguration data from and HTTP endpoint.
-		*
-		* ##### Parameters
-		*
-		* |Name|Type|Description|
-		* |----|----|-----------|
-		* |uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
-		*
-		* ##### Returns
-		* AngularJS::promise
-		*
-		* #### whenReady(uri)
-		* Returns a promise to notify when the configuration has been loaded.
-		* If the server is online, whenReady will call load, if not it will try
-		* to load it from `LocalStorage`. If there is no cached version
-		* available then an error is returned.
-		*
-		* ##### Parameters
-		*
-		* |Name|Type|Description|
-		* |----|----|-----------|
-		* |uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
-		*
-		* ##### Returns
-		* AngularJS::promise
-		*
-		*/
+/**
+* ## @service noConfig
+*
+* ### Overview
+* The noConfig service downloads the application's `config.json` and
+* exposes its contents via the `noConfig.current` property. If the
+* application's server is offline noConfig will try to load config.json
+* from `LocalStorage`.
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |current|object|exposes the entire download `config.json`|
+*
+* ### Methods
+*
+* #### fromCache()
+* Loads the configuration from `LocalStorage`.
+*
+* ##### Parameters
+* none
+*
+* ##### Returns
+* String
+*
+* #### load(uri)
+* Loads the conifiguration data from and HTTP endpoint.
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+*
+* ##### Returns
+* AngularJS::promise
+*
+* #### whenReady(uri)
+* Returns a promise to notify when the configuration has been loaded.
+* If the server is online, whenReady will call load, if not it will try
+* to load it from `LocalStorage`. If there is no cached version
+* available then an error is returned.
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+*
+* ##### Returns
+* AngularJS::promise
+*
+*/
 
 (function(angular, undefined){
 	"use strict";
@@ -68,7 +67,7 @@
 		.provider("noConfig", [function(){
 			var _currentConfig, _status;
 
-			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+			function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage){
 				var SELF = this;
 
 				Object.defineProperties(this, {
@@ -81,7 +80,7 @@
 				});
 
 				this.load = function (uri){
-					var url = uri || "/config.json"
+					var url = uri || "/config.json";
 					return $http.get(url)
 						.then(function(resp){
 							noLocalStorage.setItem("noConfig", resp.data);
@@ -93,7 +92,7 @@
 
 				this.fromCache = function(){
 					_currentConfig = noLocalStorage.getItem("noConfig");
-				}
+				};
 
 				this.whenReady = function(uri){
 					var deferred = $q.defer();
@@ -122,7 +121,7 @@
 									}else{
 										deferred.reject("noConfig is offline, and no cached version was available.");
 									}
-								})
+								});
 						}
 					});
 
@@ -131,7 +130,7 @@
 			}
 
 			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
-				return new noConfig($http, $q, $timeout, $rootScope, noLocalStorage);
+				return new NoConfig($http, $q, $timeout, $rootScope, noLocalStorage);
 			}];
 		}])
 	;
