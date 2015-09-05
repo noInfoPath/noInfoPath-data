@@ -1,3 +1,40 @@
+/*
+* ## noDbSchema
+*The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+*/
+/*
+*	### Properties
+
+*	|Name|Type|Description|
+*	|----|----|-----------|
+*	|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+*	|tables|Object|A hash table of NoInfoPath database schema definitions|
+*	|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+*/
+/**
+*	### Methods
+
+*	#### \_processDbJson
+*	Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
+
+*	##### Parameters
+*	|Name|Type|Descriptions|
+*	|----|----|------------|
+*	|resp|Object|The raw HTTP response received from the noinfopath-rest service|
+
+*	### load()
+*	Loads and processes the database schema from the noinfopath-rest service.
+
+*	#### Returns
+*	AngularJS::Promise
+*/
+/*
+*	### whenReady
+*	whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
+
+*	#### Returns
+*	AngularJS::Promise
+*/
 var GloboTest = {};
 
 (function (angular, Dexie, undefined){
@@ -7,17 +44,18 @@ var GloboTest = {};
 
 		/*
 		 * ## noDbSchema
-		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+		 * The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
 		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
-			var _interface = new NoDbSchema(),  
-				_config = {}, 
-				_tables = {}, 
-				_sql = {}, 
+			var _interface = new NoDbSchema(),
+				_config = {},
+				_tables = {},
+				_sql = {},
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
 				DELETE = "DELETE FROM ",
+				READ = "SELECT * FROM ",
 				COLUMNDEF = "{0}",
 				PRIMARYKEY = "PRIMARY KEY ASC",
 				FOREIGNKEY = "REFERENCES ",
@@ -69,26 +107,26 @@ var GloboTest = {};
 					"bit" : function(i){return angular.isNumber(i) ? i : null;},
 					"decimal" : function(n){return angular.isNumber(n) ? n : null;},
 					"int" : function(i){return angular.isNumber(i) ? i : null;},
-					"money" : function(n){return angular.isNumber(n) ? n : null;}, 
+					"money" : function(n){return angular.isNumber(n) ? n : null;},
 					"numeric" : function(n){return angular.isNumber(n) ? n : null;},
 					"smallint" : function(i){return angular.isNumber(i) ? i : null;},
-					"smallmoney" : function(n){return angular.isNumber(n) ? n : null;}, 
+					"smallmoney" : function(n){return angular.isNumber(n) ? n : null;},
 					"tinyint" : function(i){return angular.isNumber(i) ? i : null;},
 					"float" : function(r){return r;},
 					"real" : function(r){return r;},
-					"date" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
-					"datetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"date" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"datetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
 					"datetime2" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
-					"datetimeoffset" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"datetimeoffset" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
 					"smalldatetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
-					"time" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();}, 
+					"time" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
 					"char" : function(t){return angular.isString(t) ? t : null;},
 					"nchar" : function(t){return angular.isString(t) ? t : null;},
 					"varchar" : function(t){return angular.isString(t) ? t : null;},
 					"nvarchar" : function(t){return angular.isString(t) ? t : null;},
 					"text" : function(t){return angular.isString(t) ? t : null;},
 					"ntext" : function(t){return angular.isString(t) ? t : null;},
-					"binary" : function(b){return b;}, 
+					"binary" : function(b){return b;},
 					"varbinary" : function(b){return b;},
 					"image" : function(b){return b;},
 					"uniqueidentifier" : function(t){return angular.isString(t) ? t : null;}
@@ -127,7 +165,7 @@ var GloboTest = {};
 					"typeName": function(columnConfig){
 						return sqlConversion[columnConfig.type];
 					},
-					"expr": function(Expr){return ""},
+					"expr": function(Expr){return "";},
 					"foreignKeyClause": function(isForeignKey, columnName, foreignKeys){
 						var rs = "";
 						if(isForeignKey){
@@ -166,79 +204,107 @@ var GloboTest = {};
 						return columnConfig.nullable;
 					},
 					"sqlInsert": function(tableName, data){
-						var columns = [],
-							values = [],
-							columnString = "",
-							valuesString = ""
+						var columnString = "",
+							placeholdersString = "",
+							returnObject = {},
+							val = {}
 						;
 
-						angular.forEach(data, function(value, key){
-							columns.push(key);
+						val = this.parseData(data);
 
-							if(angular.isString(value))
-							{
-								values.push("'" + value + "'");
-							} else {
-								values.push(value);
-							}
-						});
+						columnString = val.columns.join(",");
+						placeholdersString = val.placeholders.join(",");
 
-						columnString = columns.join(",");
-						valuesString = values.join(",");
+						returnObject.queryString = INSERT + tableName + " (" + columnString + ") VALUES (" + placeholdersString + ");";
+						returnObject.valueArray = val.values;
 
-						return INSERT + tableName + " (" + columnString + ") VALUES (" + valuesString + ");";
+						return returnObject;
 					},
 					"sqlUpdate": function(tableName, data, filters){
-						var nvp = [],
-							nvpString;
+						var val = {},
+							nvps = [],
+							nvpsString = "",
+							returnObject = {};
 
-						angular.forEach(data, function(value, key){
+						val = this.parseData(data);
 
-							nvp.push(this.sqlUpdateNameValuePair(value, key));
+						nvps = this.sqlUpdateNameValuePair(val);
 
-						}, this);
+						nvpsString = nvps.join(", ");
 
-						nvpString = nvp.join(", ");
+						returnObject.queryString = UPDATE + tableName + " SET " + nvpsString + " WHERE " + filters.toSQL();
+						returnObject.valueArray = val.values;
 
-						return UPDATE + tableName + " SET " + nvpString + " WHERE " + filters.toSQL();
-						
+						return returnObject;
+
 					},
-					"sqlUpdateNameValuePair": function(value, key){
-						var rs = "";
+					"sqlUpdateNameValuePair": function(values){
+						var nvps = [];
 
-						if(angular.isString(value))
-						{
-							rs = key + " = '"  + value + "'";
-						} 
-						else 
-						{
-							rs = key + " = " + value;
-						}
+						angular.forEach(values.columns, function(col, key){
+							nvps.push(col + " = ?");
+						});
 
-						return rs
+						return nvps;
 					},
 					"sqlDelete": function(tableName, filters){
-						return DELETE + tableName + " WHERE " + filters.toSQL();
+						var returnObject = {};
+						returnObject.queryString = DELETE + tableName + " WHERE " + filters.toSQL();
+						return returnObject;
+					},
+					"sqlRead": function(tableName, filters, sort, page){
+						var fs, ss, ps, returnObject = {};
+						fs = !!filters ? " WHERE " + filters.toSQL() : "";
+						ss = !!sort ? " " + sort.toSQL() : "";
+						ps = !!page ? " " + page.toSQL() : "";
+						returnObject.queryString = READ + tableName + fs + ss + ps;
+						return returnObject;
+					},
+					"sqlOne": function(tableName, primKey, value){
+						var returnObject = {};
+						returnObject.queryString = READ + tableName + " WHERE " + primKey + " = '" + value + "'";
+						return returnObject;
+					},
+					"parseData": function(data){
+						var values = [], placeholders = [], columns = [], r = {};
+						angular.forEach(data, function(value, key){
+							columns.push(key);
+							placeholders.push("?");
+							values.push(value);
+						});
+
+						r.values = values;
+						r.placeholders = placeholders;
+						r.columns = columns;
+
+						return r;
 					}
-				}
+				};
 
 				this.createSqlTableStmt = function(tableName, tableConfig){
 					return _interface.createTable(tableName, tableConfig);
-				}
+				};
 
-				this.createSqlInsertStmt = function(tableName, tableConfig){
-					return _interface.sqlInsert(tableName, tableConfig);
-				}
+				this.createSqlInsertStmt = function(tableName, data, filters){
+					return _interface.sqlInsert(tableName, data);
+				};
 
 				this.createSqlUpdateStmt = function(tableName, data, filters){
 					return _interface.sqlUpdate(tableName, data, filters);
-				}
+				};
 
-				this.createSqlDeleteStmt = function(tableName, filters){
+				this.createSqlDeleteStmt = function(tableName, data, filters){
 					return _interface.sqlDelete(tableName, filters);
-				}
+				};
 
-				
+				this.createSqlReadStmt = function(tableName, filters, sort, page){
+					return _interface.sqlRead(tableName, filters, sort, page);
+				};
+
+				this.createSqlOneStmt = function(tableName, primKey, value){
+					return _interface.sqlOne(tableName, primKey, value);
+				};
+
 				/*
 					### Properties
 
@@ -263,16 +329,6 @@ var GloboTest = {};
 					}
 				});
 
-				/**
-					### Methods
-
-					#### _processDbJson
-					Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
-
-					##### Parameters
-					|Name|Type|Descriptions|
-					|resp|Object|The raw HTTP response received from the noinfopath-rest service|
-				*/
 				function _processDbJson(resp){
 					var deferred = $q.defer();
 
@@ -296,13 +352,7 @@ var GloboTest = {};
 					return deferred.promise;
 				}
 
-				/**
-					### load()
-					Loads and processes the database schema from the noinfopath-rest service.
 
-					#### Returns
-					AngularJS::Promise
-				*/
 				function load(){
 					var req = {
 						method: "GET",
@@ -321,13 +371,7 @@ var GloboTest = {};
 						});
 				}
 
-				/*
-					### whenReady
-					whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
 
-					#### Returns
-					AngularJS::Promise
-				*/
 
 				this.whenReady = function(){
 					var deferred = $q.defer();
@@ -359,13 +403,12 @@ var GloboTest = {};
 					return deferred.promise;
 				};
 
+				// This is for testing purposes
 				this.test = _interface;
-
 			}
 
-			return _interface;
-		}])
-
+		return _interface;
+	}])
 	;
 
 })(angular, Dexie);

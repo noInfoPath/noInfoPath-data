@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.7
+@version 0.2.8
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -108,7 +108,17 @@ NoFilterExpression(column, operator, value [, logic])
 
 ## Class NoFilters : Array
 
-NoFilters is an array of NoFilterExpression objects.
+NoFilters is an array of NoFilter objects.
+
+### Constructors
+
+####NoFilters()
+
+##### Usage
+
+```js
+var x = new noInfoPath.data.NoFilters()
+```
 
 ### Properties
 
@@ -118,9 +128,47 @@ NoFilters is an array of NoFilterExpression objects.
 
 ### Methods
 
-#### add(column, operator, value[, logic])
+#### add(column, logic, beginning, end, filters)
 
-Creates and adds a new NoFilterExpression into the underlying array that NoFilters represents.
+Creates and adds a new NoFilter into the underlying array that NoFilters represents.
+
+##### Parameters
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The name of the column to filter on.|
+|logic|String|One of the following values: 'and', 'or'|
+|beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+|end|Boolean|If the NoFilter is the end of the filter expression|
+|filters|Array|Array of NoFilterExpressions|
+
+#### toSQL()
+
+Converts the NoFilters array to a partial SQL statement. It calls the toSQL() method on every NoFilter object within the NoFilters array.
+
+##### Parameters
+
+None
+
+## Class NoFilter : Object
+
+NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+
+### Properties
+
+|Name|Type|Description|
+|----|----|------------|
+|column|String|The column that will be filtered on|
+|logic|String|One of the following values: 'and', 'or'|
+|beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+|end|Boolean|If the NoFilter is the end of the filter expression|
+|filters|Array|Array of NoFilterExpressions|
+
+### Methods
+
+#### toSQL()
+
+Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression within the filters array.
 
 #### Parameters
 
@@ -472,8 +520,100 @@ Implements a INoQueryBuilder compatible service that converts NoFilters,
 NoSort, NoPage into a WebSQL compatible query string.
 
 
+<<<<<<< HEAD
 ## noDb
 The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+=======
+### createTable(tableName, table)
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|tableName|String|The table's name|
+|table|Object|The table schema|
+
+### _getOne(rowid)
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|rowid|Number or Object| When a number assume that you are filtering on "rowId". When an Object the object will have a key, and value property.|
+
+### _exec(sqlExpressionData)
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|sqlExpressionData|Object|An object with two properties, queryString and valueArray. queryString is the SQL statement that will be executed, and the valueArray is the array of values for the replacement variables within the queryString.|
+
+### webSqlOperation(operation, noTransaction, data)
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|operation|String|Either a "C" "U" or "D"|
+|noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+|data|Object|Name Value Pairs|
+
+### noCreate(data, noTransaction)
+
+Inserts a record into the websql database with the data provided.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|data|Object|Name Value Pairs|
+|noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+
+### noRead([NoFilters, NoSort, NoPage])
+
+Reads records from the websql database.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|NoFilters|Object|(Optional) A noInfoPath NoFilters Array|
+|NoSort|Object|(Optional) A noInfoPath NoSort Object|
+|NoPage|Object|(Optional) A noInfoPath NoPage Object|
+
+### noUpdate(data, noTransaction)
+
+Updates a record from the websql database based on the Primary Key of the data provided.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|data|Object|Name Value Pairs|
+|noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+
+### noDestroy(data, noTransaction)
+
+Deletes a record from the websql database based on the Primary Key of the data provided.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|data|Object|Name Value Pairs|
+|noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+
+### noOne(data)
+
+Reads a record from the websql database based on the Primary Key of the data provided.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|data|Object|Name Value Pairs|
+>>>>>>> cb46a89fd69da5d4b4385e0374c081e552ba367b
 
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.
@@ -631,4 +771,7 @@ update is required and calls the appropreiate function.
 ### _extendDexieTables
 
 ### configure
+
+## noDb
+The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
 

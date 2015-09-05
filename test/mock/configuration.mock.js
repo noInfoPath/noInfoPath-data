@@ -18,7 +18,7 @@ var mockConfig = {
 
 	var noODATAProv;
 
-	angular.module("noinfopath.data")
+	angular.module("noinfopath.data.mocks")
 		.config([function(){
 		}])
 
@@ -38,7 +38,7 @@ var mockConfig = {
 				});
 
 				this.load = function (uri){
-					
+
 					return $timeout(function (){
 							noLocalStorage.setItem("noConfig", mockConfig);
 						});

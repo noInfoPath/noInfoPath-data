@@ -6,9 +6,11 @@ describe("Testing noOdataQueryBuilder", function(){
 		module("noinfopath.helpers");
 		module("noinfopath.filters");
 		module("noinfopath.data");
+		module("noinfopath.logger");
 
 		inject(function($injector){
 			noOdataQueryBuilder = $injector.get("noOdataQueryBuilder");
+			noTransactionCache = $injector.get("noTransactionCache");
 		});
 	});
 
@@ -62,10 +64,10 @@ describe("Testing noOdataQueryBuilder", function(){
 
 		it("testing NoFilter.toSQL()", function(){
 			var filter = new noInfoPath.data.NoFilter(
-				"FlavorID", 
-				null, 
-				true, 
-				true, 
+				"FlavorID",
+				null,
+				true,
+				true,
 				[
 					{
 						"operator" : "eq",
@@ -154,20 +156,23 @@ describe("Testing noOdataQueryBuilder", function(){
 
 	describe("Testing transactions", function(){
 		it("should have all relevant classes exposed", function(){
-			expect(noInfoPath.data.NoTransactions).toBeDefined();
 			expect(noInfoPath.data.NoTransaction).toBeDefined();
-			expect(noInfoPath.data.NoChangeSet).toBeDefined();
 			expect(noInfoPath.data.NoChanges).toBeDefined();
 			expect(noInfoPath.data.NoChange).toBeDefined();
 		});
 
 		it("should create a NoChange object with the proper properties", function(){
-			var result = new noInfoPath.data.NoChange("U", {"Pie": "Apple"}, null);
+			var result = new noInfoPath.data.NoChange("Pies", {"Pie": "Apple"}, "U");
 
 			expect(result).toBeDefined();
 			expect(result.changeType).toBeDefined();
-			expect(result.changeObject).toBeDefined();
-			//expect(result.relatedChangeSet).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.tableName).toBeDefined();
+			expect(result.changeType).toBe("U");
+			expect(result.data).toEqual({"Pie": "Apple"});
+			expect(result.tableName).toBe("Pies");
+
+
 		});
 
 		it("should create a NoChanges array", function(){
@@ -177,43 +182,31 @@ describe("Testing noOdataQueryBuilder", function(){
 		});
 
 		it("should create a NoChanges array and add a NoChange Object with .add()", function(){
-			var result = new noInfoPath.data.NoChanges();
+			var noChanges = new noInfoPath.data.NoChanges(),
+				result;
 
-			result.add("U", {"Pie": "Apple"}, null);
+			noChanges.add("Pies", {"Pie": "Apple"}, "U");
+
+			expect(noChanges).toBeDefined();
+			expect(noChanges.length).toBe(1);
+
+			result = noChanges[0];
 
 			expect(result).toBeDefined();
-			expect(result.length).toEqual(1);
-		});
-
-		it("should create a NoChangeSet object", function(){
-			var result = new noInfoPath.data.NoChangeSet("foo");
-
-			expect(result).toBeDefined();
-
-			result.add("foo");
-			expect(result.foo).toBeDefined();
-			expect(result.foo.tableName).toBeDefined();
-			expect(result.foo.tableName).toEqual("foo");
-			expect(result.foo.changes).toBeDefined();
+			expect(result.changeType).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.tableName).toBeDefined();
+			expect(result.changeType).toBe("U");
+			expect(result.data).toEqual({"Pie": "Apple"});
+			expect(result.tableName).toBe("Pies");
 		});
 
 		it("should create a NoTransaction object with the proper properties", function(){
 			var result = new noInfoPath.data.NoTransaction("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx");
 
 			expect(result).toBeDefined();
-			expect(result.userID).toEqual("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx");
+			expect(result.userID).toBe("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx");
 			expect(result.timestamp).toBeDefined();
-			expect(result.changeset).toBeDefined();
-		});
-
-		it("should create a NoTransactions array", function(){
-			var result = new noInfoPath.data.NoTransactions();
-
-			expect(result).toBeDefined();
-
-			result.add("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx");
-
-			expect(result.length).toEqual(1);
 		});
 	});
 });
