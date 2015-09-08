@@ -2501,10 +2501,10 @@ var GloboTest = {};
 				}else{
 
 					$rootScope.$watchCollection(noWebSQLInitialized, function(newval, oldval, scope){
-						// if(newval){
-						// 	noLogService.log("noWebSQL Ready.");
-						// 	deferred.resolve(newval);
-						// }
+						if(newval){
+							noLogService.log("noWebSQL Ready.");
+							deferred.resolve(newval);
+						}
 						console.info(newval);
 					});
 				}
