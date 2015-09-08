@@ -810,15 +810,15 @@
 		return  _dexie;
 	}
 
-	noInfoPath.data.noIndexedDb = noIndexedDb;
+	//noInfoPath.data.noIndexedDb = noIndexedDb;
 
 	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
 		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath-v3");
+			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_v3");
 		}])
 		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc-v1");
+			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc_v1");
 		}])
 	;
 

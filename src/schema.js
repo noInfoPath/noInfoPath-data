@@ -252,12 +252,11 @@ var GloboTest = {};
 						returnObject.queryString = DELETE + tableName + " WHERE " + filters.toSQL();
 						return returnObject;
 					},
-					"sqlRead": function(tableName, filters, sort, page){
+					"sqlRead": function(tableName, filters, sort){
 						var fs, ss, ps, returnObject = {};
 						fs = !!filters ? " WHERE " + filters.toSQL() : "";
 						ss = !!sort ? " " + sort.toSQL() : "";
-						ps = !!page ? " " + page.toSQL() : "";
-						returnObject.queryString = READ + tableName + fs + ss + ps;
+						returnObject.queryString = READ + tableName + fs + ss;
 						return returnObject;
 					},
 					"sqlOne": function(tableName, primKey, value){
@@ -297,8 +296,8 @@ var GloboTest = {};
 					return _interface.sqlDelete(tableName, filters);
 				};
 
-				this.createSqlReadStmt = function(tableName, filters, sort, page){
-					return _interface.sqlRead(tableName, filters, sort, page);
+				this.createSqlReadStmt = function(tableName, filters, sort){
+					return _interface.sqlRead(tableName, filters, sort);
 				};
 
 				this.createSqlOneStmt = function(tableName, primKey, value){

@@ -131,7 +131,7 @@
 * > Inherited properties are omitted.
 *
 * |Name|Type|Description|
-* |-|-|-|
+* |----|----|-----------|
 * |total|Number|The total number of items in the array|
 *
 * ### Methods
@@ -141,13 +141,13 @@
 * ##### Parameters
 *
 * |Name|Type|Description|
-* |-|-|-|
+* |----|----|-----------|
 * |options|NoPage|A NoPage object that contains the paging instructions|
 *
 * ##### Parameters
 *
 * |Name|Type|Description|
-* |-|-|-|
+* |----|----|-----------|
 * |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
 *
 * ##### Returns
@@ -274,6 +274,8 @@
 			}
 		});
 
+		noInfoPath.setPrototypeOf(this, arr);
+
 		//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
 		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
 
@@ -293,8 +295,13 @@
 			rsArray = [];
 
 			angular.forEach(this, function(value, key){
+
+				if(this.length == key + 1){
+					value.logic = null;
+				}
+
 				rsArray.push(value.toSQL());
-			});
+			}, this);
 
 			rs = rsArray.join("");
 
@@ -308,7 +315,7 @@
 			this.unshift(new NoFilter(column, logic, beginning, end, filters));
 		};
 
-		noInfoPath.setPrototypeOf(this, arr);
+
 	}
 
 	/*
@@ -466,12 +473,16 @@
 
 
 	function NoPage(skip, take) {
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function(){
+					return "NoPage";
+				}
+			}
+		});
+
 		this.skip = skip;
 		this.take = take;
-
-		this.toSQL = function(){
-			return "LIMIT " + this.skip + "," + this.take;
-		};
 	}
 
 	function NoResults(arrayOfThings){

@@ -52,7 +52,7 @@ module.exports = function(grunt) {
             continuous: {
                 configFile: 'karma.conf.js',
                 singleRun: true,
-                browsers: ['PhantomJS']
+                browsers: ['Chrome']
             },
             ugly: {
                 configFile: 'karma.ugly.conf.js',
@@ -89,7 +89,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['jenkins']
+            tasks: ['notest']
         },
         uglify: {
             options: {

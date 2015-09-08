@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.9
+@version 0.2.10
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -199,7 +199,7 @@ NoResults is a wrapper around a standard JavaScript Array instance. It inherits 
 > Inherited properties are omitted.
 
 |Name|Type|Description|
-|-|-|-|
+|----|----|-----------|
 |total|Number|The total number of items in the array|
 
 ### Methods
@@ -209,13 +209,13 @@ NoResults is a wrapper around a standard JavaScript Array instance. It inherits 
 ##### Parameters
 
 |Name|Type|Description|
-|-|-|-|
+|----|----|-----------|
 |options|NoPage|A NoPage object that contains the paging instructions|
 
 ##### Parameters
 
 |Name|Type|Description|
-|-|-|-|
+|----|----|-----------|
 |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
 
 ##### Returns

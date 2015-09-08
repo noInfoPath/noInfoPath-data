@@ -2,9 +2,33 @@
 (function(angular, undefined){
 	"use strict";
 
-	function NoDbService($parse, $rootScope, _, $q, $timeout, noLogService){
+	function NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema){
 
-		this.whenReady = function(config, tables){
+		this.wait = function(noWebSQLInitialized){
+			var deferred = $q.defer();
+
+			$timeout(function(){
+
+				if($rootScope[noWebSQLInitialized])
+				{
+					noLogService.log("noWebSQL Ready.");
+					deferred.resolve();
+				}else{
+
+					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
+						if(newval){
+							noLogService.log("noWebSQL Ready.");
+							deferred.resolve(newval);
+						}
+						console.info(newval);
+					});
+				}
+			});
+
+			return deferred.promise;
+		};
+
+		this.whenReady = function(config){
 			var deferred = $q.defer();
 
 			$timeout(function(){
@@ -16,14 +40,14 @@
 					deferred.resolve();
 				}else{
 
-					$rootScope.$watch(noWebSQLInitialized, function(newval){
+					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
 						if(newval){
 							noLogService.log("noWebSQL Ready.");
 							deferred.resolve(newval);
 						}
 					});
 
-					this.configure(config, tables)
+					this.configure(config)
 						.then(function(db){
 							$rootScope[noWebSQLInitialized] = db;
 						})
@@ -31,21 +55,21 @@
 							deferred.reject(err);
 						});
 				}
-			});
+			}.bind(this));
 
 			return deferred.promise;
 		};
 
-		this.configure = function(config, tables){
+		this.configure = function(config){
 			var _webSQL = null,
 				promises = [];
 
 			_webSQL = openDatabase(config.name, config.version, config.description, config.size);
 
-			angular.forEach(tables, function(table, name){
+			angular.forEach(noDbSchema.tables, function(table, name){
 				var t = new NoTable(table, name, _webSQL);
 				this[name] = t;
-				promises.push(createTable(name, table));
+				promises.push(createTable(name, table, _webSQL));
 			}, _webSQL);
 
 			return $q.all(promises)
@@ -54,6 +78,9 @@
 				});
 		};
 
+		this.getDatabase = function(databaseName){
+			return $rootScope[databaseName];
+		};
 		/**
 		* ### createTable(tableName, table)
 		*
@@ -64,11 +91,11 @@
 		* |tableName|String|The table's name|
 		* |table|Object|The table schema|
 		*/
-		var createTable = function(tableName, table){
+		var createTable = function(tableName, table, database){
 
 			var deferred = $q.defer();
 
-			this.transaction(function(tx){
+			database.transaction(function(tx){
 				tx.executeSql(noDbSchema.createSqlTableStmt(tableName, table), [],
 			 	function(t, r){
 					deferred.resolve();
@@ -79,7 +106,7 @@
 			});
 
 			return deferred.promise;
-		}.bind(_webSQL);
+		};
 
 		function NoTable(table, tableName, database){
 			if(!table) throw "table is a required parameter";
@@ -153,7 +180,7 @@
 					valueArray = [];
 				}
 
-				_webSQL.transaction(function(tx){
+				_db.transaction(function(tx){
 					tx.executeSql(
 						sqlExpressionData.queryString,
 						valueArray,
@@ -273,7 +300,7 @@
 
 					//success and error must always be first, then
 					if(angular.isObject(arg)){
-						switch(arg.constructor.name){
+						switch(arg.__type){
 							case "NoFilters":
 								filters = arg;
 								break;
@@ -287,14 +314,16 @@
 					}
 				}
 
-				readObject = noDbSchema.createSqlReadStmt(_tableName, filters, sort, page);
+				readObject = noDbSchema.createSqlReadStmt(_tableName, filters, sort);
 
 				function _txCallback(tx){
 					tx.executeSql(
 						readObject.queryString,
 						[],
 						function(t, r){
-							deferred.resolve(r);
+							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+							if(page) data.page(page);
+							deferred.resolve(data);
 						},
 						function(t, e){
 							deferred.reject(e);
@@ -399,9 +428,9 @@
 
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL",['$parse','$rootScope','lodash', '$q', '$timeout', 'noLogService', function($parse, $rootScope, _, $q, $timeout, noLogService)
+		.factory("noWebSQL",['$parse','$rootScope','lodash', '$q', '$timeout', 'noLogService', 'noDbSchema', function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema)
 		{
-	      	return new NoDbService($parse, $rootScope, _, $q, $timeout, noLogService);
+	      	return new NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema);
 		}])
 		;
 })(angular);
