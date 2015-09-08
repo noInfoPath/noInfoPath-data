@@ -17,16 +17,16 @@ module.exports = function(grunt) {
 		    noinfopath: {
 		        src: [
 		        	'src/globals.js',
-              'src/classes.js',
-              'src/query-builder.js',
+                    'src/classes.js',
+                    'src/query-builder.js',
 		        	'src/storage.js',
 		        	'src/configuration.js',
 		        	'src/http.js',
-              'src/schema.js',
-              'src/sql-builder.js',
-              'src/websql.js',
-              //'src/manifest.js',
-              'src/transaction-cache.js',
+                    'src/schema.js',
+                    'src/sql-builder.js',
+                    'src/websql.js',
+                    //'src/manifest.js',
+                    'src/transaction-cache.js',
 		        	//'src/import.js',
 		        	'src/indexeddb.js'
 		        ],
@@ -52,7 +52,7 @@ module.exports = function(grunt) {
             continuous: {
                 configFile: 'karma.conf.js',
                 singleRun: true,
-                browsers: ['PhantomJS']
+                browsers: ['Chrome']
             },
             ugly: {
                 configFile: 'karma.ugly.conf.js',
@@ -89,7 +89,7 @@ module.exports = function(grunt) {
     	},
         watch: {
             files: ['src/*.js', 'test/*.spec.js'],
-            tasks: ['notest']
+            tasks: ['jenkins']
         },
         uglify: {
             options: {

@@ -1,5 +1,5 @@
 //query-build.spec.js
-describe("Testing noOdataQueryBuilder", function(){
+describe("Testing Classes", function(){
 	var noOdataQueryBuilder;
 
 	beforeEach(function(){

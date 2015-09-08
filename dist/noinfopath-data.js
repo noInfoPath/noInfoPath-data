@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.9
+ *	@version 0.2.10
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -161,378 +161,17 @@
 		 		return getter(store);
 			}
 
-			function _noFilterExpression(type, key, operator, match, logic){
-				this.type = type || "indexed";
-				this.field = key;
-				this.operator = operator;
-				this.value = match;
-				this.logic = logic;
-			}
-
-			function _noFilter(table){
-				var _table = table,
-					_filters = [],
-					_logic = "and";
-
-				Object.defineProperties(this, {
-					"filters": {
-						"get": function(){
-							return _filters;
-						}
-					},
-					"logic": {
-						"get": function(){ return _logic;},
-						"set": function(value){ _logic = value }
-					}
-				});
-
-				this.__proto__.type = "noFilter";
-				this.__proto__.add = function (key, operator, match, logic){
-					var k, o, m, l;
-
-					if(angular.isObject(key)){
-						k = key.field;
-						o = key.operator;
-						m = key.value;
-						l = "and";
-					}else{
-						k = key;
-						o = operator;
-						m = match;
-						l = logic;
-					}
-
-					if(_table){
-						var index = _table.schema.indexes.filter(function(a){ return a.name === k; }),
-						isIndexed = index.length == 1 || _table.schema.primKey.name === k,
-						type = isIndexed ? "indexed" : "filtered";
-					}else{
-						type = "odata"
-					}
-					_filters.push( new window.noInfoPath.noFilterExpression(type, k, o, m, l));
-				};
-			}
-
-			function _noDataReadRequest(table, options){
-				var deferred = $q.defer(), _table = table;
-
-				Object.defineProperties(this, {
-					"__type": {
-						"get": function () { return "noDataReadRequest"; }
-					},
-					"promise": {
-						"get": function (){
-							return deferred.promise;
-						}
-					}
-				});
-
-
-
-				this.__proto__.addFilter = function(key, operator, match, logic){
-					if(this.data.filter === undefined){
-						this.data.filter = new window.noInfoPath.noFilter(_table);
-					}
-
-					this.data.filter.add(key, operator, match, logic);
-
-
-				};
-
-				this.__proto__.removeFilter = function(indexOf){
-					if(!this.data.filter)
-						return;
-
-
-					delete this.data.filter[indexOf];
-
-					if(this.data.filter.length === 0){
-						delete this.data.filter;
-					}
-				};
-
-				this.__proto__.indexOfFilter = function(key){
-					if(this.data.filter === undefined){
-						return -1;
-					}
-
-					for(var i in this.data.filter){
-						var f = this.data.filter[i];
-						if(f.key === key){
-							return Number(i);
-						}
-					}
-
-					return -1;
-				};
-
-				this.__proto__.addSort = function(sort){
-					if(this.data.sort === undefined){
-						this.data.sort = [];
-					}
-
-					this.data.sort.push(sort);
-				};
-
-				this.__proto__.removeSort = function(indexOf){
-					if(!this.data.sort)
-						return;
-
-
-					delete this.data.sort[indexOf];
-
-					if(this.data.sort.length === 0){
-						delete this.data.sort;
-					}
-				};
-
-				this.__proto__.indexOfSort = function(key){
-					if(this.data.sort === undefined){
-						return -1;
-					}
-
-					for(var i in this.data.sort){
-						var f = this.data.sort[i];
-						if(f.key === key){
-							return Number(i);
-						}
-					}
-
-					return -1;
-				};
-
-				if(options){
-
-					this.data = {
-						filter: undefined,
-						page: undefined,
-						pageSize: undefined,
-						sort: undefined,
-						skip: undefined,
-						take: undefined,
-					};
-
-					angular.extend(this.data, options.data);
-
-					if(this.data.filter){
-						var tmp = new window.noInfoPath.noFilter(table);
-
-						angular.forEach(this.data.filter.filters, function(filter){
-							tmp.add(filter);
-						},this);
-
-						this.data.filter = tmp;
-					}
-
-
-
-				}else{
-					this.data = {
-						filter: undefined,
-						page: undefined,
-						pageSize: undefined,
-						sort: undefined,
-						skip: undefined,
-						take: undefined,
-					};
-				}
-
-				this.__proto__.success  = deferred.resolve;
-				this.__proto__.error = deferred.reject;
-				this.expand = options.expand;
-				this.projections = options.projections;
-				this.aggregators = options.aggregators;
-			}
-
-            function _noDataSource(component, config, stateParams, scope){
-                var service = $injector.get(component),
-                    provider = $injector.get(config.provider);
-
-                var ds = service.noDataSource(config.tableName, provider, config);
-                ds.expand = config.expand || undefined;
-                ds.projections = config.projections;
-                ds.aggregators = config.aggregators;
-
-                if(config.sort){
-                    ds.sort = config.sort;
-                }
-
-               	if(config.filter){
-               		//Check for early binding filters.
-               		var _filters = [];
-               		angular.forEach(config.filter, function(fltr){
-               			if(angular.isObject(fltr.value)){
-               				var source;
-               				if(fltr.value.source === "state"){
-               					source = stateParams;
-               				}else{
-               					source = scope;
-               				}
-
-           					var val = window.noInfoPath.getItem(source, fltr.value.property);
-            					val = fltr.value.type === "number" ? Number(val) : val;
-               				_filters.push({field: fltr.field, operator: fltr.operator, value: val});
-
-               			}else{
-               				_filters.push({field: fltr.field, operator: fltr.operator, value: fltr.value});
-               			}
-               		});
-
-               		ds.filter = _filters;
-               	}
-
-
-
-               	angular.extend(this, ds);
-            }
-
-            function _makeFilters(filters, scope, stateParams){
-                var _filters = [];
-
-                angular.forEach(filters, function(filter){
-                    var ctx, v;
-
-                    if(angular.isObject(filter.value)){
-                        //When it is an object the value is coming
-                        //from a source.
-                        switch(filter.value.source){
-                            case "state":
-                            	ctx = stateParams;
-                                break;
-                            case "scope":
-                               	ctx = scope;
-                                break;
-                        }
-
-            	        v =  window.noInfoPath.getItem(ctx, filter.value.property);
-
-                        if(v){
-                            v =  filter.value.type === "number" ? Number(v) : v;
-                            _filters.push({field: filter.field, operator: filter.operator, value: v});
-                        }
-                    }else{
-                        //static value
-                        _filters.push(filter);
-                    }
-                });
-
-                return _filters;
-            }
-
 			var _data = {
 				getItem: _getItem,
 				setItem: _setItem,
-				bindFilters: _makeFilters,
-				noFilterExpression: _noFilterExpression,
-				noFilter: _noFilter,
-				noDataReadRequest: _noDataReadRequest,
-				noDataSource: _noDataSource,
 				digest: _digest,
 				digestError: _digestError,
 				digestTimeout: _digestTimeout
 			};
 
-			window.noInfoPath = angular.extend(window.noInfoPath || {}, _data);
+			angular.extend(noInfoPath, _data);
 		}])
 
-		/**
-		 * ## @service noDataService `deprecated`
-		 *
-		 */
-		.service("noDataService", ['$q', function($q){
-			this.noDataSource = function(uri, datasvc, options){
-
-				function _noHTTP(){
-					return {
-	         			transport: {
-							read: function(options){
-								return datasvc.read(uri, options);
-							},
-							create: function(options){
-								return datasvc.create(uri, options);
-							},
-							update: function(options){
-								return datasvc.update(uri, options);
-							},
-							destroy: function(options){
-								return crudOp(_ds, "destroy", options);
-							},
-							one: function(options){
-								return datasvc.read(uri, options)
-									.then(function(data){
-										if(data.length > 0){
-											return data[0];
-										}else{
-											return {};
-										}
-									});
-							},
-							upsert: function(options){
-								console.warn("TODO: implement noHTTP upsert");
-								return datasvc.update(uri, options);
-							}
-						}
-	         		}
-				}
-
-				function _noIndexedDB(){
-					function crudOp(table, operation, options){
-						var 	crud = table.noCRUD,
-								ndrr = new window.noInfoPath.noDataReadRequest(table, options);
-
-						return crud[operation](ndrr);
-					}
-
-	         		if(!uri) throw "uri is a required parameter for makeKendoDataSource";
-	         		var _ds = datasvc[uri];
-
-					return {
-	         			transport: {
-							read: function(options){
-								var deferred = _ds.noCRUD.$q.defer();
-								crudOp(_ds, "read", options)
-									.then(function(data){
-										this.data = data;
-
-										deferred.resolve(data);
-									}.bind(this));
-
-								return deferred.promise;
-							},
-							create: function(options){
-								return crudOp(_ds, "create", options);
-							},
-							update: function(options){
-								return crudOp(_ds, "update", options);
-							},
-							destroy: function(options){
-								return crudOp(_ds, "destroy", options);
-							},
-							one: function(options){
-								return _ds.noCRUD.one(options);
-							},
-							upsert: function(options){
-								return _ds.noCRUD.upsert(options);
-							}
-						},
-	         			table: _ds,
-	         			data: [],
-	         			expand: options.expand,
-	         			projections: options.projections,
-	         			aggregators: options.aggregators
-	         		};
-				}
-
-				var ds;
-
-				if(datasvc.name == "NoInfoPath-v3"){
-					ds = _noIndexedDB();
-				}else{
-					ds = _noHTTP();
-				}
-         		return ds;
-         	};
-		}])
 	;
 })(angular);
 
@@ -1041,8 +680,6 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-
-
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
@@ -1427,61 +1064,60 @@
 
 //configuration.js
 
-
-		/**
-		* ## @service noConfig
-		*
-		* ### Overview
-		* The noConfig service downloads the application's `config.json` and
-		* exposes its contents via the `noConfig.current` property. If the
-		* application's server is offline noConfig will try to load config.json
-		* from `LocalStorage`.
-		*
-		* ### Properties
-		*
-		* |Name|Type|Description|
-		* |----|----|-----------|
-		* |current|object|exposes the entire download `config.json`|
-		*
-		* ### Methods
-		*
-		* #### fromCache()
-		* Loads the configuration from `LocalStorage`.
-		*
-		* ##### Parameters
-		* none
-		*
-		* ##### Returns
-		* String
-		*
-		* #### load(uri)
-		* Loads the conifiguration data from and HTTP endpoint.
-		*
-		* ##### Parameters
-		*
-		* |Name|Type|Description|
-		* |----|----|-----------|
-		* |uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
-		*
-		* ##### Returns
-		* AngularJS::promise
-		*
-		* #### whenReady(uri)
-		* Returns a promise to notify when the configuration has been loaded.
-		* If the server is online, whenReady will call load, if not it will try
-		* to load it from `LocalStorage`. If there is no cached version
-		* available then an error is returned.
-		*
-		* ##### Parameters
-		*
-		* |Name|Type|Description|
-		* |----|----|-----------|
-		* |uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
-		*
-		* ##### Returns
-		* AngularJS::promise
-		*
-		*/
+/**
+* ## @service noConfig
+*
+* ### Overview
+* The noConfig service downloads the application's `config.json` and
+* exposes its contents via the `noConfig.current` property. If the
+* application's server is offline noConfig will try to load config.json
+* from `LocalStorage`.
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |current|object|exposes the entire download `config.json`|
+*
+* ### Methods
+*
+* #### fromCache()
+* Loads the configuration from `LocalStorage`.
+*
+* ##### Parameters
+* none
+*
+* ##### Returns
+* String
+*
+* #### load(uri)
+* Loads the conifiguration data from and HTTP endpoint.
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+*
+* ##### Returns
+* AngularJS::promise
+*
+* #### whenReady(uri)
+* Returns a promise to notify when the configuration has been loaded.
+* If the server is online, whenReady will call load, if not it will try
+* to load it from `LocalStorage`. If there is no cached version
+* available then an error is returned.
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+*
+* ##### Returns
+* AngularJS::promise
+*
+*/
 
 (function(angular, undefined){
 	"use strict";
@@ -1495,7 +1131,7 @@
 		.provider("noConfig", [function(){
 			var _currentConfig, _status;
 
-			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+			function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage){
 				var SELF = this;
 
 				Object.defineProperties(this, {
@@ -1508,7 +1144,7 @@
 				});
 
 				this.load = function (uri){
-					var url = uri || "/config.json"
+					var url = uri || "/config.json";
 					return $http.get(url)
 						.then(function(resp){
 							noLocalStorage.setItem("noConfig", resp.data);
@@ -1520,7 +1156,7 @@
 
 				this.fromCache = function(){
 					_currentConfig = noLocalStorage.getItem("noConfig");
-				}
+				};
 
 				this.whenReady = function(uri){
 					var deferred = $q.defer();
@@ -1549,7 +1185,7 @@
 									}else{
 										deferred.reject("noConfig is offline, and no cached version was available.");
 									}
-								})
+								});
 						}
 					});
 
@@ -1558,7 +1194,7 @@
 			}
 
 			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
-				return new noConfig($http, $q, $timeout, $rootScope, noLocalStorage);
+				return new NoConfig($http, $q, $timeout, $rootScope, noLocalStorage);
 			}];
 		}])
 	;
@@ -1836,37 +1472,37 @@
 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 */
 /*
-	### Properties
+*	### Properties
 
-	|Name|Type|Description|
-	|----|----|-----------|
-	|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-	|tables|Object|A hash table of NoInfoPath database schema definitions|
-	|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+*	|Name|Type|Description|
+*	|----|----|-----------|
+*	|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+*	|tables|Object|A hash table of NoInfoPath database schema definitions|
+*	|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 */
 /**
-	### Methods
+*	### Methods
 
-	#### _processDbJson
-	Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
+*	#### \_processDbJson
+*	Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
 
-	##### Parameters
-	|Name|Type|Descriptions|
-	|resp|Object|The raw HTTP response received from the noinfopath-rest service|
-*/
-/**
-	### load()
-	Loads and processes the database schema from the noinfopath-rest service.
+*	##### Parameters
+*	|Name|Type|Descriptions|
+*	|----|----|------------|
+*	|resp|Object|The raw HTTP response received from the noinfopath-rest service|
 
-	#### Returns
-	AngularJS::Promise
+*	### load()
+*	Loads and processes the database schema from the noinfopath-rest service.
+
+*	#### Returns
+*	AngularJS::Promise
 */
 /*
-	### whenReady
-	whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
+*	### whenReady
+*	whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
 
-	#### Returns
-	AngularJS::Promise
+*	#### Returns
+*	AngularJS::Promise
 */
 var GloboTest = {};
 
@@ -1877,7 +1513,7 @@ var GloboTest = {};
 
 		/*
 		 * ## noDbSchema
-		 *The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+		 * The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
 		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
 			var _interface = new NoDbSchema(),
@@ -2601,7 +2237,7 @@ var GloboTest = {};
 			;
 
 			/**
-			* ### _getOne(rowid)
+			* ### \_getOne(rowid)
 			*
 			* #### Parameters
 			*
@@ -2644,7 +2280,7 @@ var GloboTest = {};
 			}
 
 			/**
-			* ### _exec(sqlExpressionData)
+			* ### \_exec(sqlExpressionData)
 			*
 			* #### Parameters
 			*
@@ -3022,189 +2658,189 @@ var GloboTest = {};
 })(angular);
 
 /*
-	## noDb
-	The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+*	## noDb
+*	The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
 */
 
 /**
-	### Class noDatum
-	This is a contructor function used by Dexie when creating and returning data objects.
+*	### Class noDatum
+*	This is a contructor function used by Dexie when creating and returning data objects.
 */
 
 /**
-	### Class noDexie
-	This is the classed used to construct the Dexie AddOn.
+*	### Class noDexie
+*	This is the classed used to construct the Dexie AddOn.
 */
 
 /*
-	#### noCreate
-	Adds a new record to the database. If the primary key is provided in that will be used when adding otherwise a new UUID will be created by Dexie.
+*	#### noCreate
+*	Adds a new record to the database. If the primary key is provided in that will be used when adding otherwise a new UUID will be created by Dexie.
 
-	##### Parameters
+*	##### Parameters
 
-	|Name|Type|Description|
-	|data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
+*	|Name|Type|Description|
+*	|data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
 
-	##### Returns
-	AngularJS:Promise
+*	##### Returns
+*	AngularJS:Promise
 */
 
 /*
-	#### noRead
+*	#### noRead
 
-	The read operation takes a complex set of parameters that allow
-	for filtering, sorting and paging of data.
+*	The read operation takes a complex set of parameters that allow
+*	for filtering, sorting and paging of data.
 
-	##### Parameters
+*	##### Parameters
 
-	|Name|Type|Descriptions|
-	|----|----|------------|
-	|filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|
-	|sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
-	|page|NoPage|(Optional) Paging information, if paging is reqired by the read operation.|
+*	|Name|Type|Descriptions|
+*	|----|----|------------|
+*	|filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|
+*	|sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
+*	|page|NoPage|(Optional) Paging information, if paging is reqired by the read operation.|
 
-	##### Returns
-	AngularJS::Promise
+*	##### Returns
+*	AngularJS::Promise
 */
 
 /**
-	#### Internal Values
+*	#### Internal Values
 
-	|Name|Type|Description|
-	|------|-----|-------------|
-	|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
-	|_resolve|Function|Call to resolve `Dexie::Promise` upon successful completion of `_applyFilters()`. This function is returned while resolving the underlying IDBObjectStore from the `table` parameter.|
-	|_reject|Function|Call to resolve the `Dexie::Promise` when an unexpected for un recoverable error occurs during processing.|
-	|_store|IDBObjectStore|This underlying `IDBObjectStore` that the `table` parameter represents.|
-	|_trans|IDBTransaction|This is the underlying `IDBTransaction` that the current object store is bound to.|
+*	|Name|Type|Description|
+*	|------|-----|-------------|
+*	|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
+*	|_resolve|Function|Call to resolve `Dexie::Promise` upon successful completion of `_applyFilters()`. This function is returned while resolving the underlying IDBObjectStore from the `table` parameter.|
+*	|_reject|Function|Call to resolve the `Dexie::Promise` when an unexpected for un recoverable error occurs during processing.|
+*	|_store|IDBObjectStore|This underlying `IDBObjectStore` that the `table` parameter represents.|
+*	|_trans|IDBTransaction|This is the underlying `IDBTransaction` that the current object store is bound to.|
 */
 
 /**
-	##### nonIndexedOperators
-	This hash table allows for quick access to the operations that can be applied to a property on a target object and the value(s) being filtered on.
+*	##### nonIndexedOperators
+*	This hash table allows for quick access to the operations that can be applied to a property on a target object and the value(s) being filtered on.
 
-	NOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.
+*	NOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.
 */
 
 /**
-	#### _applyFilters
-	This function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.
+*	#### \_applyFilters
+*	This function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.
 
-	##### Parameters
+*	##### Parameters
 
-	|Name|Type|Description|
-	|----|----|------|
-	|iNofilters|[iNoFilterExpression]|An array of filter expressions. Contains both indexed and non-indexed filters|
-	|table|Dexie::Table|A reference to the `Dexie::Table` being filtered.
+*	|Name|Type|Description|
+*	|----|----|------|
+*	|iNofilters|[iNoFilterExpression]|An array of filter expressions. Contains both indexed and non-indexed filters|
+*	|table|Dexie::Table|A reference to the `Dexie::Table` being filtered.
 
-	##### Internal variables
+*	##### Internal variables
 
-	|Name|Type|Description|
-	|------|-----|-------------|
-	|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
-	|iNoFilterHash|Collection<iNoFilters>|Used to organize the filters received in the `iNoFilters` in to a set of indexed and non-indexed filter object The collection is created by a call to `_sortOutFilters()`.|
-	|resultsKeys|Array\<guid\>|This will be use to collect the final set of results. It will be an array of keys that will be used to query the final result set.|
+*	|Name|Type|Description|
+*	|------|-----|-------------|
+*	|deferred|$q::deferred|An AngularJS deferment object that is used to return a Promise.|
+*	|iNoFilterHash|Collection<iNoFilters>|Used to organize the filters received in the `iNoFilters` in to a set of indexed and non-indexed filter object The collection is created by a call to `_sortOutFilters()`.|
+*	|resultsKeys|Array\<guid\>|This will be use to collect the final set of results. It will be an array of keys that will be used to query the final result set.|
 
-	##### Returns
-	AngularJS::Promise (Maybe)
+*	##### Returns
+*	AngularJS::Promise (Maybe)
 */
 
 /**
-	### _filterByIndex
+*	### \_filterByIndex
 
-	This method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.
+*	This method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.
 
-	#### Parameters
+*	#### Parameters
 
-	|Name|Type|Description|
-	|------|-----|-------------|
-	|filter|INoFilterExpression|A single indexed filter the contains the column, operator, and value to apply to the index.|
+*	|Name|Type|Description|
+*	|------|-----|-------------|
+*	|filter|INoFilterExpression|A single indexed filter the contains the column, operator, and value to apply to the index.|
 
-	#### Returns
-	AngularJS::Promise
+*	#### Returns
+*	AngularJS::Promise
 */
 
 /**
-	### _filterByPrimaryKey  -- Being Deprecated
+*	### \_filterByPrimaryKey  -- Being Deprecated
 
-	This method of of filterig goes against the `IDBObjectStore`'s primary key.
+*	This method of of filterig goes against the `IDBObjectStore`'s primary key.
 */
 
 /*
-	_filterHasIndex uses the iNoFilter parameter to determine
-	if there is an index available for the give filter. it returns
-	true if there is, false if not.
+*	\_filterHasIndex uses the iNoFilter parameter to determine
+*	if there is an index available for the give filter. it returns
+*	true if there is, false if not.
 
-	To determine if and index exists, we look at the table.schema.primKey,
-	and table.schema.indexes properties.
+*	To determine if and index exists, we look at the table.schema.primKey,
+*	and table.schema.indexes properties.
 */
 
 /**
-	### _recurseIndexedFilters
+*	### \_recurseIndexedFilters
 */
 
 /*
-	This method of filtering compares the supplied set of
-	filters against each object return in the Dexie colletion.
-	This is a much slower than filtering against an index.
+*	This method of filtering compares the supplied set of
+*	filters against each object return in the Dexie colletion.
+*	This is a much slower than filtering against an index.
 */
 
 /*
-	While Dexie supports a put operation which is similar to upsert,
-	we're going with upsert which decides whether an insert or an
-	update is required and calls the appropreiate function.
+*	While Dexie supports a put operation which is similar to upsert,
+*	we're going with upsert which decides whether an insert or an
+*	update is required and calls the appropreiate function.
 */
 
 /**
-	### configure
+*	### configure
 */
 
 /*
-	This function splits up the filters by indexed verses not. The
-	return value is a INoFilterHash.
+*	This function splits up the filters by indexed verses not. The
+*	return value is a INoFilterHash.
 
-	interface INoFilterHash {
-		indexedFilters: [INoFilterExpression]
-		nonIndexedFilters: [INoFilterExpression]
-	}
+*	interface INoFilterHash {
+*		indexedFilters: [INoFilterExpression]
+*		nonIndexedFilters: [INoFilterExpression]
+*	}
 */
 /*
-	This function applies the provided sort items to the supplied
-	Dexie:Collection. It should always sort on indexed columns and
-	return a DexieCollection.
+*	This function applies the provided sort items to the supplied
+*	Dexie:Collection. It should always sort on indexed columns and
+*	return a DexieCollection.
 
-	NOTE: Need to research how to apply multi-column sorting.
+*	NOTE: Need to research how to apply multi-column sorting.
 */
 /*
-	Applies the specified skip and take values to the final
-	Dexie::Collection, if supplied.
+*	Applies the specified skip and take values to the final
+*	Dexie::Collection, if supplied.
 
-	Note that this is the function returns the final Array of items
-	based on all of the properties applied prior to this call.
+*	Note that this is the function returns the final Array of items
+*	based on all of the properties applied prior to this call.
 */
 /*
-	The promise should resolve to a Dexie::Collection that will result in
-	a set of data that matches the supplied filters, reject errors.
+*	The promise should resolve to a Dexie::Collection that will result in
+*	a set of data that matches the supplied filters, reject errors.
 */
 
 /*
-The update function expects the key to be within the update object.
+*	The update function expects the key to be within the update object.
 */
 /*
-Maps to the Dexie.Table.get method.
+*	Maps to the Dexie.Table.get method.
 */
 /**
-### _extendDexieTables
+*	### \_extendDexieTables
 */
 
 
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	function noIndexedDb($timeout, $q, $rootScope, _, noLogService, databaseName){
+	function createIndexedDB($timeout, $q, $rootScope, _, noLogService, databaseName){
 		/**
-			### Class noDatum
-			This is a contructor function used by Dexie when creating and returning data objects.
+		*	### Class noDatum
+		*	This is a contructor function used by Dexie when creating and returning data objects.
 		*/
 		function noDatum(){
 			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
@@ -3212,7 +2848,6 @@ Maps to the Dexie.Table.get method.
 
 
 		function noDexie(db){
-
 
 			db.WriteableTable.prototype.noCreate = function(data){
 				var deferred = $q.defer(),
@@ -3256,7 +2891,6 @@ Maps to the Dexie.Table.get method.
 
 				return deferred.promise;
 			};
-
 
 			db.Table.prototype.noRead = function(){
 
@@ -3310,7 +2944,6 @@ Maps to the Dexie.Table.get method.
 							return a1.indexOf(b1) >= -1;
 						}
 					}, buckets = {};
-
 
 				//sort out the parameters
 				for(var ai in arguments){
@@ -3632,7 +3265,6 @@ Maps to the Dexie.Table.get method.
 				return deferred.promise;
 			};
 
-
 			db.WriteableTable.prototype.noOne = function(data){
 			 	var deferred = $q.defer(),
 			 		table = this,
@@ -3663,7 +3295,7 @@ Maps to the Dexie.Table.get method.
 
 			db.WriteableTable.prototype.bulkLoad = function(data, progress){
 				var deferred = $q.defer(), table = this;
-			//var table = this;
+				//var table = this;
 				function _import(data, progress){
 					var total = data ? data.length : 0;
 
@@ -3837,19 +3469,15 @@ Maps to the Dexie.Table.get method.
 		return  _dexie;
 	}
 
-	noInfoPath.data.noIndexedDb = noIndexedDb;
+	//noInfoPath.data.noIndexedDb = noIndexedDb;
 
 	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
-		/*
-			## noDb
-			The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
-		*/
 		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return noIndexedDb($timeout, $q, $rootScope, _, noLogService, "NoInfoPath-v3");
+			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath-v3");
 		}])
 		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return noIndexedDb($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc-v1");
+			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc-v1");
 		}])
 	;
 

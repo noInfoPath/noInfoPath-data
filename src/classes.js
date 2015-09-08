@@ -503,8 +503,6 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-
-
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
