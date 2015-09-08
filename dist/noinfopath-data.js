@@ -308,7 +308,7 @@
 * > Inherited properties are omitted.
 *
 * |Name|Type|Description|
-* |-|-|-|
+* |----|----|-----------|
 * |total|Number|The total number of items in the array|
 *
 * ### Methods
@@ -318,13 +318,13 @@
 * ##### Parameters
 *
 * |Name|Type|Description|
-* |-|-|-|
+* |----|----|-----------|
 * |options|NoPage|A NoPage object that contains the paging instructions|
 *
 * ##### Parameters
 *
 * |Name|Type|Description|
-* |-|-|-|
+* |----|----|-----------|
 * |arrayOfThings|Array|(optional) An array of object that is used to populate the object on creation.|
 *
 * ##### Returns
@@ -451,6 +451,8 @@
 			}
 		});
 
+		noInfoPath.setPrototypeOf(this, arr);
+
 		//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
 		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
 
@@ -470,8 +472,13 @@
 			rsArray = [];
 
 			angular.forEach(this, function(value, key){
+
+				if(this.length == key + 1){
+					value.logic = null;
+				}
+
 				rsArray.push(value.toSQL());
-			});
+			}, this);
 
 			rs = rsArray.join("");
 
@@ -485,7 +492,7 @@
 			this.unshift(new NoFilter(column, logic, beginning, end, filters));
 		};
 
-		noInfoPath.setPrototypeOf(this, arr);
+
 	}
 
 	/*
@@ -643,12 +650,16 @@
 
 
 	function NoPage(skip, take) {
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function(){
+					return "NoPage";
+				}
+			}
+		});
+
 		this.skip = skip;
 		this.take = take;
-
-		this.toSQL = function(){
-			return "LIMIT " + this.skip + "," + this.take;
-		};
 	}
 
 	function NoResults(arrayOfThings){
@@ -1721,12 +1732,11 @@ var GloboTest = {};
 						returnObject.queryString = DELETE + tableName + " WHERE " + filters.toSQL();
 						return returnObject;
 					},
-					"sqlRead": function(tableName, filters, sort, page){
+					"sqlRead": function(tableName, filters, sort){
 						var fs, ss, ps, returnObject = {};
 						fs = !!filters ? " WHERE " + filters.toSQL() : "";
 						ss = !!sort ? " " + sort.toSQL() : "";
-						ps = !!page ? " " + page.toSQL() : "";
-						returnObject.queryString = READ + tableName + fs + ss + ps;
+						returnObject.queryString = READ + tableName + fs + ss;
 						return returnObject;
 					},
 					"sqlOne": function(tableName, primKey, value){
@@ -1766,8 +1776,8 @@ var GloboTest = {};
 					return _interface.sqlDelete(tableName, filters);
 				};
 
-				this.createSqlReadStmt = function(tableName, filters, sort, page){
-					return _interface.sqlRead(tableName, filters, sort, page);
+				this.createSqlReadStmt = function(tableName, filters, sort){
+					return _interface.sqlRead(tableName, filters, sort);
 				};
 
 				this.createSqlOneStmt = function(tableName, primKey, value){
@@ -2136,7 +2146,7 @@ var GloboTest = {};
 					deferred.resolve();
 				}else{
 
-					$rootScope.$watchCollection(noWebSQLInitialized, function(newval, oldval, scope){
+					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
 						if(newval){
 							noLogService.log("noWebSQL Ready.");
 							deferred.resolve(newval);
@@ -2170,7 +2180,7 @@ var GloboTest = {};
 
 					this.configure(config)
 						.then(function(db){
-							$rootScope[noWebSQLInitialized] = true;
+							$rootScope[noWebSQLInitialized] = db;
 						})
 						.catch(function(err){
 							deferred.reject(err);
@@ -2193,12 +2203,15 @@ var GloboTest = {};
 				promises.push(createTable(name, table, _webSQL));
 			}, _webSQL);
 
-			return $q.all(promises);
-				// .then(function(){
-				// 	//return _webSQL;
-				// });
+			return $q.all(promises)
+				.then(function(){
+					return _webSQL;
+				});
 		};
 
+		this.getDatabase = function(databaseName){
+			return $rootScope[databaseName];
+		};
 		/**
 		* ### createTable(tableName, table)
 		*
@@ -2298,7 +2311,7 @@ var GloboTest = {};
 					valueArray = [];
 				}
 
-				_webSQL.transaction(function(tx){
+				_db.transaction(function(tx){
 					tx.executeSql(
 						sqlExpressionData.queryString,
 						valueArray,
@@ -2418,7 +2431,7 @@ var GloboTest = {};
 
 					//success and error must always be first, then
 					if(angular.isObject(arg)){
-						switch(arg.constructor.name){
+						switch(arg.__type){
 							case "NoFilters":
 								filters = arg;
 								break;
@@ -2432,14 +2445,16 @@ var GloboTest = {};
 					}
 				}
 
-				readObject = noDbSchema.createSqlReadStmt(_tableName, filters, sort, page);
+				readObject = noDbSchema.createSqlReadStmt(_tableName, filters, sort);
 
 				function _txCallback(tx){
 					tx.executeSql(
 						readObject.queryString,
 						[],
 						function(t, r){
-							deferred.resolve(r);
+							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+							if(page) data.page(page);
+							deferred.resolve(data);
 						},
 						function(t, e){
 							deferred.reject(e);
@@ -2555,7 +2570,8 @@ var GloboTest = {};
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$q", "noDataTransactionCache", "lodash", function($q, noDataTransactionCache, _){
+		.factory("noTransactionCache", ["$q", "noDataTransactionCache", "lodash", "$rootScope", "$timeout", function($q, noDataTransactionCache, _, $rootScope, $timeout){
+
 
 
 			function NoTransaction(userID, transaction){
@@ -2587,7 +2603,6 @@ var GloboTest = {};
 
 			}
 
-
 			function NoChanges(){
 				Object.defineProperties(this, {
 					"__type": {
@@ -2603,7 +2618,6 @@ var GloboTest = {};
 				};
 			}
 
-
 			function NoChange(tableName, data, changeType){
 				Object.defineProperties(this, {
 					"__type": {
@@ -2618,9 +2632,48 @@ var GloboTest = {};
 				this.changeType = changeType;
 			}
 
-
 			function NoTransactionCache($q, noDataTransactionCache){
 				var SELF = this;
+
+				this.whenReady = function(user){
+					var deferred = $q.defer();
+
+					$timeout(function(){
+						var no = "NoInfoPath_dtc_v1";
+
+						if($rootScope[no])
+						{
+							console.log("noDataTransactionCache Ready.");
+							deferred.resolve();
+						}else{
+
+							$rootScope.$watch(no, function(newval, oldval, scope){
+								if(newval){
+									console.log("noDataTransactionCache Ready.");
+									deferred.resolve(newval);
+								}
+							});
+
+							var version = {"name":"NoInfoPath_Changes_v1","version":1},
+								store = {"NoInfoPath_Changes": "$$ChangeID"},
+								tables = {
+									"NoInfoPath_Changes": {
+										"primaryKey": "ChangeID"
+									}
+								};
+
+							noDataTransactionCache.configure(user, version, store, tables)
+								.then(function(){
+									$rootScope[no] = true;
+								})
+								.catch(function(err){
+									console.error(err);
+								});
+						}
+					}.bind(noDataTransactionCache));
+
+					return deferred.promise;
+				};
 
 				this.beginTransaction = function(db, userId){
 
@@ -3474,10 +3527,10 @@ var GloboTest = {};
 	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
 		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath-v3");
+			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_v3");
 		}])
 		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc-v1");
+			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc_v1");
 		}])
 	;
 

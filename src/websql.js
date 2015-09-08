@@ -15,7 +15,7 @@
 					deferred.resolve();
 				}else{
 
-					$rootScope.$watchCollection(noWebSQLInitialized, function(newval, oldval, scope){
+					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
 						if(newval){
 							noLogService.log("noWebSQL Ready.");
 							deferred.resolve(newval);
@@ -49,7 +49,7 @@
 
 					this.configure(config)
 						.then(function(db){
-							$rootScope[noWebSQLInitialized] = true;
+							$rootScope[noWebSQLInitialized] = db;
 						})
 						.catch(function(err){
 							deferred.reject(err);
@@ -72,12 +72,15 @@
 				promises.push(createTable(name, table, _webSQL));
 			}, _webSQL);
 
-			return $q.all(promises);
-				// .then(function(){
-				// 	//return _webSQL;
-				// });
+			return $q.all(promises)
+				.then(function(){
+					return _webSQL;
+				});
 		};
 
+		this.getDatabase = function(databaseName){
+			return $rootScope[databaseName];
+		};
 		/**
 		* ### createTable(tableName, table)
 		*
@@ -177,7 +180,7 @@
 					valueArray = [];
 				}
 
-				_webSQL.transaction(function(tx){
+				_db.transaction(function(tx){
 					tx.executeSql(
 						sqlExpressionData.queryString,
 						valueArray,
@@ -297,7 +300,7 @@
 
 					//success and error must always be first, then
 					if(angular.isObject(arg)){
-						switch(arg.constructor.name){
+						switch(arg.__type){
 							case "NoFilters":
 								filters = arg;
 								break;
@@ -311,14 +314,16 @@
 					}
 				}
 
-				readObject = noDbSchema.createSqlReadStmt(_tableName, filters, sort, page);
+				readObject = noDbSchema.createSqlReadStmt(_tableName, filters, sort);
 
 				function _txCallback(tx){
 					tx.executeSql(
 						readObject.queryString,
 						[],
 						function(t, r){
-							deferred.resolve(r);
+							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+							if(page) data.page(page);
+							deferred.resolve(data);
 						},
 						function(t, e){
 							deferred.reject(e);
