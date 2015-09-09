@@ -3,6 +3,10 @@
 	"use strict";
 
 	function NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema){
+		var stmts = {
+			"T": noDbSchema.createSqlTableStmt,
+			"V": noDbSchema.createSqlViewStmt
+		};
 
 		this.wait = function(noWebSQLInitialized){
 			var deferred = $q.defer();
@@ -60,6 +64,7 @@
 			return deferred.promise;
 		};
 
+		//TODO: modify config to also contain Views, as well as, Tables.
 		this.configure = function(config){
 			var _webSQL = null,
 				promises = [];
@@ -69,7 +74,13 @@
 			angular.forEach(noDbSchema.tables, function(table, name){
 				var t = new NoTable(table, name, _webSQL);
 				this[name] = t;
-				promises.push(createTable(name, table, _webSQL));
+				promises.push(createEntity("T", name, table, _webSQL));
+			}, _webSQL);
+
+			angular.forEach(noDbSchema.views, function(view, name){
+				var t = new NoView(view, name, _webSQL);
+				this[name] = t;
+				promises.push(createEntity("V", name, view, _webSQL));
 			}, _webSQL);
 
 			return $q.all(promises)
@@ -82,6 +93,7 @@
 		this.getDatabase = function(databaseName){
 			return $rootScope[databaseName];
 		};
+
 		/**
 		* ### createTable(tableName, table)
 		*
@@ -89,15 +101,17 @@
 		*
 		* |Name|Type|Description|
 		* |----|----|-----------|
+		* |type|String|One of T\|V|
 		* |tableName|String|The table's name|
 		* |table|Object|The table schema|
 		*/
-		var createTable = function(tableName, table, database){
+		function createEntity(type, tableName, table, database){
 
 			var deferred = $q.defer();
 
+
 			database.transaction(function(tx){
-				tx.executeSql(noDbSchema.createSqlTableStmt(tableName, table), [],
+				tx.executeSql(stmts[type](tableName, table), [],
 			 	function(t, r){
 					deferred.resolve();
 			 	},
@@ -107,8 +121,12 @@
 			});
 
 			return deferred.promise;
-		};
+		}
 
+		/**
+		 * ## NoTable
+		 * CRUD interface for WebSql
+		*/
 		function NoTable(table, tableName, database){
 			if(!table) throw "table is a required parameter";
 			if(!tableName) throw "tableName is a required parameter";
@@ -505,14 +523,106 @@
 			};
 		}
 
+		/**
+		 * ## NoView
+		 * An in memory representation of complex SQL operation that involes
+		 * multiple tables and joins, as well as grouping and aggregation
+		 * functions.
+		 *
+		 * ##### NoView JSON Prototype
+		 *
+		 * ```json
+		 *	{
+		 *		"sql": String
+		 *		"params": []
+		 *	}
+		 * ```
+		 *
+		 * ##### References
+		 * - https://www.sqlite.org/lang_createview.html
+		 *
+		*/
+		function NoView(view, viewName, database) {
+			if(!view) throw "view is a required parameter";
+			if(!viewName) throw "viewName is a required parameter";
+			if(!database) throw "database is a required parameter";
+
+			var _view = view,
+				_viewName = viewName,
+				_db = database
+			;
+
+			this.noCreate = angular.noop;
+
+			this.noRead = function() {
+
+				var filters, sort, page,
+					deferred = $q.defer(),
+					readObject;
+
+				for(var ai in arguments){
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if(angular.isObject(arg)){
+						switch(arg.__type){
+							case "NoFilters":
+								filters = arg;
+								break;
+							case "NoSort":
+								sort = arg;
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
+
+				readObject = noDbSchema.createSqlReadStmt(_viewName, filters, sort);
+
+				function _txCallback(tx){
+					tx.executeSql(
+						readObject.queryString,
+						[],
+						function(t, r){
+							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+							if(page) data.page(page);
+							deferred.resolve(data);
+						},
+						function(t, e){
+							deferred.reject(e);
+						});
+				}
+
+				function _txFailure(error){
+					console.error("Tx Failure", error);
+				}
+
+				function _txSuccess(data){
+					console.log("Tx Success", data);
+				}
+
+				_db.transaction(_txCallback, _txFailure, _txSuccess);
+
+				return deferred.promise;
+			};
+
+			this.noUpdate = angular.noop;
+
+			this.noDestroy = angular.noop;
+
+			this.bulkLoad = angular.noop;
+
+			this.noClear = angular.noop;
+		}
 	}
 
 
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL",['$parse','$rootScope','lodash', '$q', '$timeout', 'noLogService', 'noDbSchema', function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema)
-		{
+		.factory("noWebSQL",['$parse','$rootScope','lodash', '$q', '$timeout', 'noLogService', 'noDbSchema', function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema){
 	      	return new NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema);
 		}])
-		;
+	;
 })(angular);

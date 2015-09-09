@@ -1,6 +1,7 @@
 /*
 * ## noDbSchema
-*The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+* The noDbSchema service provides access to the database configuration that
+* defines how to configure the local IndexedDB data store.
 */
 /*
 *	### Properties
@@ -59,8 +60,10 @@ var GloboTest = {};
 		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
 			var _config = {},
 				_tables = {},
+				_views = {},
 				_sql = {},
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
+				CREATEVIEW = "CREATE VIEW IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
 				DELETE = "DELETE FROM ",
@@ -148,11 +151,20 @@ var GloboTest = {};
 
 
 			function NoDbSchema(){
+				//TODO: Refactor this so that it is not specific to the WebSql provider.
+				//		actually none of this belongs in here. Move it to websql.js
 				var _interface = {
 					"createTable" : function(tableName, tableConfig){
 						var rs = CREATETABLE;
 
 						rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
+
+						return rs;
+					},
+					"createView" : function(viewName, viewSql){
+						var rs = CREATEVIEW;
+
+						rs += viewName + " AS " + viewSql;
 
 						return rs;
 					},
@@ -295,6 +307,10 @@ var GloboTest = {};
 					return _interface.createTable(tableName, tableConfig);
 				};
 
+				this.createSqlViewStmt = function(tableName){
+					return _interface.createView(tableName);
+				};
+
 				this.createSqlInsertStmt = function(tableName, data, filters){
 					return _interface.sqlInsert(tableName, data);
 				};
@@ -315,7 +331,7 @@ var GloboTest = {};
 					return _interface.sqlOne(tableName, primKey, value);
 				};
 
-				this.createSqlClear = function(tableName){
+				this.createSqlClearStmt = function(tableName){
 					return _interface.sqlDelete(tableName);
 				};
 
@@ -361,6 +377,9 @@ var GloboTest = {};
 					},
 					"sql": {
 						"get": function() { return _sql; }
+					},
+					"views": {
+						"get": function() { return _views; }
 					}
 				});
 
