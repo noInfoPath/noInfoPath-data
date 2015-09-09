@@ -46,9 +46,18 @@ var GloboTest = {};
 		 * ## noDbSchema
 		 * The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
+		/*
+			### Properties
+
+			|Name|Type|Description|
+			|----|----|-----------|
+			|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+			|tables|Object|A hash table of NoInfoPath database schema definitions|
+			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+		*/
+
 		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
-			var _interface = new NoDbSchema(),
-				_config = {},
+			var _config = {},
 				_tables = {},
 				_sql = {},
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
@@ -136,6 +145,7 @@ var GloboTest = {};
 			GloboTest.fromSqlLiteConversionFunctions = fromSqlLiteConversionFunctions;
 			GloboTest.toSqlLiteConversionFunctions = toSqlLiteConversionFunctions;
 			GloboTest.sqlConversion = sqlConversion;
+
 
 			function NoDbSchema(){
 				var _interface = {
@@ -248,8 +258,9 @@ var GloboTest = {};
 						return nvps;
 					},
 					"sqlDelete": function(tableName, filters){
-						var returnObject = {};
-						returnObject.queryString = DELETE + tableName + " WHERE " + filters.toSQL();
+						var returnObject = {},
+							where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
+						returnObject.queryString = DELETE + tableName + where;
 						return returnObject;
 					},
 					"sqlRead": function(tableName, filters, sort){
@@ -304,15 +315,40 @@ var GloboTest = {};
 					return _interface.sqlOne(tableName, primKey, value);
 				};
 
-				/*
-					### Properties
+				this.createSqlClear = function(tableName){
+					return _interface.sqlDelete(tableName);
+				};
 
-					|Name|Type|Description|
-					|----|----|-----------|
-					|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-					|tables|Object|A hash table of NoInfoPath database schema definitions|
-					|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
-				*/
+				this.whenReady = function(){
+					var deferred = $q.defer();
+
+					$timeout(function(){
+						if($rootScope.noDbSchemaInitialized)
+						{
+							noLogService.log("noDbSchema Ready.");
+							deferred.resolve();
+						}else{
+							//noLogService.log("noDbSchema is not ready yet.")
+							$rootScope.$watch("noDbSchemaInitialized", function(newval){
+								if(newval){
+									noLogService.log("noDbSchema ready.");
+									deferred.resolve();
+								}
+							});
+
+							load()
+								.then(function(resp){
+									$rootScope.noDbSchemaInitialized = true;
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								});
+						}
+					});
+
+					return deferred.promise;
+				};
+
 				Object.defineProperties(this, {
 					"store": {
 						"get": function() { return _config; }
@@ -351,7 +387,6 @@ var GloboTest = {};
 					return deferred.promise;
 				}
 
-
 				function load(){
 					var req = {
 						method: "GET",
@@ -370,44 +405,12 @@ var GloboTest = {};
 						});
 				}
 
-
-
-				this.whenReady = function(){
-					var deferred = $q.defer();
-
-					$timeout(function(){
-						if($rootScope.noDbSchemaInitialized)
-						{
-							noLogService.log("noDbSchema Ready.");
-							deferred.resolve();
-						}else{
-							//noLogService.log("noDbSchema is not ready yet.")
-							$rootScope.$watch("noDbSchemaInitialized", function(newval){
-								if(newval){
-									noLogService.log("noDbSchema ready.");
-									deferred.resolve();
-								}
-							});
-
-							load()
-								.then(function(resp){
-									$rootScope.noDbSchemaInitialized = true;
-								})
-								.catch(function(err){
-									deferred.reject(err);
-								});
-						}
-					});
-
-					return deferred.promise;
-				};
-
-				// This is for testing purposes
+				// TODO: For Testing with Jasmime.
 				this.test = _interface;
 			}
 
-		return _interface;
-	}])
+			return new NoDbSchema();
+		}])
 	;
 
 })(angular, Dexie);

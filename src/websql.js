@@ -78,6 +78,7 @@
 				});
 		};
 
+		//TODO: Add this method to noIndexedDb also.
 		this.getDatabase = function(databaseName){
 			return $rootScope[databaseName];
 		};
@@ -202,7 +203,7 @@
 			* |Name|Type|Description|
 			* |----|----|-----------|
 			* |operation|String|Either a "C" "U" or "D"|
-			* |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+			* |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 			* |data|Object|Name Value Pairs|
 			*/
 
@@ -213,7 +214,14 @@
 					ops = {
 						"C": noDbSchema.createSqlInsertStmt,
 						"U": noDbSchema.createSqlUpdateStmt,
-						"D": noDbSchema.createSqlDeleteStmt
+						"D": noDbSchema.createSqlDeleteStmt,
+						"B": noDbScema.createSqlClearStmt
+					},
+					opFns = {
+						"C": null,
+						"U": null,
+						"D": null,
+						"B": null
 					},
 					sqlExpressionData,
 					noFilters = new noInfoPath.data.NoFilters(),
@@ -230,28 +238,41 @@
 					sqlExpressionData = ops[operation](_tableName, data, noFilters);
 
 					_db.transaction(function(tx){
-						if(operation === "D"){
-							_getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
-								.then(function(result){
-									_exec(sqlExpressionData)
-										.then(function(result){
-											noTransaction.addChange(_tableName, this, "D");
-											deferred.resolve(result);
-										}.bind(result))
-										.catch(deferred.reject);
-								})
-								.catch(deferred.reject);
-						}else{
-							_exec(sqlExpressionData)
-								.then(function(result){
-									_getOne(result.insertId)
-										.then(function(result){
-											noTransaction.addChange(_tableName, result, operation);
-											deferred.resolve(result);
-										})
-										.catch(deferred.reject);
-								})
-								.catch(deferred.reject);
+						switch(operation){
+							case "C":
+							case "U":
+								sqlExpressionData = ops[operation](_tableName, data, noFilters);
+								_exec(sqlExpressionData)
+									.then(function(result){
+										_getOne(result.insertId)
+											.then(function(result){
+												if(noTransaction) noTransaction.addChange(_tableName, result, operation);
+												deferred.resolve(result);
+											})
+											.catch(deferred.reject);
+									})
+									.catch(deferred.reject);
+								break;
+							case "D":
+								sqlExpressionData = ops[operation](_tableName, data, noFilters);
+								_getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
+									.then(function(result){
+										_exec(sqlExpressionData)
+											.then(function(result){
+												if(noTransaction) noTransaction.addChange(_tableName, this, "D");
+												deferred.resolve(result);
+											}.bind(result))
+											.catch(deferred.reject);
+									})
+									.catch(deferred.reject);
+								break;
+							case "B":
+								sqlExpressionData = ops[operation](_tableName);
+								_exec(sqlExpressionData)
+									.then(deferred.resolve)
+									.catch(deferred.reject);
+								break;
+
 						}
 					});
 
@@ -272,7 +293,7 @@
 			*/
 
 			this.noCreate = function(data, noTransaction){
-				return webSqlOperation("C", noTransaction, data);
+				return webSqlOperation("C", noTransaction ? noTransaction : null, data);
 			};
 
 			/**
@@ -375,7 +396,7 @@
 			*/
 
 			this.noDestroy = function(data, noTransaction) {
-				return webSqlOperation("D", noTransaction, data);
+				return webSqlOperation("D", noTransaction ? noTransaction : null, data);
 			};
 
 			/**
@@ -389,7 +410,6 @@
 			* |----|----|-----------|
 			* |data|Object|Name Value Pairs|
 			*/
-
 			this.noOne = function(data) {
 				var deferred = $q.defer(),
 					key = data[_table.primaryKey],
@@ -421,6 +441,68 @@
 				return deferred.promise;
 			};
 
+			this.bulkLoad = function(data, progress, db){
+				var deferred = $q.defer(), table = this;
+				//var table = this;
+				function _import(data, progress){
+					var total = data ? data.length : 0;
+
+					$timeout(function(){
+						//progress.rows.start({max: total});
+						deferred.notify(progress);
+					});
+
+					var currentItem = 0;
+
+					//_dexie.transaction('rw', table, function (){
+					_next();
+					//});
+
+					function _next(){
+						if(currentItem < data.length){
+							var datum = data[currentItem];
+
+							table.noCreate(datum)
+								.then(function(data){
+									//progress.updateRow(progress.rows);
+									deferred.notify(data);
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								})
+								.finally(function(){
+									currentItem++;
+									_next();
+								});
+
+						}else{
+							deferred.resolve(table.name);
+						}
+					}
+
+				}
+
+				//console.info("bulkLoad: ", table.TableName)
+
+				table.noClear()
+					.then(function(){
+						_import(data, progress);
+					}.bind(this));
+
+				return deferred.promise;
+			};
+
+			/**
+			* ### noClear()
+			*
+			* Delete all rows from the current table.
+			*
+			* #### Returns
+			* AngularJS Promise.
+			*/
+			this.noClear = function(){
+				return webSqlOperation("B", null);
+			};
 		}
 
 	}
