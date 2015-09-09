@@ -422,6 +422,8 @@
 	* |Name|Type|Description|
 	* |----|----|------------|
 	* |length|Number|Number of elements in the array.|
+	* |total|Number|Total number of rows available given the current filters.|
+	* |paged|Array|An array of object sliced on the skip and take parameters passed into the constructor.|
 	*
 	* ### Methods
 	*
@@ -471,7 +473,6 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-
 	function NoPage(skip, take) {
 		Object.defineProperties(this, {
 			"__type": {
@@ -486,7 +487,7 @@
 	}
 
 	function NoResults(arrayOfThings){
-		//Capture the lenght of the arrayOfThings before any changes are made to it.
+		//Capture the length of the arrayOfThings before any changes are made to it.
 		var _total = arrayOfThings.length,
 		_page = arrayOfThings,
 		arr = arrayOfThings;
@@ -507,7 +508,7 @@
 		});
 
 		arr.page = function(nopage){
-			if(!nopage) throw "nopage is a required parameter for NoResults:page";
+			if(!nopage) throw "nopage is a required parameter for NoResults::page";
 			_page = this.slice(nopage.skip, nopage.skip + nopage.take);
 		};
 

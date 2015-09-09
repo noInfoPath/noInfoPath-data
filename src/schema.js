@@ -1,6 +1,7 @@
 /*
 * ## noDbSchema
-*The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+* The noDbSchema service provides access to the database configuration that
+* defines how to configure the local IndexedDB data store.
 */
 /*
 *	### Properties
@@ -46,12 +47,23 @@ var GloboTest = {};
 		 * ## noDbSchema
 		 * The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
+		/*
+			### Properties
+
+			|Name|Type|Description|
+			|----|----|-----------|
+			|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+			|tables|Object|A hash table of NoInfoPath database schema definitions|
+			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+		*/
+
 		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
-			var _interface = new NoDbSchema(),
-				_config = {},
+			var _config = {},
 				_tables = {},
+				_views = {},
 				_sql = {},
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
+				CREATEVIEW = "CREATE VIEW IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
 				DELETE = "DELETE FROM ",
@@ -137,12 +149,22 @@ var GloboTest = {};
 			GloboTest.toSqlLiteConversionFunctions = toSqlLiteConversionFunctions;
 			GloboTest.sqlConversion = sqlConversion;
 
+
 			function NoDbSchema(){
+				//TODO: Refactor this so that it is not specific to the WebSql provider.
+				//		actually none of this belongs in here. Move it to websql.js
 				var _interface = {
 					"createTable" : function(tableName, tableConfig){
 						var rs = CREATETABLE;
 
 						rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
+
+						return rs;
+					},
+					"createView" : function(viewName, viewSql){
+						var rs = CREATEVIEW;
+
+						rs += viewName + " AS " + viewSql;
 
 						return rs;
 					},
@@ -248,8 +270,9 @@ var GloboTest = {};
 						return nvps;
 					},
 					"sqlDelete": function(tableName, filters){
-						var returnObject = {};
-						returnObject.queryString = DELETE + tableName + " WHERE " + filters.toSQL();
+						var returnObject = {},
+							where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
+						returnObject.queryString = DELETE + tableName + where;
 						return returnObject;
 					},
 					"sqlRead": function(tableName, filters, sort){
@@ -284,6 +307,10 @@ var GloboTest = {};
 					return _interface.createTable(tableName, tableConfig);
 				};
 
+				this.createSqlViewStmt = function(tableName){
+					return _interface.createView(tableName);
+				};
+
 				this.createSqlInsertStmt = function(tableName, data, filters){
 					return _interface.sqlInsert(tableName, data);
 				};
@@ -304,73 +331,9 @@ var GloboTest = {};
 					return _interface.sqlOne(tableName, primKey, value);
 				};
 
-				/*
-					### Properties
-
-					|Name|Type|Description|
-					|----|----|-----------|
-					|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-					|tables|Object|A hash table of NoInfoPath database schema definitions|
-					|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
-				*/
-				Object.defineProperties(this, {
-					"store": {
-						"get": function() { return _config; }
-					},
-					"tables": {
-						"get": function() { return _tables; }
-					},
-					"isReady": {
-						"get": function() { return _.size(_tables) > 0; }
-					},
-					"sql": {
-						"get": function() { return _sql; }
-					}
-				});
-
-				function _processDbJson(resp){
-					var deferred = $q.defer();
-
-					_tables = resp.data;
-
-					$timeout(function(){
-						//save reference to the source data from the rest api.
-
-						angular.forEach(_tables, function(table, tableName){
-							var primKey = "$$" + table.primaryKey,
-								foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
-
-							//Prep as a Dexie Store config
-							_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-						});
-
-						deferred.resolve();
-					});
-
-					//noLogService.log(angular.toJson(_config));
-					return deferred.promise;
-				}
-
-
-				function load(){
-					var req = {
-						method: "GET",
-						url: noConfig.current.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
-						headers: {
-							"Content-Type": "application/json",
-							"Accept": "application/json"
-						},
-						withCredentials: true
-					};
-
-					return $http(req)
-						.then(_processDbJson)
-						.catch(function(resp){
-							noLogService.error(resp);
-						});
-				}
-
-
+				this.createSqlClearStmt = function(tableName){
+					return _interface.sqlDelete(tableName);
+				};
 
 				this.whenReady = function(){
 					var deferred = $q.defer();
@@ -402,12 +365,71 @@ var GloboTest = {};
 					return deferred.promise;
 				};
 
-				// This is for testing purposes
+				Object.defineProperties(this, {
+					"store": {
+						"get": function() { return _config; }
+					},
+					"tables": {
+						"get": function() { return _tables; }
+					},
+					"isReady": {
+						"get": function() { return _.size(_tables) > 0; }
+					},
+					"sql": {
+						"get": function() { return _sql; }
+					},
+					"views": {
+						"get": function() { return _views; }
+					}
+				});
+
+				function _processDbJson(resp){
+					var deferred = $q.defer();
+
+					_tables = resp.data;
+
+					$timeout(function(){
+						//save reference to the source data from the rest api.
+
+						angular.forEach(_tables, function(table, tableName){
+							var primKey = "$$" + table.primaryKey,
+								foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
+
+							//Prep as a Dexie Store config
+							_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+						});
+
+						deferred.resolve();
+					});
+
+					//noLogService.log(angular.toJson(_config));
+					return deferred.promise;
+				}
+
+				function load(){
+					var req = {
+						method: "GET",
+						url: noConfig.current.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
+						headers: {
+							"Content-Type": "application/json",
+							"Accept": "application/json"
+						},
+						withCredentials: true
+					};
+
+					return $http(req)
+						.then(_processDbJson)
+						.catch(function(resp){
+							noLogService.error(resp);
+						});
+				}
+
+				// TODO: For Testing with Jasmime.
 				this.test = _interface;
 			}
 
-		return _interface;
-	}])
+			return new NoDbSchema();
+		}])
 	;
 
 })(angular, Dexie);
