@@ -1138,7 +1138,7 @@ describe("Testing noDbSchema", function(){
 	});
 
 	describe("Testing SQL delete strings", function(){
-		it("should make a sql delete statement from a mock", function(){
+		it("should make a sql delete statement with a filter from a mock", function(){
 			var result,
 				expected = {
 					"queryString" : "DELETE FROM foo WHERE (FooID = '0eec54c3-1c7e-48af-a9da-d7da62820083')"
@@ -1239,6 +1239,74 @@ describe("Testing noDbSchema", function(){
 			expect(result).toEqual(expected);
 		});
 
+	});
+
+	describe("Testing public methods of NoDbSchema", function(){
+
+		// it("testing createSqlTableStmt", function(){
+		// 	var result,
+		// 		expected = "";
+		//
+		// 	result = noDbSchema.createSqlTableStmt("foo", mock.foo);
+		//
+		// 	expect(result).toEqual(expected);
+		// });
+		it("testing createSqlViewStmt", function(){
+			var result,
+				expected = "CREATE VIEW IF NOT EXISTS foo AS SELECT * FROM foo";
+
+			result = noDbSchema.createSqlViewStmt("foo", "SELECT * FROM foo");
+
+			expect(result).toEqual(expected);
+		});
+		// it("testing createSqlInsertStmt", function(){
+		// 	var result,
+		// 		expected = "";
+		//
+		// 	result = noDbSchema.createSqlTableStmt("foo", mock.foo);
+		//
+		// 	expect(result).toEqual(expected);
+		// });
+		// it("testing createSqlUpdateStmt", function(){
+		// 	var result,
+		// 		expected = "";
+		//
+		// 	result = noDbSchema.createSqlTableStmt("foo", mock.foo);
+		//
+		// 	expect(result).toEqual(expected);
+		// });
+		// it("testing createSqlDeleteStmt", function(){
+		// 	var result,
+		// 		expected = "";
+		//
+		// 	result = noDbSchema.createSqlTableStmt("foo", mock.foo);
+		//
+		// 	expect(result).toEqual(expected);
+		// });
+		// it("testing createSqlReadStmt", function(){
+		// 	var result,
+		// 		expected = "";
+		//
+		// 	result = noDbSchema.createSqlTableStmt("foo", mock.foo);
+		//
+		// 	expect(result).toEqual(expected);
+		// });
+		// it("testing createSqlOneStmt", function(){
+		// 	var result,
+		// 		expected = "";
+		//
+		// 	result = noDbSchema.createSqlTableStmt("foo", mock.foo);
+		//
+		// 	expect(result).toEqual(expected);
+		// });
+		it("testing createSqlClearStmt", function(){
+			var result,
+				expected = { "queryString": "DELETE FROM foo"};
+
+			result = noDbSchema.createSqlClearStmt("foo");
+
+			expect(result).toEqual(expected);
+		});
 	});
 
 });

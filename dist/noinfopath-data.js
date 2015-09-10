@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.10
+ *	@version 0.2.11
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -599,6 +599,8 @@
 	* |Name|Type|Description|
 	* |----|----|------------|
 	* |length|Number|Number of elements in the array.|
+	* |total|Number|Total number of rows available given the current filters.|
+	* |paged|Array|An array of object sliced on the skip and take parameters passed into the constructor.|
 	*
 	* ### Methods
 	*
@@ -648,7 +650,6 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
-
 	function NoPage(skip, take) {
 		Object.defineProperties(this, {
 			"__type": {
@@ -663,7 +664,7 @@
 	}
 
 	function NoResults(arrayOfThings){
-		//Capture the lenght of the arrayOfThings before any changes are made to it.
+		//Capture the length of the arrayOfThings before any changes are made to it.
 		var _total = arrayOfThings.length,
 		_page = arrayOfThings,
 		arr = arrayOfThings;
@@ -684,7 +685,7 @@
 		});
 
 		arr.page = function(nopage){
-			if(!nopage) throw "nopage is a required parameter for NoResults:page";
+			if(!nopage) throw "nopage is a required parameter for NoResults::page";
 			_page = this.slice(nopage.skip, nopage.skip + nopage.take);
 		};
 
@@ -1480,7 +1481,8 @@
 
 /*
 * ## noDbSchema
-*The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+* The noDbSchema service provides access to the database configuration that
+* defines how to configure the local IndexedDB data store.
 */
 /*
 *	### Properties
@@ -1526,12 +1528,23 @@ var GloboTest = {};
 		 * ## noDbSchema
 		 * The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 		*/
+		/*
+			### Properties
+
+			|Name|Type|Description|
+			|----|----|-----------|
+			|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+			|tables|Object|A hash table of NoInfoPath database schema definitions|
+			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+		*/
+
 		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
-			var _interface = new NoDbSchema(),
-				_config = {},
+			var _config = {},
 				_tables = {},
+				_views = {},
 				_sql = {},
 				CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
+				CREATEVIEW = "CREATE VIEW IF NOT EXISTS ",
 				INSERT = "INSERT INTO ",
 				UPDATE = "UPDATE ",
 				DELETE = "DELETE FROM ",
@@ -1617,12 +1630,64 @@ var GloboTest = {};
 			GloboTest.toSqlLiteConversionFunctions = toSqlLiteConversionFunctions;
 			GloboTest.sqlConversion = sqlConversion;
 
+			// TODO: Finish documentation
+			/*
+			 * ## NoDbSchema : Class
+			 * This provides
+			 *
+			 * ### Constructors
+			 *
+			 * #### Constructor()
+			 *
+			 * ##### Usage
+			 * ```js
+			 * var x = new NoDbSchema();
+			 * ```
+			 *
+			 * ##### Parameters
+			 *
+			 * None
+			 *
+			 * ### Methods
+			 *
+			 * #### createSqlTableStmt(tableName, tableConfig)
+			 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
+			 *
+			 * ##### Usage
+			 * ```js
+			 * var x = createSqlTableStmt(tableName, tableConfig);
+			 * ```
+			 * ##### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |tableName|String|The name of the table to be created|
+			 * |tableConfig|Object|The schema of the table to be created|
+			 *
+			 * ##### Returns
+			 * Returns a SQL query string
+			 *
+			 * ### Properties
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
+			*/
+
 			function NoDbSchema(){
+				//TODO: Refactor this so that it is not specific to the WebSql provider.
+				//		actually none of this belongs in here. Move it to websql.js
 				var _interface = {
 					"createTable" : function(tableName, tableConfig){
 						var rs = CREATETABLE;
 
 						rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
+
+						return rs;
+					},
+					"createView" : function(viewName, viewSql){
+						var rs = CREATEVIEW;
+
+						rs += viewName + " AS " + viewSql;
 
 						return rs;
 					},
@@ -1728,8 +1793,9 @@ var GloboTest = {};
 						return nvps;
 					},
 					"sqlDelete": function(tableName, filters){
-						var returnObject = {};
-						returnObject.queryString = DELETE + tableName + " WHERE " + filters.toSQL();
+						var returnObject = {},
+							where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
+						returnObject.queryString = DELETE + tableName + where;
 						return returnObject;
 					},
 					"sqlRead": function(tableName, filters, sort){
@@ -1764,6 +1830,10 @@ var GloboTest = {};
 					return _interface.createTable(tableName, tableConfig);
 				};
 
+				this.createSqlViewStmt = function(tableName, viewSql){
+					return _interface.createView(tableName, viewSql);
+				};
+
 				this.createSqlInsertStmt = function(tableName, data, filters){
 					return _interface.sqlInsert(tableName, data);
 				};
@@ -1784,73 +1854,9 @@ var GloboTest = {};
 					return _interface.sqlOne(tableName, primKey, value);
 				};
 
-				/*
-					### Properties
-
-					|Name|Type|Description|
-					|----|----|-----------|
-					|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-					|tables|Object|A hash table of NoInfoPath database schema definitions|
-					|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
-				*/
-				Object.defineProperties(this, {
-					"store": {
-						"get": function() { return _config; }
-					},
-					"tables": {
-						"get": function() { return _tables; }
-					},
-					"isReady": {
-						"get": function() { return _.size(_tables) > 0; }
-					},
-					"sql": {
-						"get": function() { return _sql; }
-					}
-				});
-
-				function _processDbJson(resp){
-					var deferred = $q.defer();
-
-					_tables = resp.data;
-
-					$timeout(function(){
-						//save reference to the source data from the rest api.
-
-						angular.forEach(_tables, function(table, tableName){
-							var primKey = "$$" + table.primaryKey,
-								foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
-
-							//Prep as a Dexie Store config
-							_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-						});
-
-						deferred.resolve();
-					});
-
-					//noLogService.log(angular.toJson(_config));
-					return deferred.promise;
-				}
-
-
-				function load(){
-					var req = {
-						method: "GET",
-						url: noConfig.current.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
-						headers: {
-							"Content-Type": "application/json",
-							"Accept": "application/json"
-						},
-						withCredentials: true
-					};
-
-					return $http(req)
-						.then(_processDbJson)
-						.catch(function(resp){
-							noLogService.error(resp);
-						});
-				}
-
-
+				this.createSqlClearStmt = function(tableName){
+					return _interface.sqlDelete(tableName);
+				};
 
 				this.whenReady = function(){
 					var deferred = $q.defer();
@@ -1882,12 +1888,71 @@ var GloboTest = {};
 					return deferred.promise;
 				};
 
-				// This is for testing purposes
+				Object.defineProperties(this, {
+					"store": {
+						"get": function() { return _config; }
+					},
+					"tables": {
+						"get": function() { return _tables; }
+					},
+					"isReady": {
+						"get": function() { return _.size(_tables) > 0; }
+					},
+					"sql": {
+						"get": function() { return _sql; }
+					},
+					"views": {
+						"get": function() { return _views; }
+					}
+				});
+
+				function _processDbJson(resp){
+					var deferred = $q.defer();
+
+					_tables = resp.data;
+
+					$timeout(function(){
+						//save reference to the source data from the rest api.
+
+						angular.forEach(_tables, function(table, tableName){
+							var primKey = "$$" + table.primaryKey,
+								foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
+
+							//Prep as a Dexie Store config
+							_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+						});
+
+						deferred.resolve();
+					});
+
+					//noLogService.log(angular.toJson(_config));
+					return deferred.promise;
+				}
+
+				function load(){
+					var req = {
+						method: "GET",
+						url: noConfig.current.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
+						headers: {
+							"Content-Type": "application/json",
+							"Accept": "application/json"
+						},
+						withCredentials: true
+					};
+
+					return $http(req)
+						.then(_processDbJson)
+						.catch(function(resp){
+							noLogService.error(resp);
+						});
+				}
+
+				// TODO: For Testing with Jasmime.
 				this.test = _interface;
 			}
 
-		return _interface;
-	}])
+			return new NoDbSchema();
+		}])
 	;
 
 })(angular, Dexie);
@@ -2133,25 +2198,63 @@ var GloboTest = {};
 (function(angular, undefined){
 	"use strict";
 
-	function NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema){
+	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage){
+		var stmts = {
+			"T": noDbSchema.createSqlTableStmt,
+			"V": noDbSchema.createSqlViewStmt
+		}, _name;
 
-		this.wait = function(noWebSQLInitialized){
+		Object.defineProperties(this, {
+			"isInitialized": {
+				"get" : function(){
+					return !!noLocalStorage.getItem(_name);
+				}
+			}
+		});
+
+		//TODO: modify config to also contain Views, as well as, Tables.
+		this.configure = function(noUser, config, schema){
+			var _webSQL = null,
+				promises = [],
+				noWebSQLInitialized = "noWebSQL_" + config.dbName;
+
+			_webSQL = openDatabase(config.dbName, config.version, config.description, config.size);
+
+			_webSQL.currentUser = noUser;
+			_webSQL.name = config.dbName;
+
+			angular.forEach(schema.tables, function(table, name){
+				var t = new NoTable(table, name, _webSQL);
+				this[name] = t;
+				promises.push(createEntity("T", name, table, _webSQL));
+			}, _webSQL);
+
+			angular.forEach(schema.views, function(view, name){
+				var t = new NoView(view, name, _webSQL);
+				this[name] = t;
+				promises.push(createEntity("V", name, view, _webSQL));
+			}, _webSQL);
+
+			return $q.all(promises)
+				.then(function(){
+					$rootScope[noWebSQLInitialized] = _webSQL;
+				});
+		};
+
+		this.whenReady = function(config){
 			var deferred = $q.defer();
 
 			$timeout(function(){
+				var noWebSQLInitialized = "noWebSQL_" + config.dbName;
 
 				if($rootScope[noWebSQLInitialized])
 				{
-					noLogService.log("noWebSQL Ready.");
 					deferred.resolve();
 				}else{
-
 					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
 						if(newval){
-							noLogService.log("noWebSQL Ready.");
-							deferred.resolve(newval);
+							deferred.resolve();
 						}
-						console.info(newval);
 					});
 				}
 			});
@@ -2159,59 +2262,10 @@ var GloboTest = {};
 			return deferred.promise;
 		};
 
-		this.whenReady = function(config){
-			var deferred = $q.defer();
-
-			$timeout(function(){
-				var noWebSQLInitialized = "noWebSQL_" + config.name;
-
-				if($rootScope[noWebSQLInitialized])
-				{
-					noLogService.log("noWebSQL Ready.");
-					deferred.resolve();
-				}else{
-
-					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
-						if(newval){
-							noLogService.log("noWebSQL Ready.");
-							deferred.resolve(newval);
-						}
-					});
-
-					this.configure(config)
-						.then(function(db){
-							$rootScope[noWebSQLInitialized] = db;
-						})
-						.catch(function(err){
-							deferred.reject(err);
-						});
-				}
-			}.bind(this));
-
-			return deferred.promise;
-		};
-
-		this.configure = function(config){
-			var _webSQL = null,
-				promises = [];
-
-			_webSQL = openDatabase(config.name, config.version, config.description, config.size);
-
-			angular.forEach(noDbSchema.tables, function(table, name){
-				var t = new NoTable(table, name, _webSQL);
-				this[name] = t;
-				promises.push(createTable(name, table, _webSQL));
-			}, _webSQL);
-
-			return $q.all(promises)
-				.then(function(){
-					return _webSQL;
-				});
-		};
-
 		this.getDatabase = function(databaseName){
 			return $rootScope[databaseName];
 		};
+
 		/**
 		* ### createTable(tableName, table)
 		*
@@ -2219,15 +2273,17 @@ var GloboTest = {};
 		*
 		* |Name|Type|Description|
 		* |----|----|-----------|
+		* |type|String|One of T\|V|
 		* |tableName|String|The table's name|
 		* |table|Object|The table schema|
 		*/
-		var createTable = function(tableName, table, database){
+		function createEntity(type, tableName, table, database){
 
 			var deferred = $q.defer();
 
+
 			database.transaction(function(tx){
-				tx.executeSql(noDbSchema.createSqlTableStmt(tableName, table), [],
+				tx.executeSql(stmts[type](tableName, table), [],
 			 	function(t, r){
 					deferred.resolve();
 			 	},
@@ -2237,8 +2293,12 @@ var GloboTest = {};
 			});
 
 			return deferred.promise;
-		};
+		}
 
+		/**
+		 * ## NoTable
+		 * CRUD interface for WebSql
+		*/
 		function NoTable(table, tableName, database){
 			if(!table) throw "table is a required parameter";
 			if(!tableName) throw "tableName is a required parameter";
@@ -2333,7 +2393,7 @@ var GloboTest = {};
 			* |Name|Type|Description|
 			* |----|----|-----------|
 			* |operation|String|Either a "C" "U" or "D"|
-			* |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+			* |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 			* |data|Object|Name Value Pairs|
 			*/
 
@@ -2344,7 +2404,14 @@ var GloboTest = {};
 					ops = {
 						"C": noDbSchema.createSqlInsertStmt,
 						"U": noDbSchema.createSqlUpdateStmt,
-						"D": noDbSchema.createSqlDeleteStmt
+						"D": noDbSchema.createSqlDeleteStmt,
+						"B": noDbScema.createSqlClearStmt
+					},
+					opFns = {
+						"C": null,
+						"U": null,
+						"D": null,
+						"B": null
 					},
 					sqlExpressionData,
 					noFilters = new noInfoPath.data.NoFilters(),
@@ -2361,28 +2428,41 @@ var GloboTest = {};
 					sqlExpressionData = ops[operation](_tableName, data, noFilters);
 
 					_db.transaction(function(tx){
-						if(operation === "D"){
-							_getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
-								.then(function(result){
-									_exec(sqlExpressionData)
-										.then(function(result){
-											noTransaction.addChange(_tableName, this, "D");
-											deferred.resolve(result);
-										}.bind(result))
-										.catch(deferred.reject);
-								})
-								.catch(deferred.reject);
-						}else{
-							_exec(sqlExpressionData)
-								.then(function(result){
-									_getOne(result.insertId)
-										.then(function(result){
-											noTransaction.addChange(_tableName, result, operation);
-											deferred.resolve(result);
-										})
-										.catch(deferred.reject);
-								})
-								.catch(deferred.reject);
+						switch(operation){
+							case "C":
+							case "U":
+								sqlExpressionData = ops[operation](_tableName, data, noFilters);
+								_exec(sqlExpressionData)
+									.then(function(result){
+										_getOne(result.insertId)
+											.then(function(result){
+												if(noTransaction) noTransaction.addChange(_tableName, result, operation);
+												deferred.resolve(result);
+											})
+											.catch(deferred.reject);
+									})
+									.catch(deferred.reject);
+								break;
+							case "D":
+								sqlExpressionData = ops[operation](_tableName, data, noFilters);
+								_getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
+									.then(function(result){
+										_exec(sqlExpressionData)
+											.then(function(result){
+												if(noTransaction) noTransaction.addChange(_tableName, this, "D");
+												deferred.resolve(result);
+											}.bind(result))
+											.catch(deferred.reject);
+									})
+									.catch(deferred.reject);
+								break;
+							case "B":
+								sqlExpressionData = ops[operation](_tableName);
+								_exec(sqlExpressionData)
+									.then(deferred.resolve)
+									.catch(deferred.reject);
+								break;
+
 						}
 					});
 
@@ -2403,7 +2483,7 @@ var GloboTest = {};
 			*/
 
 			this.noCreate = function(data, noTransaction){
-				return webSqlOperation("C", noTransaction, data);
+				return webSqlOperation("C", noTransaction ? noTransaction : null, data);
 			};
 
 			/**
@@ -2506,7 +2586,7 @@ var GloboTest = {};
 			*/
 
 			this.noDestroy = function(data, noTransaction) {
-				return webSqlOperation("D", noTransaction, data);
+				return webSqlOperation("D", noTransaction ? noTransaction : null, data);
 			};
 
 			/**
@@ -2520,7 +2600,6 @@ var GloboTest = {};
 			* |----|----|-----------|
 			* |data|Object|Name Value Pairs|
 			*/
-
 			this.noOne = function(data) {
 				var deferred = $q.defer(),
 					key = data[_table.primaryKey],
@@ -2552,25 +2631,179 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
+			this.bulkLoad = function(data, progress, db){
+				var deferred = $q.defer(), table = this;
+				//var table = this;
+				function _import(data, progress){
+					var total = data ? data.length : 0;
+
+					$timeout(function(){
+						//progress.rows.start({max: total});
+						deferred.notify(progress);
+					});
+
+					var currentItem = 0;
+
+					//_dexie.transaction('rw', table, function (){
+					_next();
+					//});
+
+					function _next(){
+						if(currentItem < data.length){
+							var datum = data[currentItem];
+
+							table.noCreate(datum)
+								.then(function(data){
+									//progress.updateRow(progress.rows);
+									deferred.notify(data);
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								})
+								.finally(function(){
+									currentItem++;
+									_next();
+								});
+
+						}else{
+							deferred.resolve(table.name);
+						}
+					}
+
+				}
+
+				//console.info("bulkLoad: ", table.TableName)
+
+				table.noClear()
+					.then(function(){
+						_import(data, progress);
+					}.bind(this));
+
+				return deferred.promise;
+			};
+
+			/**
+			* ### noClear()
+			*
+			* Delete all rows from the current table.
+			*
+			* #### Returns
+			* AngularJS Promise.
+			*/
+			this.noClear = function(){
+				return webSqlOperation("B", null);
+			};
 		}
 
+		/**
+		 * ## NoView
+		 * An in memory representation of complex SQL operation that involes
+		 * multiple tables and joins, as well as grouping and aggregation
+		 * functions.
+		 *
+		 * ##### NoView JSON Prototype
+		 *
+		 * ```json
+		 *	{
+		 *		"sql": String
+		 *		"params": []
+		 *	}
+		 * ```
+		 *
+		 * ##### References
+		 * - https://www.sqlite.org/lang_createview.html
+		 *
+		*/
+		function NoView(view, viewName, database) {
+			if(!view) throw "view is a required parameter";
+			if(!viewName) throw "viewName is a required parameter";
+			if(!database) throw "database is a required parameter";
+
+			var _view = view,
+				_viewName = viewName,
+				_db = database
+			;
+
+			this.noCreate = angular.noop;
+
+			this.noRead = function() {
+
+				var filters, sort, page,
+					deferred = $q.defer(),
+					readObject;
+
+				for(var ai in arguments){
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if(angular.isObject(arg)){
+						switch(arg.__type){
+							case "NoFilters":
+								filters = arg;
+								break;
+							case "NoSort":
+								sort = arg;
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
+
+				readObject = noDbSchema.createSqlReadStmt(_viewName, filters, sort);
+
+				function _txCallback(tx){
+					tx.executeSql(
+						readObject.queryString,
+						[],
+						function(t, r){
+							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+							if(page) data.page(page);
+							deferred.resolve(data);
+						},
+						function(t, e){
+							deferred.reject(e);
+						});
+				}
+
+				function _txFailure(error){
+					console.error("Tx Failure", error);
+				}
+
+				function _txSuccess(data){
+					console.log("Tx Success", data);
+				}
+
+				_db.transaction(_txCallback, _txFailure, _txSuccess);
+
+				return deferred.promise;
+			};
+
+			this.noUpdate = angular.noop;
+
+			this.noDestroy = angular.noop;
+
+			this.bulkLoad = angular.noop;
+
+			this.noClear = angular.noop;
+		}
 	}
 
 
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL",['$parse','$rootScope','lodash', '$q', '$timeout', 'noLogService', 'noDbSchema', function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema)
-		{
-	      	return new NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema);
+		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noDbSchema", "noLocalStorage", function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage){
+	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage);
 		}])
-		;
+	;
 })(angular);
 
 (function(angular, undefined){
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$q", "noDataTransactionCache", "lodash", "$rootScope", "$timeout", function($q, noDataTransactionCache, _, $rootScope, $timeout){
+		.factory("noTransactionCache", ["$q", "noIndexedDb", "lodash", "$rootScope", "$timeout", function($q, noIndexedDb, _, $rootScope, $timeout){
 
 
 
@@ -2643,26 +2876,35 @@ var GloboTest = {};
 
 						if($rootScope[no])
 						{
-							console.log("noDataTransactionCache Ready.");
 							deferred.resolve();
 						}else{
 
 							$rootScope.$watch(no, function(newval, oldval, scope){
 								if(newval){
-									console.log("noDataTransactionCache Ready.");
 									deferred.resolve(newval);
 								}
 							});
 
-							var version = {"name":"NoInfoPath_Changes_v1","version":1},
-								store = {"NoInfoPath_Changes": "$$ChangeID"},
-								tables = {
-									"NoInfoPath_Changes": {
-										"primaryKey": "ChangeID"
+							var config = {
+								"dbName": "NoInfoPath_dtc_v1",
+								"provider": "noIndexedDB",
+								"version": 1,
+								"schemaSource": {
+									"provider": "inline",
+									"schema": {
+										"store": {
+											"NoInfoPath_Changes": "$$ChangeID"
+										},
+										"tables": {
+											"NoInfoPath_Changes": {
+												"primaryKey": "ChangeID"
+											}
+										}
 									}
-								};
+								}
+							};
 
-							noDataTransactionCache.configure(user, version, store, tables)
+							noIndexedDb.configure(user, config)
 								.then(function(){
 									$rootScope[no] = true;
 								})
@@ -2670,7 +2912,7 @@ var GloboTest = {};
 									console.error(err);
 								});
 						}
-					}.bind(noDataTransactionCache));
+					}.bind(noIndexedDb));
 
 					return deferred.promise;
 				};
@@ -2705,7 +2947,7 @@ var GloboTest = {};
 			noInfoPath.data.NoChange = NoChange;
 			noInfoPath.data.NoTransactionCache = NoTransactionCache;
 
-			return new NoTransactionCache($q, noDataTransactionCache);
+			return new NoTransactionCache($q, noIndexedDb);
 		}])
 		;
 })(angular);
@@ -2890,15 +3132,136 @@ var GloboTest = {};
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	function createIndexedDB($timeout, $q, $rootScope, _, noLogService, databaseName){
-		/**
-		*	### Class noDatum
-		*	This is a contructor function used by Dexie when creating and returning data objects.
-		*/
-		function noDatum(){
-			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
-		}
+	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage){
 
+		var _name;
+
+		Object.defineProperties(this, {
+			"isInitialized": {
+				"get" : function(){
+					return !!noLocalStorage.getItem(_name);
+				}
+			}
+		});
+
+		this.configure = function(noUser, config, schema){
+			var deferred = $q.defer(),
+				_dexie = new Dexie(config.dbName),
+				noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
+
+			$timeout(function(){
+				_dexie.currentUser = noUser;
+				_dexie.on('error', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.error("Dexie Error: " + err);
+				   	deferred.reject(err);
+				});
+
+				_dexie.on('blocked', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.warn("IndexedDB is currently execting a blocking operation.");
+				   	deferred.reject(err);
+				});
+
+				_dexie.on('versionchange', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.error("IndexedDB as detected a version change");
+				});
+
+				_dexie.on('populate', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.warn("IndedexDB populate...  not implemented.");
+				});
+
+				_dexie.on('ready', function(data) {
+					noLogService.log("Dexie ready");
+				    // Log to console or show en error indicator somewhere in your GUI...
+					$rootScope[noIndexedDbInitialized] = _dexie;
+					deferred.resolve();
+				});
+
+				if(_dexie.isOpen()){
+					$timeout(function(){
+						//noLogService.log("Dexie already open.")
+						window.noInfoPath.digest(deferred.resolve);
+					});
+				}else{
+					if(_.size(schema.store)){
+						_dexie.version(config.version).stores(schema.store);
+						_extendDexieTables.call(_dexie, schema.tables);
+						_dexie.open();
+					}else{
+						noLogService.warn("Waiting for noDbSchema data.");
+					}
+
+				}
+			});
+
+			function _extendDexieTables(dbSchema){
+				function _toDexieClass(tsqlTableSchema){
+					var _table = {};
+
+					angular.forEach(tsqlTableSchema.columns, function(column,tableName){
+						switch(column.type){
+							case "uniqueidentifier":
+							case "nvarchar":
+							case "varchar":
+								_table[tableName] = "String";
+								break;
+
+							case "date":
+							case "datetime":
+								_table[tableName] = "Date";
+								break;
+
+							case "bit":
+								_table[tableName] = "Boolean";
+								break;
+
+							case "int":
+							case "decimal":
+								_table[tableName] = "Number";
+								break;
+						}
+					});
+
+					return _table;
+				}
+
+				angular.forEach(dbSchema, function(table, tableName){
+					var dexieTable = _dexie[tableName];
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					dexieTable.noInfoPath = table;
+				});
+			}
+
+			return deferred.promise;
+		};
+
+		this.whenReady = function(config){
+			var deferred = $q.defer();
+
+			$timeout(function(){
+				var noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
+
+				if($rootScope[noIndexedDbInitialized])
+				{
+					deferred.resolve();
+				}else{
+					$rootScope.$watch(noIndexedDbInitialized, function(newval, oldval, scope){
+						if(newval){
+							deferred.resolve();
+						}
+					});
+				}
+			});
+
+			return deferred.promise;
+		};
+
+		this.getDatabase = function(databaseName){
+			return $rootScope[databaseName];
+		};
 
 		function noDexie(db){
 
@@ -3399,138 +3762,26 @@ var GloboTest = {};
 
 		}
 
-
-		function _extendDexieTables(dbSchema){
-			function _toDexieClass(tsqlTableSchema){
-				var _table = {};
-
-				angular.forEach(tsqlTableSchema.columns, function(column,tableName){
-					switch(column.type){
-						case "uniqueidentifier":
-						case "nvarchar":
-						case "varchar":
-							_table[tableName] = "String";
-							break;
-
-						case "date":
-						case "datetime":
-							_table[tableName] = "Date";
-							break;
-
-						case "bit":
-							_table[tableName] = "Boolean";
-							break;
-
-						case "int":
-						case "decimal":
-							_table[tableName] = "Number";
-							break;
-					}
-				});
-
-				return _table;
-			}
-
-			angular.forEach(dbSchema, function(table, tableName){
-				var dexieTable = _dexie[tableName];
-				dexieTable.mapToClass(noDatum, _toDexieClass(table));
-				dexieTable.noInfoPath = table;
-			});
+		/**
+		*	### Class noDatum
+		*	This is a contructor function used by Dexie when creating and returning data objects.
+		*/
+		function noDatum(){
+			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
 		}
 
-
-		Dexie.prototype.configure = function(noUser, dbVersion, dexieStores, dbSchema){
-			var deferred = $q.defer();
-
-			$timeout(function(){
-				_dexie.currentUser = noUser;
-				_dexie.on('error', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.error("Dexie Error: " + err);
-				   	window.noInfoPath.digestError(deferred.reject, err);
-				});
-
-				_dexie.on('blocked', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.warn("IndedexDB is currently execting a blocking operation.");
-				   	window.noInfoPath.digestError(deferred.reject, err);
-				});
-
-				_dexie.on('versionchange', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.error("IndexedDB as detected a version change");
-				});
-
-				_dexie.on('populate', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.warn("IndedexDB populate...  not implemented.");
-				});
-
-				_dexie.on('ready', function(data) {
-					noLogService.log("Dexie ready");
-				    // Log to console or show en error indicator somewhere in your GUI...
-					$rootScope.noIndexedDBReady = true;
-				    window.noInfoPath.digest(deferred.resolve, data);
-				});
-
-				if(_dexie.isOpen()){
-					$timeout(function(){
-						//noLogService.log("Dexie already open.")
-						window.noInfoPath.digest(deferred.resolve);
-					});
-				}else{
-					if(_.size(dexieStores)){
-						_dexie.version(dbVersion.version).stores(dexieStores);
-						_extendDexieTables.call(_dexie, dbSchema);
-						_dexie.open();
-					}else{
-						noLogService.warn("Waiting for noDbSchema data.");
-					}
-
-				}
-			});
-
-			window.noInfoPath.digestTimeout();
-
-			return deferred.promise;
-		};
-
-		Dexie.prototype.whenReady = function(){
-			var deferred = $q.defer();
-
-			$timeout(function(){
-				if($rootScope.noIndexedDBReady)
-				{
-					deferred.resolve();
-				}else{
-					$rootScope.$watch("noIndexedDBReady", function(newval){
-						if(newval){
-							deferred.resolve();
-						}
-					});
-				}
-			});
-
-			return deferred.promise;
-		};
 
 
 		Dexie.addons.push(noDexie);
 
-		var _dexie = new Dexie(databaseName);
-
-		return  _dexie;
 	}
 
 	//noInfoPath.data.noIndexedDb = noIndexedDb;
 
 	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
-		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_v3");
-		}])
-		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc_v1");
+		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage){
+			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 	;
 

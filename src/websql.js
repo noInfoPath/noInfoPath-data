@@ -2,82 +2,38 @@
 (function(angular, undefined){
 	"use strict";
 
-	function NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema){
+	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage){
 		var stmts = {
 			"T": noDbSchema.createSqlTableStmt,
 			"V": noDbSchema.createSqlViewStmt
-		};
+		}, _name;
 
-		this.wait = function(noWebSQLInitialized){
-			var deferred = $q.defer();
-
-			$timeout(function(){
-
-				if($rootScope[noWebSQLInitialized])
-				{
-					noLogService.log("noWebSQL Ready.");
-					deferred.resolve();
-				}else{
-
-					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
-						if(newval){
-							noLogService.log("noWebSQL Ready.");
-							deferred.resolve(newval);
-						}
-						console.info(newval);
-					});
+		Object.defineProperties(this, {
+			"isInitialized": {
+				"get" : function(){
+					return !!noLocalStorage.getItem(_name);
 				}
-			});
-
-			return deferred.promise;
-		};
-
-		this.whenReady = function(config){
-			var deferred = $q.defer();
-
-			$timeout(function(){
-				var noWebSQLInitialized = "noWebSQL_" + config.name;
-
-				if($rootScope[noWebSQLInitialized])
-				{
-					noLogService.log("noWebSQL Ready.");
-					deferred.resolve();
-				}else{
-
-					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
-						if(newval){
-							noLogService.log("noWebSQL Ready.");
-							deferred.resolve(newval);
-						}
-					});
-
-					this.configure(config)
-						.then(function(db){
-							$rootScope[noWebSQLInitialized] = db;
-						})
-						.catch(function(err){
-							deferred.reject(err);
-						});
-				}
-			}.bind(this));
-
-			return deferred.promise;
-		};
+			}
+		});
 
 		//TODO: modify config to also contain Views, as well as, Tables.
-		this.configure = function(config){
+		this.configure = function(noUser, config, schema){
 			var _webSQL = null,
-				promises = [];
+				promises = [],
+				noWebSQLInitialized = "noWebSQL_" + config.dbName;
 
-			_webSQL = openDatabase(config.name, config.version, config.description, config.size);
+			_webSQL = openDatabase(config.dbName, config.version, config.description, config.size);
 
-			angular.forEach(noDbSchema.tables, function(table, name){
+			_webSQL.currentUser = noUser;
+			_webSQL.name = config.dbName;
+
+			angular.forEach(schema.tables, function(table, name){
 				var t = new NoTable(table, name, _webSQL);
 				this[name] = t;
 				promises.push(createEntity("T", name, table, _webSQL));
 			}, _webSQL);
 
-			angular.forEach(noDbSchema.views, function(view, name){
+			angular.forEach(schema.views, function(view, name){
 				var t = new NoView(view, name, _webSQL);
 				this[name] = t;
 				promises.push(createEntity("V", name, view, _webSQL));
@@ -85,11 +41,31 @@
 
 			return $q.all(promises)
 				.then(function(){
-					return _webSQL;
+					$rootScope[noWebSQLInitialized] = _webSQL;
 				});
 		};
 
-		//TODO: Add this method to noIndexedDb also.
+		this.whenReady = function(config){
+			var deferred = $q.defer();
+
+			$timeout(function(){
+				var noWebSQLInitialized = "noWebSQL_" + config.dbName;
+
+				if($rootScope[noWebSQLInitialized])
+				{
+					deferred.resolve();
+				}else{
+					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope){
+						if(newval){
+							deferred.resolve();
+						}
+					});
+				}
+			});
+
+			return deferred.promise;
+		};
+
 		this.getDatabase = function(databaseName){
 			return $rootScope[databaseName];
 		};
@@ -621,8 +597,8 @@
 
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL",['$parse','$rootScope','lodash', '$q', '$timeout', 'noLogService', 'noDbSchema', function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema){
-	      	return new NoDbService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema);
+		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noDbSchema", "noLocalStorage", function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage){
+	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage);
 		}])
 	;
 })(angular);

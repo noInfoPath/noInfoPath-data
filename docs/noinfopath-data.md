@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.10
+@version 0.2.11
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -327,6 +327,8 @@ NoSort is an array of NoSortExpression objects.
 |Name|Type|Description|
 |----|----|------------|
 |length|Number|Number of elements in the array.|
+|total|Number|Total number of rows available given the current filters.|
+|paged|Array|An array of object sliced on the skip and take parameters passed into the constructor.|
 
 ### Methods
 
@@ -492,7 +494,8 @@ NoInfoPath component that consume data such as noKendo.
 |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
 
 ## noDbSchema
-he noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+The noDbSchema service provides access to the database configuration that
+defines how to configure the local IndexedDB data store.
 
 ### Properties
 
@@ -542,6 +545,46 @@ The noDbSchema service provides access to the database configuration that define
 |tables|Object|A hash table of NoInfoPath database schema definitions|
 |isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 
+## NoDbSchema : Class
+This provides
+
+### Constructors
+
+#### Constructor()
+
+##### Usage
+```js
+var x = new NoDbSchema();
+```
+
+##### Parameters
+
+None
+
+### Methods
+
+#### createSqlTableStmt(tableName, tableConfig)
+Returns a SQL query string that creates a table given the provided tableName and tableConfig
+
+##### Usage
+```js
+var x = createSqlTableStmt(tableName, tableConfig);
+```
+##### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|tableName|String|The name of the table to be created|
+|tableConfig|Object|The schema of the table to be created|
+
+##### Returns
+Returns a SQL query string
+
+### Properties
+|Name|Type|Description|
+|----|----|-----------|
+|queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
+
 ## @interface INoQueryBuilder
 
 > INoQueryBuilder is a conceptual entity, it does not really exist
@@ -584,8 +627,12 @@ NoSort, NoPage into a WebSQL compatible query string.
 
 |Name|Type|Description|
 |----|----|-----------|
+|type|String|One of T\|V|
 |tableName|String|The table's name|
 |table|Object|The table schema|
+
+## NoTable
+CRUD interface for WebSql
 
 ### \_getOne(rowid)
 
@@ -610,7 +657,7 @@ NoSort, NoPage into a WebSQL compatible query string.
 |Name|Type|Description|
 |----|----|-----------|
 |operation|String|Either a "C" "U" or "D"|
-|noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+|noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 |data|Object|Name Value Pairs|
 
 ### noCreate(data, noTransaction)
@@ -667,6 +714,31 @@ Reads a record from the websql database based on the Primary Key of the data pro
 |Name|Type|Description|
 |----|----|-----------|
 |data|Object|Name Value Pairs|
+
+### noClear()
+
+Delete all rows from the current table.
+
+#### Returns
+AngularJS Promise.
+
+## NoView
+An in memory representation of complex SQL operation that involes
+multiple tables and joins, as well as grouping and aggregation
+functions.
+
+##### NoView JSON Prototype
+
+```json
+{
+	"sql": String
+	"params": []
+}
+```
+
+##### References
+- https://www.sqlite.org/lang_createview.html
+
 
 ## noDb
 The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
