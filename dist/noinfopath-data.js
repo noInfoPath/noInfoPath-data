@@ -2263,7 +2263,7 @@ var GloboTest = {};
 		};
 
 		this.getDatabase = function(databaseName){
-			return $rootScope[databaseName];
+			return $rootScope["noWebSQL_" + databaseName];
 		};
 
 		/**
@@ -2405,7 +2405,7 @@ var GloboTest = {};
 						"C": noDbSchema.createSqlInsertStmt,
 						"U": noDbSchema.createSqlUpdateStmt,
 						"D": noDbSchema.createSqlDeleteStmt,
-						"B": noDbScema.createSqlClearStmt
+						"B": noDbSchema.createSqlClearStmt
 					},
 					opFns = {
 						"C": null,
@@ -2417,13 +2417,17 @@ var GloboTest = {};
 					noFilters = new noInfoPath.data.NoFilters(),
 					id;
 
-					if(operation === "C"){
-						id = data[_table.primaryKey] = noInfoPath.createUUID();
-					} else {
-						id = data[_table.primaryKey];
+					switch(operation){
+						case "B":
+							break;
+						case "C":
+							id = data[_table.primaryKey] = noInfoPath.createUUID();
+							noFilters.add(_table.primaryKey, null, true, true, [{operator: "eq", value: id}]);
+							break;
+						default:
+							id = data[_table.primaryKey];
+							noFilters.add(_table.primaryKey, null, true, true, [{operator: "eq", value: id}]);
 					}
-
-					noFilters.add(_table.primaryKey, null, true, true, [{operator: "eq", value: id}]);
 
 					sqlExpressionData = ops[operation](_tableName, data, noFilters);
 
@@ -2631,7 +2635,7 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-			this.bulkLoad = function(data, progress, db){
+			this.bulkLoad = function(data, progress){
 				var deferred = $q.defer(), table = this;
 				//var table = this;
 				function _import(data, progress){
@@ -3260,10 +3264,11 @@ var GloboTest = {};
 		};
 
 		this.getDatabase = function(databaseName){
-			return $rootScope[databaseName];
+			return $rootScope["noIndexedDb_" + databaseName];
 		};
 
 		function noDexie(db){
+			var _dexie = db;
 
 			db.WriteableTable.prototype.noCreate = function(data){
 				var deferred = $q.defer(),

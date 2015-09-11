@@ -306,10 +306,11 @@
 		};
 
 		this.getDatabase = function(databaseName){
-			return $rootScope[databaseName];
+			return $rootScope["noIndexedDb_" + databaseName];
 		};
 
 		function noDexie(db){
+			var _dexie = db;
 
 			db.WriteableTable.prototype.noCreate = function(data){
 				var deferred = $q.defer(),
