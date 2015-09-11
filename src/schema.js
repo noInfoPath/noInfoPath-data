@@ -149,6 +149,48 @@ var GloboTest = {};
 			GloboTest.toSqlLiteConversionFunctions = toSqlLiteConversionFunctions;
 			GloboTest.sqlConversion = sqlConversion;
 
+			// TODO: Finish documentation
+			/*
+			 * ## NoDbSchema : Class
+			 * This provides
+			 *
+			 * ### Constructors
+			 *
+			 * #### Constructor()
+			 *
+			 * ##### Usage
+			 * ```js
+			 * var x = new NoDbSchema();
+			 * ```
+			 *
+			 * ##### Parameters
+			 *
+			 * None
+			 *
+			 * ### Methods
+			 *
+			 * #### createSqlTableStmt(tableName, tableConfig)
+			 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
+			 *
+			 * ##### Usage
+			 * ```js
+			 * var x = createSqlTableStmt(tableName, tableConfig);
+			 * ```
+			 * ##### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |tableName|String|The name of the table to be created|
+			 * |tableConfig|Object|The schema of the table to be created|
+			 *
+			 * ##### Returns
+			 * Returns a SQL query string
+			 *
+			 * ### Properties
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
+			*/
 
 			function NoDbSchema(){
 				//TODO: Refactor this so that it is not specific to the WebSql provider.
@@ -307,8 +349,8 @@ var GloboTest = {};
 					return _interface.createTable(tableName, tableConfig);
 				};
 
-				this.createSqlViewStmt = function(tableName){
-					return _interface.createView(tableName);
+				this.createSqlViewStmt = function(tableName, viewSql){
+					return _interface.createView(tableName, viewSql);
 				};
 
 				this.createSqlInsertStmt = function(tableName, data, filters){

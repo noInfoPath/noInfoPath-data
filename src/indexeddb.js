@@ -178,17 +178,139 @@
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	function createIndexedDB($timeout, $q, $rootScope, _, noLogService, databaseName){
-		/**
-		*	### Class noDatum
-		*	This is a contructor function used by Dexie when creating and returning data objects.
-		*/
-		function noDatum(){
-			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
-		}
+	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage){
 
+		var _name;
+
+		Object.defineProperties(this, {
+			"isInitialized": {
+				"get" : function(){
+					return !!noLocalStorage.getItem(_name);
+				}
+			}
+		});
+
+		this.configure = function(noUser, config, schema){
+			var deferred = $q.defer(),
+				_dexie = new Dexie(config.dbName),
+				noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
+
+			$timeout(function(){
+				_dexie.currentUser = noUser;
+				_dexie.on('error', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.error("Dexie Error: " + err);
+				   	deferred.reject(err);
+				});
+
+				_dexie.on('blocked', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.warn("IndexedDB is currently execting a blocking operation.");
+				   	deferred.reject(err);
+				});
+
+				_dexie.on('versionchange', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.error("IndexedDB as detected a version change");
+				});
+
+				_dexie.on('populate', function(err) {
+				    // Log to console or show en error indicator somewhere in your GUI...
+				    noLogService.warn("IndedexDB populate...  not implemented.");
+				});
+
+				_dexie.on('ready', function(data) {
+					noLogService.log("Dexie ready");
+				    // Log to console or show en error indicator somewhere in your GUI...
+					$rootScope[noIndexedDbInitialized] = _dexie;
+					deferred.resolve();
+				});
+
+				if(_dexie.isOpen()){
+					$timeout(function(){
+						//noLogService.log("Dexie already open.")
+						window.noInfoPath.digest(deferred.resolve);
+					});
+				}else{
+					if(_.size(schema.store)){
+						_dexie.version(config.version).stores(schema.store);
+						_extendDexieTables.call(_dexie, schema.tables);
+						_dexie.open();
+					}else{
+						noLogService.warn("Waiting for noDbSchema data.");
+					}
+
+				}
+			});
+
+			function _extendDexieTables(dbSchema){
+				function _toDexieClass(tsqlTableSchema){
+					var _table = {};
+
+					angular.forEach(tsqlTableSchema.columns, function(column,tableName){
+						switch(column.type){
+							case "uniqueidentifier":
+							case "nvarchar":
+							case "varchar":
+								_table[tableName] = "String";
+								break;
+
+							case "date":
+							case "datetime":
+								_table[tableName] = "Date";
+								break;
+
+							case "bit":
+								_table[tableName] = "Boolean";
+								break;
+
+							case "int":
+							case "decimal":
+								_table[tableName] = "Number";
+								break;
+						}
+					});
+
+					return _table;
+				}
+
+				angular.forEach(dbSchema, function(table, tableName){
+					var dexieTable = _dexie[tableName];
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					dexieTable.noInfoPath = table;
+				});
+			}
+
+			return deferred.promise;
+		};
+
+		this.whenReady = function(config){
+			var deferred = $q.defer();
+
+			$timeout(function(){
+				var noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
+
+				if($rootScope[noIndexedDbInitialized])
+				{
+					deferred.resolve();
+				}else{
+					$rootScope.$watch(noIndexedDbInitialized, function(newval, oldval, scope){
+						if(newval){
+							deferred.resolve();
+						}
+					});
+				}
+			});
+
+			return deferred.promise;
+		};
+
+		this.getDatabase = function(databaseName){
+			return $rootScope["noIndexedDb_" + databaseName];
+		};
 
 		function noDexie(db){
+			var _dexie = db;
 
 			db.WriteableTable.prototype.noCreate = function(data){
 				var deferred = $q.defer(),
@@ -687,138 +809,26 @@
 
 		}
 
-
-		function _extendDexieTables(dbSchema){
-			function _toDexieClass(tsqlTableSchema){
-				var _table = {};
-
-				angular.forEach(tsqlTableSchema.columns, function(column,tableName){
-					switch(column.type){
-						case "uniqueidentifier":
-						case "nvarchar":
-						case "varchar":
-							_table[tableName] = "String";
-							break;
-
-						case "date":
-						case "datetime":
-							_table[tableName] = "Date";
-							break;
-
-						case "bit":
-							_table[tableName] = "Boolean";
-							break;
-
-						case "int":
-						case "decimal":
-							_table[tableName] = "Number";
-							break;
-					}
-				});
-
-				return _table;
-			}
-
-			angular.forEach(dbSchema, function(table, tableName){
-				var dexieTable = _dexie[tableName];
-				dexieTable.mapToClass(noDatum, _toDexieClass(table));
-				dexieTable.noInfoPath = table;
-			});
+		/**
+		*	### Class noDatum
+		*	This is a contructor function used by Dexie when creating and returning data objects.
+		*/
+		function noDatum(){
+			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
 		}
 
-
-		Dexie.prototype.configure = function(noUser, dbVersion, dexieStores, dbSchema){
-			var deferred = $q.defer();
-
-			$timeout(function(){
-				_dexie.currentUser = noUser;
-				_dexie.on('error', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.error("Dexie Error: " + err);
-				   	window.noInfoPath.digestError(deferred.reject, err);
-				});
-
-				_dexie.on('blocked', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.warn("IndedexDB is currently execting a blocking operation.");
-				   	window.noInfoPath.digestError(deferred.reject, err);
-				});
-
-				_dexie.on('versionchange', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.error("IndexedDB as detected a version change");
-				});
-
-				_dexie.on('populate', function(err) {
-				    // Log to console or show en error indicator somewhere in your GUI...
-				    noLogService.warn("IndedexDB populate...  not implemented.");
-				});
-
-				_dexie.on('ready', function(data) {
-					noLogService.log("Dexie ready");
-				    // Log to console or show en error indicator somewhere in your GUI...
-					$rootScope.noIndexedDBReady = true;
-				    window.noInfoPath.digest(deferred.resolve, data);
-				});
-
-				if(_dexie.isOpen()){
-					$timeout(function(){
-						//noLogService.log("Dexie already open.")
-						window.noInfoPath.digest(deferred.resolve);
-					});
-				}else{
-					if(_.size(dexieStores)){
-						_dexie.version(dbVersion.version).stores(dexieStores);
-						_extendDexieTables.call(_dexie, dbSchema);
-						_dexie.open();
-					}else{
-						noLogService.warn("Waiting for noDbSchema data.");
-					}
-
-				}
-			});
-
-			window.noInfoPath.digestTimeout();
-
-			return deferred.promise;
-		};
-
-		Dexie.prototype.whenReady = function(){
-			var deferred = $q.defer();
-
-			$timeout(function(){
-				if($rootScope.noIndexedDBReady)
-				{
-					deferred.resolve();
-				}else{
-					$rootScope.$watch("noIndexedDBReady", function(newval){
-						if(newval){
-							deferred.resolve();
-						}
-					});
-				}
-			});
-
-			return deferred.promise;
-		};
 
 
 		Dexie.addons.push(noDexie);
 
-		var _dexie = new Dexie(databaseName);
-
-		return  _dexie;
 	}
 
 	//noInfoPath.data.noIndexedDb = noIndexedDb;
 
 	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
-		.factory("noDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_v3");
-		}])
-		.factory("noDataTransactionCache", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", function($timeout, $q, $rootScope, _, noLogService){
-			return createIndexedDB($timeout, $q, $rootScope, _, noLogService, "NoInfoPath_dtc_v1");
+		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage){
+			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 	;
 

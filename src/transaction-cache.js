@@ -2,7 +2,7 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$q", "noDataTransactionCache", "lodash", "$rootScope", "$timeout", function($q, noDataTransactionCache, _, $rootScope, $timeout){
+		.factory("noTransactionCache", ["$q", "noIndexedDb", "lodash", "$rootScope", "$timeout", function($q, noIndexedDb, _, $rootScope, $timeout){
 
 
 
@@ -75,26 +75,35 @@
 
 						if($rootScope[no])
 						{
-							console.log("noDataTransactionCache Ready.");
 							deferred.resolve();
 						}else{
 
 							$rootScope.$watch(no, function(newval, oldval, scope){
 								if(newval){
-									console.log("noDataTransactionCache Ready.");
 									deferred.resolve(newval);
 								}
 							});
 
-							var version = {"name":"NoInfoPath_Changes_v1","version":1},
-								store = {"NoInfoPath_Changes": "$$ChangeID"},
-								tables = {
-									"NoInfoPath_Changes": {
-										"primaryKey": "ChangeID"
+							var config = {
+								"dbName": "NoInfoPath_dtc_v1",
+								"provider": "noIndexedDB",
+								"version": 1,
+								"schemaSource": {
+									"provider": "inline",
+									"schema": {
+										"store": {
+											"NoInfoPath_Changes": "$$ChangeID"
+										},
+										"tables": {
+											"NoInfoPath_Changes": {
+												"primaryKey": "ChangeID"
+											}
+										}
 									}
-								};
+								}
+							};
 
-							noDataTransactionCache.configure(user, version, store, tables)
+							noIndexedDb.configure(user, config)
 								.then(function(){
 									$rootScope[no] = true;
 								})
@@ -102,7 +111,7 @@
 									console.error(err);
 								});
 						}
-					}.bind(noDataTransactionCache));
+					}.bind(noIndexedDb));
 
 					return deferred.promise;
 				};
@@ -137,7 +146,7 @@
 			noInfoPath.data.NoChange = NoChange;
 			noInfoPath.data.NoTransactionCache = NoTransactionCache;
 
-			return new NoTransactionCache($q, noDataTransactionCache);
+			return new NoTransactionCache($q, noIndexedDb);
 		}])
 		;
 })(angular);
