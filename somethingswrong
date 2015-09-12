@@ -38,7 +38,7 @@
 */
 var GloboTest = {};
 
-(function (angular, Dexie, undefined){
+(function (angular, undefined){
 	"use strict";
 
 	angular.module("noinfopath.data")
@@ -83,63 +83,30 @@ var GloboTest = {};
 			 *
 			 * ### Methods
 			 *
-			 * #### createSqlTableStmt(tableName, tableConfig)
-			 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
-			 *
-			 * ##### Usage
-			 * ```js
-			 * var x = createSqlTableStmt(tableName, tableConfig);
-			 * ```
-			 * ##### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |tableName|String|The name of the table to be created|
-			 * |tableConfig|Object|The schema of the table to be created|
-			 *
-			 * ##### Returns
-			 * Returns a SQL query string
-			 *
-			 * ### Properties
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
 			*/
 
 			function NoDbSchema(){
 
-				// when calling noDbSchema.whenReady you need to bind the call with the configuration.
-				this.whenReady = function(){
+				this.whenReady = function(config){
 					var deferred = $q.defer(),
-						config = this,
-						noDbSchemaInitialized;
+						noDbSchemaInitialized = "noDbSchema_" + config.dbName;
 
 					$timeout(function(){
-
-						for(var x in config){
-							var c = config[x];
-
-							if(c.schemaSource.provider !== "noDbSchema"){
-								break;
-							}
-
-							noDbSchemaInitialized = "noDbSchema_" + config.dbName;
-						}
-
 						if($rootScope[noDbSchemaInitialized])
 						{
 							deferred.resolve();
 						}else{
+
 							$rootScope.$watch(noDbSchemaInitialized, function(newval){
 								if(newval){
+									noLogService.log(noDbSchemaInitialized + " ready.");
 									deferred.resolve();
 								}
 							});
 
 							load(config)
 								.then(function(resp){
-									$rootScope[noDbSchemaInitialized] = true;
-									noLogService.log(noDbSchemaInitialized + " ready.");
+
 								})
 								.catch(function(err){
 									deferred.reject(err);
@@ -168,12 +135,10 @@ var GloboTest = {};
 					}
 				});
 
-				function _processDbJson(resp){
-					var deferred = $q.defer(),
-						config = this,
-						noDbSchemaInitialized = "noDbSchema_" + config.dbName;
+				function _processDbJson(resp, config){
+					var deferred = $q.defer();
 
-					noLocalStorage.setItem(noDbSchemaInitialized, resp);
+					noLocalStorage.setItem("noDbSchema_" + config.dbName, resp);
 
 					_tables = resp.data;
 
@@ -187,6 +152,8 @@ var GloboTest = {};
 							//Prep as a Dexie Store config
 							_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
 						});
+
+						$rootScope[noDbSchemaInitialized] = true;
 
 						deferred.resolve();
 					});
@@ -207,7 +174,9 @@ var GloboTest = {};
 					};
 
 					return $http(req)
-						.then(_processDbJson.bind(config))
+						.then(function(resp){
+							_processDbJson(resp, config);
+						})
 						.catch(function(resp){
 							noLogService.error(resp);
 						});
@@ -218,4 +187,4 @@ var GloboTest = {};
 		}])
 	;
 
-})(angular, Dexie);
+})(angular);

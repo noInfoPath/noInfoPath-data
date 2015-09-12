@@ -2,10 +2,278 @@
 (function(angular, undefined){
 	"use strict";
 
-	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage){
+
+	function NoWebSQLParser(){
+		var CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
+			CREATEVIEW = "CREATE VIEW IF NOT EXISTS ",
+			INSERT = "INSERT INTO ",
+			UPDATE = "UPDATE ",
+			DELETE = "DELETE FROM ",
+			READ = "SELECT * FROM ",
+			COLUMNDEF = "{0}",
+			PRIMARYKEY = "PRIMARY KEY ASC",
+			FOREIGNKEY = "REFERENCES ",
+			NULL = "NULL",
+			INTEGER = "INTEGER",
+			REAL = "REAL",
+			TEXT = "TEXT",
+			BLOB = "BLOB",
+			NUMERIC = "NUMERIC",
+			WITHOUTROWID = "WITHOUT ROWID",
+			_interface = {
+				sqlConversion : {
+					"bigint" : INTEGER,
+					"bit" : INTEGER,
+					"decimal" : NUMERIC,
+					"int" : INTEGER,
+					"money" : NUMERIC, // CHECK
+					"numeric" : NUMERIC,
+					"smallint" : INTEGER,
+					"smallmoney" : NUMERIC, // CHECK
+					"tinyint" : INTEGER,
+					"float" : REAL,
+					"real" : REAL,
+					"date" : NUMERIC, // CHECK
+					"datetime" : NUMERIC, // CHECK
+					"datetime2" : NUMERIC, // CHECK
+					"datetimeoffset" : NUMERIC, // CHECK
+					"smalldatetime" : NUMERIC, // CHECK
+					"time" : NUMERIC, // CHECK
+					"char" : TEXT,
+					"nchar" : TEXT,
+					"varchar" : TEXT,
+					"nvarchar" : TEXT,
+					"text" : TEXT,
+					"ntext" : TEXT,
+					"binary" : BLOB, // CHECK
+					"varbinary" : BLOB,
+					"image" : BLOB,
+					"uniqueidentifier" : TEXT
+				},
+				toSqlLiteConversionFunctions : {
+					"TEXT" : function(s){return angular.isString(s) ? "'"+s+"'" : null;},
+					"BLOB" : function(b){return b;},
+					"INTEGER" : function(i){return angular.isNumber(i) ? i : null;},
+					"NUMERIC" : function(n){return angular.isNumber(n) ? n : null;},
+					"REAL" : function(r){return r;}
+				},
+				fromSqlLiteConversionFunctions : {
+					"bigint" : function(i){return angular.isNumber(i) ? i : null;},
+					"bit" : function(i){return angular.isNumber(i) ? i : null;},
+					"decimal" : function(n){return angular.isNumber(n) ? n : null;},
+					"int" : function(i){return angular.isNumber(i) ? i : null;},
+					"money" : function(n){return angular.isNumber(n) ? n : null;},
+					"numeric" : function(n){return angular.isNumber(n) ? n : null;},
+					"smallint" : function(i){return angular.isNumber(i) ? i : null;},
+					"smallmoney" : function(n){return angular.isNumber(n) ? n : null;},
+					"tinyint" : function(i){return angular.isNumber(i) ? i : null;},
+					"float" : function(r){return r;},
+					"real" : function(r){return r;},
+					"date" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"datetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"datetime2" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"datetimeoffset" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"smalldatetime" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"time" : function(n){return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();},
+					"char" : function(t){return angular.isString(t) ? t : null;},
+					"nchar" : function(t){return angular.isString(t) ? t : null;},
+					"varchar" : function(t){return angular.isString(t) ? t : null;},
+					"nvarchar" : function(t){return angular.isString(t) ? t : null;},
+					"text" : function(t){return angular.isString(t) ? t : null;},
+					"ntext" : function(t){return angular.isString(t) ? t : null;},
+					"binary" : function(b){return b;},
+					"varbinary" : function(b){return b;},
+					"image" : function(b){return b;},
+					"uniqueidentifier" : function(t){return angular.isString(t) ? t : null;}
+				},
+				"createTable" : function(tableName, tableConfig){
+					var rs = CREATETABLE;
+
+					rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
+
+					return rs;
+				},
+				"createView" : function(viewName, viewSql){
+					var rs = CREATEVIEW;
+
+					rs += viewName + " AS " + viewSql;
+
+					return rs;
+				},
+				"columnDef" : function(columnName, columnConfig, tableConfig){
+					return columnName + " " + this.typeName(columnConfig) + this.columnConstraint(columnName, columnConfig, tableConfig);
+				},
+				"columnConstraint": function(columnName, columnConfig, tableConfig){
+					var isPrimaryKey = this.isPrimaryKey(columnName, tableConfig),
+						isForeignKey = this.isForeignKey(columnName, tableConfig),
+						isNullable = this.isNullable(columnConfig),
+						returnString = ""
+					;
+
+					returnString += this.primaryKeyClause(isPrimaryKey && (!isForeignKey && !isNullable)); // A PK cannot be a FK or nullable.
+					returnString += this.foreignKeyClause((isForeignKey && !isPrimaryKey), columnName, tableConfig.foreignKeys); // A FK cannot be a PK
+					returnString += this.nullableClause(isNullable && !isPrimaryKey); // A nullable field cannot be a PK
+
+					return returnString;
+				},
+				"typeName": function(columnConfig){
+					return this.sqlConversion[columnConfig.type];
+				},
+				"expr": function(Expr){return "";},
+				"foreignKeyClause": function(isForeignKey, columnName, foreignKeys){
+					var rs = "";
+					if(isForeignKey){
+						rs = " " + FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
+					}
+					return rs;
+				},
+				"primaryKeyClause": function(isPrimaryKey){
+					var rs = "";
+					if(isPrimaryKey){
+						rs = " " + PRIMARYKEY;
+					}
+					return rs;
+				},
+				"nullableClause": function(isNullable){
+					var rs = "";
+					if(isNullable){
+						rs = " " + NULL;
+					}
+					return rs;
+				},
+				"columnConstraints": function(tableConfig){
+					var colConst = [];
+					angular.forEach(tableConfig.columns, function(value, key){
+						colConst.push(this.columnDef(key, value, tableConfig));
+					}, this);
+					return colConst.join(",");
+				},
+				"isPrimaryKey": function(columnName, tableConfig){
+					return (columnName === tableConfig.primaryKey);
+				},
+				"isForeignKey": function(columnName, tableConfig){
+					return !!tableConfig.foreignKeys[columnName];
+				},
+				"isNullable": function(columnConfig){
+					return columnConfig.nullable;
+				},
+				"sqlInsert": function(tableName, data){
+					var columnString = "",
+						placeholdersString = "",
+						returnObject = {},
+						val = {}
+					;
+
+					val = this.parseData(data);
+
+					columnString = val.columns.join(",");
+					placeholdersString = val.placeholders.join(",");
+
+					returnObject.queryString = INSERT + tableName + " (" + columnString + ") VALUES (" + placeholdersString + ");";
+					returnObject.valueArray = val.values;
+
+					return returnObject;
+				},
+				"sqlUpdate": function(tableName, data, filters){
+					var val = {},
+						nvps = [],
+						nvpsString = "",
+						returnObject = {};
+
+					val = this.parseData(data);
+
+					nvps = this.sqlUpdateNameValuePair(val);
+
+					nvpsString = nvps.join(", ");
+
+					returnObject.queryString = UPDATE + tableName + " SET " + nvpsString + " WHERE " + filters.toSQL();
+					returnObject.valueArray = val.values;
+
+					return returnObject;
+				},
+				"sqlUpdateNameValuePair": function(values){
+					var nvps = [];
+
+					angular.forEach(values.columns, function(col, key){
+						nvps.push(col + " = ?");
+					});
+
+					return nvps;
+				},
+				"sqlDelete": function(tableName, filters){
+					var returnObject = {},
+						where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
+					returnObject.queryString = DELETE + tableName + where;
+					return returnObject;
+				},
+				"sqlRead": function(tableName, filters, sort){
+					var fs, ss, ps, returnObject = {};
+					fs = !!filters ? " WHERE " + filters.toSQL() : "";
+					ss = !!sort ? " " + sort.toSQL() : "";
+					returnObject.queryString = READ + tableName + fs + ss;
+					return returnObject;
+				},
+				"sqlOne": function(tableName, primKey, value){
+					var returnObject = {};
+					returnObject.queryString = READ + tableName + " WHERE " + primKey + " = '" + value + "'";
+					return returnObject;
+				},
+				"parseData": function(data){
+					var values = [], placeholders = [], columns = [], r = {};
+					angular.forEach(data, function(value, key){
+						columns.push(key);
+						placeholders.push("?");
+						values.push(value);
+					});
+
+					r.values = values;
+					r.placeholders = placeholders;
+					r.columns = columns;
+
+					return r;
+				}
+			};
+
+		this._interface = _interface;
+
+		this.createSqlTableStmt = function(tableName, tableConfig){
+			return _interface.createTable(tableName, tableConfig);
+		};
+
+		this.createSqlViewStmt = function(tableName, viewSql){
+			return _interface.createView(tableName, viewSql);
+		};
+
+		this.createSqlInsertStmt = function(tableName, data, filters){
+			return _interface.sqlInsert(tableName, data);
+		};
+
+		this.createSqlUpdateStmt = function(tableName, data, filters){
+			return _interface.sqlUpdate(tableName, data, filters);
+		};
+
+		this.createSqlDeleteStmt = function(tableName, data, filters){
+			return _interface.sqlDelete(tableName, filters);
+		};
+
+		this.createSqlReadStmt = function(tableName, filters, sort){
+			return _interface.sqlRead(tableName, filters, sort);
+		};
+
+		this.createSqlOneStmt = function(tableName, primKey, value){
+			return _interface.sqlOne(tableName, primKey, value);
+		};
+
+		this.createSqlClearStmt = function(tableName){
+			return _interface.sqlDelete(tableName);
+		};
+
+	}
+
+	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){
 		var stmts = {
-			"T": noDbSchema.createSqlTableStmt,
-			"V": noDbSchema.createSqlViewStmt
+			"T": noWebSQLParser.createSqlTableStmt,
+			"V": noWebSQLParser.createSqlViewStmt
 		}, _name;
 
 		Object.defineProperties(this, {
@@ -42,6 +310,8 @@
 			return $q.all(promises)
 				.then(function(){
 					$rootScope[noWebSQLInitialized] = _webSQL;
+					noLocalStorage.setItem(_name, {"timestamp": Date.now()});
+					noLogService.log(noWebSQLInitialized + " Ready.");
 				});
 		};
 
@@ -141,7 +411,7 @@
 					}]);
 				}
 
-				sqlExpressionData = noDbSchema.createSqlReadStmt(_tableName, filters);
+				sqlExpressionData = noWebSQLParser.createSqlReadStmt(_tableName, filters);
 
 				_exec(sqlExpressionData)
 					.then(function(resultset){
@@ -204,12 +474,12 @@
 			function webSqlOperation(operation, noTransaction, data){
 				// noTransaction is not required, but is needed to track transactions
 				var deferred = $q.defer(),
-					createObject = noDbSchema.createSqlInsertStmt(_tableName, data),
+					createObject = noWebSQLParser.createSqlInsertStmt(_tableName, data),
 					ops = {
-						"C": noDbSchema.createSqlInsertStmt,
-						"U": noDbSchema.createSqlUpdateStmt,
-						"D": noDbSchema.createSqlDeleteStmt,
-						"B": noDbSchema.createSqlClearStmt
+						"C": noWebSQLParser.createSqlInsertStmt,
+						"U": noWebSQLParser.createSqlUpdateStmt,
+						"D": noWebSQLParser.createSqlDeleteStmt,
+						"B": noWebSQLParser.createSqlClearStmt
 					},
 					opFns = {
 						"C": null,
@@ -333,7 +603,7 @@
 					}
 				}
 
-				readObject = noDbSchema.createSqlReadStmt(_tableName, filters, sort);
+				readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort);
 
 				function _txCallback(tx){
 					tx.executeSql(
@@ -411,7 +681,7 @@
 			this.noOne = function(data) {
 				var deferred = $q.defer(),
 					key = data[_table.primaryKey],
-					oneObject = noDbSchema.createSqlOneStmt(_tableName, _table.primaryKey, key);
+					oneObject = noWebSQLParser.createSqlOneStmt(_tableName, _table.primaryKey, key);
 
 				function _txCallback(tx){
 
@@ -559,7 +829,7 @@
 					}
 				}
 
-				readObject = noDbSchema.createSqlReadStmt(_viewName, filters, sort);
+				readObject = noWebSQLParser.createSqlReadStmt(_viewName, filters, sort);
 
 				function _txCallback(tx){
 					tx.executeSql(
@@ -601,8 +871,11 @@
 
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noDbSchema", "noLocalStorage", function($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage){
-	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noDbSchema, noLocalStorage);
+		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){
+	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser);
+		}])
+		.service("noWebSQLParser", [function(){
+			return new NoWebSQLParser();
 		}])
 	;
 })(angular);
