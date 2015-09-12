@@ -1538,7 +1538,7 @@ var GloboTest = {};
 			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 		*/
 
-		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter){
+		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", "noLocalStorage", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter, noLocalStorage){
 			var _config = {},
 				_tables = {},
 				_views = {},
@@ -1589,26 +1589,28 @@ var GloboTest = {};
 
 			function NoDbSchema(){
 
-				this.whenReady = function(config){
-					var deferred = $q.defer();
+				// when calling noDbSchema.whenReady you need to bind the call with the configuration.
+				this.whenReady = function(){
+					var deferred = $q.defer(),
+						config = this,
+						noDbSchemaInitialized = "noDbSchema" + config.dbName;
+
 
 					$timeout(function(){
-						if($rootScope.noDbSchemaInitialized)
+						if($rootScope[noDbSchemaInitialized])
 						{
-							noLogService.log("noDbSchema Ready.");
 							deferred.resolve();
 						}else{
-							//noLogService.log("noDbSchema is not ready yet.")
-							$rootScope.$watch("noDbSchemaInitialized", function(newval){
+							$rootScope.$watch(noDbSchemaInitialized, function(newval){
 								if(newval){
-									noLogService.log("noDbSchema ready.");
 									deferred.resolve();
 								}
 							});
 
-							load()
+							load(config)
 								.then(function(resp){
-									$rootScope.noDbSchemaInitialized = true;
+									$rootScope[noDbSchemaInitialized] = true;
+									noLogService.log(noDbSchemaInitialized + " ready.");
 								})
 								.catch(function(err){
 									deferred.reject(err);
@@ -1638,7 +1640,11 @@ var GloboTest = {};
 				});
 
 				function _processDbJson(resp){
-					var deferred = $q.defer();
+					var deferred = $q.defer(),
+						config = this,
+						noDbSchemaInitialized = "noDbSchema" + config.dbName;
+
+					noLocalStorage.setItem(noDbSchemaInitialized, resp);
 
 					_tables = resp.data;
 
@@ -1660,7 +1666,7 @@ var GloboTest = {};
 					return deferred.promise;
 				}
 
-				function load(){
+				function load(config){
 					var req = {
 						method: "GET",
 						url: noConfig.current.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
@@ -1672,7 +1678,7 @@ var GloboTest = {};
 					};
 
 					return $http(req)
-						.then(_processDbJson)
+						.then(_processDbJson.bind(config))
 						.catch(function(resp){
 							noLogService.error(resp);
 						});
