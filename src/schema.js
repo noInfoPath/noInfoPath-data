@@ -112,10 +112,20 @@ var GloboTest = {};
 				this.whenReady = function(){
 					var deferred = $q.defer(),
 						config = this,
-						noDbSchemaInitialized = "noDbSchema_" + config.dbName;
-
+						noDbSchemaInitialized;
 
 					$timeout(function(){
+
+						for(var x in config){
+							var c = config[x];
+
+							if(c.schemaSource.provider !== "noDbSchema"){
+								break;
+							}
+
+							noDbSchemaInitialized = "noDbSchema_" + config.dbName;
+						}
+
 						if($rootScope[noDbSchemaInitialized])
 						{
 							deferred.resolve();
