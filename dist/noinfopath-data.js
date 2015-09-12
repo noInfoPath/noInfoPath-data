@@ -1589,7 +1589,7 @@ var GloboTest = {};
 
 			function NoDbSchema(){
 
-				this.whenReady = function(){
+				this.whenReady = function(config){
 					var deferred = $q.defer();
 
 					$timeout(function(){
@@ -2234,6 +2234,8 @@ var GloboTest = {};
 			return $q.all(promises)
 				.then(function(){
 					$rootScope[noWebSQLInitialized] = _webSQL;
+					noLocalStorage.setItem(_name, {"timestamp": Date.now()});
+					noLogService.log(noWebSQLInitialized + " Ready.");
 				});
 		};
 
