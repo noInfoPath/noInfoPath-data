@@ -54,6 +54,10 @@ module.exports = function(grunt) {
 			unit: {
 				configFile: "karma.conf.js"
 			},
+			noDbSchema: {
+				configFile: "karma.conf.noDBSchema.js",
+				singleRun: true
+			},
 			continuous: {
 				configFile: 'karma.conf.js',
 				singleRun: true,
@@ -94,7 +98,7 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			files: ['src/*.js', 'test/*.spec.js'],
-			tasks: ['jenkins']
+			tasks: ['karma:noDbSchema']
 		},
 		uglify: {
 			options: {

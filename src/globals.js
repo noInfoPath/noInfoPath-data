@@ -96,7 +96,7 @@
 (function(angular, undefined){
  	"use strict";
 
-	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers'])
+	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
 		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){

@@ -384,6 +384,9 @@
 			;
 
 			Object.defineProperties(this, {
+				"__type": {
+					"get": function() { return "INoCRUD"; }
+				},
 				"primaryKey": {
 					"get": function(){ return _table.primaryKey; }
 				}
@@ -810,6 +813,9 @@
 			;
 
 			Object.defineProperties(this, {
+				"__type": {
+					"get": function() { return "INoCRUD"; }
+				},
 				"primaryKey": {
 					"get": function(){ return _view.primaryKey; }
 				}
