@@ -34,7 +34,7 @@ module.exports = function(config) {
         //'test/mock/noinfopath.mock.js',
         'test/mock/db.json.mock.js',
         'test/mock/sql-builder.mock.js',
-        //'test/mock/configuration.mock.js',
+        'test/mock/configuration.mock.js',
         'test/mock/schema.mock.js',
 
 

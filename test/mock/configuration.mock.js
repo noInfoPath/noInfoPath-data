@@ -16,7 +16,7 @@ var mockConfig = {
 				"schema": {
 					"NoInfoPath_Changes": {
 						"primaryKey": "ChangeID"
-					}				
+					}
 				}
 			}
 		},
@@ -52,7 +52,7 @@ var mockConfig = {
 	var noODATAProv;
 
 	angular.module("noinfopath.data.mocks", [])
-		.provider("noConfig", [function(){
+		.provider("noConfigMock", [function(){
 			var _currentConfig, _status;
 
 			function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage){
@@ -116,5 +116,7 @@ var mockConfig = {
 				return new NoConfig($http, $q, $timeout, $rootScope, noLocalStorage);
 			}];
 		}])
+
+
 	;
 })(angular);

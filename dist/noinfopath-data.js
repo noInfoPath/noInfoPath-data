@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.13
+ *	@version 0.2.14
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -96,7 +96,7 @@
 (function(angular, undefined){
  	"use strict";
 
-	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers'])
+	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
 		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){
@@ -1538,12 +1538,7 @@ var GloboTest = {};
 			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 		*/
 
-		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "noConfig", "$filter", "noLocalStorage", function($q, $timeout, $http, $rootScope, _, noLogService, noConfig, $filter, noLocalStorage){
-			var _config = {},
-				_tables = {},
-				_views = {},
-				_sql = {};
-
+		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage){
 			// TODO: Finish documentation
 			/*
 			 * ## NoDbSchema : Class
@@ -1586,40 +1581,38 @@ var GloboTest = {};
 			 * |----|----|-----------|
 			 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
 			*/
+			/*
+			* ```json
+			* {
+			*		"dbName": "NoInfoPath_dtc_v1",
+			*		"provider": "noIndexedDB",
+			*		"remoteProvider:": "noHTTP",
+			*		"version": 1,
+			*		"schemaSource": {
+			*			"provider": "inline",
+			*			"schema": {
+			*				"store": {
+			*					"NoInfoPath_Changes": "$$ChangeID"
+			*				},
+			*				"tables": {
+			*					"NoInfoPath_Changes": {
+			*						"primaryKey": "ChangeID"
+			*					}
+			*				}
+			*			}
+			*		}
+			*	}
+			* ```
+			*/
 
-			function NoDbSchema(){
 
-				// when calling noDbSchema.whenReady you need to bind the call with the configuration.
-				this.whenReady = function(){
-					var deferred = $q.defer(),
-						config = this,
-						noDbSchemaInitialized = "noDbSchema" + config.dbName;
+			function NoDbSchema(noConfig, noDbConfig, rawDbSchema){
+				console.warn(rawDbSchema);
 
-
-					$timeout(function(){
-						if($rootScope[noDbSchemaInitialized])
-						{
-							deferred.resolve();
-						}else{
-							$rootScope.$watch(noDbSchemaInitialized, function(newval){
-								if(newval){
-									deferred.resolve();
-								}
-							});
-
-							load(config)
-								.then(function(resp){
-									$rootScope[noDbSchemaInitialized] = true;
-									noLogService.log(noDbSchemaInitialized + " ready.");
-								})
-								.catch(function(err){
-									deferred.reject(err);
-								});
-						}
-					});
-
-					return deferred.promise;
-				};
+				var _config = {},
+					_tables = {},
+					_views = {},
+					_sql = {};
 
 				Object.defineProperties(this, {
 					"store": {
@@ -1639,37 +1632,48 @@ var GloboTest = {};
 					}
 				});
 
-				function _processDbJson(resp){
-					var deferred = $q.defer(),
-						config = this,
-						noDbSchemaInitialized = "noDbSchema" + config.dbName;
+				_tables = rawDbSchema;
 
-					noLocalStorage.setItem(noDbSchemaInitialized, resp);
+				angular.forEach(_tables, function(table, tableName){
+					var primKey = "$$" + table.primaryKey,
+						foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
 
-					_tables = resp.data;
+					//Prep as a Dexie Store config
+					_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+				});
 
-					$timeout(function(){
-						//save reference to the source data from the rest api.
+			}
 
-						angular.forEach(_tables, function(table, tableName){
-							var primKey = "$$" + table.primaryKey,
-								foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
+			/**
+			*	### NoDbSchemaFactory
+			*
+			*	Creates unique instances of NoDbSchema based on noDBSchema configuration data.
+			*/
 
-							//Prep as a Dexie Store config
-							_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-						});
+			function NoDbSchemaFactory(){
+				var noConfig,
+					promises =[],
+					schemaSourceProviders = {
+						"inline": function(key, schemaConfig){
+							return $timeout(function(){
+								return schemaConfig.schemaSource.schema;
+							});
+						},
+						"noDBSchema": function(key) {
+							return getRemoteSchema(noConfig)
+								.then(function(resp){
+									return resp.data;
+								})
+								.catch(function(err){
+									deferred.reject(err);
+								});
+						}
+					};
 
-						deferred.resolve();
-					});
-
-					//noLogService.log(angular.toJson(_config));
-					return deferred.promise;
-				}
-
-				function load(config){
+				function getRemoteSchema(config){
 					var req = {
 						method: "GET",
-						url: noConfig.current.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
+						url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
 						headers: {
 							"Content-Type": "application/json",
 							"Accept": "application/json"
@@ -1678,18 +1682,83 @@ var GloboTest = {};
 					};
 
 					return $http(req)
-						.then(_processDbJson.bind(config))
+						.then(function(resp){
+							return resp;
+						})
 						.catch(function(resp){
 							noLogService.error(resp);
 						});
 				}
+
+				function checkCache(schemaKey){
+					return  noLocalStorage.getItem(schemaKey);
+				}
+
+				function getSchema(schemaKey, schemaConfig){
+					var deferred = $q.defer(),
+						schemaProvider = schemaConfig.schemaSource.provider;
+
+					if($rootScope[schemaKey])
+					{
+						deferred.resolve(schemaKey);
+					}else{
+						$rootScope.$watch(schemaKey, function(newval){
+							if(newval){
+								noLocalStorage.setItem(schemaKey, newval);
+								deferred.resolve(schemaKey);
+							}
+						});
+
+						schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
+							.then(function (schema){
+								$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+							})
+							.catch(function(){
+								var schema = checkCache(schemaKey);
+								if(schema){
+									$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+								}else{
+									deferred.reject();
+								}
+							});
+					}
+
+					return deferred.promise;
+				}
+
+				// when calling noDbSchema.whenReady you need to bind the call
+				// with the configuration.
+
+				/**
+				 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
+				*/
+				this.whenReady = function(config){
+					noConfig = config;
+
+					var noDbSchemaConfig = noConfig.noDbSchema,
+						promises = [];
+
+					for(var c in noDbSchemaConfig){
+						var schemaConfig = noDbSchemaConfig[c],
+							schemaKey = "noDbSchema_" + schemaConfig.dbName;
+
+						promises.push(getSchema(schemaKey, schemaConfig));
+					}
+
+					return $q.all(promises)
+						.catch(function (err) {
+							console.error(err);
+						});
+
+				};
+
 			}
 
-			return new NoDbSchema();
+			return new NoDbSchemaFactory();
 		}])
 	;
 
-})(angular, Dexie);
+})(angular);
 
 /*
 * ## @interface INoQueryBuilder
@@ -2313,6 +2382,15 @@ var GloboTest = {};
 				_db = database
 			;
 
+			Object.defineProperties(this, {
+				"__type": {
+					"get": function() { return "INoCRUD"; }
+				},
+				"primaryKey": {
+					"get": function(){ return _table.primaryKey; }
+				}
+			});
+
 			/**
 			* ### \_getOne(rowid)
 			*
@@ -2713,7 +2791,8 @@ var GloboTest = {};
 		 *
 		 * ```json
 		 *	{
-		 *		"sql": String
+		 *		"sql": String,
+		 *		"primaryKey": String,
 		 *		"params": []
 		 *	}
 		 * ```
@@ -2731,6 +2810,15 @@ var GloboTest = {};
 				_viewName = viewName,
 				_db = database
 			;
+
+			Object.defineProperties(this, {
+				"__type": {
+					"get": function() { return "INoCRUD"; }
+				},
+				"primaryKey": {
+					"get": function(){ return _view.primaryKey; }
+				}
+			});
 
 			this.noCreate = angular.noop;
 
@@ -2797,8 +2885,6 @@ var GloboTest = {};
 			this.noClear = angular.noop;
 		}
 	}
-
-
 
 	angular.module("noinfopath.data")
 		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){

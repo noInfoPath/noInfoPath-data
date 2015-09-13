@@ -10,7 +10,7 @@ describe("Testing noDbSchema", function(){
 		inject(function($injector){
 			$httpBackend = $injector.get("$httpBackend");
 			noDbSchema = $injector.get("noDbSchema");
-			noConfig = $injector.get("noConfig");
+			noConfig = $injector.get("noConfigMock");
 			$timeout = $injector.get("$timeout");
 			$rootScope = $injector.get("$rootScope");
 		});
@@ -46,7 +46,7 @@ describe("Testing noDbSchema", function(){
 						done();
 					});
 			});
-			
+
 		$timeout.flush();
 
 		$httpBackend.flush();
