@@ -1,8 +1,5 @@
 describe("Testing noWebSQLParser", function(){
-	var $httpBackend, noWebSQLParser, dbJsonMock, noWebSQL,
-		expected = {
-
-		}
+	var $httpBackend, noWebSQLParser, dbJsonMock, noWebSQL
 	;
 
 	beforeEach(function(){
@@ -941,7 +938,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = "TEXT";
 
-			result = noWebSQLParser._interface.typeName(mock.foo.columns.Description);
+			result = noWebSQLParser._interface.typeName(noDbSchemaMock.foo.columns.Description);
 
 			expect(result).toEqual(expected);
 		});
@@ -950,7 +947,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = true;
 
-			result = noWebSQLParser._interface.isNullable(mock.foo.columns.Description);
+			result = noWebSQLParser._interface.isNullable(noDbSchemaMock.foo.columns.Description);
 
 			expect(result).toEqual(expected);
 		});
@@ -959,7 +956,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = true;
 
-			result = noWebSQLParser._interface.isPrimaryKey("fooID", mock.foo);
+			result = noWebSQLParser._interface.isPrimaryKey("fooID", noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -968,7 +965,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = true;
 
-			result = noWebSQLParser._interface.isForeignKey("barID", mock.foo);
+			result = noWebSQLParser._interface.isForeignKey("barID", noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -977,7 +974,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = " NULL";
 
-			result = noWebSQLParser._interface.nullableClause(mock.foo.columns.barID);
+			result = noWebSQLParser._interface.nullableClause(noDbSchemaMock.foo.columns.barID);
 
 			expect(result).toEqual(expected);
 		});
@@ -986,7 +983,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = " PRIMARY KEY ASC";
 
-			result = noWebSQLParser._interface.primaryKeyClause(noWebSQLParser._interface.isPrimaryKey("fooID", mock.foo));
+			result = noWebSQLParser._interface.primaryKeyClause(noWebSQLParser._interface.isPrimaryKey("fooID", noDbSchemaMock.foo));
 
 			expect(result).toEqual(expected);
 		});
@@ -995,7 +992,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = " REFERENCES bar (barID)";
 
-			result = noWebSQLParser._interface.foreignKeyClause(noWebSQLParser._interface.isForeignKey("barID", mock.foo), "barID", mock.foo.foreignKeys);
+			result = noWebSQLParser._interface.foreignKeyClause(noWebSQLParser._interface.isForeignKey("barID", noDbSchemaMock.foo), "barID", noDbSchemaMock.foo.foreignKeys);
 
 			expect(result).toEqual(expected);
 		});
@@ -1004,7 +1001,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = " REFERENCES bar (barID) NULL";
 
-			result = noWebSQLParser._interface.columnConstraint("barID", mock.foo.columns.barID, mock.foo);
+			result = noWebSQLParser._interface.columnConstraint("barID", noDbSchemaMock.foo.columns.barID, noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1013,7 +1010,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = " PRIMARY KEY ASC";
 
-			result = noWebSQLParser._interface.columnConstraint("fooID", mock.foo.columns.fooID, mock.foo);
+			result = noWebSQLParser._interface.columnConstraint("fooID", noDbSchemaMock.foo.columns.fooID, noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1022,7 +1019,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = " NULL";
 
-			result = noWebSQLParser._interface.columnConstraint("Description", mock.foo.columns.Description, mock.foo);
+			result = noWebSQLParser._interface.columnConstraint("Description", noDbSchemaMock.foo.columns.Description, noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1031,7 +1028,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = "price NUMERIC";
 
-			result = noWebSQLParser._interface.columnDef("price", mock.foo.columns.price, mock.foo);
+			result = noWebSQLParser._interface.columnDef("price", noDbSchemaMock.foo.columns.price, noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1040,7 +1037,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = "number INTEGER NULL";
 
-			result = noWebSQLParser._interface.columnDef("number", mock.foo.columns.number, mock.foo);
+			result = noWebSQLParser._interface.columnDef("number", noDbSchemaMock.foo.columns.number, noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1049,7 +1046,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = "barID TEXT REFERENCES bar (barID) NULL";
 
-			result = noWebSQLParser._interface.columnDef("barID", mock.foo.columns.barID, mock.foo);
+			result = noWebSQLParser._interface.columnDef("barID", noDbSchemaMock.foo.columns.barID, noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1058,7 +1055,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = "Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC";
 
-			result = noWebSQLParser._interface.columnConstraints(mock.foo);
+			result = noWebSQLParser._interface.columnConstraints(noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1067,7 +1064,7 @@ describe("Testing noWebSQLParser", function(){
 			var result,
 				expected = "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC)";
 
-			result = noWebSQLParser._interface.createTable("foo", mock.foo);
+			result = noWebSQLParser._interface.createTable("foo", noDbSchemaMock.foo);
 
 			expect(result).toEqual(expected);
 		});
@@ -1075,7 +1072,7 @@ describe("Testing noWebSQLParser", function(){
 	});
 
 	describe("Testing SQL Insert Strings", function(){
-		it("should make a sql insert object from a mock", function(){
+		it("should make a sql insert object from a noDbSchemaMock", function(){
 			var result,
 				expected = {
 					"queryString" : "INSERT INTO foo (fooID,Description,barID,number,price) VALUES (?,?,?,?,?);",

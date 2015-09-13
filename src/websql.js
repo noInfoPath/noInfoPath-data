@@ -383,6 +383,15 @@
 				_db = database
 			;
 
+			Object.defineProperties(this, {
+				"__type": {
+					"get": function() { return "INoCRUD"; }
+				},
+				"primaryKey": {
+					"get": function(){ return _table.primaryKey; }
+				}
+			});
+
 			/**
 			* ### \_getOne(rowid)
 			*
@@ -783,7 +792,8 @@
 		 *
 		 * ```json
 		 *	{
-		 *		"sql": String
+		 *		"sql": String,
+		 *		"primaryKey": String,
 		 *		"params": []
 		 *	}
 		 * ```
@@ -801,6 +811,15 @@
 				_viewName = viewName,
 				_db = database
 			;
+
+			Object.defineProperties(this, {
+				"__type": {
+					"get": function() { return "INoCRUD"; }
+				},
+				"primaryKey": {
+					"get": function(){ return _view.primaryKey; }
+				}
+			});
 
 			this.noCreate = angular.noop;
 
@@ -867,8 +886,6 @@
 			this.noClear = angular.noop;
 		}
 	}
-
-
 
 	angular.module("noinfopath.data")
 		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){

@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.13
+@version 0.2.14
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -585,6 +585,34 @@ Returns a SQL query string
 |----|----|-----------|
 |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
 
+```json
+{
+	"dbName": "NoInfoPath_dtc_v1",
+	"provider": "noIndexedDB",
+	"remoteProvider:": "noHTTP",
+	"version": 1,
+	"schemaSource": {
+		"provider": "inline",
+		"schema": {
+			"store": {
+				"NoInfoPath_Changes": "$$ChangeID"
+			},
+			"tables": {
+				"NoInfoPath_Changes": {
+					"primaryKey": "ChangeID"
+				}
+			}
+		}
+	}
+}
+```
+
+### NoDbSchemaFactory
+
+Creates unique instances of NoDbSchema based on noDBSchema configuration data.
+
+> NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
+
 ## @interface INoQueryBuilder
 
 > INoQueryBuilder is a conceptual entity, it does not really exist
@@ -731,7 +759,8 @@ functions.
 
 ```json
 {
-	"sql": String
+	"sql": String,
+	"primaryKey": String,
 	"params": []
 }
 ```

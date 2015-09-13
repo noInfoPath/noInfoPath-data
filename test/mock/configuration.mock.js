@@ -1,10 +1,43 @@
 //configuration.mock.js
+console.warn("TODO: Refactor actual noConfig service to work more like this mock");
+
 var mockConfig = {
 	"RESTURI": "http://fcfn-rest.img.local/odata",
+	"AUTHURI": "http://fcfn-rest.img.local",
+	"NODBSCHEMAURI": "http://noinfopath-rest.img.local/api/NoDbSchema",
+	"noDbSchema": [
+		{
+			"dbName": "NoInfoPath_dtc_v1",
+			"provider": "noIndexedDB",
+			"remoteProvider:": "noHTTP",
+			"version": 1,
+			"schemaSource": {
+				"provider": "inline",
+				"schema": {
+					"NoInfoPath_Changes": {
+						"primaryKey": "ChangeID"
+					}
+				}
+			}
+		},
+		{
+			"dbName": "FCFNv2",
+			"provider": "noWebSQL",
+			"remoteProvider": "noHTTP",
+			"version": 1,
+			"description": "Fall Creek Variety Development Database",
+			"size": 51200,
+			"schemaSource": {
+				"provider": "noDBSchema",
+				"sourceDB": "fcfn2"
+			}
+		}
+	],
 	"IndexedDB" : {
 		"name": "NoInfoPath-v3",
 		"version": 1
 	},
+
 	"WebSQL" : {
 		"name": "NoInfoPath-v3",
 		"version" : "1.0",
@@ -18,14 +51,11 @@ var mockConfig = {
 
 	var noODATAProv;
 
-	angular.module("noinfopath.data.mocks")
-		.config([function(){
-		}])
-
-		.provider("noConfig", [function(){
+	angular.module("noinfopath.data.mocks", [])
+		.provider("noConfigMock", [function(){
 			var _currentConfig, _status;
 
-			function noConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+			function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage){
 				var SELF = this;
 
 				Object.defineProperties(this, {
@@ -38,17 +68,14 @@ var mockConfig = {
 				});
 
 				this.load = function (uri){
-
 					return $timeout(function (){
-							noLocalStorage.setItem("noConfig", mockConfig);
-						});
-
-
+						noLocalStorage.setItem("noConfig", mockConfig);
+					});
 				};
 
 				this.fromCache = function(){
 					_currentConfig = noLocalStorage.getItem("noConfig");
-				}
+				};
 
 				this.whenReady = function(uri){
 					var deferred = $q.defer();
@@ -58,7 +85,7 @@ var mockConfig = {
 						{
 							deferred.resolve();
 						}else{
-							$rootScope.$watch("noConfigReady", function(newval){
+							$rootScope.$watch("noConfig", function(newval){
 								if(newval){
 									deferred.resolve();
 								}
@@ -67,17 +94,17 @@ var mockConfig = {
 							SELF.load(uri)
 								.then(function(){
 									_currentConfig = noLocalStorage.getItem("noConfig");
-									$rootScope.noConfigReady = true;
+									$rootScope.noConfig = _currentConfig;
 								})
 								.catch(function(err){
 									SELF.fromCache();
 
 									if(_currentConfig){
-										$rootScope.noConfigReady = true;
+										$rootScope.noConfig = _currentConfig;
 									}else{
 										deferred.reject("noConfig is offline, and no cached version was available.");
 									}
-								})
+								});
 						}
 					});
 
@@ -86,8 +113,10 @@ var mockConfig = {
 			}
 
 			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
-				return new noConfig($http, $q, $timeout, $rootScope, noLocalStorage);
+				return new NoConfig($http, $q, $timeout, $rootScope, noLocalStorage);
 			}];
 		}])
+
+
 	;
 })(angular);
