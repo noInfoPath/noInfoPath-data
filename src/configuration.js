@@ -44,6 +44,8 @@
 * to load it from `LocalStorage`. If there is no cached version
 * available then an error is returned.
 *
+* Once the config.json is resolved is it stored on $rootScope as $rootScope.noConfig
+*
 * ##### Parameters
 *
 * |Name|Type|Description|
@@ -98,11 +100,11 @@
 					var deferred = $q.defer();
 
 					$timeout(function(){
-						if($rootScope.noConfigReady)
+						if($rootScope.noConfig)
 						{
 							deferred.resolve();
 						}else{
-							$rootScope.$watch("noConfigReady", function(newval){
+							$rootScope.$watch("noConfig", function(newval){
 								if(newval){
 									deferred.resolve();
 								}
@@ -111,13 +113,13 @@
 							SELF.load(uri)
 								.then(function(){
 									_currentConfig = noLocalStorage.getItem("noConfig");
-									$rootScope.noConfigReady = true;
+									$rootScope.noConfig = _currentConfig;
 								})
 								.catch(function(err){
 									SELF.fromCache();
 
 									if(_currentConfig){
-										$rootScope.noConfigReady = true;
+										$rootScope.noConfig = _currentConfig;
 									}else{
 										deferred.reject("noConfig is offline, and no cached version was available.");
 									}
