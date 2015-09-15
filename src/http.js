@@ -74,9 +74,10 @@
 				function NoDb(queryBuilder){
 					var THIS = this;
 
-					this.whenReady = function(){
-						var deferred = $q.defer(),
-							tables = noDbSchema.tables;
+					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
+
+					this.whenReady = function(tables){
+						var deferred = $q.defer();
 
 						$timeout(function(){
 							if($rootScope.noHTTPInitialized)
@@ -92,13 +93,10 @@
 									}
 								});
 
-								configure(tables)
-									.then(function(resp){
-										$rootScope.noHTTPInitialized = true;
-									})
-									.catch(function(err){
-										deferred.reject(err);
-									});
+								$timeout(function(){configure(tables);});
+
+
+
 							}
 						});
 
@@ -106,17 +104,15 @@
 					};
 
 					function configure(tables){
-						var deferred = $q.defer();
 
-						$timeout(function(){
-							angular.forEach(tables, function(table, name){
-								this[name] = new NoTable(name, table, queryBuilder);
-							}, THIS);
+						for(var t in tables){
+							var table = tables[t];
+							THIS[t] = new NoTable(t, table, queryBuilder);
 
-							deferred.resolve();
-						});
+						}
 
-						return deferred.promise;
+
+						$rootScope.noHTTPInitialized = true;
 					}
 
 				}

@@ -310,7 +310,6 @@
 			return $q.all(promises)
 				.then(function(){
 					$rootScope[noWebSQLInitialized] = _webSQL;
-					noLocalStorage.setItem(_name, {"timestamp": Date.now()});
 					noLogService.log(noWebSQLInitialized + " Ready.");
 				});
 		};

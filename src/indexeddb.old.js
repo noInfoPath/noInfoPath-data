@@ -1,7 +1,7 @@
 //indexeddb.js
 (function(angular, Dexie, undefined){
 	"use strict";
-	
+
 	angular.module("noinfopath.data")
 
 		.factory("noIndexedDB", ['$parse','$rootScope','lodash', 'noManifest', '$q', '$timeout', function($parse, $rootScope, _, noManifest, $q, $timeout){
@@ -10,15 +10,15 @@
 			function _bind(tables){
 				function _import(table, data, deferred, progress){
 					var total = data ? data.length : 0;
-						
-					$timeout(function(){progress.rows.start({max: total})});
+
+					$timeout(function(){progress.rows.start({max: total});});
 					var currentItem = 0;
 
 					dex.transaction('rw', table, function (){
 						_next();
-					});	
-					
-					
+					});
+
+
 					function _next(){
 						if(currentItem < data.length){
 							var datum = data[currentItem];
@@ -32,13 +32,13 @@
 							})
 							.finally(function(){
 								currentItem++;
-								_next();								
-							});	
+								_next();
+							});
 
 						}else{
 							deferred.resolve(table.name);
 						}
-					}											
+					}
 				}
 
 				_.each(tables, function(table){
@@ -58,7 +58,7 @@
 						return deferred.promise;
 					}.bind(dex);
 				});
-			}			
+			}
 
 			Dexie.prototype.whenReady = function(){
 				var deferred = $q.defer();
@@ -68,17 +68,17 @@
 					{
 						console.log("IndexedDB Ready");
 						deferred.resolve();
-					}else{	
+					}else{
 						$rootScope.$watch("noIndexedDBReady", function(newval){
 							if(newval){
 								console.log("IndexedDB Ready");
-								deferred.resolve();								
+								deferred.resolve();
 							}
-						});					
-					}					
-				});	
+						});
+					}
+				});
 
-				return deferred.promise;			
+				return deferred.promise;
 			};
 
 			Dexie.prototype.configure = function(dbinfo, stores){
@@ -93,7 +93,7 @@
 				dex.on('blocked', function(err) {
 				    // Log to console or show en error indicator somewhere in your GUI...
 				    console.warn("IndedexDB is currently execting a blocking operation.");
-				});	
+				});
 
 				dex.on('versionchange', function(err) {
 				    // Log to console or show en error indicator somewhere in your GUI...
@@ -103,15 +103,15 @@
 				dex.on('populate', function(err) {
 				    // Log to console or show en error indicator somewhere in your GUI...
 				    console.warn("IndedexDB populate...  not implemented.");
-				});	
+				});
 
 				dex.on('ready', function(err) {
 				    // Log to console or show en error indicator somewhere in your GUI...
 				    console.info("IndedexDB is ready");
-					_bind(noManifest.current.indexedDB);	
+					_bind(noManifest.current.indexedDB);
 					$rootScope.noIndexedDBReady = true;
 				    deferred.resolve();
-				});	
+				});
 
 				if(dbinfo.name !== dex.name) throw "DB Name is invalid.";
 
@@ -144,14 +144,14 @@
 						"eq": function(a, b){
 							return a === b;
 						}
-					}, _total = 0, 
+					}, _total = 0,
 					filters = options.data.filter;
 
 				function _filter(table, filter){
 
 
 					function _indexFilter(fields, values, operators){
-						
+
 
 						var w = fields.length === 1 ? fields.join("+") : "[" + fields.join("+") + "]",
 							v = values.length === 1 ? values[0] : values,
@@ -171,11 +171,11 @@
 
 							switch(o){
 								case "startswith":
-				 					collection = table.where(w).startsWithIgnoreCase(v);					
+				 					collection = table.where(w).startsWithIgnoreCase(v);
 									break;
 
 								default:
-				 					collection = table.where(w).equals(v);					
+				 					collection = table.where(w).equals(v);
 									break;
 							}
 						}
@@ -187,7 +187,7 @@
 						var collection = table.filter(function(obj){
 							//console.log("_jsFilter", value[this.field], this.field, value[this.field].indexOf(this.value));
 							var result = false;
-									
+
 							for(var fi in filter.filters){
 								var fltr = filter.filters[fi],
 									tmp = obj[fltr.field],
@@ -232,7 +232,7 @@
 						if(filter)
 						{
 							//console.log("filter", filter);
-							
+
 							fields = table.noCRUD._.pluck(filter.filters, "field");
 							values = table.noCRUD._.pluck(filter.filters, "value");
 							types = table.noCRUD._.pluck(filter.filters, "type");
@@ -246,7 +246,7 @@
 							}else{
 								//Performing simple primary key lookup
 								deferred.resolve(_indexFilter(fields, values, operators));
-							}				
+							}
 
 						}else{
 							deferred.resolve(table.toCollection());
@@ -272,7 +272,7 @@
 					return deferred.promise;
 				}
 
-				function _sort(collection, sort){	
+				function _sort(collection, sort){
 					var deferred = table.noCRUD.$q.defer(),
 						arry = [];
 
@@ -311,7 +311,7 @@
 					var deferred = table.noCRUD.$q.defer();
 
 					table.noCRUD.$timeout(function(){
-						if(take){	
+						if(take){
 
 							deferred.resolve(array.slice(skip, skip+take));
 						}else{
@@ -365,7 +365,7 @@
 
 					return $q.all(promises)
 						.then(function(data){
-						
+
 							var tmp, hash = {};
 							do{
 								tmp = data.pop();
@@ -381,11 +381,11 @@
 
 									if(item[pk] !== null) {
 										var refItem = hash[pk][item[pk]] ? hash[pk][item[pk]] : {};
-											
+
 										if(expand.fields){
 											angular.forEach(expand.fields, function(field){
 												newRefItem[field] = refItem[field];
-											});							
+											});
 										}else{
 											newRefItem = refItem;
 										}
@@ -394,16 +394,16 @@
 									if(expand.merge) {
 										item = angular.extend(item, newRefItem);
 									} else {
-										item[expand.name] = newRefItem;							
+										item[expand.name] = newRefItem;
 									}
 
-									
+
 									//console.log(field, refItem, newRefItem)
 								});
 							});
 
 						return array;
-						
+
 					});
 				}
 
@@ -411,7 +411,7 @@
 					var table = dex[expand.tableName],
 						_ = table.noCRUD._,
 						keys = _.pluck(array, expand.foreignKey);
-					
+
 					return $q(function(resolve, reject){
 						table.where(expand.foreignKey).anyOf(keys).toArray()
 							.then(function(array){
@@ -454,7 +454,7 @@
 								console.error(err);
 								deferred.reject(err);
 							});
-						
+
 						return deferred.promise;
 					}
 
@@ -463,7 +463,7 @@
 							table = dex[projectee.tableName],
 							_ = table.noCRUD._,
 							keys = _.pluck(array, projectee.foreignKey);
-						
+
 						return table.where(projectee.foreignKey).anyOf(keys).toArray()
 							.then(function(projected){
 								var hash = {};
@@ -482,11 +482,11 @@
 
 
 									item["_" + this.options.name] = projectedItems;
-						
+
 								}, this);
 
 								return {projectee: projectee, hashed: hash, projected: projected};
-								
+
 							}.bind({primaryKey: projectee.primaryKey, options: projectee, data:array}))
 							.catch(function(err){
 								console.error(err);
@@ -508,12 +508,12 @@
 							.then(function(data){
 								return data;
 							});
-					}	
+					}
 
 
 					return _project(rootArray, projections)
 						.then(function(){
-			
+
 							// angular.forEach(rootArray, function(cooperator){
 							// 	var fieldSites = _aggregate(cooperator.fieldSites, {operation: "count"}),
 							// 		trials = 0,
@@ -560,8 +560,8 @@
 							var items = item[aggregation.path],
 								val = _aggregate(items, aggregation);
 
-							if(!currentRootItem[aggregation.name]) { 
-								currentRootItem[aggregation.name] = 0; 
+							if(!currentRootItem[aggregation.name]) {
+								currentRootItem[aggregation.name] = 0;
 							}
 
 							currentRootItem[aggregation.name] += val;
@@ -569,7 +569,7 @@
 							if(aggregation.aggregations){
 								angular.forEach(items, function(item){
 									_recurseAggregations(item, aggregation.aggregations);
-								});								
+								});
 							}
 						});
 					}
@@ -642,12 +642,12 @@
 						});
 
 					return deferred.promise;
-				}	 					
+				}
 			};
 
 			function noCRUD(dex, $q, $timeout, lodash, noTable, querySvc) {
 				if(!noTable) throw "noTable is a required parameter";
-				
+
 				this.$q = $q;
 				this.$timeout = $timeout;
 				this._ = lodash;
@@ -662,8 +662,8 @@
 					var deferred = this.$q.defer();
 
 					if(!options) throw "noCRUD::update requires options parameter";
-					
-				
+
+
 					var tbl = this.dex[this.tableName],
 						THAT = this;
 
@@ -678,7 +678,7 @@
 						// 			var newKey =  Number(lastOne[THAT.noTable.IndexedDB.pk]) + 1;
 						// 			options.data[THAT.noTable.IndexedDB.pk] = newKey;
 						// 			tbl.add(options.data);
-						// 		});								
+						// 		});
 						// }else{
 							tbl.add(options.data);
 						// }
@@ -689,8 +689,8 @@
 					.catch(function(err){
 						deferred.reject(err);
 					})
-						
-					return deferred.promise;				
+
+					return deferred.promise;
 				};
 
 				this.__proto__.read = function(options) {
@@ -720,9 +720,9 @@
 					.catch(function(err){
 						console.error(err);
 						deferred.reject(err);
-					})	
+					})
 
-					return deferred.promise;						
+					return deferred.promise;
 				};
 
 				this.__proto__.one = function(options){
@@ -739,7 +739,7 @@
 							})
 							.catch(function(err){
 								deferred.reject(err);
-							});				
+							});
 					});
 
 
@@ -750,7 +750,7 @@
 					var deferred = this.$q.defer();
 
 					if(!options) throw "noCRUD::update requires options parameter";
-					
+
 					var tbl = this.dex[this.tableName],
 						key = options.data[this.noTable.IndexedDB.pk];
 
@@ -762,7 +762,7 @@
 									deferred.resolve(options.data);
 								}else{
 									deferred.reject("Record not updated.");
-								}									
+								}
 							});
 					})
 					.then(function(resp){
@@ -772,9 +772,9 @@
 						console.error(err);
 						deferred.reject(err);
 					})
-					
 
-					return deferred.promise;						
+
+					return deferred.promise;
 				};
 
 				this.__proto__.destroy = function(options) {
@@ -795,12 +795,12 @@
 						deferred.reject(err);
 					})
 
-					return deferred.promise;		
+					return deferred.promise;
 				};
 
 				this.__proto__.upsert = function(options){
 					if(!options) throw "noCRUD::update requires options parameter";
-					
+
 					var tbl = this.dex[this.tableName],
 						key = options.data[this.noTable.IndexedDB.pk];
 
@@ -834,7 +834,7 @@
 					if(task){
 						$timeout(function(){
 							progress.tables.update("Downloading " + task.TableName);
-							progress.tables.changeCss("progress-bar-success progress-bar-striped active");							
+							progress.tables.changeCss("progress-bar-success progress-bar-striped active");
 						})
 						console.info("Downloading " + task.TableName);
 
@@ -854,7 +854,7 @@
 										noIndexedDB[task.TableName].bulkLoad(data, progress)
 											.then(function(info){
 												//deferred.notify(info);
-												console.info("\t" + info + " import completed.");									
+												console.info("\t" + info + " import completed.");
 												_recurse(deferred, progress);
 											})
 											.catch(function(err){
@@ -863,7 +863,7 @@
 											})
 											.finally(angular.noop, function(info){
 												console.info(info);
-											});								
+											});
 									}else{
 										console.info("\tError downloading " + task.TableName);
 										$timeout(function(){
@@ -878,13 +878,13 @@
 								$timeout(function(){
 									progress.rows.start({min: 1, max: 1, showProgress: false})
 									progress.rows.update("Error downloading " + task.TableName);
-									progress.rows.changeCss("progress-bar-warning");												
+									progress.rows.changeCss("progress-bar-warning");
 								})
 								_recurse(deferred, progress);
 
 							});
 						}
-						
+
 					}else{
 						deferred.resolve();  //Nothing left to do
 					}
