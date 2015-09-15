@@ -57,7 +57,7 @@ var GloboTest = {};
 			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 		*/
 
-		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage){
+		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector){
 			// TODO: Finish documentation
 			/*
 			 * ## NoDbSchema : Class
@@ -126,7 +126,7 @@ var GloboTest = {};
 
 
 			function NoDbSchema(noConfig, noDbConfig, rawDbSchema){
-				console.warn(rawDbSchema);
+				//console.warn(rawDbSchema);
 
 				var _config = {},
 					_tables = {},
@@ -221,9 +221,9 @@ var GloboTest = {};
 					{
 						deferred.resolve(schemaKey);
 					}else{
-						$rootScope.$watch(schemaKey, function(newval){
+						$rootScope.$watch(schemaKey, function(newval, oldval){
 							if(newval){
-								noLocalStorage.setItem(schemaKey, newval);
+								noLocalStorage.setItem(schemaKey, newval.tables);
 								deferred.resolve(schemaKey);
 							}
 						});
@@ -265,12 +265,36 @@ var GloboTest = {};
 					}
 
 					return $q.all(promises)
+						.then(function(results){
+							$rootScope.noDbSchema_names = results;
+							return results;
+						})
 						.catch(function (err) {
 							console.error(err);
 						});
 
 				};
 
+				this.configureDatabases = function(noUser, noDbSchemaConfigs){
+					var promises = [];
+
+					for(var s in noDbSchemaConfigs){
+						var schemaConfig = noDbSchemaConfigs[s],
+							schema = $rootScope["noDbSchema_" + schemaConfig.dbName],
+							provider = $injector.get(schemaConfig.provider);
+
+						promises.push(provider.configure(noUser, schemaConfig, schema));
+
+					}
+
+					return $q.all(promises);
+
+				};
+
+				this.getSchema = function(dbName){
+					var schema = $rootScope["noDbSchema_" + dbName];
+					return schema;
+				};
 			}
 
 			return new NoDbSchemaFactory();

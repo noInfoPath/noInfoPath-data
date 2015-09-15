@@ -20,6 +20,7 @@ describe("Testing noDbSchema", function(){
 	it("noDbSchema should exist and be initialized.", function(){
 		expect(noDbSchema).toBeDefined();
 		expect(noDbSchema.whenReady).toBeDefined();
+		expect(noDbSchema.configureDatabases).toBeDefined();
 	});
 
 	it("noDbSchema.whenReady should yeild two NoDbSchema instaces on $rootScope.", function(done){
@@ -35,6 +36,7 @@ describe("Testing noDbSchema", function(){
 						for(var r in results){
 							var result = results[r];
 							expect($rootScope[result]).toBeDefined();
+							expect($rootScope.noDbSchema_names).toEqual(results);
 							expect($rootScope[result].store).toEqual(noDbSchemaResults[result].store);
 							expect($rootScope[result].tables).toEqual(noDbSchemaResults[result].tables);
 						}

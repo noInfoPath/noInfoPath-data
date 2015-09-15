@@ -276,7 +276,7 @@
 
 				angular.forEach(dbSchema, function(table, tableName){
 					var dexieTable = _dexie[tableName];
-					dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					dexieTable.noInfoPath = table;
 				});
 			}

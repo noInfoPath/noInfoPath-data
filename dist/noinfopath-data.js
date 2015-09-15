@@ -1290,9 +1290,10 @@
 				function NoDb(queryBuilder){
 					var THIS = this;
 
-					this.whenReady = function(){
-						var deferred = $q.defer(),
-							tables = noDbSchema.tables;
+					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
+
+					this.whenReady = function(tables){
+						var deferred = $q.defer();
 
 						$timeout(function(){
 							if($rootScope.noHTTPInitialized)
@@ -1308,13 +1309,10 @@
 									}
 								});
 
-								configure(tables)
-									.then(function(resp){
-										$rootScope.noHTTPInitialized = true;
-									})
-									.catch(function(err){
-										deferred.reject(err);
-									});
+								$timeout(function(){configure(tables);});
+
+
+
 							}
 						});
 
@@ -1322,17 +1320,15 @@
 					};
 
 					function configure(tables){
-						var deferred = $q.defer();
 
-						$timeout(function(){
-							angular.forEach(tables, function(table, name){
-								this[name] = new NoTable(name, table, queryBuilder);
-							}, THIS);
+						for(var t in tables){
+							var table = tables[t];
+							THIS[t] = new NoTable(t, table, queryBuilder);
 
-							deferred.resolve();
-						});
+						}
 
-						return deferred.promise;
+
+						$rootScope.noHTTPInitialized = true;
 					}
 
 				}
@@ -1540,7 +1536,7 @@ var GloboTest = {};
 			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 		*/
 
-		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage){
+		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector){
 			// TODO: Finish documentation
 			/*
 			 * ## NoDbSchema : Class
@@ -1609,7 +1605,7 @@ var GloboTest = {};
 
 
 			function NoDbSchema(noConfig, noDbConfig, rawDbSchema){
-				console.warn(rawDbSchema);
+				//console.warn(rawDbSchema);
 
 				var _config = {},
 					_tables = {},
@@ -1704,9 +1700,9 @@ var GloboTest = {};
 					{
 						deferred.resolve(schemaKey);
 					}else{
-						$rootScope.$watch(schemaKey, function(newval){
+						$rootScope.$watch(schemaKey, function(newval, oldval){
 							if(newval){
-								noLocalStorage.setItem(schemaKey, newval);
+								noLocalStorage.setItem(schemaKey, newval.tables);
 								deferred.resolve(schemaKey);
 							}
 						});
@@ -1748,12 +1744,36 @@ var GloboTest = {};
 					}
 
 					return $q.all(promises)
+						.then(function(results){
+							$rootScope.noDbSchema_names = results;
+							return results;
+						})
 						.catch(function (err) {
 							console.error(err);
 						});
 
 				};
 
+				this.configureDatabases = function(noUser, noDbSchemaConfigs){
+					var promises = [];
+
+					for(var s in noDbSchemaConfigs){
+						var schemaConfig = noDbSchemaConfigs[s],
+							schema = $rootScope["noDbSchema_" + schemaConfig.dbName],
+							provider = $injector.get(schemaConfig.provider);
+
+						promises.push(provider.configure(noUser, schemaConfig, schema));
+
+					}
+
+					return $q.all(promises);
+
+				};
+
+				this.getSchema = function(dbName){
+					var schema = $rootScope["noDbSchema_" + dbName];
+					return schema;
+				};
 			}
 
 			return new NoDbSchemaFactory();
@@ -2311,7 +2331,6 @@ var GloboTest = {};
 			return $q.all(promises)
 				.then(function(){
 					$rootScope[noWebSQLInitialized] = _webSQL;
-					noLocalStorage.setItem(_name, {"timestamp": Date.now()});
 					noLogService.log(noWebSQLInitialized + " Ready.");
 				});
 		};
@@ -3329,7 +3348,7 @@ var GloboTest = {};
 
 				angular.forEach(dbSchema, function(table, tableName){
 					var dexieTable = _dexie[tableName];
-					dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					dexieTable.noInfoPath = table;
 				});
 			}
