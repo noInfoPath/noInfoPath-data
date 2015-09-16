@@ -2114,10 +2114,8 @@ var GloboTest = {};
 
 					return rs;
 				},
-				"createView" : function(viewName, viewSql){
-					var rs = CREATEVIEW;
-
-					rs += viewName + " AS " + viewSql;
+				"createView" : function(viewName, viewConfig){
+					var rs = viewConfig.entitySQL.replace("CREATE VIEW ", CREATEVIEW);
 
 					return rs;
 				},
@@ -2309,7 +2307,11 @@ var GloboTest = {};
 		this.configure = function(noUser, config, schema){
 			var _webSQL = null,
 				promises = [],
-				noWebSQLInitialized = "noWebSQL_" + config.dbName;
+				noWebSQLInitialized = "noWebSQL_" + config.dbName,
+				noConstructors = {
+					"T": NoTable,
+					"V": NoView
+				};
 
 			_webSQL = openDatabase(config.dbName, config.version, config.description, config.size);
 
@@ -2317,15 +2319,9 @@ var GloboTest = {};
 			_webSQL.name = config.dbName;
 
 			angular.forEach(schema.tables, function(table, name){
-				var t = new NoTable(table, name, _webSQL);
+				var t = new noConstructors[table.entityType](table, name, _webSQL);
 				this[name] = t;
-				promises.push(createEntity("T", name, table, _webSQL));
-			}, _webSQL);
-
-			angular.forEach(schema.views, function(view, name){
-				var t = new NoView(view, name, _webSQL);
-				this[name] = t;
-				promises.push(createEntity("V", name, view, _webSQL));
+				promises.push(createEntity(table, _webSQL));
 			}, _webSQL);
 
 			return $q.all(promises)
@@ -2371,18 +2367,18 @@ var GloboTest = {};
 		* |tableName|String|The table's name|
 		* |table|Object|The table schema|
 		*/
-		function createEntity(type, tableName, table, database){
+		function createEntity(entity, database){
 
 			var deferred = $q.defer();
 
 
 			database.transaction(function(tx){
-				tx.executeSql(stmts[type](tableName, table), [],
+				tx.executeSql(stmts[entity.entityType](entity.entityName, entity), [],
 			 	function(t, r){
 					deferred.resolve();
 			 	},
 				function(t, e){
-			 		deferred.reject();
+			 		deferred.reject(e);
 			 	});
 			});
 
