@@ -4,27 +4,32 @@ var noDbSchemaMock = {
 			"Description": {
 				"nullable": true,
 				"type": "varchar",
-				"length": 50
+				"length": 50,
+				"columnName": "Description"
 			},
 			"fooID" : {
 				"nullable": false,
 				"type": "uniqueidentifier",
-				"length": 0
+				"length": 0,
+				"columnName": "fooID"
 			},
 			"barID" : {
 				"nullable": true,
 				"type": "uniqueidentifier",
-				"length": 0
+				"length": 0,
+				"columnName": "barID"
 			},
 			"number": {
 				"nullable": true,
 				"type": "int",
-				"length": 0
+				"length": 0,
+				"columnName": "number"
 			},
 			"price": {
 				"nullable": false,
 				"type": "decimal",
-				"length": 0
+				"length": 0,
+				"columnName": "price"
 			}
 		},
 		"foreignKeys": {
@@ -33,23 +38,19 @@ var noDbSchemaMock = {
 				"column": "barID"
 			}
 		},
-		"primaryKey": "fooID"
+		"primaryKey": ["fooID"],
+        "entityType": "T",
+        "entityName": "foo"
 	}
 };
 
 var noDbSchemaResults = {
 	"noDbSchema_NoInfoPath_dtc_v1": {
-		store: {"NoInfoPath_Changes": "$$ChangeID"},
-		tables: {
 			"NoInfoPath_Changes": {
 				"primaryKey": "ChangeID"
 			}
-		}
 	},
-	"noDbSchema_FCFNv2": {
-		store: {"foo": "$$fooID,barID"},
-		tables: noDbSchemaMock
-	}
+	"noDbSchema_FCFNv2": noDbSchemaMock
 };
 
 var insertData = {

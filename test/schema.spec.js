@@ -37,8 +37,8 @@ describe("Testing noDbSchema", function(){
 							var result = results[r];
 							expect($rootScope[result]).toBeDefined();
 							expect($rootScope.noDbSchema_names).toEqual(results);
-							expect($rootScope[result].store).toEqual(noDbSchemaResults[result].store);
-							expect($rootScope[result].tables).toEqual(noDbSchemaResults[result].tables);
+							console.log(result);
+							expect($rootScope[result].tables).toEqual(noDbSchemaResults[result]);
 						}
 					})
 					.catch(function(err){
