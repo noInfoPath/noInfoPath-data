@@ -208,6 +208,7 @@
 				var sorts = [], expr;
 
 				angular.forEach(sort, function(value) {
+					console.log(value);
 					var order = value.column.replace(/\./g, "/");
 
 					if (value.dir === "desc") {

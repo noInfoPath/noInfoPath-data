@@ -147,7 +147,16 @@
 					return colConst.join(",");
 				},
 				"isPrimaryKey": function(columnName, tableConfig){
-					return (columnName === tableConfig.primaryKey);
+					var temp = false;
+
+					for (var x in tableConfig.primaryKey){
+						if(columnName === tableConfig.primaryKey[x])
+						{
+							temp = true;
+							break;
+						}
+					}
+					return temp;
 				},
 				"isForeignKey": function(columnName, tableConfig){
 					return !!tableConfig.foreignKeys[columnName];

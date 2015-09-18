@@ -1,6 +1,6 @@
 {
   "name": "noinfopath-data",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "noInfoPath data module",
   "main": "noinfopath-data.js",
   "directories": {
