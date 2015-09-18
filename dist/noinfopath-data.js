@@ -2041,7 +2041,7 @@ var GloboTest = {};
 			BLOB = "BLOB",
 			NUMERIC = "NUMERIC",
 			WITHOUTROWID = "WITHOUT ROWID",
-			_interface = {
+		_interface = {
 				sqlConversion : {
 					"bigint" : INTEGER,
 					"bit" : INTEGER,
@@ -2263,7 +2263,7 @@ var GloboTest = {};
 			return _interface.createView(tableName, viewSql);
 		};
 
-		this.createSqlInsertStmt = function(tableName, data, filters){
+		this.createSqlInsertStmt = function(tableName, data){
 			return _interface.sqlInsert(tableName, data);
 		};
 
@@ -2395,7 +2395,7 @@ var GloboTest = {};
 			if(!database) throw "database is a required parameter";
 
 			var _table = table,
-				_tableName = tableName,
+				_tableName = table.entityName,
 				_db = database
 			;
 
@@ -2491,83 +2491,103 @@ var GloboTest = {};
 			*
 			* |Name|Type|Description|
 			* |----|----|-----------|
-			* |operation|String|Either a "C" "U" or "D"|
+			* |operation|String|Either one of (C\|U\|D\|BD\|BC)|
 			* |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 			* |data|Object|Name Value Pairs|
 			*/
 
-			function webSqlOperation(operation, noTransaction, data){
+			function webSqlOperation(operation, data, noTransaction){
 				// noTransaction is not required, but is needed to track transactions
-				var deferred = $q.defer(),
+				var sqlExpressionData, id,
+					deferred = $q.defer(),
 					createObject = noWebSQLParser.createSqlInsertStmt(_tableName, data),
-					ops = {
+					sqlStmtFns = {
 						"C": noWebSQLParser.createSqlInsertStmt,
 						"U": noWebSQLParser.createSqlUpdateStmt,
 						"D": noWebSQLParser.createSqlDeleteStmt,
-						"B": noWebSQLParser.createSqlClearStmt
+						"BD": noWebSQLParser.createSqlClearStmt,
+						"BC": noWebSQLParser.createSqlInsertStmt
 					},
-					opFns = {
-						"C": null,
-						"U": null,
-						"D": null,
-						"B": null
-					},
-					sqlExpressionData,
-					noFilters = new noInfoPath.data.NoFilters(),
-					id;
+					filterOps = {
+						"C": function(data){
+							var noFilters = new noInfoPath.data.NoFilters(), id;
 
-					switch(operation){
-						case "B":
-							break;
-						case "C":
-							id = data[_table.primaryKey] = noInfoPath.createUUID();
+							if(data[_table.primaryKey]){
+								id = data[_table.primaryKey];
+							}else{
+								id = noInfoPath.createUUID();
+								data[_table.primaryKey] = id;
+							}
+
 							noFilters.add(_table.primaryKey, null, true, true, [{operator: "eq", value: id}]);
-							break;
-						default:
+
+							return noFilters;
+						},
+						"U": function(data){
+							var noFilters = new noInfoPath.data.NoFilters(), id;
 							id = data[_table.primaryKey];
 							noFilters.add(_table.primaryKey, null, true, true, [{operator: "eq", value: id}]);
-					}
 
-					sqlExpressionData = ops[operation](_tableName, data, noFilters);
+							return noFilters;
+						},
+						"D": function(data){
+							var noFilters = new noInfoPath.data.NoFilters(), id;
+							id = data[_table.primaryKey];
+							noFilters.add(_table.primaryKey, null, true, true, [{operator: "eq", value: id}]);
 
-					_db.transaction(function(tx){
-						switch(operation){
-							case "C":
-							case "U":
-								sqlExpressionData = ops[operation](_tableName, data, noFilters);
-								_exec(sqlExpressionData)
-									.then(function(result){
-										_getOne(result.insertId)
-											.then(function(result){
-												if(noTransaction) noTransaction.addChange(_tableName, result, operation);
-												deferred.resolve(result);
-											})
-											.catch(deferred.reject);
-									})
-									.catch(deferred.reject);
-								break;
-							case "D":
-								sqlExpressionData = ops[operation](_tableName, data, noFilters);
-								_getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
-									.then(function(result){
-										_exec(sqlExpressionData)
-											.then(function(result){
-												if(noTransaction) noTransaction.addChange(_tableName, this, "D");
-												deferred.resolve(result);
-											}.bind(result))
-											.catch(deferred.reject);
-									})
-									.catch(deferred.reject);
-								break;
-							case "B":
-								sqlExpressionData = ops[operation](_tableName);
-								_exec(sqlExpressionData)
-									.then(deferred.resolve)
-									.catch(deferred.reject);
-								break;
+							return noFilters;
+						},
+						"BD":function(){},
+						"BC": function(){}
+					},
+					sqlOps = {
+						"C": function(data, noFilters, noTransaction){
+							var sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
+							_exec(sqlStmt)
+								.then(function(result){
+									_getOne(result.insertId)
+										.then(function(result){
+											if(noTransaction) noTransaction.addChange(_tableName, result, operation);
+											deferred.resolve(result);
+										})
+										.catch(deferred.reject);
+								})
+								.catch(deferred.reject);
+						},
+						"U": function(data, noFilters, noTransaction){
+							sqlOps.C(data, noFilters);
+						},
+						"D": function(data, noFilters, noTransaction){
+							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters);
+							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
+								.then(function(result){
+									_exec(sqlStmt)
+										.then(function(result){
+											if(noTransaction) noTransaction.addChange(_tableName, this, "D");
+											deferred.resolve(result);
+										}.bind(result))
+										.catch(deferred.reject);
+								})
+								.catch(deferred.reject);
+						},
+						"BD":function(){
+							var sqlStmt = sqlStmtFns.D(_tableName);
+							_exec(sqlStmt)
+								.then(deferred.resolve)
+								.catch(deferred.reject);
 
+						},
+						"BC": function(data){
+							var sqlStmt = sqlStmtFns.C(_tableName, data, null);
+							_exec(sqlStmt, data)
+								.then(deferred.resolve)
+								.catch(deferred.reject);
 						}
-					});
+					},
+					filters = filterOps[operation](data);
+
+				sqlOps[operation](data, filters, noTransaction);
+
 
 				return deferred.promise;
 			}
@@ -2586,7 +2606,7 @@ var GloboTest = {};
 			*/
 
 			this.noCreate = function(data, noTransaction){
-				return webSqlOperation("C", noTransaction ? noTransaction : null, data);
+				return webSqlOperation("C",  data, noTransaction);
 			};
 
 			/**
@@ -2672,7 +2692,7 @@ var GloboTest = {};
 
 			this.noUpdate = function(data, noTransaction) {
 				// removed the filters parameter as we will most likely be updating one record at a time. Expand this by potentially renaming this to noUpdateOne and the replacement noUpdate be able to handle filters?
-				return webSqlOperation("U", noTransaction, data);
+				return webSqlOperation("U", data, noTransaction);
 			};
 
 			/**
@@ -2689,7 +2709,7 @@ var GloboTest = {};
 			*/
 
 			this.noDestroy = function(data, noTransaction) {
-				return webSqlOperation("D", noTransaction ? noTransaction : null, data);
+				return webSqlOperation("D", data, noTransaction);
 			};
 
 			/**
@@ -2755,7 +2775,7 @@ var GloboTest = {};
 						if(currentItem < data.length){
 							var datum = data[currentItem];
 
-							table.noCreate(datum)
+							table.noBulkCreate(datum)
 								.then(function(data){
 									//progress.updateRow(progress.rows);
 									deferred.notify(data);
@@ -2794,7 +2814,11 @@ var GloboTest = {};
 			* AngularJS Promise.
 			*/
 			this.noClear = function(){
-				return webSqlOperation("B", null);
+				return webSqlOperation("BD", null);
+			};
+
+			this.noBulkCreate = function(data){
+					return webSqlOperation("BC", data);
 			};
 		}
 
