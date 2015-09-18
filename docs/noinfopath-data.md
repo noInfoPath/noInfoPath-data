@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.16
+@version 0.2.17
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -686,7 +686,7 @@ CRUD interface for WebSql
 
 |Name|Type|Description|
 |----|----|-----------|
-|operation|String|Either a "C" "U" or "D"|
+|operation|String|Either one of (C\|U\|D\|BD\|BC)|
 |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 |data|Object|Name Value Pairs|
 
