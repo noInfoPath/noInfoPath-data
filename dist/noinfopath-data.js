@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.15
+ *	@version 0.2.16
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2169,7 +2169,16 @@ var GloboTest = {};
 					return colConst.join(",");
 				},
 				"isPrimaryKey": function(columnName, tableConfig){
-					return (columnName === tableConfig.primaryKey);
+					var temp = false;
+
+					for (var x in tableConfig.primaryKey){
+						if(columnName === tableConfig.primaryKey[x])
+						{
+							temp = true;
+							break;
+						}
+					}
+					return temp;
 				},
 				"isForeignKey": function(columnName, tableConfig){
 					return !!tableConfig.foreignKeys[columnName];
