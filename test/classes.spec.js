@@ -128,6 +128,7 @@ describe("Testing Classes", function(){
 			var sort = new noInfoPath.data.NoSort();
 			expect(sort).toBeDefined();
 			sort.add("Description", "desc");
+			//console.log(sort);
 			var odata = JSON.stringify(noOdataQueryBuilder.makeQuery(sort)),
 				expected = "{\"$orderby\":\"Description desc\"}";
 			expect(odata).toBe(expected);
