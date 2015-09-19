@@ -129,9 +129,10 @@ var GloboTest = {};
 				//console.warn(rawDbSchema);
 
 				var _config = {},
-					_tables = {},
+					_tables = rawDbSchema,
 					_views = {},
-					_sql = {};
+					_sql = {},
+					_schemaConfig = noDbConfig;
 
 				Object.defineProperties(this, {
 					"store": {
@@ -148,10 +149,13 @@ var GloboTest = {};
 					},
 					"views": {
 						"get": function() { return _views; }
+					},
+					"config": {
+						"get": function() { return _schemaConfig; }
 					}
 				});
 
-				_tables = rawDbSchema;
+
 
 				angular.forEach(_tables, function(table, tableName){
 					var primKey = "$$" + table.primaryKey,
@@ -178,14 +182,26 @@ var GloboTest = {};
 								return schemaConfig.schemaSource.schema;
 							});
 						},
-						"noDBSchema": function(key) {
+						"noDBSchema": function(key, schemaConfig) {
 							return getRemoteSchema(noConfig)
 								.then(function(resp){
 									return resp.data;
 								})
 								.catch(function(err){
-									deferred.reject(err);
+									throw err;
 								});
+						},
+						"cached": function(key, schemaConfig){
+							var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
+
+							return $q(function(resolve, reject){
+								$rootScope.$watch(schemaKey, function(newval){
+									if(newval){
+										resolve(newval.tables);
+									}
+								});
+
+							});
 						}
 					};
 
@@ -205,7 +221,7 @@ var GloboTest = {};
 							return resp;
 						})
 						.catch(function(resp){
-							noLogService.error(resp);
+							throw resp;
 						});
 				}
 
@@ -237,7 +253,7 @@ var GloboTest = {};
 								if(schema){
 									$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
 								}else{
-									deferred.reject();
+									deferred.reject("noDbSchemaServiceOffline");
 								}
 							});
 					}
@@ -252,7 +268,7 @@ var GloboTest = {};
 				 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
 				*/
 				this.whenReady = function(config){
-					noConfig = config;
+					noConfig = config.current;
 
 					var noDbSchemaConfig = noConfig.noDbSchema,
 						promises = [];
@@ -270,7 +286,7 @@ var GloboTest = {};
 							return results;
 						})
 						.catch(function (err) {
-							console.error(err);
+							throw err;
 						});
 
 				};
@@ -279,11 +295,11 @@ var GloboTest = {};
 					var promises = [];
 
 					for(var s in noDbSchemaConfigs){
-						var schemaConfig = noDbSchemaConfigs[s],
-							schema = $rootScope["noDbSchema_" + schemaConfig.dbName],
-							provider = $injector.get(schemaConfig.provider);
+						var schemaName = noDbSchemaConfigs[s],
+							schema = $rootScope[schemaName],
+							provider = $injector.get(schema.config.provider);
 
-						promises.push(provider.configure(noUser, schemaConfig, schema));
+						promises.push(provider.configure(noUser, schemaName, schema));
 
 					}
 

@@ -295,16 +295,16 @@
 		this.configure = function(noUser, config, schema){
 			var _webSQL = null,
 				promises = [],
-				noWebSQLInitialized = "noWebSQL_" + config.dbName,
+				noWebSQLInitialized = "noWebSQL_" + schema.config.dbName,
 				noConstructors = {
 					"T": NoTable,
 					"V": NoView
 				};
 
-			_webSQL = openDatabase(config.dbName, config.version, config.description, config.size);
+			_webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
 
 			_webSQL.currentUser = noUser;
-			_webSQL.name = config.dbName;
+			_webSQL.name = schema.config.dbName;
 
 			angular.forEach(schema.tables, function(table, name){
 				var t = new noConstructors[table.entityType](table, name, _webSQL);

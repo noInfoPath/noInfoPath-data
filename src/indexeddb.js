@@ -192,8 +192,8 @@
 
 		this.configure = function(noUser, config, schema){
 			var deferred = $q.defer(),
-				_dexie = new Dexie(config.dbName),
-				noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
+				_dexie = new Dexie(schema.config.dbName),
+				noIndexedDbInitialized = "noIndexedDb_" + schema.config.dbName;
 
 			$timeout(function(){
 				_dexie.currentUser = noUser;
@@ -220,7 +220,7 @@
 				});
 
 				_dexie.on('ready', function(data) {
-					noLogService.log("Dexie ready");
+					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
 				    // Log to console or show en error indicator somewhere in your GUI...
 					$rootScope[noIndexedDbInitialized] = _dexie;
 					deferred.resolve();
@@ -233,7 +233,7 @@
 					});
 				}else{
 					if(_.size(schema.store)){
-						_dexie.version(config.version).stores(schema.store);
+						_dexie.version(schema.config.version).stores(schema.store);
 						_extendDexieTables.call(_dexie, schema.tables);
 						_dexie.open();
 					}else{

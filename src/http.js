@@ -71,7 +71,7 @@
 		.provider("noHTTP",[function(){
 			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', function($rootScope, $q, $timeout, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder, noLogService){
 
-				function NoDb(queryBuilder){
+				function NoHTTP(queryBuilder){
 					var THIS = this;
 
 					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
@@ -93,31 +93,26 @@
 									}
 								});
 
-								$timeout(function(){configure(tables);});
-
-
-
 							}
 						});
 
 						return deferred.promise;
 					};
 
-					function configure(tables){
+					this.configure = function(noUser, config, schema){
 
-						for(var t in tables){
-							var table = tables[t];
-							THIS[t] = new NoTable(t, table, queryBuilder);
+						return $timeout(function(){
+							for(var t in schema.tables){
+								var table = schema.tables[t];
+								THIS[t] = new NoTable(t, table, queryBuilder);
+							}
+							$rootScope.noHTTPInitialized = true;
+							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
+						});
 
-						}
-
-
-						$rootScope.noHTTPInitialized = true;
-					}
+					};
 
 				}
-
-
 
 				function NoTable(tableName, table, queryBuilder){
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
@@ -255,7 +250,7 @@
 				}
 
 				//return new noREST($q, $http, $filter, noUrl, noConfig)
-				return new NoDb(noOdataQueryBuilder.makeQuery);
+				return new NoHTTP(noOdataQueryBuilder.makeQuery);
 			}];
 		}])
 	;
