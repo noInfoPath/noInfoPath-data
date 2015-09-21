@@ -366,7 +366,7 @@
 					deferred.resolve();
 			 	},
 				function(t, e){
-			 		deferred.reject(e);
+			 		deferred.reject( {entity: entity, error: e});
 			 	});
 			});
 
