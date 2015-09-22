@@ -121,7 +121,7 @@
 									if(_currentConfig){
 										$rootScope.noConfig = _currentConfig;
 									}else{
-										deferred.reject("noConfig is offline, and no cached version was available.");
+										deferred.reject("noConfig");
 									}
 								});
 						}

@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.17
+ *	@version 0.2.18
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1198,7 +1198,7 @@
 									if(_currentConfig){
 										$rootScope.noConfig = _currentConfig;
 									}else{
-										deferred.reject("noConfig is offline, and no cached version was available.");
+										deferred.reject("noConfig");
 									}
 								});
 						}
@@ -1288,7 +1288,7 @@
 		.provider("noHTTP",[function(){
 			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', function($rootScope, $q, $timeout, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder, noLogService){
 
-				function NoDb(queryBuilder){
+				function NoHTTP(queryBuilder){
 					var THIS = this;
 
 					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
@@ -1310,31 +1310,26 @@
 									}
 								});
 
-								$timeout(function(){configure(tables);});
-
-
-
 							}
 						});
 
 						return deferred.promise;
 					};
 
-					function configure(tables){
+					this.configure = function(noUser, config, schema){
 
-						for(var t in tables){
-							var table = tables[t];
-							THIS[t] = new NoTable(t, table, queryBuilder);
+						return $timeout(function(){
+							for(var t in schema.tables){
+								var table = schema.tables[t];
+								THIS[t] = new NoTable(t, table, queryBuilder);
+							}
+							$rootScope.noHTTPInitialized = true;
+							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
+						});
 
-						}
-
-
-						$rootScope.noHTTPInitialized = true;
-					}
+					};
 
 				}
-
-
 
 				function NoTable(tableName, table, queryBuilder){
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
@@ -1472,7 +1467,7 @@
 				}
 
 				//return new noREST($q, $http, $filter, noUrl, noConfig)
-				return new NoDb(noOdataQueryBuilder.makeQuery);
+				return new NoHTTP(noOdataQueryBuilder.makeQuery);
 			}];
 		}])
 	;
@@ -1609,9 +1604,10 @@ var GloboTest = {};
 				//console.warn(rawDbSchema);
 
 				var _config = {},
-					_tables = {},
+					_tables = rawDbSchema,
 					_views = {},
-					_sql = {};
+					_sql = {},
+					_schemaConfig = noDbConfig;
 
 				Object.defineProperties(this, {
 					"store": {
@@ -1628,10 +1624,13 @@ var GloboTest = {};
 					},
 					"views": {
 						"get": function() { return _views; }
+					},
+					"config": {
+						"get": function() { return _schemaConfig; }
 					}
 				});
 
-				_tables = rawDbSchema;
+
 
 				angular.forEach(_tables, function(table, tableName){
 					var primKey = "$$" + table.primaryKey,
@@ -1658,14 +1657,26 @@ var GloboTest = {};
 								return schemaConfig.schemaSource.schema;
 							});
 						},
-						"noDBSchema": function(key) {
+						"noDBSchema": function(key, schemaConfig) {
 							return getRemoteSchema(noConfig)
 								.then(function(resp){
 									return resp.data;
 								})
 								.catch(function(err){
-									deferred.reject(err);
+									throw err;
 								});
+						},
+						"cached": function(key, schemaConfig){
+							var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
+
+							return $q(function(resolve, reject){
+								$rootScope.$watch(schemaKey, function(newval){
+									if(newval){
+										resolve(newval.tables);
+									}
+								});
+
+							});
 						}
 					};
 
@@ -1685,7 +1696,7 @@ var GloboTest = {};
 							return resp;
 						})
 						.catch(function(resp){
-							noLogService.error(resp);
+							throw resp;
 						});
 				}
 
@@ -1717,7 +1728,7 @@ var GloboTest = {};
 								if(schema){
 									$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
 								}else{
-									deferred.reject();
+									deferred.reject("noDbSchemaServiceOffline");
 								}
 							});
 					}
@@ -1732,7 +1743,7 @@ var GloboTest = {};
 				 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
 				*/
 				this.whenReady = function(config){
-					noConfig = config;
+					noConfig = config.current;
 
 					var noDbSchemaConfig = noConfig.noDbSchema,
 						promises = [];
@@ -1750,7 +1761,7 @@ var GloboTest = {};
 							return results;
 						})
 						.catch(function (err) {
-							console.error(err);
+							throw err;
 						});
 
 				};
@@ -1759,11 +1770,11 @@ var GloboTest = {};
 					var promises = [];
 
 					for(var s in noDbSchemaConfigs){
-						var schemaConfig = noDbSchemaConfigs[s],
-							schema = $rootScope["noDbSchema_" + schemaConfig.dbName],
-							provider = $injector.get(schemaConfig.provider);
+						var schemaName = noDbSchemaConfigs[s],
+							schema = $rootScope[schemaName],
+							provider = $injector.get(schema.config.provider);
 
-						promises.push(provider.configure(noUser, schemaConfig, schema));
+						promises.push(provider.configure(noUser, schemaName, schema));
 
 					}
 
@@ -1893,7 +1904,7 @@ var GloboTest = {};
 					filter,
 					origFilter;
 
-			   
+
 
 			    for (idx = 0, length = filters.length; idx < length; idx++) {
 			    	filter = origFilter = filters[idx];
@@ -1929,10 +1940,10 @@ var GloboTest = {};
 			                    // }
 
 			                } else if (angular.isDate(value)) {
-			                   
+
 		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
 		                        format = "{1}";
-			                    
+
 			                } else {
 			                    format = "{1}";
 			                }
@@ -2317,16 +2328,16 @@ var GloboTest = {};
 		this.configure = function(noUser, config, schema){
 			var _webSQL = null,
 				promises = [],
-				noWebSQLInitialized = "noWebSQL_" + config.dbName,
+				noWebSQLInitialized = "noWebSQL_" + schema.config.dbName,
 				noConstructors = {
 					"T": NoTable,
 					"V": NoView
 				};
 
-			_webSQL = openDatabase(config.dbName, config.version, config.description, config.size);
+			_webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
 
 			_webSQL.currentUser = noUser;
-			_webSQL.name = config.dbName;
+			_webSQL.name = schema.config.dbName;
 
 			angular.forEach(schema.tables, function(table, name){
 				var t = new noConstructors[table.entityType](table, name, _webSQL);
@@ -2388,7 +2399,7 @@ var GloboTest = {};
 					deferred.resolve();
 			 	},
 				function(t, e){
-			 		deferred.reject(e);
+			 		deferred.reject( {entity: entity, error: e});
 			 	});
 			});
 
@@ -2411,11 +2422,14 @@ var GloboTest = {};
 
 			Object.defineProperties(this, {
 				"__type": {
-					"get": function() { return "INoCRUD"; }
+					"get": function() { return "INoCRUD"; },
 				},
 				"primaryKey": {
 					"get": function(){ return _table.primaryKey; }
-				}
+				},
+                "entityName": {
+                    "get": function() { return _tableName; }
+                }
 			});
 
 			/**
@@ -2868,8 +2882,12 @@ var GloboTest = {};
 				},
 				"primaryKey": {
 					"get": function(){ return _view.primaryKey; }
-				}
-			});
+				},
+                "entityName":{
+                    "get": function() { return _viewName; }
+                }
+
+		    });
 
 			this.noCreate = angular.noop;
 
@@ -3101,8 +3119,11 @@ var GloboTest = {};
 })(angular);
 
 /*
-*	## noDb
-*	The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+*	## noIndexedDB
+*	The noIndexedDB factory creates and configures a new instance of Dexie.
+*	Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that
+*	extends the query capabilites of Dexie, and exposes a CRUD interface
+*	on the WriteableTable class.
 */
 
 /**
@@ -3294,8 +3315,8 @@ var GloboTest = {};
 
 		this.configure = function(noUser, config, schema){
 			var deferred = $q.defer(),
-				_dexie = new Dexie(config.dbName),
-				noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
+				_dexie = new Dexie(schema.config.dbName),
+				noIndexedDbInitialized = "noIndexedDb_" + schema.config.dbName;
 
 			$timeout(function(){
 				_dexie.currentUser = noUser;
@@ -3322,7 +3343,7 @@ var GloboTest = {};
 				});
 
 				_dexie.on('ready', function(data) {
-					noLogService.log("Dexie ready");
+					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
 				    // Log to console or show en error indicator somewhere in your GUI...
 					$rootScope[noIndexedDbInitialized] = _dexie;
 					deferred.resolve();
@@ -3335,7 +3356,7 @@ var GloboTest = {};
 					});
 				}else{
 					if(_.size(schema.store)){
-						_dexie.version(config.version).stores(schema.store);
+						_dexie.version(schema.config.version).stores(schema.store);
 						_extendDexieTables.call(_dexie, schema.tables);
 						_dexie.open();
 					}else{

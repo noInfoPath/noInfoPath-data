@@ -30,7 +30,7 @@ describe("Testing noDbSchema", function(){
 
 		noConfig.whenReady()
 			.then(function(config){
-				noDbSchema.whenReady(noConfig.current)
+				noDbSchema.whenReady(noConfig)
 					.then(function(results){
 						console.warn(results);
 						for(var r in results){
