@@ -389,11 +389,14 @@
 
 			Object.defineProperties(this, {
 				"__type": {
-					"get": function() { return "INoCRUD"; }
+					"get": function() { return "INoCRUD"; },
 				},
 				"primaryKey": {
 					"get": function(){ return _table.primaryKey; }
-				}
+				},
+                "entityName": {
+                    "get": function() { return _tableName; }
+                }
 			});
 
 			/**
@@ -846,8 +849,12 @@
 				},
 				"primaryKey": {
 					"get": function(){ return _view.primaryKey; }
-				}
-			});
+				},
+                "entityName":{
+                    "get": function() { return _viewName; }
+                }
+
+		    });
 
 			this.noCreate = angular.noop;
 

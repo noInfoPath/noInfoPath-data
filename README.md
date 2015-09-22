@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.17
+@version 0.2.18
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -771,8 +771,11 @@ functions.
 - https://www.sqlite.org/lang_createview.html
 
 
-## noDb
-The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+## noIndexedDB
+The noIndexedDB factory creates and configures a new instance of Dexie.
+Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that
+extends the query capabilites of Dexie, and exposes a CRUD interface
+on the WriteableTable class.
 
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.

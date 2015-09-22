@@ -2,7 +2,7 @@
 
 /*
  *	# noinfopath-data
- *	@version 0.2.17
+ *	@version 0.2.18
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1904,7 +1904,7 @@ var GloboTest = {};
 					filter,
 					origFilter;
 
-			   
+
 
 			    for (idx = 0, length = filters.length; idx < length; idx++) {
 			    	filter = origFilter = filters[idx];
@@ -1940,10 +1940,10 @@ var GloboTest = {};
 			                    // }
 
 			                } else if (angular.isDate(value)) {
-			                   
+
 		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
 		                        format = "{1}";
-			                    
+
 			                } else {
 			                    format = "{1}";
 			                }
@@ -2422,11 +2422,14 @@ var GloboTest = {};
 
 			Object.defineProperties(this, {
 				"__type": {
-					"get": function() { return "INoCRUD"; }
+					"get": function() { return "INoCRUD"; },
 				},
 				"primaryKey": {
 					"get": function(){ return _table.primaryKey; }
-				}
+				},
+                "entityName": {
+                    "get": function() { return _tableName; }
+                }
 			});
 
 			/**
@@ -2879,8 +2882,12 @@ var GloboTest = {};
 				},
 				"primaryKey": {
 					"get": function(){ return _view.primaryKey; }
-				}
-			});
+				},
+                "entityName":{
+                    "get": function() { return _viewName; }
+                }
+
+		    });
 
 			this.noCreate = angular.noop;
 
@@ -3112,8 +3119,11 @@ var GloboTest = {};
 })(angular);
 
 /*
-*	## noDb
-*	The noDb factory creates and configures a new instance of Dexie.  Dexie is a wrapper about IndexedDB.  noDb is a Dexie AddOn that extends the query capabilites of Dexie.
+*	## noIndexedDB
+*	The noIndexedDB factory creates and configures a new instance of Dexie.
+*	Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that
+*	extends the query capabilites of Dexie, and exposes a CRUD interface
+*	on the WriteableTable class.
 */
 
 /**

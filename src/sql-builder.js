@@ -108,7 +108,7 @@
 					filter,
 					origFilter;
 
-			   
+
 
 			    for (idx = 0, length = filters.length; idx < length; idx++) {
 			    	filter = origFilter = filters[idx];
@@ -144,10 +144,10 @@
 			                    // }
 
 			                } else if (angular.isDate(value)) {
-			                   
+
 		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
 		                        format = "{1}";
-			                    
+
 			                } else {
 			                    format = "{1}";
 			                }
