@@ -896,12 +896,12 @@
 							deferred.resolve(data);
 						},
 						function(t, e){
-							deferred.reject(e);
+							throw e;
 						});
 				}
 
 				function _txFailure(error){
-					console.error("Tx Failure", error);
+					throw error;
 				}
 
 				function _txSuccess(data){
