@@ -724,7 +724,8 @@
 					tx.executeSql(oneObject.queryString,
 						oneObject.valueArray,
 						function(t, r){
-							deferred.resolve(r);
+							var data = r.rows.length ? r.rows[0] : undefined;
+							deferred.resolve(data);
 						},
 						function(t, e){
 							deferred.reject(e);
@@ -897,6 +898,49 @@
 						function(t, e){
 							deferred.reject(e);
 						});
+				}
+
+				function _txFailure(error){
+					console.error("Tx Failure", error);
+				}
+
+				function _txSuccess(data){
+					console.log("Tx Success", data);
+				}
+
+				_db.transaction(_txCallback, _txFailure, _txSuccess);
+
+				return deferred.promise;
+			};
+
+			/**
+			* ### noOne(data)
+			*
+			* Reads a record from the websql database based on the Primary Key of the data provided.
+			*
+			* #### Parameters
+			*
+			* |Name|Type|Description|
+			* |----|----|-----------|
+			* |data|Object|Name Value Pairs|
+			*/
+			this.noOne = function(data, primaryKey) {
+				var deferred = $q.defer(),
+					key = data[primaryKey],
+					oneObject = noWebSQLParser.createSqlOneStmt(_viewName, primaryKey, key);
+
+				function _txCallback(tx){
+
+					tx.executeSql(oneObject.queryString,
+						oneObject.valueArray,
+						function(t, r){
+                            var data = r.rows.length ? r.rows[0] : undefined;
+							deferred.resolve(data);
+						},
+						function(t, e){
+							deferred.reject(e);
+						});
+
 				}
 
 				function _txFailure(error){
