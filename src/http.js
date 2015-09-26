@@ -1,5 +1,4 @@
 //http.js
-
 /*
 * ## @service noHTTP
 *
@@ -24,9 +23,8 @@
 *
 * #### destroy(resourceURI, formdata)
 * TODO: Implementation required.
-*/
-
-/**
+*
+*
 * ### @class NoDb
 *
 * #### Overview
@@ -42,9 +40,8 @@
 * |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
 * |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
 *
-*/
-
-/**
+*
+*
 * ### @class NoTable
 *
 * #### Overview
@@ -62,7 +59,6 @@
 * |tableName|string|name of the table that this instance will interact with.|
 * |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
 */
-
 (function(angular, undefined){
 	"use strict";
 

@@ -651,7 +651,7 @@
 							deferred.resolve(data);
 						},
 						function(t, e){
-							deferred.reject(e);
+							deferred.reject(arguments);
 						});
 				}
 
@@ -724,7 +724,7 @@
 					tx.executeSql(oneObject.queryString,
 						oneObject.valueArray,
 						function(t, r){
-							var data = r.rows.length ? r.rows[0] : undefined;
+                            var data = r.rows.length ? r.rows[0] : undefined;
 							deferred.resolve(data);
 						},
 						function(t, e){
@@ -772,8 +772,8 @@
 									//progress.updateRow(progress.rows);
 									deferred.notify(data);
 								})
-								.catch(function(err){
-									deferred.reject(err);
+								.catch(function(){
+									deferred.reject({entity: table, error: arguments});
 								})
 								.finally(function(){
 									currentItem++;

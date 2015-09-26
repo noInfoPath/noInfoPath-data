@@ -24,7 +24,7 @@ NoInfoPath data provides several services to access data from local storage or r
 - es5-shim
 - grunt
 - grunt-bumpup
-- grunt-version
+  - grunt-version
 - grunt-contrib-concat
 - grunt-contrib-copy
 - grunt-contrib-watch
@@ -54,6 +54,7 @@ NoInfoPath data provides several services to access data from local storage or r
 ## @interface noInfoPath
 
 ### Overview
+
 This interface exposes some useful funtions on the global scope
 by attaching it to the `window` object as ```window.noInfoPath```
 
@@ -166,6 +167,7 @@ Creates and adds a new NoSortExpression into the underlying array that NoSort re
 |column|String|The name of the column filter on.|
 |dir|String|(Optional) One of the following values: `asc`, `desc`.|
 
+
 ## Class NoPage : Object
 
 NoPage represent that information required to support paging of a data set.
@@ -180,6 +182,7 @@ NoPage(skip, take)
 |-|-|-|
 |skip|Number|Number of objects to skip before returning the desired amount specified in `take`.|
 |take|Number|Number of objects records to return when paging data.|
+
 
 
 ## Class NoResults : Object
@@ -343,15 +346,15 @@ Creates and adds a new NoSortExpression into the underlying array that NoSort re
 |column|String|The name of the column filter on.|
 |dir|String|(Optional) One of the following values: `asc`, `desc`.|
 
-## @interface INoQueryBuilder
+## @interface INoQueryParser
 
-> INoQueryBuilder is a conceptual entity, it does not really exist
+> INoQueryParser is a conceptual entity, it does not really exist
 > the reality. This is because JavaScript does not implement interfaces
-> like other languages do. This documentation should be considered as a
-> guide for creating query providers compatible with NoInfoPath.
+> like other languages do. This documentation should be considered a
+> guide for creating query parsers compatible with NoInfoPath.
 
 ### Overview
-INoQueryBuilder provides a service interface definition for converting a set
+INoQueryParser provides a service interface definition for converting a set
 of NoInfoPath class related to querying data into a given query protocol.
 An example of this is the ODATA 2.0 specification.
 
@@ -371,7 +374,29 @@ An example of this is the ODATA 2.0 specification.
 Object
 
 
-## @service noOdataQueryBuilder : INoQueryBuilder
+## noQueryParser
+
+### Overview
+The noQueryParser takes the `data` property of the options
+parameter passed to the Kendo DataSources transport.read method. The
+data object is inspected and its filter, sort, and paging values are
+converted to NoInfoPath compatible versions.
+
+### Methods
+
+#### parse(options)
+Parses provided filter, sort and paging options into NoInfoPath compatible
+  objects. Stores the results internally for future use.
+
+  ##### Returns
+Any/all filters, sorts or paging data as an array compatible
+with a call to `function.prototype.array`.
+
+### Properties
+  None.
+
+
+##  noQueryParser : INoQueryParser
 
 ### Overview
 
@@ -462,6 +487,7 @@ TODO: Implementation required.
 #### destroy(resourceURI, formdata)
 TODO: Implementation required.
 
+
 ### @class NoDb
 
 #### Overview
@@ -476,6 +502,7 @@ Creates and manages a set of NoTable objects.
 |----|----|-----------|
 |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
 |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+
 
 
 ### @class NoTable
@@ -499,8 +526,8 @@ NoInfoPath component that consume data such as noKendo.
 The noDbSchema service provides access to the database configuration that
 defines how to configure the local IndexedDB data store.
 
-### Properties
 
+### Properties
 
 |Name|Type|Description|
 |----|----|-----------|
@@ -508,29 +535,26 @@ defines how to configure the local IndexedDB data store.
 |tables|Object|A hash table of NoInfoPath database schema definitions|
 |isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 
-### Methods
 
+### Methods
 
 #### \_processDbJson
 Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
-
 
 ##### Parameters
 |Name|Type|Descriptions|
 |----|----|------------|
 |resp|Object|The raw HTTP response received from the noinfopath-rest service|
 
-
 ### load()
 Loads and processes the database schema from the noinfopath-rest service.
-
 
 #### Returns
 AngularJS::Promise
 
+
 ### whenReady
 whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
-
 
 #### Returns
 AngularJS::Promise
@@ -771,41 +795,49 @@ functions.
 - https://www.sqlite.org/lang_createview.html
 
 
+### noOne(data)
+
+Reads a record from the websql database based on the Primary Key of the data provided.
+
+#### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|data|Object|Name Value Pairs|
+
 ## noIndexedDB
 The noIndexedDB factory creates and configures a new instance of Dexie.
 Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that
 extends the query capabilites of Dexie, and exposes a CRUD interface
 on the WriteableTable class.
 
+
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.
+
 
 ### Class noDexie
 This is the classed used to construct the Dexie AddOn.
 
+
 #### noCreate
 Adds a new record to the database. If the primary key is provided in that will be used when adding otherwise a new UUID will be created by Dexie.
 
-
 ##### Parameters
-
 
 |Name|Type|Description|
 |data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
 
-
 ##### Returns
 AngularJS:Promise
 
-#### noRead
 
+#### noRead
 
 The read operation takes a complex set of parameters that allow
 for filtering, sorting and paging of data.
 
-
 ##### Parameters
-
 
 |Name|Type|Descriptions|
 |----|----|------------|
@@ -813,12 +845,11 @@ for filtering, sorting and paging of data.
 |sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
 |page|NoPage|(Optional) Paging information, if paging is reqired by the read operation.|
 
-
 ##### Returns
 AngularJS::Promise
 
-#### Internal Values
 
+#### Internal Values
 
 |Name|Type|Description|
 |------|-----|-------------|
@@ -828,27 +859,24 @@ AngularJS::Promise
 |_store|IDBObjectStore|This underlying `IDBObjectStore` that the `table` parameter represents.|
 |_trans|IDBTransaction|This is the underlying `IDBTransaction` that the current object store is bound to.|
 
+
 ##### nonIndexedOperators
 This hash table allows for quick access to the operations that can be applied to a property on a target object and the value(s) being filtered on.
 
-
 NOTE:  The "a" parameter will always be the value tested, and "b" will always be the value being filter for.
+
 
 #### \_applyFilters
 This function develops an array of objects that has had all of the filters provided in the original request applied to them.  The schema matches the schema of the `table` parameter.
 
-
 ##### Parameters
-
 
 |Name|Type|Description|
 |----|----|------|
 |iNofilters|[iNoFilterExpression]|An array of filter expressions. Contains both indexed and non-indexed filters|
 |table|Dexie::Table|A reference to the `Dexie::Table` being filtered.
 
-
 ##### Internal variables
-
 
 |Name|Type|Description|
 |------|-----|-------------|
@@ -856,81 +884,85 @@ This function develops an array of objects that has had all of the filters provi
 |iNoFilterHash|Collection<iNoFilters>|Used to organize the filters received in the `iNoFilters` in to a set of indexed and non-indexed filter object The collection is created by a call to `_sortOutFilters()`.|
 |resultsKeys|Array\<guid\>|This will be use to collect the final set of results. It will be an array of keys that will be used to query the final result set.|
 
-
 ##### Returns
 AngularJS::Promise (Maybe)
 
-### \_filterByIndex
 
+### \_filterByIndex
 
 This method of filtering goes against a predefined index. Basically we are doing a MapReduce techique angaist each indexed filter we come across. Using the `filter` parameter provided the index is reduced by matching against the `value` property of the `INoFilterExpression`.  See the `INoFilterExpression` for more details.
 
-
 #### Parameters
-
 
 |Name|Type|Description|
 |------|-----|-------------|
 |filter|INoFilterExpression|A single indexed filter the contains the column, operator, and value to apply to the index.|
 
-
 #### Returns
 AngularJS::Promise
 
+
 ### \_filterByPrimaryKey  -- Being Deprecated
 
-
 This method of of filterig goes against the `IDBObjectStore`'s primary key.
+
 
 \_filterHasIndex uses the iNoFilter parameter to determine
 if there is an index available for the give filter. it returns
 true if there is, false if not.
 
-
 To determine if and index exists, we look at the table.schema.primKey,
 and table.schema.indexes properties.
 
+
 ### \_recurseIndexedFilters
+
 
 This method of filtering compares the supplied set of
 filters against each object return in the Dexie colletion.
 This is a much slower than filtering against an index.
 
+
 While Dexie supports a put operation which is similar to upsert,
 we're going with upsert which decides whether an insert or an
 update is required and calls the appropreiate function.
 
+
 ### configure
+
 
 This function splits up the filters by indexed verses not. The
 return value is a INoFilterHash.
-
 
 interface INoFilterHash {
 	indexedFilters: [INoFilterExpression]
 	nonIndexedFilters: [INoFilterExpression]
 }
 
+
 This function applies the provided sort items to the supplied
 Dexie:Collection. It should always sort on indexed columns and
 return a DexieCollection.
 
-
 NOTE: Need to research how to apply multi-column sorting.
+
 
 Applies the specified skip and take values to the final
 Dexie::Collection, if supplied.
 
-
 Note that this is the function returns the final Array of items
 based on all of the properties applied prior to this call.
+
 
 The promise should resolve to a Dexie::Collection that will result in
 a set of data that matches the supplied filters, reject errors.
 
+
 The update function expects the key to be within the update object.
 
+
 Maps to the Dexie.Table.get method.
+
 
 ### \_extendDexieTables
 

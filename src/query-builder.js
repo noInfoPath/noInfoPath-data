@@ -1,13 +1,14 @@
+//query-builder.js
 /*
-* ## @interface INoQueryBuilder
+* ## @interface INoQueryParser
 *
-* > INoQueryBuilder is a conceptual entity, it does not really exist
+* > INoQueryParser is a conceptual entity, it does not really exist
 * > the reality. This is because JavaScript does not implement interfaces
-* > like other languages do. This documentation should be considered as a
-* > guide for creating query providers compatible with NoInfoPath.
+* > like other languages do. This documentation should be considered a
+* > guide for creating query parsers compatible with NoInfoPath.
 *
 * ### Overview
-* INoQueryBuilder provides a service interface definition for converting a set
+* INoQueryParser provides a service interface definition for converting a set
 * of NoInfoPath class related to querying data into a given query protocol.
 * An example of this is the ODATA 2.0 specification.
 *
@@ -26,10 +27,30 @@
 * ##### Returns
 * Object
 *
-*/
-
-/*
-* ## @service noOdataQueryBuilder : INoQueryBuilder
+*
+*	## noQueryParser
+*
+*	### Overview
+*	The noQueryParser takes the `data` property of the options
+*	parameter passed to the Kendo DataSources transport.read method. The
+*	data object is inspected and its filter, sort, and paging values are
+*	converted to NoInfoPath compatible versions.
+*
+*	### Methods
+*
+*	#### parse(options)
+*	Parses provided filter, sort and paging options into NoInfoPath compatible
+*   objects. Stores the results internally for future use.
+*
+*   ##### Returns
+*	Any/all filters, sorts or paging data as an array compatible
+*	with a call to `function.prototype.array`.
+*
+*	### Properties
+*   None.
+*
+*
+* ##  noQueryParser : INoQueryParser
 *
 * ### Overview
 *
@@ -37,9 +58,37 @@
 * NoSort, NoPage into ODATA compatible query object.
 *
 */
-
 (function(angular, undefined){
 	angular.module("noinfopath.data")
+        .service("noQueryParser",[function(){
+            var filters, sort, paging;
+
+            this.parse = function(options){
+                var filters, sort, paging;
+
+                //filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
+                //{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
+                if(!!options.take) paging = new noInfoPath.data.NoPage(options.skip, options.take);
+                if(!!options.sort) sort = new noInfoPath.data.NoSort(options.sort);
+                if(!!options.filter) filters = new noInfoPath.data.NoFilters(options.filter);
+
+                return toArray(filters, sort, paging);
+            };
+
+            function toArray(filters, sort, paging){
+                var arr = [];
+
+                if(!!filters) arr.push(filters);
+
+                if(!!sort) arr.push(sort);
+
+                if(!!paging) arr.push(paging);
+
+                if(arr.length === 0) arr = undefined;
+
+                return arr;
+            }
+        }])
 
 		.service("noOdataQueryBuilder", ['$filter', function($filter){
 			var odataFilters = {
@@ -248,5 +297,6 @@
 				return query;
 			};
 		}])
+
 	;
 })(angular);
