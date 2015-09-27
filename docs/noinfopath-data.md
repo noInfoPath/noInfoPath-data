@@ -254,7 +254,7 @@ NoFilters is an array of NoFilter objects.
 
 ### Constructors
 
-####NoFilters()
+#### NoFilters()
 
 ##### Usage
 
@@ -968,4 +968,46 @@ Maps to the Dexie.Table.get method.
 
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.
+
+## noDataSource Service
+
+Provides a generic service that exposes the NoInfoPath data providers'
+underlying CRUD interface.
+
+```json
+
+"noDataSource": {
+       "dataProvider": "noWebSQL",
+       "databaseName": "FCFNv2",
+       "entityName": "LU_PercentColor",
+       "primaryKey": "PercentColorID",
+       "queryParser": "noQueryParser",
+       "sort":  [{"field": "Percentage", "dir": "asc"}]
+   }
+
+```
+
+  ### resolveFilterValues(filters)
+
+  > TODO: Implement support for delayed (waitFor) filter values.
+
+  > NOTE: If a filter.value is an object and it has a source
+  > property set to `scope` then use the directives scope variable. Otherwise assume source is an injectable.
+
+#### create(dsConfigKey)
+
+create a new instance of a NoDataSource object configured
+based on the datasource configuration found in noConfig
+at the given `dsConfigKey` location.
+
+##### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|dsConfigKey|String|The location in noConfig where the data source's configuration can be found.  Can be a complex name like the following.  `noForms.myForm1.noComponents.foo.noDataSource`|
+
+##### Returns
+
+An instance of a NoDataSource object.
+
 
