@@ -31,7 +31,14 @@
 
         /**
         *   ### resolveFilterValues(filters)
-        *
+        *   #### This is more information
+		*
+		*	> Note of some kind
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|Foo|Number|Does something fun.|
+		*
         *   > TODO: Implement support for delayed (waitFor) filter values.
         *
         *   > NOTE: If a filter.value is an object and it has a source

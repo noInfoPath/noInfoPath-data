@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.18
+*	@version 0.2.19
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4045,7 +4045,14 @@ var GloboTest = {};
 
         /**
         *   ### resolveFilterValues(filters)
-        *
+        *   #### This is more information
+		*
+		*	> Note of some kind
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|Foo|Number|Does something fun.|
+		*
         *   > TODO: Implement support for delayed (waitFor) filter values.
         *
         *   > NOTE: If a filter.value is an object and it has a source
