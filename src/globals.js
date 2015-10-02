@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.19
+*	@version 0.2.20
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -89,7 +89,7 @@
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){
+		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter',  function($injector, $parse, $timeout, $q, $rootScope, $browser, $filter){
 
 			function _digestTimeout(){
 
@@ -151,12 +151,17 @@
 		 		return getter(store);
 			}
 
+            function _toDbDate(date){
+                return $filter("date")(date, "yyyy-MM-ddTHH:mm:ssZ");
+            }
+
 			var _data = {
 				getItem: _getItem,
 				setItem: _setItem,
 				digest: _digest,
 				digestError: _digestError,
-				digestTimeout: _digestTimeout
+				digestTimeout: _digestTimeout,
+                toDbDate: _toDbDate
 			};
 
 			angular.extend(noInfoPath, _data);

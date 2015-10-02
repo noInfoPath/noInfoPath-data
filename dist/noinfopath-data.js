@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.19
+*	@version 0.2.20
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -89,7 +89,7 @@
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){
+		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter',  function($injector, $parse, $timeout, $q, $rootScope, $browser, $filter){
 
 			function _digestTimeout(){
 
@@ -151,12 +151,17 @@
 		 		return getter(store);
 			}
 
+            function _toDbDate(date){
+                return $filter("date")(date, "yyyy-MM-ddTHH:mm:ssZ");
+            }
+
 			var _data = {
 				getItem: _getItem,
 				setItem: _setItem,
 				digest: _digest,
 				digestError: _digestError,
-				digestTimeout: _digestTimeout
+				digestTimeout: _digestTimeout,
+                toDbDate: _toDbDate
 			};
 
 			angular.extend(noInfoPath, _data);
@@ -2337,7 +2342,7 @@ var GloboTest = {};
 
 	}
 
-	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){
+	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser){
 		var stmts = {
 			"T": noWebSQLParser.createSqlTableStmt,
 			"V": noWebSQLParser.createSqlViewStmt
@@ -2528,7 +2533,10 @@ var GloboTest = {};
 						function(t, resultset){
 							deferred.resolve(resultset);
 						},
-						deferred.reject
+                        function(t,r,x){
+                            deferred.reject({tx: t, err: r});
+                        }
+
 					);
 				});
 
@@ -2545,7 +2553,9 @@ var GloboTest = {};
 			* |operation|String|Either one of (C\|U\|D\|BD\|BC)|
 			* |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 			* |data|Object|Name Value Pairs|
-			*/
+            *
+            *
+            */
 
 			function webSqlOperation(operation, data, noTransaction){
 				// noTransaction is not required, but is needed to track transactions
@@ -2593,7 +2603,13 @@ var GloboTest = {};
 					},
 					sqlOps = {
 						"C": function(data, noFilters, noTransaction){
+                            data.CreatedBy = noLoginService.user.userID;
+                            data.DateCreated = noInfoPath.toDbDate(new Date());
+                            data.ModifiedBy = noLoginService.user.userID;
+                            data.ModifiedDate = noInfoPath.toDbDate(new Date());
+
 							var sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
+
 							_exec(sqlStmt)
 								.then(function(result){
 									_getOne(result.insertId)
@@ -2606,11 +2622,24 @@ var GloboTest = {};
 								.catch(deferred.reject);
 						},
 						"U": function(data, noFilters, noTransaction){
-							sqlOps.C(data, noFilters);
-						},
+                            data.ModifiedBy = noLoginService.user.userID;
+                            data.ModifedDate = noInfoPath.toDbDate(new Date());
+
+                            var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters);
+
+							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]})
+								.then(function(result){
+									_exec(sqlStmt)
+										.then(function(result){
+											if(noTransaction) noTransaction.addChange(_tableName, this, "U");
+											deferred.resolve(result);
+										}.bind(result))
+										.catch(deferred.reject);
+								})
+								.catch(deferred.reject);						},
 						"D": function(data, noFilters, noTransaction){
 							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters);
-							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
+							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]})
 								.then(function(result){
 									_exec(sqlStmt)
 										.then(function(result){
@@ -3027,8 +3056,8 @@ var GloboTest = {};
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){
-	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser);
+		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noLoginService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser){
+	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser);
 		}])
 		.service("noWebSQLParser", [function(){
 			return new NoWebSQLParser();
@@ -3037,6 +3066,51 @@ var GloboTest = {};
 })(angular);
 
 //transaction.js
+/*  ## noTransactionCache service
+*
+*
+*
+*  #### noConfig notation example.
+*
+*   ```json
+*    "noTransaction": {
+*        "create": {
+*            [
+*               {
+*                    "entityName": "Observations",
+*                    "identityInsert": "lazy",
+*                    "identityType": "guid",
+*                    "order": 1
+*                }
+*            ]
+*        },
+*        "update": {
+*            [
+*               {
+*                    "entityName": "Observations",
+*                    "order": 1
+*                }
+*            ]
+*        },
+*        "destroy": {
+*            [
+*               {
+*                    "entityName": "Observations",
+*                    "order": 1
+*                }
+*            ]
+*        }
+*    }
+*   ```
+*   Each top-level property represents a crud operation that must
+*   be handled in a specific manner in order to ensure consistency.
+*   Within each operation is a list of NoTables that are part of the
+*   transaction.
+*
+*   For each table in the operation are instructions as to which entity are
+*   involved, how to carry out the transaction, and in what order.
+*
+*/
 (function(angular, undefined){
 	"use strict";
 
