@@ -1,5 +1,4 @@
 //classes.js
-
 /*
 * ## @class NoFilterExpression : Object
 *
@@ -24,9 +23,7 @@
 * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
 * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 * |logic|String|(Optional) One of the following values: `and`, `or`.|
-*/
-
-/*
+*
 * ## Class NoFilters : Array
 *
 * NoFilters is an array of NoFilterExpression objects.
@@ -51,9 +48,7 @@
 * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
 * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 * |logic|String|(Optional) One of the following values: `and`, `or`.|
-*/
-
-/*
+*
 * ## Class NoSortExpression : Object
 *
 * Represents a single sort expression that can be applied to an `IDBObjectStore`.
@@ -68,9 +63,7 @@
 * |----|----|------------|
 * |column|String|The name of the column filter on.|
 * |dir|String|(Optional) One of the following values: `asc`, `desc`.|
-*/
-
-/*
+*
 * ## Class NoSort : Array
 *
 * NoSort is an array of NoSortExpression objects.
@@ -93,9 +86,8 @@
 * |----|----|------------|
 * |column|String|The name of the column filter on.|
 * |dir|String|(Optional) One of the following values: `asc`, `desc`.|
-*/
-
-/*
+*
+*
 * ## Class NoPage : Object
 *
 * NoPage represent that information required to support paging of a data set.
@@ -111,9 +103,8 @@
 * |skip|Number|Number of objects to skip before returning the desired amount specified in `take`.|
 * |take|Number|Number of objects records to return when paging data.|
 *
-*/
-
-/*
+*
+*
 * ## Class NoResults : Object
 *
 * NoResults is a wrapper around a standard JavaScript Array instance. It inherits all properties and method offered by Array, but adds support for paged queries.
@@ -153,8 +144,6 @@
 * ##### Returns
 * void
 */
-
-
 (function(angular, undefined){
 	"use strict";
 
@@ -192,8 +181,7 @@
 		this.value = value;
 		this.logic = logic;
 
-		this.toSQL = function()
-		{
+		this.toSQL = function(){
 			var sqlOperators = {
 				"eq" : "=",
 				"ne" : "!=",
@@ -225,7 +213,7 @@
 	*
 	* ### Constructors
 	*
-	* ####NoFilters()
+	* #### NoFilters()
 	*
 	* ##### Usage
 	*
@@ -400,18 +388,6 @@
 		// }
 	}
 
-	function NoSortExpression(column, dir){
-
-		if(!column) throw "NoFilters::add requires a column to sort on.";
-
-		this.column = column;
-		this.dir = dir;
-
-		this.toSQL = function(){
-			return this.column + (this.dir ? " " + this.dir : "");
-		};
-	}
-
 	/*
 	* ## Class NoSort : Array
 	*
@@ -438,6 +414,17 @@
 	* |column|String|The name of the column filter on.|
 	* |dir|String|(Optional) One of the following values: `asc`, `desc`.|
 	*/
+	function NoSortExpression(column, dir){
+
+		if(!column) throw "NoFilters::add requires a column to sort on.";
+
+		this.column = column;
+		this.dir = dir;
+
+		this.toSQL = function(){
+			return this.column + (this.dir ? " " + this.dir : "");
+		};
+	}
 
 	function NoSort() {
 		var arr = [ ];
@@ -450,7 +437,17 @@
 			}
 		});
 
-		arr.push.apply(arr, arguments.length ? arguments[0] : []);
+        if(arguments.length){
+            var raw = arguments[0];
+
+            for(var s in raw){
+                var sort = raw[s];
+                arr.push(new NoSortExpression(sort.field, sort.dir));
+            }
+
+        }
+
+		//arr.push.apply(arr, arguments.length ? arguments[0] : []);
 		arr.add = function(column, dir) {
 			if(!column) throw "NoSort::add requires a column to filter on.";
 
@@ -462,11 +459,10 @@
 			var sqlOrder = "ORDER BY ",
 			sortExpressions = [];
 
-			this.forEach(function(o, index, array){
+            angular.forEach(this, function(sort){
+                sortExpressions.push(sort.toSQL());
+            });
 
-				sortExpressions.push(o.toSQL());
-
-			});
 
 			return sqlOrder + sortExpressions.join(',');
 		};

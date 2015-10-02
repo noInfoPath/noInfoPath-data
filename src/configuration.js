@@ -1,6 +1,5 @@
 //configuration.js
-
-/**
+/*
 * ## @service noConfig
 *
 * ### Overview
@@ -56,7 +55,6 @@
 * AngularJS::promise
 *
 */
-
 (function(angular, undefined){
 	"use strict";
 

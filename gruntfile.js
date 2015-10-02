@@ -32,8 +32,9 @@ module.exports = function(grunt) {
 					'src/websql.js',
 					//'src/manifest.js',
 					'src/transaction-cache.js',
-					'src/noInitDatabases.js',
-					'src/indexeddb.js'
+					//'src/noInitDatabases.js',
+					'src/indexeddb.js',
+					'src/data-source.js'
 				],
 				dest: 'dist/noinfopath-data.js'
 			},
@@ -62,10 +63,10 @@ module.exports = function(grunt) {
 				configFile: "karma.conf.noConfig.js",
 				singleRun: true
 			},
-			noInitDatabases: {
+			/*noInitDatabases: {
 				configFile: "karma.conf.noInitDatabases.js",
 				singleRun: true
-			},
+			},*/
 			continuous: {
 				configFile: 'karma.conf.js',
 				singleRun: true,
@@ -106,7 +107,7 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			files: ['src/*.js', 'test/*.spec.js'],
-			tasks: ['jenkins']
+			tasks: ['document']
 		},
 		uglify: {
 			options: {

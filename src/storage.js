@@ -1,9 +1,7 @@
 //storage.js
-
 /**
 	### @class MockStorage
 */
-
 (function(){
 	"use strict";
 

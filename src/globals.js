@@ -1,69 +1,62 @@
 //globals.js
-
 /*
- *	# noinfopath-data
- *	@version 0.2.18
- *
- *	## Overview
- *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
- *
- *	[![Build Status](http://192.168.254.94:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://192.168.254.94:8081/job/noinfopath-data/6/)
- *
- *	## Dependencies
- *
- *	- AngularJS
- *	- jQuery
- *	- ngLodash
- *	- Dexie
- *	- Dexie Observable
- *	- Dexie Syncable
-*/
-
-/**
- *	## Development Dependencies
- *
- *	> See `package.json` for exact version requirements.
- *
- *	- indexedDB.polyfill
- *	- angular-mocks
- *	- es5-shim
- *	- grunt
- *	- grunt-bumpup
- * - grunt-version
- *	- grunt-contrib-concat
- *	- grunt-contrib-copy
- *	- grunt-contrib-watch
- *	- grunt-karma
- *	- jasmine-ajax
- *	- jasmine-core
- *	- jshint-stylish
- *	- karma
- *	- karma-chrome-launcher
- *	- karma-coverage
- *	- karma-firefox-launcher
- *	- karma-html-reporter
- *	- karma-ie-launcher
- *	- karma-jasmine
- *	- karma-phantomjs-launcher
- *	- karma-safari-launcher
- *	- karma-verbose-reporter
- *	- noinfopath-helpers
- *	- phantomjs
-*/
-
-/**
- *	## Developers' Remarks
- *
- *	|Who|When|What|
- *	|---|----|----|
- *	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
-*/
-
-
-/*
+*	# noinfopath-data
+*	@version 0.2.20
+*
+*	## Overview
+*	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
+*
+*	[![Build Status](http://192.168.254.94:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://192.168.254.94:8081/job/noinfopath-data/6/)
+*
+*	## Dependencies
+*
+*	- AngularJS
+*	- jQuery
+*	- ngLodash
+*	- Dexie
+*	- Dexie Observable
+*	- Dexie Syncable
+*
+*	## Development Dependencies
+*
+*	> See `package.json` for exact version requirements.
+*
+*	- indexedDB.polyfill
+*	- angular-mocks
+*	- es5-shim
+*	- grunt
+*	- grunt-bumpup
+*   - grunt-version
+*	- grunt-contrib-concat
+*	- grunt-contrib-copy
+*	- grunt-contrib-watch
+*	- grunt-karma
+*	- jasmine-ajax
+*	- jasmine-core
+*	- jshint-stylish
+*	- karma
+*	- karma-chrome-launcher
+*	- karma-coverage
+*	- karma-firefox-launcher
+*	- karma-html-reporter
+*	- karma-ie-launcher
+*	- karma-jasmine
+*	- karma-phantomjs-launcher
+*	- karma-safari-launcher
+*	- karma-verbose-reporter
+*	- noinfopath-helpers
+*	- phantomjs
+*
+*	## Developers' Remarks
+*
+*	|Who|When|What|
+*	|---|----|----|
+*	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
+*
 * ## @interface noInfoPath
 *
 * ### Overview
+*
 * This interface exposes some useful funtions on the global scope
 * by attaching it to the `window` object as ```window.noInfoPath```
 *
@@ -88,18 +81,15 @@
 * #### digestError `deprecated`
 *
 * #### digestTimeout `deprecated`
- */
-
-//(noInfoPath = noInfoPath || {});
+*/
 (noInfoPath.data = {});
-
 (function(angular, undefined){
  	"use strict";
 
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser',  function($injector, $parse, $timeout, $q, $rootScope, $browser){
+		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter',  function($injector, $parse, $timeout, $q, $rootScope, $browser, $filter){
 
 			function _digestTimeout(){
 
@@ -161,16 +151,20 @@
 		 		return getter(store);
 			}
 
+            function _toDbDate(date){
+                return $filter("date")(date, "yyyy-MM-ddTHH:mm:ssZ");
+            }
+
 			var _data = {
 				getItem: _getItem,
 				setItem: _setItem,
 				digest: _digest,
 				digestError: _digestError,
-				digestTimeout: _digestTimeout
+				digestTimeout: _digestTimeout,
+                toDbDate: _toDbDate
 			};
 
 			angular.extend(noInfoPath, _data);
 		}])
-
 	;
 })(angular);
