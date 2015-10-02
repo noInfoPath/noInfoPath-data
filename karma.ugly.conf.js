@@ -23,45 +23,21 @@ module.exports = function(config) {
         'node_modules/noinfopath/dist/noinfopath.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
         'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
-        'node_modules/noinfopath-logger/dist/noinfopath-logger.js',
         'lib/indexedDB.polyfill.js',
-        'lib/dexie.js',
-        'lib/dexie.observable.js',
-        'lib/dexie.syncable.js',
-
-
-
-        //'test/mock/noinfopath.mock.js',
-        'test/mock/db.json.mock.js',
-        'test/mock/sql-builder.mock.js',
-        'test/mock/configuration.mock.js',
-        'test/mock/schema.mock.js',
-
-
-		'src/globals.js',
-		'src/classes.js',
-		'src/configuration.js',
-        'src/http.js',
-       'src/indexeddb.js',
-       // 'src/manifest.js',
-        'src/storage.js',
+        'dist/noinfopath-dexie.js',
+        'dist/noinfopath-data.min.js',
+        //'src/configuration.js',
+        //'src/http.js',
+        //'src/indexeddb.js',
+        //'src/manifest.js',
+        //'src/storage.js',
         //'src/dexie.js',
-        'src/schema.js',
-        'src/query-builder.js',
-        'src/sql-builder.js',
-        'src/websql.js',
-		'src/transaction-cache.js',
+        //'src/query-builder.js',
 
-        //'test/date-formatter.spec.js'
-        'test/storage.spec.js',
-        'test/http.spec.js',
-        'test/configuration.spec.js',
-        'test/query-builder.spec.js',
-        'test/classes.spec.js',
-        'test/schema.spec.js',
-		'test/websql-parser.spec.js'
-        //'test/websql.spec.js'
-      //  'test/sql-builder.spec.js'
+        //'test/storage.spec.js',
+        //'test/http.spec.js'
+        //'test/configuration.spec.js',
+        'test/query-builder.spec.js'
     ],
 
 
@@ -85,7 +61,7 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['verbose', 'coverage'],
+    reporters: ['verbose'],
 
 
     // web server port
@@ -107,7 +83,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome'],
 
 
     // Continuous Integration mode
