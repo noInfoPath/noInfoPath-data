@@ -1,4 +1,49 @@
 //transaction.js
+/*  ## noTransactionCache service
+*
+*
+*
+*  #### noConfig notation example.
+*
+*   ```json
+*    "noTransaction": {
+*        "create": {
+*            [
+*               {
+*                    "entityName": "Observations",
+*                    "identityInsert": "lazy",
+*                    "identityType": "guid",
+*                    "order": 1
+*                }
+*            ]
+*        },
+*        "update": {
+*            [
+*               {
+*                    "entityName": "Observations",
+*                    "order": 1
+*                }
+*            ]
+*        },
+*        "destroy": {
+*            [
+*               {
+*                    "entityName": "Observations",
+*                    "order": 1
+*                }
+*            ]
+*        }
+*    }
+*   ```
+*   Each top-level property represents a crud operation that must
+*   be handled in a specific manner in order to ensure consistency.
+*   Within each operation is a list of NoTables that are part of the
+*   transaction.
+*
+*   For each table in the operation are instructions as to which entity are
+*   involved, how to carry out the transaction, and in what order.
+*
+*/
 (function(angular, undefined){
 	"use strict";
 

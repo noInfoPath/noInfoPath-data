@@ -277,7 +277,7 @@
 
 	}
 
-	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){
+	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser){
 		var stmts = {
 			"T": noWebSQLParser.createSqlTableStmt,
 			"V": noWebSQLParser.createSqlViewStmt
@@ -468,7 +468,10 @@
 						function(t, resultset){
 							deferred.resolve(resultset);
 						},
-						deferred.reject
+                        function(t,r,x){
+                            deferred.reject({tx: t, err: r});
+                        }
+
 					);
 				});
 
@@ -485,7 +488,9 @@
 			* |operation|String|Either one of (C\|U\|D\|BD\|BC)|
 			* |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 			* |data|Object|Name Value Pairs|
-			*/
+            *
+            *
+            */
 
 			function webSqlOperation(operation, data, noTransaction){
 				// noTransaction is not required, but is needed to track transactions
@@ -533,7 +538,13 @@
 					},
 					sqlOps = {
 						"C": function(data, noFilters, noTransaction){
+                            data.CreatedBy = noLoginService.user.userID;
+                            data.DateCreated = noInfoPath.toDbDate(new Date());
+                            data.ModifiedBy = noLoginService.user.userID;
+                            data.ModifiedDate = noInfoPath.toDbDate(new Date());
+
 							var sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
+
 							_exec(sqlStmt)
 								.then(function(result){
 									_getOne(result.insertId)
@@ -546,11 +557,24 @@
 								.catch(deferred.reject);
 						},
 						"U": function(data, noFilters, noTransaction){
-							sqlOps.C(data, noFilters);
-						},
+                            data.ModifiedBy = noLoginService.user.userID;
+                            data.ModifedDate = noInfoPath.toDbDate(new Date());
+
+                            var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters);
+
+							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]})
+								.then(function(result){
+									_exec(sqlStmt)
+										.then(function(result){
+											if(noTransaction) noTransaction.addChange(_tableName, this, "U");
+											deferred.resolve(result);
+										}.bind(result))
+										.catch(deferred.reject);
+								})
+								.catch(deferred.reject);						},
 						"D": function(data, noFilters, noTransaction){
 							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters);
-							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]}, tx)
+							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]})
 								.then(function(result){
 									_exec(sqlStmt)
 										.then(function(result){
@@ -967,8 +991,8 @@
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser){
-	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLocalStorage, noWebSQLParser);
+		.factory("noWebSQL",["$parse","$rootScope","lodash", "$q", "$timeout", "noLogService", "noLoginService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser){
+	      	return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser);
 		}])
 		.service("noWebSQLParser", [function(){
 			return new NoWebSQLParser();

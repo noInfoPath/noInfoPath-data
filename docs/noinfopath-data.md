@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 0.2.19
+@version 0.2.20
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -714,6 +714,8 @@ CRUD interface for WebSql
 |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
 |data|Object|Name Value Pairs|
 
+
+
 ### noCreate(data, noTransaction)
 
 Inserts a record into the websql database with the data provided.
@@ -804,6 +806,7 @@ Reads a record from the websql database based on the Primary Key of the data pro
 |Name|Type|Description|
 |----|----|-----------|
 |data|Object|Name Value Pairs|
+
 
 ## noIndexedDB
 The noIndexedDB factory creates and configures a new instance of Dexie.
