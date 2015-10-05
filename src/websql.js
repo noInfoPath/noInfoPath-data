@@ -538,9 +538,9 @@
 					},
 					sqlOps = {
 						"C": function(data, noFilters, noTransaction){
-                            data.CreatedBy = noLoginService.user.userID;
+                            data.CreatedBy = noLoginService.user.userId;
                             data.DateCreated = noInfoPath.toDbDate(new Date());
-                            data.ModifiedBy = noLoginService.user.userID;
+                            data.ModifiedBy = noLoginService.user.userId;
                             data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
 							var sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
@@ -557,17 +557,24 @@
 								.catch(deferred.reject);
 						},
 						"U": function(data, noFilters, noTransaction){
-                            data.ModifiedBy = noLoginService.user.userID;
-                            data.ModifedDate = noInfoPath.toDbDate(new Date());
+                            data.ModifiedBy = noLoginService.user.userId;
+                            data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-                            var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters);
+                            var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters),
+                                keys = [];
 
-							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]})
+                            for(var k in _table.primaryKey){
+                                var key = _table.primaryKey[k];
+
+                                keys.push(data[key]);
+                            }
+
+							 _getOne(keys.join(","))
 								.then(function(result){
 									_exec(sqlStmt)
 										.then(function(result){
 											if(noTransaction) noTransaction.addChange(_tableName, this, "U");
-											deferred.resolve(result);
+											deferred.resolve(data);
 										}.bind(result))
 										.catch(deferred.reject);
 								})
@@ -684,7 +691,7 @@
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);
@@ -762,7 +769,7 @@
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);
@@ -929,7 +936,7 @@
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);
@@ -972,7 +979,7 @@
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);

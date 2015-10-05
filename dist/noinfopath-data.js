@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.20
+*	@version 0.2.21
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2603,9 +2603,9 @@ var GloboTest = {};
 					},
 					sqlOps = {
 						"C": function(data, noFilters, noTransaction){
-                            data.CreatedBy = noLoginService.user.userID;
+                            data.CreatedBy = noLoginService.user.userId;
                             data.DateCreated = noInfoPath.toDbDate(new Date());
-                            data.ModifiedBy = noLoginService.user.userID;
+                            data.ModifiedBy = noLoginService.user.userId;
                             data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
 							var sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
@@ -2622,17 +2622,24 @@ var GloboTest = {};
 								.catch(deferred.reject);
 						},
 						"U": function(data, noFilters, noTransaction){
-                            data.ModifiedBy = noLoginService.user.userID;
-                            data.ModifedDate = noInfoPath.toDbDate(new Date());
+                            data.ModifiedBy = noLoginService.user.userId;
+                            data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-                            var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters);
+                            var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters),
+                                keys = [];
 
-							 _getOne({"key": _table.primaryKey, "value": data[_table.primaryKey]})
+                            for(var k in _table.primaryKey){
+                                var key = _table.primaryKey[k];
+
+                                keys.push(data[key]);
+                            }
+
+							 _getOne(keys.join(","))
 								.then(function(result){
 									_exec(sqlStmt)
 										.then(function(result){
 											if(noTransaction) noTransaction.addChange(_tableName, this, "U");
-											deferred.resolve(result);
+											deferred.resolve(data);
 										}.bind(result))
 										.catch(deferred.reject);
 								})
@@ -2749,7 +2756,7 @@ var GloboTest = {};
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);
@@ -2827,7 +2834,7 @@ var GloboTest = {};
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);
@@ -2994,7 +3001,7 @@ var GloboTest = {};
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);
@@ -3037,7 +3044,7 @@ var GloboTest = {};
 				}
 
 				function _txSuccess(data){
-					console.log("Tx Success", data);
+					//console.log("Tx Success", data);
 				}
 
 				_db.transaction(_txCallback, _txFailure, _txSuccess);
@@ -4210,13 +4217,13 @@ var GloboTest = {};
 		this.update = function(data, noTrans) {
 			if(isNoView) throw "update operation not support on entities of type NoView";
 
-			return entity.noUpdate(options, data);
+			return entity.noUpdate(data, noTrans);
 		};
 
 		this.destroy = function(data, noTrans) {
 			if(isNoView) throw "destroy operation not support on entities of type NoView";
 
-			return entity.noUpdate(options, data);
+			return entity.noUpdate(data, noTrans);
 		};
 
         this.one = function(options) {
