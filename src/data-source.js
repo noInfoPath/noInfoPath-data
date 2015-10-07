@@ -122,13 +122,13 @@
 		this.update = function(data, noTrans) {
 			if(isNoView) throw "update operation not support on entities of type NoView";
 
-			return entity.noUpdate(options, data);
+			return entity.noUpdate(data, noTrans);
 		};
 
 		this.destroy = function(data, noTrans) {
 			if(isNoView) throw "destroy operation not support on entities of type NoView";
 
-			return entity.noUpdate(options, data);
+			return entity.noUpdate(data, noTrans);
 		};
 
         this.one = function(options) {
