@@ -36,13 +36,11 @@ module.exports = function(config) {
         'test/mock/sql-builder.mock.js',
         'test/mock/configuration.mock.js',
         'test/mock/schema.mock.js',
-
-
 		'src/globals.js',
 		'src/classes.js',
 		'src/configuration.js',
         'src/http.js',
-       'src/indexeddb.js',
+        'src/indexeddb.js',
        // 'src/manifest.js',
         'src/storage.js',
         //'src/dexie.js',
@@ -50,7 +48,8 @@ module.exports = function(config) {
         'src/query-builder.js',
         'src/sql-builder.js',
         'src/websql.js',
-		'src/transaction-cache.js',
+		'src/data-source.js',
+        //'src/transaction-cache.js',
 
         //'test/date-formatter.spec.js'
         'test/storage.spec.js',
@@ -85,6 +84,7 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
+    // reporters: ['verbose', 'coverage'],
     reporters: ['verbose', 'coverage'],
 
 

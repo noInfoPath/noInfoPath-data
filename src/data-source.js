@@ -29,6 +29,12 @@
             _scope = scope
 		;
 
+        Object.defineProperties(this, {
+            "entity": {
+                "get": function() { return entity; }
+            }
+        });
+
         /**
         *   ### resolveFilterValues(filters)
         *   #### This is more information
@@ -164,8 +170,6 @@
             return $q(function(resolve, reject){
                 var waitFor, filterValues;
 
-
-
                 if(dsConfig.waitFor){
                     waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
                         if(newval){
@@ -186,7 +190,6 @@
 	}
 
 	angular.module("noinfopath.data")
-
 		.service("noDataSource", ["$injector", "$q", function($injector, $q){
 			/*
 			*	#### create(dsConfigKey)
@@ -206,8 +209,8 @@
 			*	An instance of a NoDataSource object.
 			*
 			*/
-			this.create = function(dsConifg, scope){
-				return new NoDataSource($injector, $q, dsConifg, scope);
+			this.create = function(dsConfig, scope){
+				return new NoDataSource($injector, $q, dsConfig, scope);
 			};
 		}])
 	;
