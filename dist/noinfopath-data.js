@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.21
+*	@version 0.2.22
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3128,12 +3128,10 @@ var GloboTest = {};
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$q", "noIndexedDb", "lodash", "$rootScope", "$timeout", function($q, noIndexedDb, _, $rootScope, $timeout){
+		.factory("noTransactionCache", ["$q","noIndexedDb", "lodash", "noDataSource", function($q, noIndexedDb, _, noDataSource){
 
-
-
-			function NoTransaction(userID, transaction){
-				var SELF = this;
+			function NoTransaction(userId, noTransConfig){
+				var transCfg = noTransConfig;
 
 				Object.defineProperties(this, {
 					"__type": {
@@ -3143,9 +3141,9 @@ var GloboTest = {};
 					}
 				});
 
-				this.transactionID = noInfoPath.createUUID();
+				this.transactionId = noInfoPath.createUUID();
 				this.timestamp = new Date().valueOf();
-				this.userID = userID;
+				this.userId = userId;
 				this.changes = new NoChanges();
 
 				this.addChange = function(tableName, data, changeType){
@@ -3159,6 +3157,43 @@ var GloboTest = {};
 					return json;
 				};
 
+                this.upsert = function upsert(entityName, scope){
+                    var THIS = this,
+                        deferred = $q.defer(),
+                        entityCfg = transCfg.entities[entityName],
+                        data = scope[entityCfg.source.property],
+                        opType = data[entityCfg.source.primaryKey] ? "update" : "create",
+                        opEntites = entityCfg.operations[opType],
+                        curOpEntity = 0;
+
+                    function _recurse(entityCfg){
+                        var curEntity = opEntites[curOpEntity++],
+                            dsConfig, dataSource;
+
+                        if(curEntity){
+                            dsConfig = angular.merge({entityName: curEntity.entityName}, transCfg.noDataSource);
+                            dataSource = noDataSource.create(dsConfig, scope);
+
+                            dataSource[opType](data, THIS)
+                                .then(function(){
+                                    _recurse(entityCfg);
+                                })
+                                .catch(deferred.reject);
+
+                        }else{
+                            deferred.resolve();
+                        }
+                    }
+
+                    _recurse(entityCfg);
+
+                    return deferred.promise;
+                };
+
+                this.destroy = function(entityName, data){
+                    var entityTxCfg = noTxConfig[entityName];
+
+                };
 			}
 
 			function NoChanges(){
@@ -3190,87 +3225,26 @@ var GloboTest = {};
 				this.changeType = changeType;
 			}
 
-			function NoTransactionCache($q, noDataTransactionCache){
-				var SELF = this;
+			function NoTransactionCache(){
+				var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+                    entity = db.NoInfoPath_Changes;
 
-				this.whenReady = function(user){
-					var deferred = $q.defer();
 
-					$timeout(function(){
-						var no = "NoInfoPath_dtc_v1";
-
-						if($rootScope[no])
-						{
-							deferred.resolve();
-						}else{
-
-							$rootScope.$watch(no, function(newval, oldval, scope){
-								if(newval){
-									deferred.resolve(newval);
-								}
-							});
-
-							var config = {
-								"dbName": "NoInfoPath_dtc_v1",
-								"provider": "noIndexedDB",
-								"version": 1,
-								"schemaSource": {
-									"provider": "inline",
-									"schema": {
-										"store": {
-											"NoInfoPath_Changes": "$$ChangeID"
-										},
-										"tables": {
-											"NoInfoPath_Changes": {
-												"primaryKey": "ChangeID"
-											}
-										}
-									}
-								}
-							};
-
-							noIndexedDb.configure(user, config)
-								.then(function(){
-									$rootScope[no] = true;
-								})
-								.catch(function(err){
-									console.error(err);
-								});
-						}
-					}.bind(noIndexedDb));
-
-					return deferred.promise;
-				};
-
-				this.beginTransaction = function(db, userId){
-
-					var deferred = $q.defer();
-
-					db.transaction(function(tx){
-						var t = new NoTransaction(userId, tx);
-
-						deferred.resolve(t);
-					}, function(err){
-						console.error(err);
-					});
-
-					return deferred.promise;
-				};
-
-				this.addChange = function(tableName, data, changeType){
-					_transaction.addChange(tableName, data, changeType);
-				};
+                this.beginTransaction = function(userId, noTransConfig){
+                    return new NoTransaction(userId, noTransConfig);
+                };
 
 				this.endTransaction = function(transaction){
-					return noDataTransactionCache.NoInfoPath_Changes.noCreate(transaction.toObject());
+					return entity.noCreate(transaction.toObject());
 				};
+
 			}
 
-			// These classes are exposed for testing purposes
-			noInfoPath.data.NoTransaction = NoTransaction;
-			noInfoPath.data.NoChanges = NoChanges;
-			noInfoPath.data.NoChange = NoChange;
-			noInfoPath.data.NoTransactionCache = NoTransactionCache;
+			// // These classes are exposed for testing purposes
+			// noInfoPath.data.NoTransaction = NoTransaction;
+			// noInfoPath.data.NoChanges = NoChanges;
+			// noInfoPath.data.NoChange = NoChange;
+			// noInfoPath.data.NoTransactionCache = NoTransactionCache;
 
 			return new NoTransactionCache($q, noIndexedDb);
 		}])
@@ -4130,6 +4104,12 @@ var GloboTest = {};
             _scope = scope
 		;
 
+        Object.defineProperties(this, {
+            "entity": {
+                "get": function() { return entity; }
+            }
+        });
+
         /**
         *   ### resolveFilterValues(filters)
         *   #### This is more information
@@ -4265,8 +4245,6 @@ var GloboTest = {};
             return $q(function(resolve, reject){
                 var waitFor, filterValues;
 
-
-
                 if(dsConfig.waitFor){
                     waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
                         if(newval){
@@ -4287,7 +4265,6 @@ var GloboTest = {};
 	}
 
 	angular.module("noinfopath.data")
-
 		.service("noDataSource", ["$injector", "$q", function($injector, $q){
 			/*
 			*	#### create(dsConfigKey)
@@ -4307,8 +4284,8 @@ var GloboTest = {};
 			*	An instance of a NoDataSource object.
 			*
 			*/
-			this.create = function(dsConifg, scope){
-				return new NoDataSource($injector, $q, dsConifg, scope);
+			this.create = function(dsConfig, scope){
+				return new NoDataSource($injector, $q, dsConfig, scope);
 			};
 		}])
 	;
