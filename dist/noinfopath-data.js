@@ -526,25 +526,26 @@
 			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
 		}, this);
 
+
+
 		this.toSQL = function(){
-			var rs = "",
-			filterArray = [],
-			filterArrayString = "";
+					var rs = "",
+					filterArray = [],
+					filterArrayString = "";
 
-			angular.forEach(this.filters, function(value, key){
-				filterArray.push(this.column + " " + value.toSQL());
-			}, this);
+					angular.forEach(this.filters, function(value, key){
+						filterArray.push(this.column + " " + value.toSQL());
+					}, this);
 
-			filterArrayString = filterArray.join(" ");
+					filterArrayString = filterArray.join(" ");
 
-			if(!!this.beginning) rs = "(";
-			rs += filterArrayString;
-			if(!!this.end) rs += ")";
-			if(!!this.logic) rs += " " + logic + " ";
+					if(!!this.beginning) rs = "(";
+					rs += filterArrayString;
+					if(!!this.end) rs += ")";
+					if(!!this.logic) rs += " " + logic + " ";
 
-			return rs;
-		};
-
+					return rs;
+				};
 		// this.add = function(column, logic, beginning, end, filters) {
 		// 	this.column = column;
 		// 	this.logic = logic;
@@ -651,6 +652,10 @@
 
 		this.skip = skip;
 		this.take = take;
+
+		this.toSQL = function(){
+			return "LIMIT " + this.take + " OFFSET " + this.skip;
+		};
 	}
 
 	function NoResults(arrayOfThings){
@@ -2278,11 +2283,12 @@ var GloboTest = {};
 					returnObject.queryString = DELETE + tableName + where;
 					return returnObject;
 				},
-				"sqlRead": function(tableName, filters, sort){
+				"sqlRead": function(tableName, filters, sort, page){
 					var fs, ss, ps, returnObject = {};
 					fs = !!filters ? " WHERE " + filters.toSQL() : "";
 					ss = !!sort ? " " + sort.toSQL() : "";
-					returnObject.queryString = READ + tableName + fs + ss;
+					ps = !!page ? " " + page.toSQL() : "";
+					returnObject.queryString = READ + tableName + fs + ss + ps;
 					return returnObject;
 				},
 				"sqlOne": function(tableName, primKey, value){
@@ -2328,8 +2334,8 @@ var GloboTest = {};
 			return _interface.sqlDelete(tableName, filters);
 		};
 
-		this.createSqlReadStmt = function(tableName, filters, sort){
-			return _interface.sqlRead(tableName, filters, sort);
+		this.createSqlReadStmt = function(tableName, filters, sort, page){
+			return _interface.sqlRead(tableName, filters, sort, page);
 		};
 
 		this.createSqlOneStmt = function(tableName, primKey, value){
@@ -2735,7 +2741,7 @@ var GloboTest = {};
 					}
 				}
 
-				readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort);
+				readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort, page);
 
 				function _txCallback(tx){
 					tx.executeSql(

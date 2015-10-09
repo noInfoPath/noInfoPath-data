@@ -213,11 +213,12 @@
 					returnObject.queryString = DELETE + tableName + where;
 					return returnObject;
 				},
-				"sqlRead": function(tableName, filters, sort){
+				"sqlRead": function(tableName, filters, sort, page){
 					var fs, ss, ps, returnObject = {};
 					fs = !!filters ? " WHERE " + filters.toSQL() : "";
 					ss = !!sort ? " " + sort.toSQL() : "";
-					returnObject.queryString = READ + tableName + fs + ss;
+					ps = !!page ? " " + page.toSQL() : "";
+					returnObject.queryString = READ + tableName + fs + ss + ps;
 					return returnObject;
 				},
 				"sqlOne": function(tableName, primKey, value){
@@ -263,8 +264,8 @@
 			return _interface.sqlDelete(tableName, filters);
 		};
 
-		this.createSqlReadStmt = function(tableName, filters, sort){
-			return _interface.sqlRead(tableName, filters, sort);
+		this.createSqlReadStmt = function(tableName, filters, sort, page){
+			return _interface.sqlRead(tableName, filters, sort, page);
 		};
 
 		this.createSqlOneStmt = function(tableName, primKey, value){
@@ -670,7 +671,7 @@
 					}
 				}
 
-				readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort);
+				readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort, page);
 
 				function _txCallback(tx){
 					tx.executeSql(

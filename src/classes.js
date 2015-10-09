@@ -355,25 +355,26 @@
 			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
 		}, this);
 
+
+
 		this.toSQL = function(){
-			var rs = "",
-			filterArray = [],
-			filterArrayString = "";
+					var rs = "",
+					filterArray = [],
+					filterArrayString = "";
 
-			angular.forEach(this.filters, function(value, key){
-				filterArray.push(this.column + " " + value.toSQL());
-			}, this);
+					angular.forEach(this.filters, function(value, key){
+						filterArray.push(this.column + " " + value.toSQL());
+					}, this);
 
-			filterArrayString = filterArray.join(" ");
+					filterArrayString = filterArray.join(" ");
 
-			if(!!this.beginning) rs = "(";
-			rs += filterArrayString;
-			if(!!this.end) rs += ")";
-			if(!!this.logic) rs += " " + logic + " ";
+					if(!!this.beginning) rs = "(";
+					rs += filterArrayString;
+					if(!!this.end) rs += ")";
+					if(!!this.logic) rs += " " + logic + " ";
 
-			return rs;
-		};
-
+					return rs;
+				};
 		// this.add = function(column, logic, beginning, end, filters) {
 		// 	this.column = column;
 		// 	this.logic = logic;
@@ -480,6 +481,10 @@
 
 		this.skip = skip;
 		this.take = take;
+
+		this.toSQL = function(){
+			return "LIMIT " + this.take + " OFFSET " + this.skip;
+		};
 	}
 
 	function NoResults(arrayOfThings){
