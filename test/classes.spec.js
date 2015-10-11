@@ -124,7 +124,7 @@ describe("Testing Classes", function(){
 			expect(sort.length).toBeGreaterThan(0);
 		});
 
-		it("should return an ODATA compatible sort object, when sort supplied alone.", function(){
+		xit("should return an ODATA compatible sort object, when sort supplied alone.", function(){
 			var sort = new noInfoPath.data.NoSort();
 			expect(sort).toBeDefined();
 			sort.add("Description", "desc");
@@ -134,7 +134,7 @@ describe("Testing Classes", function(){
 			expect(odata).toBe(expected);
 		});
 
-		it("should return an ODATA compatible sort object, when 2 sorts are supplied alone.", function(){
+		xit("should return an ODATA compatible sort object, when 2 sorts are supplied alone.", function(){
 			var sort = new noInfoPath.data.NoSort();
 			expect(sort).toBeDefined();
 			sort.add("Description", "desc");

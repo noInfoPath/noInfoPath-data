@@ -52,13 +52,13 @@ module.exports = function(config) {
         //'src/transaction-cache.js',
 
         //'test/date-formatter.spec.js'
-        'test/storage.spec.js',
-        'test/http.spec.js',
-        'test/configuration.spec.js',
-        'test/query-builder.spec.js',
+        // 'test/storage.spec.js',
+        // 'test/http.spec.js',
+        // 'test/configuration.spec.js',
+        // 'test/query-builder.spec.js',
         'test/classes.spec.js',
-        'test/schema.spec.js',
-		'test/websql-parser.spec.js'
+        // 'test/schema.spec.js',
+		// 'test/websql-parser.spec.js'
         //'test/websql.spec.js'
       //  'test/sql-builder.spec.js'
     ],
@@ -107,7 +107,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['PhantomJS'],
 
 
     // Continuous Integration mode
