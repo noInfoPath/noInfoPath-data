@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.22
+*	@version 0.2.23
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3517,7 +3517,7 @@ var GloboTest = {};
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage){
+	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser){
 
 		var _name;
 
@@ -3709,8 +3709,14 @@ var GloboTest = {};
 						"startswith": "startsWith",
 						"bt": "between"
 					},
-
-
+                    logic = {
+                        "and": function(a, b){
+                            return a && b;
+                        },
+                        "or": function(a, b){
+                            return a || b;
+                        }
+                    },
 					operators = {
 						"in": function(a, b){
 							return _.indexOf(b,a) > -1;
@@ -3812,12 +3818,12 @@ var GloboTest = {};
 							//noLogService.log(items);
 
 							switch(items.filter.logic){
-								case "or":
-									keys = _.union(keys, _.pluck(items.data, "pk"));
-									break;
-								case "and":
-									keys = _.intersection(keys, _.pluck(items.data, "pk"));
-									break;
+								// case "or":
+								// 	keys = _.union(keys, _.pluck(items.data, "pk"));
+								// 	break;
+								// case "and":
+								// 	keys = _.intersection(keys, _.pluck(items.data, "pk"));
+								// 	break;
 								default:
 									keys = keys.concat(_.pluck(items.data, "pk"));
 									break;
@@ -3900,7 +3906,6 @@ var GloboTest = {};
 
 				function _filterByIndex(filter, table) {
 					var deferred = $q.defer(),
-						operator = operators[filter.operator],
 						matchedKeys = [];
 
 
@@ -3909,11 +3914,33 @@ var GloboTest = {};
 							req = ndx.openCursor();
 
 						req.onsuccess = function(event){
-							var cursor = event.target.result;
+							var cursor = event.target.result,
+                                //When AND assume success look for failure. When OR assume failure until any match is found.
+                                matched = false;
 							if(cursor){
-								if(operator(cursor.key, filter.value)){
-									matchedKeys.push({pk: cursor.primaryKey, fk: cursor.key, obj: cursor.value});
-								}
+
+                                for(var f in filter.filters){
+                                    var fltr = filter.filters[f],
+                                        operator = operators[fltr.operator];
+
+                                    matched = operator(cursor.key, fltr.value);
+
+                                    if(filter.logic === "and"){
+                                        if(!matched){
+                                            break;
+                                        }
+                                    }else{ //Assume OR operator
+                                        if(matched){
+                                            break;
+                                        }
+                                    }
+
+                                }
+
+                                if(matched){
+                                    matchedKeys.push({pk: cursor.primaryKey, fk: cursor.key, obj: cursor.value});
+                                }
+
 								cursor.continue();
 							}else{
 								//noLogService.info(matchedKeys);
@@ -4251,7 +4278,7 @@ var GloboTest = {};
 
 		this.read = function(options) {
             function requestData(scope, config, entity, queryParser, resolve, reject){
-                var params = {},
+                var params = angular.merge({}, options),
                     filterValues = resolveFilterValues(dsConfig.filter, _scope);
 
                 if(config.filter){
@@ -4271,7 +4298,7 @@ var GloboTest = {};
                     params.sort = config.sort;
                 }
 
-                return entity.noRead.apply(null, queryParser.parse(params))
+                return entity.noRead.apply(entity, queryParser.parse(params))
                     .then(function(data){
                         resolve(data);
                     })
@@ -4345,6 +4372,8 @@ var GloboTest = {};
             return $q(function(resolve, reject){
                 var waitFor, filterValues;
 
+
+
                 if(dsConfig.waitFor){
                     waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
                         if(newval){
@@ -4365,6 +4394,7 @@ var GloboTest = {};
 	}
 
 	angular.module("noinfopath.data")
+
 		.service("noDataSource", ["$injector", "$q", function($injector, $q){
 			/*
 			*	#### create(dsConfigKey)
