@@ -164,7 +164,7 @@
 (function (angular, Dexie, undefined){
 	"use strict";
 
-	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage){
+	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser){
 
 		var _name;
 
@@ -356,8 +356,14 @@
 						"startswith": "startsWith",
 						"bt": "between"
 					},
-
-
+                    logic = {
+                        "and": function(a, b){
+                            return a && b;
+                        },
+                        "or": function(a, b){
+                            return a || b;
+                        }
+                    },
 					operators = {
 						"in": function(a, b){
 							return _.indexOf(b,a) > -1;
@@ -459,12 +465,12 @@
 							//noLogService.log(items);
 
 							switch(items.filter.logic){
-								case "or":
-									keys = _.union(keys, _.pluck(items.data, "pk"));
-									break;
-								case "and":
-									keys = _.intersection(keys, _.pluck(items.data, "pk"));
-									break;
+								// case "or":
+								// 	keys = _.union(keys, _.pluck(items.data, "pk"));
+								// 	break;
+								// case "and":
+								// 	keys = _.intersection(keys, _.pluck(items.data, "pk"));
+								// 	break;
 								default:
 									keys = keys.concat(_.pluck(items.data, "pk"));
 									break;
@@ -547,7 +553,6 @@
 
 				function _filterByIndex(filter, table) {
 					var deferred = $q.defer(),
-						operator = operators[filter.operator],
 						matchedKeys = [];
 
 
@@ -556,11 +561,33 @@
 							req = ndx.openCursor();
 
 						req.onsuccess = function(event){
-							var cursor = event.target.result;
+							var cursor = event.target.result,
+                                //When AND assume success look for failure. When OR assume failure until any match is found.
+                                matched = false;
 							if(cursor){
-								if(operator(cursor.key, filter.value)){
-									matchedKeys.push({pk: cursor.primaryKey, fk: cursor.key, obj: cursor.value});
-								}
+
+                                for(var f in filter.filters){
+                                    var fltr = filter.filters[f],
+                                        operator = operators[fltr.operator];
+
+                                    matched = operator(cursor.key, fltr.value);
+
+                                    if(filter.logic === "and"){
+                                        if(!matched){
+                                            break;
+                                        }
+                                    }else{ //Assume OR operator
+                                        if(matched){
+                                            break;
+                                        }
+                                    }
+
+                                }
+
+                                if(matched){
+                                    matchedKeys.push({pk: cursor.primaryKey, fk: cursor.key, obj: cursor.value});
+                                }
+
 								cursor.continue();
 							}else{
 								//noLogService.info(matchedKeys);
