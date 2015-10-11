@@ -76,7 +76,7 @@
 
 		this.read = function(options) {
             function requestData(scope, config, entity, queryParser, resolve, reject){
-                var params = {},
+                var params = angular.merge({}, options),
                     filterValues = resolveFilterValues(dsConfig.filter, _scope);
 
                 if(config.filter){
@@ -96,7 +96,7 @@
                     params.sort = config.sort;
                 }
 
-                return entity.noRead.apply(null, queryParser.parse(params))
+                return entity.noRead.apply(entity, queryParser.parse(params))
                     .then(function(data){
                         resolve(data);
                     })
@@ -170,6 +170,8 @@
             return $q(function(resolve, reject){
                 var waitFor, filterValues;
 
+
+
                 if(dsConfig.waitFor){
                     waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
                         if(newval){
@@ -190,6 +192,7 @@
 	}
 
 	angular.module("noinfopath.data")
+
 		.service("noDataSource", ["$injector", "$q", function($injector, $q){
 			/*
 			*	#### create(dsConfigKey)
