@@ -1018,7 +1018,7 @@
                     }
                 }
 
-                readObject = noWebSQLParser.createSqlReadStmt(_viewName, filters, sort);
+                readObject = noWebSQLParser.createSqlReadStmt(_viewName, filters, sort, page);
 
                 function _txCallback(tx) {
                     tx.executeSql(
