@@ -2071,6 +2071,7 @@ var GloboTest = {};
 	;
 })(angular);
 
+
 //websql.js
 (function(angular, undefined) {
     "use strict";
@@ -2125,7 +2126,7 @@ var GloboTest = {};
                 },
                 toSqlLiteConversionFunctions: {
                     "TEXT": function(s) {
-                        return angular.isString(s) ? "'" + s + "'" : null;
+                        return angular.isString(s) ? s : null;
                     },
                     "BLOB": function(b) {
                         return b;
@@ -2414,6 +2415,12 @@ var GloboTest = {};
         this.createSqlClearStmt = function(tableName) {
             return _interface.sqlDelete(tableName);
         };
+
+		this.convertToWebSQL = function(sqlColumn, sqlData){
+			var sqliteColumn = _interface.sqlConversion[sqlColumn];
+
+			return _interface.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
+		};
 
     }
 
