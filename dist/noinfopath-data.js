@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.24
+*	@version 0.2.25
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -670,7 +670,10 @@
             "total": {
                 "get": function() {
                     return _total;
-                }
+                },
+				"set": function(value){
+					_total = value;
+				}
             },
             "paged": {
                 "get": function() {
@@ -681,7 +684,7 @@
 
         arr.page = function(nopage) {
             if (!nopage) throw "nopage is a required parameter for NoResults::page";
-            _page = this.slice(nopage.skip, nopage.skip + nopage.take);
+            // _page = this.slice(nopage.skip, nopage.skip + nopage.take);
         };
 
         noInfoPath.setPrototypeOf(this, arr);
@@ -2068,6 +2071,7 @@ var GloboTest = {};
 	;
 })(angular);
 
+
 //websql.js
 (function(angular, undefined) {
     "use strict";
@@ -2122,7 +2126,7 @@ var GloboTest = {};
                 },
                 toSqlLiteConversionFunctions: {
                     "TEXT": function(s) {
-                        return angular.isString(s) ? "'" + s + "'" : null;
+                        return angular.isString(s) ? s : null;
                     },
                     "BLOB": function(b) {
                         return b;
@@ -2412,6 +2416,12 @@ var GloboTest = {};
             return _interface.sqlDelete(tableName);
         };
 
+		this.convertToWebSQL = function(sqlColumn, sqlData){
+			var sqliteColumn = _interface.sqlConversion[sqlColumn];
+
+			return _interface.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
+		};
+
     }
 
     function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
@@ -2655,22 +2665,7 @@ var GloboTest = {};
                     },
                     filterOps = {
                         "C": function(data) {
-                            var noFilters = new noInfoPath.data.NoFilters(),
-                                id;
-
-                            if (data[_table.primaryKey]) {
-                                id = data[_table.primaryKey];
-                            } else {
-                                id = noInfoPath.createUUID();
-                                data[_table.primaryKey] = id;
-                            }
-
-                            noFilters.add(_table.primaryKey, null, true, true, [{
-                                operator: "eq",
-                                value: id
-                            }]);
-
-                            return noFilters;
+                            return;
                         },
                         "U": function(data) {
                             var noFilters = new noInfoPath.data.NoFilters(),
@@ -2699,12 +2694,21 @@ var GloboTest = {};
                     },
                     sqlOps = {
                         "C": function(data, noFilters, noTransaction) {
+                            console.log(_table.primaryKey);
+                            var pk = angular.isArray(_table.primaryKey) ?
+                                _table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
+                                sqlStmt;
+
+                            if(pk && !data[pk]){
+                                data[_table.primaryKey] = noInfoPath.createUUID();
+                            }
+
                             data.CreatedBy = noLoginService.user.userId;
                             data.DateCreated = noInfoPath.toDbDate(new Date());
                             data.ModifiedBy = noLoginService.user.userId;
                             data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-                            var sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
+                            sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
 
                             _exec(sqlStmt)
                                 .then(function(result) {
@@ -3096,7 +3100,12 @@ var GloboTest = {};
                         function(t, r) {
                             var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
                             if (page) data.page(page);
-                            deferred.resolve(data);
+							_getTotal(_db, _viewName, filters)
+								.then(function(total){
+									data.total = total;
+									deferred.resolve(data);
+								})
+								.catch(deferred.reject);
                         },
                         function(t, e) {
                             throw e;
@@ -3167,6 +3176,58 @@ var GloboTest = {};
 
             this.noClear = angular.noop;
         }
+
+		function _getTotal(db, entityName, noFilter){
+
+			var deferred = $q.defer(),
+				filterExpression = noFilter ? " WHERE " + noFilter.toSQL(): "",
+				sqlExpressionData = {
+					"queryString": "SELECT COUNT() AS total FROM " + entityName + filterExpression
+				};
+
+			_exec(db, sqlExpressionData)
+				.then(function(resultset) {
+					if (resultset.rows.length === 0) {
+						deferred.resolve(0);
+					} else {
+						deferred.resolve(resultset.rows[0].total);
+					}
+				})
+				.catch(deferred.reject);
+
+			return deferred.promise;
+
+		}
+
+		function _exec(db, sqlExpressionData) {
+			var deferred = $q.defer(),
+				valueArray;
+
+			if (sqlExpressionData.valueArray) {
+				valueArray = sqlExpressionData.valueArray;
+			} else {
+				valueArray = [];
+			}
+
+			db.transaction(function(tx) {
+				tx.executeSql(
+					sqlExpressionData.queryString,
+					valueArray,
+					function(t, resultset) {
+						deferred.resolve(resultset);
+					},
+					function(t, r, x) {
+						deferred.reject({
+							tx: t,
+							err: r
+						});
+					}
+
+				);
+			});
+
+			return deferred.promise;
+		}
     }
 
     angular.module("noinfopath.data")

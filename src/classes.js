@@ -499,7 +499,10 @@
             "total": {
                 "get": function() {
                     return _total;
-                }
+                },
+				"set": function(value){
+					_total = value;
+				}
             },
             "paged": {
                 "get": function() {
@@ -510,7 +513,7 @@
 
         arr.page = function(nopage) {
             if (!nopage) throw "nopage is a required parameter for NoResults::page";
-            _page = this.slice(nopage.skip, nopage.skip + nopage.take);
+            // _page = this.slice(nopage.skip, nopage.skip + nopage.take);
         };
 
         noInfoPath.setPrototypeOf(this, arr);
