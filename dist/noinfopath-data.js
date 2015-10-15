@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.24
+*	@version 0.2.25
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -670,7 +670,10 @@
             "total": {
                 "get": function() {
                     return _total;
-                }
+                },
+				"set": function(value){
+					_total = value;
+				}
             },
             "paged": {
                 "get": function() {
@@ -681,7 +684,7 @@
 
         arr.page = function(nopage) {
             if (!nopage) throw "nopage is a required parameter for NoResults::page";
-            _page = this.slice(nopage.skip, nopage.skip + nopage.take);
+            // _page = this.slice(nopage.skip, nopage.skip + nopage.take);
         };
 
         noInfoPath.setPrototypeOf(this, arr);
@@ -2655,22 +2658,7 @@ var GloboTest = {};
                     },
                     filterOps = {
                         "C": function(data) {
-                            var noFilters = new noInfoPath.data.NoFilters(),
-                                id;
-
-                            if (data[_table.primaryKey]) {
-                                id = data[_table.primaryKey];
-                            } else {
-                                id = noInfoPath.createUUID();
-                                data[_table.primaryKey] = id;
-                            }
-
-                            noFilters.add(_table.primaryKey, null, true, true, [{
-                                operator: "eq",
-                                value: id
-                            }]);
-
-                            return noFilters;
+                            return;
                         },
                         "U": function(data) {
                             var noFilters = new noInfoPath.data.NoFilters(),
@@ -2699,12 +2687,21 @@ var GloboTest = {};
                     },
                     sqlOps = {
                         "C": function(data, noFilters, noTransaction) {
+                            console.log(_table.primaryKey);
+                            var pk = angular.isArray(_table.primaryKey) ?
+                                _table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
+                                sqlStmt;
+
+                            if(pk && !data[pk]){
+                                data[_table.primaryKey] = noInfoPath.createUUID();
+                            }
+
                             data.CreatedBy = noLoginService.user.userId;
                             data.DateCreated = noInfoPath.toDbDate(new Date());
                             data.ModifiedBy = noLoginService.user.userId;
                             data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-                            var sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
+                            sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
 
                             _exec(sqlStmt)
                                 .then(function(result) {
@@ -3096,7 +3093,12 @@ var GloboTest = {};
                         function(t, r) {
                             var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
                             if (page) data.page(page);
-                            deferred.resolve(data);
+							_getTotal(_db, _viewName, filters)
+								.then(function(total){
+									data.total = total;
+									deferred.resolve(data);
+								})
+								.catch(deferred.reject);
                         },
                         function(t, e) {
                             throw e;
@@ -3167,6 +3169,58 @@ var GloboTest = {};
 
             this.noClear = angular.noop;
         }
+
+		function _getTotal(db, entityName, noFilter){
+
+			var deferred = $q.defer(),
+				filterExpression = noFilter ? " WHERE " + noFilter.toSQL(): "",
+				sqlExpressionData = {
+					"queryString": "SELECT COUNT() AS total FROM " + entityName + filterExpression
+				};
+
+			_exec(db, sqlExpressionData)
+				.then(function(resultset) {
+					if (resultset.rows.length === 0) {
+						deferred.resolve(0);
+					} else {
+						deferred.resolve(resultset.rows[0].total);
+					}
+				})
+				.catch(deferred.reject);
+
+			return deferred.promise;
+
+		}
+
+		function _exec(db, sqlExpressionData) {
+			var deferred = $q.defer(),
+				valueArray;
+
+			if (sqlExpressionData.valueArray) {
+				valueArray = sqlExpressionData.valueArray;
+			} else {
+				valueArray = [];
+			}
+
+			db.transaction(function(tx) {
+				tx.executeSql(
+					sqlExpressionData.queryString,
+					valueArray,
+					function(t, resultset) {
+						deferred.resolve(resultset);
+					},
+					function(t, r, x) {
+						deferred.reject({
+							tx: t,
+							err: r
+						});
+					}
+
+				);
+			});
+
+			return deferred.promise;
+		}
     }
 
     angular.module("noinfopath.data")
@@ -3228,10 +3282,11 @@ var GloboTest = {};
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$q","noIndexedDb", "lodash", "noDataSource", function($q, noIndexedDb, _, noDataSource){
+		.factory("noTransactionCache", ["$injector", "$q","noIndexedDb", "lodash", "noDataSource", function($injector, $q, noIndexedDb, _, noDataSource){
 
-			function NoTransaction(userId, noTransConfig){
-				var transCfg = noTransConfig;
+			function NoTransaction(userId, config, thescope){
+				//var transCfg = noTransConfig;
+                var scope = thescope;
 
 				Object.defineProperties(this, {
 					"__type": {
@@ -3257,42 +3312,118 @@ var GloboTest = {};
 					return json;
 				};
 
-                this.upsert = function upsert(entityName, scope){
+                this.upsert = function upsert(data){
                     var THIS = this,
                         deferred = $q.defer(),
-                        entityCfg = transCfg.entities[entityName],
-                        data = scope[entityCfg.source.property],
-                        opType = data[entityCfg.source.primaryKey] ? "update" : "create",
-                        opEntites = entityCfg.operations[opType],
-                        curOpEntity = 0;
+                        dsCfg = config.noDataSource,
+                        opType = data[dsCfg.primaryKey] ? "update" : "create",
+                        opEntites = dsCfg.noTransaction[opType],
+                        curOpEntity = 0,
+                        totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
+                        results = {},
+                        preOps = {
+                            "noop": angular.noop,
+                            "basic": function (curEntity, data, scope){
+                                var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
+
+                                if(curEntity.fields){
+                                    for(var f in curEntity.fields){
+                                        var fld = curEntity.fields[f],
+                                            prov;
+
+                                        //When field value is get remote values then store on
+                                        //the writableData object.
+                                        if(angular.isObject(fld.value)){
+                                            if(fld.value.provider === "scope"){
+                                                prov = scope;
+                                            }else{
+                                                prov = $injector.get(fld.value.provider);
+                                            }
+                                            writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
+                                        }
+
+                                        //When field has a type convert before saving.
+                                        //NOTE: This is temporary and should be refactored
+                                        //      into the actual provider.  And be data
+                                        //      driven not conditional.
+                                        if(fld.type === "date"){
+                                            writableData[fld.field] = noInfoPath.toDbDate(writeableData[fld.field]);
+                                        }
+                                    }
+                                }
+
+                                return writableData;
+
+                            },
+                            "joiner": function (curEntity, data, scope) {
+                                var writableData =  {};
+
+                                for(var f in curEntity.fields){
+                                    var fld = curEntity.fields[f],
+                                        prov, value;
+
+                                    switch(fld.value.provider){
+                                        case "data":
+                                            prov = data;
+                                            break;
+
+                                        case "results":
+                                            prov = results;
+                                            break;
+
+                                        case "scope":
+                                            prov = scope;
+                                            break;
+
+                                        default:
+                                            prov = $injector.get(fld.value.provider);
+                                            break;
+                                    }
+
+                                    value = noInfoPath.getItem(prov, fld.value.property);
+
+                                    writableData[fld.field] = value;
+                                }
+
+                                return writableData;
+                            }
+                        };
 
                     function _recurse(entityCfg){
-                        var curEntity = opEntites[curOpEntity++],
-                            dsConfig, dataSource;
+                        var curEntity = angular.isObject(opEntites) ? opEntites[curOpEntity] : {entityName: config.noDataSource.entityName},
+                            preOp = !!curEntity.type ? curEntity.type : "basic",
+                            dsConfig, dataSource, writableData;
+                            writableData = preOps[preOp](curEntity, data, scope);
 
-                        if(curEntity){
-                            dsConfig = angular.merge({entityName: curEntity.entityName}, transCfg.noDataSource);
-                            dataSource = noDataSource.create(dsConfig, scope);
 
-                            dataSource[opType](data, THIS)
-                                .then(function(){
-                                    _recurse(entityCfg);
-                                })
-                                .catch(deferred.reject);
+                        curOpEntity++;
+                        dsConfig = angular.merge(config.noDataSource, {entityName: curEntity.entityName});
+                        dataSource = noDataSource.create(dsConfig, scope);
 
-                        }else{
-                            deferred.resolve();
-                        }
+                        dataSource[opType](writableData, THIS)
+                            .then(function(result){
+                                results[curEntity.entityName] = result;
+
+                                if(curOpEntity < totOpEntity){
+                                    _recurse();
+                                }else{
+                                    deferred.resolve();
+                                }
+
+                            })
+                            .catch(deferred.reject);
+
+
                     }
 
-                    _recurse(entityCfg);
+                    _recurse();
 
                     return deferred.promise;
                 };
 
                 this.destroy = function(entityName, data){
                     var entityTxCfg = noTxConfig[entityName];
-
+                    console.warn("TODO: implement  NoTransaction::destroy");
                 };
 			}
 
@@ -3330,8 +3461,8 @@ var GloboTest = {};
                     entity = db.NoInfoPath_Changes;
 
 
-                this.beginTransaction = function(userId, noTransConfig){
-                    return new NoTransaction(userId, noTransConfig);
+                this.beginTransaction = function(userId, noTransConfig, scope){
+                    return new NoTransaction(userId, noTransConfig, scope);
                 };
 
 				this.endTransaction = function(transaction){
@@ -4250,7 +4381,8 @@ var GloboTest = {};
         *   > TODO: Implement support for delayed (waitFor) filter values.
         *
         *   > NOTE: If a filter.value is an object and it has a source
-        *   > property set to `scope` then use the directives scope variable. Otherwise assume source is an injectable.
+        *   > property set to `scope` then use the directives scope variable.
+        *   > Otherwise assume source is an injectable.
         */
         function resolveFilterValues(filters, scope){
             var values = {};
