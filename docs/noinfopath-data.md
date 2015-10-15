@@ -1002,7 +1002,8 @@ underlying CRUD interface.
   > TODO: Implement support for delayed (waitFor) filter values.
 
   > NOTE: If a filter.value is an object and it has a source
-  > property set to `scope` then use the directives scope variable. Otherwise assume source is an injectable.
+  > property set to `scope` then use the directives scope variable.
+  > Otherwise assume source is an injectable.
 
 #### create(dsConfigKey)
 
