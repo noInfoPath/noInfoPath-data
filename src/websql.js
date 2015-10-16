@@ -19,6 +19,7 @@
             REAL = "REAL",
             TEXT = "TEXT",
             BLOB = "BLOB",
+			DATE = "DATE",
             NUMERIC = "NUMERIC",
             WITHOUTROWID = "WITHOUT ROWID",
             _interface = {
@@ -34,12 +35,12 @@
                     "tinyint": INTEGER,
                     "float": REAL,
                     "real": REAL,
-                    "date": NUMERIC, // CHECK
-                    "datetime": NUMERIC, // CHECK
-                    "datetime2": NUMERIC, // CHECK
-                    "datetimeoffset": NUMERIC, // CHECK
-                    "smalldatetime": NUMERIC, // CHECK
-                    "time": NUMERIC, // CHECK
+                    "date": DATE, // CHECK
+                    "datetime": DATE, // CHECK
+                    "datetime2": DATE, // CHECK
+                    "datetimeoffset": DATE, // CHECK
+                    "smalldatetime": DATE, // CHECK
+                    "time": DATE, // CHECK
                     "char": TEXT,
                     "nchar": TEXT,
                     "varchar": TEXT,
@@ -58,14 +59,20 @@
                     "BLOB": function(b) {
                         return b;
                     },
-                    "INTEGER": function(i) {
-                        return angular.isNumber(i) ? i : null;
+					"INTEGER": function(i) {
+						if(typeof i === "boolean")
+							return i ? 1 : 0;
+                        else
+                            return angular.isNumber(i) ? i : 0;
                     },
                     "NUMERIC": function(n) {
-                        return angular.isNumber(n) ? n : null;
+                        return angular.isNumber(n) ? n : 0;
                     },
                     "REAL": function(r) {
                         return r;
+                    },
+					"DATE": function(d){
+                        return angular.isString(d) ? d.split("T").join(" ") : "";
                     }
                 },
                 fromSqlLiteConversionFunctions: {
@@ -695,9 +702,15 @@
                                 .catch(deferred.reject);
 
                         },
-                        "BC": function(data) {
+						"BC": function(data) {
+                            for(var c in table.columns){
+                                var col = table.columns[c];
+                                data[c] = noWebSQLParser.convertToWebSQL(col.type, data[c]);
+                            }
+
                             var sqlStmt = sqlStmtFns.C(_tableName, data, null);
-                            _exec(sqlStmt, data)
+
+                            _exec(sqlStmt)
                                 .then(deferred.resolve)
                                 .catch(deferred.reject);
                         }
