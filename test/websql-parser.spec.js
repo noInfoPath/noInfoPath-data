@@ -28,7 +28,7 @@ describe("Testing noWebSQLParser", function(){
 				expect(noWebSQLParser._interface.toSqlLiteConversionFunctions.TEXT).toBeDefined();
 				var result,
 				input = "Test String",
-				expected = "'Test String'";
+				expected = "Test String";
 
 				result = noWebSQLParser._interface.toSqlLiteConversionFunctions.TEXT(input);
 
@@ -68,11 +68,11 @@ describe("Testing noWebSQLParser", function(){
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing INTEGER without proper datatype, expecting null", function(){
+			it("Testing INTEGER without proper datatype, expecting 0", function(){
 				expect(noWebSQLParser._interface.toSqlLiteConversionFunctions.INTEGER).toBeDefined();
 				var result,
 				input = "hi",
-				expected = null;
+				expected = 0;
 
 				result = noWebSQLParser._interface.toSqlLiteConversionFunctions.INTEGER(input);
 
@@ -90,11 +90,11 @@ describe("Testing noWebSQLParser", function(){
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing NUMERIC without proper datatype, expecting null", function(){
+			it("Testing NUMERIC without proper datatype, expecting 0", function(){
 				expect(noWebSQLParser._interface.toSqlLiteConversionFunctions.NUMERIC).toBeDefined();
 				var result,
 				input = "hi",
-				expected = null;
+				expected = 0;
 
 				result = noWebSQLParser._interface.toSqlLiteConversionFunctions.NUMERIC(input);
 
@@ -769,60 +769,60 @@ describe("Testing noWebSQLParser", function(){
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing date conversion, expecting NUMERIC", function(){
+			it("Testing date conversion, expecting DATE", function(){
 				var result,
 				input = "date",
-				expected = "NUMERIC";
+				expected = "DATE";
 
 				result = noWebSQLParser._interface.sqlConversion[input];
 
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing datetime conversion, expecting NUMERIC", function(){
+			it("Testing datetime conversion, expecting DATE", function(){
 				var result,
 				input = "datetime",
-				expected = "NUMERIC";
+				expected = "DATE";
 
 				result = noWebSQLParser._interface.sqlConversion[input];
 
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing datetime2 conversion, expecting NUMERIC", function(){
+			it("Testing datetime2 conversion, expecting DATE", function(){
 				var result,
 				input = "datetime2",
-				expected = "NUMERIC";
+				expected = "DATE";
 
 				result = noWebSQLParser._interface.sqlConversion[input];
 
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing datetimeoffset conversion, expecting NUMERIC", function(){
+			it("Testing datetimeoffset conversion, expecting DATE", function(){
 				var result,
 				input = "datetimeoffset",
-				expected = "NUMERIC";
+				expected = "DATE";
 
 				result = noWebSQLParser._interface.sqlConversion[input];
 
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing smalldatetime conversion, expecting NUMERIC", function(){
+			it("Testing smalldatetime conversion, expecting DATE", function(){
 				var result,
 				input = "smalldatetime",
-				expected = "NUMERIC";
+				expected = "DATE";
 
 				result = noWebSQLParser._interface.sqlConversion[input];
 
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing time conversion, expecting NUMERIC", function(){
+			it("Testing time conversion, expecting DATE", function(){
 				var result,
 				input = "time",
-				expected = "NUMERIC";
+				expected = "DATE";
 
 				result = noWebSQLParser._interface.sqlConversion[input];
 
