@@ -96,6 +96,34 @@ describe("Testing Classes", function(){
 
 		});
 
+		it("testing single filter NoFilters.toSQL()::contains", function(){
+			var filters = new noInfoPath.data.NoFilters();
+			filters.add("FlavorID", null, true, true, [{
+				"operator" : "contains",
+				"value": "foo",
+				"logic": null
+			}]);
+			var actual = filters.toSQL();
+			var expected = "(FlavorID LIKE '%foo%')";
+
+			expect(actual).toBe(expected);
+
+		});
+
+		it("testing single filter NoFilters.toSQL()::startswith", function(){
+			var filters = new noInfoPath.data.NoFilters();
+			filters.add("FlavorID", null, true, true, [{
+				"operator" : "startswith",
+				"value": "foo",
+				"logic": null
+			}]);
+			var actual = filters.toSQL();
+			var expected = "(FlavorID LIKE 'foo%')";
+
+			expect(actual).toBe(expected);
+
+		});
+
 		it("testing multiple filters NoFilters.toSQL()", function(){
 			var filters = new noInfoPath.data.NoFilters();
 			filters.add("FlavorID", null, true, true, [{

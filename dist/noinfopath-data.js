@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.27
+*	@version 0.2.28
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -343,35 +343,44 @@
      * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
      * |logic|String|(Optional) One of the following values: `and`, `or`.|
      */
+     function normalizeValue(inval){
+         var outval  = inval;
+
+         if (angular.isString(inval)) {
+             outval = "'" + inval + "'";
+         }
+
+         return outval;
+     }
+
+     function normalizeLogic(inval){
+         return inval ? " " + inval : "";
+     }
+
+     var sqlOperators = {
+            "eq": function(v) { return "= " + normalizeValue(v); },
+            "ne": function(v) { return "!= " + normalizeValue(v); },
+            "gt": function(v) { return "> " + normalizeValue(v); },
+            "ge": function(v) { return ">= " + normalizeValue(v); },
+            "lt": function(v) { return "< " + normalizeValue(v); },
+            "le": function(v) { return "<= " + normalizeValue(v); },
+            "contains": function(v) { return "LIKE '%" + String(v) + "%'"; },
+            "startswith": function(v) { return "LIKE '" + String(v) + "%'"; }
+        };
+
     function NoFilterExpression(operator, value, logic) {
 
         if (!operator) throw "INoFilterExpression requires a operator to filter by.";
         if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
+
 
         this.operator = operator;
         this.value = value;
         this.logic = logic;
 
         this.toSQL = function() {
-            var sqlOperators = {
-                    "eq": "=",
-                    "ne": "!=",
-                    "gt": ">",
-                    "ge": ">=",
-                    "lt": "<",
-                    "le": "<=",
-                    "contains": "CONTAINS",
-                    "startswith": "" // TODO: FIND SQL EQUIVILANT OF STARTS WITH
-                },
-                rs = "";
-
-            if (!sqlOperators[operator]) throw "NoFilters::NoFilterExpression required a valid operator";
-
-            if (angular.isString(value)) {
-                rs = sqlOperators[operator] + " '" + this.value + "'" + (this.logic ? " " + this.logic : "");
-            } else {
-                rs = sqlOperators[operator] + " " + this.value + "" + (this.logic ? " " + this.logic : "");
-            }
+            var opFn = sqlOperators[this.operator],
+            rs = opFn(this.value) + normalizeLogic(this.logic);
 
             return rs;
         };
