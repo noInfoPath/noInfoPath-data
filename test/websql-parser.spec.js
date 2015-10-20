@@ -94,7 +94,7 @@ describe("Testing noWebSQLParser", function(){
 				expect(noWebSQLParser._interface.toSqlLiteConversionFunctions.NUMERIC).toBeDefined();
 				var result,
 				input = "hi",
-				expected = 0;
+				expected = NaN;
 
 				result = noWebSQLParser._interface.toSqlLiteConversionFunctions.NUMERIC(input);
 
