@@ -66,7 +66,8 @@
                             return angular.isNumber(i) ? i : 0;
                     },
                     "NUMERIC": function(n) {
-                        return angular.isNumber(n) ? n : 0;
+                        var c = Number(n);
+                        return angular.isNumber(c) ? c : 0;
                     },
                     "REAL": function(r) {
                         return r;
