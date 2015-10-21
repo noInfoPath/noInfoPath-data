@@ -474,8 +474,9 @@
             });
 
 
-            return sqlOrder + sortExpressions.join(',');
+            return sortExpressions.length ? sqlOrder + sortExpressions.join(',') : "";
         };
+        
         noInfoPath.setPrototypeOf(this, arr);
     }
 
