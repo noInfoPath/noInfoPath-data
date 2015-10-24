@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 0.2.29
+*	@version 0.2.30
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3378,7 +3378,7 @@ var GloboTest = {};
                                         //      into the actual provider.  And be data
                                         //      driven not conditional.
                                         if(fld.type === "date"){
-                                            writableData[fld.field] = noInfoPath.toDbDate(writeableData[fld.field]);
+                                            writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
                                         }
                                     }
                                 }
