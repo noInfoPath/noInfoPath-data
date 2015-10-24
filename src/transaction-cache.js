@@ -113,7 +113,7 @@
                                         //      into the actual provider.  And be data
                                         //      driven not conditional.
                                         if(fld.type === "date"){
-                                            writableData[fld.field] = noInfoPath.toDbDate(writeableData[fld.field]);
+                                            writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
                                         }
                                     }
                                 }
