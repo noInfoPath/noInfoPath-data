@@ -1,5 +1,5 @@
 {
-  "name": "noinfopath-data",
+  "name": "@noinfopath/noinfopath-data",
   "version": "1.0.0",
   "description": "noInfoPath data module",
   "main": "noinfopath-data.js",
