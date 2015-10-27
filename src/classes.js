@@ -200,11 +200,11 @@
     function NoFilterExpression(operator, value, logic) {
 
         if (!operator) throw "INoFilterExpression requires a operator to filter by.";
-        if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
+        //if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
 
         this.operator = operator;
-        this.value = value;
+        this.value = value ? value : "";
         this.logic = logic;
 
         this.toSQL = function() {
@@ -476,7 +476,7 @@
 
             return sortExpressions.length ? sqlOrder + sortExpressions.join(',') : "";
         };
-        
+
         noInfoPath.setPrototypeOf(this, arr);
     }
 
