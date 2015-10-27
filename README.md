@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.0.0
+@version 1.0.1
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1020,3 +1020,5 @@ at the given `dsConfigKey` location.
 ##### Returns
 
 An instance of a NoDataSource object.
+
+

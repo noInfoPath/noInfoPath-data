@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.0
+*	@version 1.0.1
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -371,11 +371,11 @@
     function NoFilterExpression(operator, value, logic) {
 
         if (!operator) throw "INoFilterExpression requires a operator to filter by.";
-        if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
+        //if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
 
         this.operator = operator;
-        this.value = value;
+        this.value = value ? value : "";
         this.logic = logic;
 
         this.toSQL = function() {
