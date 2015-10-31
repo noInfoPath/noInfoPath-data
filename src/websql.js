@@ -673,7 +673,7 @@
                                 .then(function(result) {
                                     _exec(sqlStmt)
                                         .then(function(result) {
-                                            if (noTransaction) noTransaction.addChange(_tableName, this, "U");
+                                            if (noTransaction) noTransaction.addChange(_tableName, data, "U");
                                             deferred.resolve(data);
                                         }.bind(result))
                                         .catch(deferred.reject);
@@ -689,7 +689,7 @@
                                 .then(function(result) {
                                     _exec(sqlStmt)
                                         .then(function(result) {
-                                            if (noTransaction) noTransaction.addChange(_tableName, this, "D");
+                                            if (noTransaction) noTransaction.addChange(_tableName, data, "D");
                                             deferred.resolve(result);
                                         }.bind(result))
                                         .catch(deferred.reject);
