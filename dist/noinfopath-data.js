@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.3
+*	@version 1.0.4
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -316,403 +316,451 @@
  * void
  */
 (function(angular, undefined) {
-    "use strict";
+	"use strict";
 
-    /*
-     * ## @class NoFilterExpression : Object
-     *
-     * Represents an single filter expression that can be applied to an `IDBObjectStore`.
-     *
-     * ### Constructor
-     *
-     * NoFilterExpression(column, operator, value [, logic])
-     *
-     * |Name|Type|Description|
-     * |----|----|-----------|
-     * |column|String|The name of the column filter on.|
-     * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
-     * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
-     * |logic|String|(Optional) One of the following values: `and`, `or`.|
-     *
-     * ### Properties
-     *
-     * |Name|Type|Description|
-     * |----|----|------------|
-     * |column|String|The name of the column filter on.|
-     * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
-     * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
-     * |logic|String|(Optional) One of the following values: `and`, `or`.|
-     */
-     function normalizeValue(inval){
-         var outval  = inval;
+	var $injector = angular.injector(["ng"]),
+		$filter = $injector.get("$filter");
+	/*
+	 * ## @class NoFilterExpression : Object
+	 *
+	 * Represents an single filter expression that can be applied to an `IDBObjectStore`.
+	 *
+	 * ### Constructor
+	 *
+	 * NoFilterExpression(column, operator, value [, logic])
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|-----------|
+	 * |column|String|The name of the column filter on.|
+	 * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	 * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	 * |logic|String|(Optional) One of the following values: `and`, `or`.|
+	 *
+	 * ### Properties
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|------------|
+	 * |column|String|The name of the column filter on.|
+	 * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	 * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	 * |logic|String|(Optional) One of the following values: `and`, `or`.|
+	 */
+	function normalizeValue(inval) {
+		var outval = inval;
 
-         if (angular.isString(inval)) {
-             outval = "'" + inval + "'";
-         }
+		if(angular.isDate(inval)){
+			outval = "datetime('" + $filter('date')(inval, "yyyy-MM-dd'T'HH:mm:ss.sss") + "', 'utc')";
+		}else if (angular.isString(inval)) {
+			outval = "'" + inval + "'";
+		}
 
-         return outval;
-     }
+		return outval;
+	}
 
-     function normalizeLogic(inval){
-         return inval ? " " + inval : "";
-     }
+	function normalizeLogic(inval) {
+		return inval ? " " + inval : "";
+	}
 
-     var sqlOperators = {
-            "eq": function(v) { return "= " + normalizeValue(v); },
-            "ne": function(v) { return "!= " + normalizeValue(v); },
-            "gt": function(v) { return "> " + normalizeValue(v); },
-            "ge": function(v) { return ">= " + normalizeValue(v); },
-            "lt": function(v) { return "< " + normalizeValue(v); },
-            "le": function(v) { return "<= " + normalizeValue(v); },
-            "contains": function(v) { return "LIKE '%" + String(v) + "%'"; },
-            "startswith": function(v) { return "LIKE '" + String(v) + "%'"; }
-        };
+	function normalizeOperator(inop) {
+		var filters = {
+			eq: "eq",
+			neq: "ne",
+			gt: "gt",
+			gte: "ge",
+			lt: "lt",
+			lte: "le",
+			contains: "contains",
+			doesnotcontain: "notcontains",
+			endswith: "endswith",
+			startswith: "startswith"
+		},
+        sqlOperators = {
+			"eq": function(v) {
+				return "= " + normalizeValue(v);
+			},
+			"ne": function(v) {
+				return "!= " + normalizeValue(v);
+			},
+			"gt": function(v) {
+				return "> " + normalizeValue(v);
+			},
+			"ge": function(v) {
+				return ">= " + normalizeValue(v);
+			},
+			"lt": function(v) {
+				return "< " + normalizeValue(v);
+			},
+			"le": function(v) {
+				return "<= " + normalizeValue(v);
+			},
+			"contains": function(v) {
+				return "LIKE '%" + String(v) + "%'";
+			},
+            "notcontains": function(v) {
+				return "NOT LIKE '%" + String(v) + "%'";
+			},
+			"startswith": function(v) {
+				return "LIKE '" + String(v) + "%'";
+			}
+		},
+        op = filters[inop];
 
-    function NoFilterExpression(operator, value, logic) {
+        return sqlOperators[op];
+	}
 
-        if (!operator) throw "INoFilterExpression requires a operator to filter by.";
-        //if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
+	function NoFilterExpression(operator, value, logic) {
 
-
-        this.operator = operator;
-        this.value = value ? value : "";
-        this.logic = logic;
-
-        this.toSQL = function() {
-            var opFn = sqlOperators[this.operator],
-            rs = opFn(this.value) + normalizeLogic(this.logic);
-
-            return rs;
-        };
-    }
-
-    /*
-     * ## Class NoFilters : Array
-     *
-     * NoFilters is an array of NoFilter objects.
-     *
-     * ### Constructors
-     *
-     * #### NoFilters()
-     *
-     * ##### Usage
-     *
-     * ```js
-     * var x = new noInfoPath.data.NoFilters()
-     * ```
-     *
-     * ### Properties
-     *
-     * |Name|Type|Description|
-     * |----|----|------------|
-     * |length|Number|Number of elements in the array.|
-     *
-     * ### Methods
-     *
-     * #### add(column, logic, beginning, end, filters)
-     *
-     * Creates and adds a new NoFilter into the underlying array that NoFilters represents.
-     *
-     * ##### Parameters
-     *
-     * |Name|Type|Description|
-     * |----|----|------------|
-     * |column|String|The name of the column to filter on.|
-     * |logic|String|One of the following values: 'and', 'or'|
-     * |beginning|Boolean|If the NoFilter is the beginning of the filter expression|
-     * |end|Boolean|If the NoFilter is the end of the filter expression|
-     * |filters|Array|Array of NoFilterExpressions|
-     *
-     * #### toSQL()
-     *
-     * Converts the NoFilters array to a partial SQL statement. It calls the toSQL() method on every NoFilter object within the NoFilters array.
-     *
-     * ##### Parameters
-     *
-     * None
-     */
-    function NoFilters(kendoFilter) {
-        var arr = [];
-
-        Object.defineProperties(this, {
-            "__type": {
-                "get": function() {
-                    return "NoFilters";
-                }
-            }
-        });
-
-        noInfoPath.setPrototypeOf(this, arr);
-
-        //filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
-        //{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
-
-        if (kendoFilter) {
-            for (var i in kendoFilter.filters) {
-                var filter = kendoFilter.filters[i],
-                    fe = new NoFilterExpression(filter.operator, filter.value),
-                    f = new NoFilter(filter.field, kendoFilter.logic, true, true, [fe]);
-
-                this.unshift(f);
-            }
-        }
-        //arr.push.apply(arr, arguments);
-
-        this.toSQL = function() {
-            var rs = "",
-                rsArray = [];
-
-            angular.forEach(this, function(value, key) {
-
-                if (this.length == key + 1) {
-                    value.logic = null;
-                }
-
-                rsArray.push(value.toSQL());
-            }, this);
-
-            rs = rsArray.join("");
-
-            return rs;
-        };
-
-        this.add = function(column, logic, beginning, end, filters) {
-            if (!column) throw "NoFilters::add requires a column to filter on.";
-            if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
-
-            this.unshift(new NoFilter(column, logic, beginning, end, filters));
-        };
+		if (!operator) throw "INoFilterExpression requires a operator to filter by.";
+		//if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
 
-    }
+		this.operator = operator;
+		this.value = value ? value : "";
+		this.logic = logic;
 
-    /*
-     * ## Class NoFilter : Object
-     *
-     * NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
-     *
-     * ### Properties
-     *
-     * |Name|Type|Description|
-     * |----|----|------------|
-     * |column|String|The column that will be filtered on|
-     * |logic|String|One of the following values: 'and', 'or'|
-     * |beginning|Boolean|If the NoFilter is the beginning of the filter expression|
-     * |end|Boolean|If the NoFilter is the end of the filter expression|
-     * |filters|Array|Array of NoFilterExpressions|
-     *
-     * ### Methods
-     *
-     * #### toSQL()
-     *
-     * Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression within the filters array.
-     *
-     * #### Parameters
-     *
-     * |Name|Type|Description|
-     * |----|----|------------|
-     * |column|String|The name of the column filter on.|
-     * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
-     * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
-     * |logic|String|(Optional) One of the following values: `and`, `or`.|
-     */
-    function NoFilter(column, logic, beginning, end, filters) {
-        Object.defineProperties(this, {
-            "__type": {
-                "get": function() {
-                    return "NoFilter";
-                }
-            }
-        });
+		this.toSQL = function() {
+			var opFn = normalizeOperator(this.operator),
+				rs = opFn(this.value) + normalizeLogic(this.logic);
 
-        this.column = column;
-        this.logic = logic;
-        this.beginning = beginning;
-        this.end = end;
-        this.filters = [];
+			return rs;
+		};
+	}
 
-        angular.forEach(filters, function(value, key) {
-            this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
-        }, this);
+	/*
+	 * ## Class NoFilters : Array
+	 *
+	 * NoFilters is an array of NoFilter objects.
+	 *
+	 * ### Constructors
+	 *
+	 * #### NoFilters()
+	 *
+	 * ##### Usage
+	 *
+	 * ```js
+	 * var x = new noInfoPath.data.NoFilters()
+	 * ```
+	 *
+	 * ### Properties
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|------------|
+	 * |length|Number|Number of elements in the array.|
+	 *
+	 * ### Methods
+	 *
+	 * #### add(column, logic, beginning, end, filters)
+	 *
+	 * Creates and adds a new NoFilter into the underlying array that NoFilters represents.
+	 *
+	 * ##### Parameters
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|------------|
+	 * |column|String|The name of the column to filter on.|
+	 * |logic|String|One of the following values: 'and', 'or'|
+	 * |beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+	 * |end|Boolean|If the NoFilter is the end of the filter expression|
+	 * |filters|Array|Array of NoFilterExpressions|
+	 *
+	 * #### toSQL()
+	 *
+	 * Converts the NoFilters array to a partial SQL statement. It calls the toSQL() method on every NoFilter object within the NoFilters array.
+	 *
+	 * ##### Parameters
+	 *
+	 * None
+	 */
+	function NoFilters(kendoFilter) {
+		var arr = [];
 
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function() {
+					return "NoFilters";
+				}
+			}
+		});
 
+		noInfoPath.setPrototypeOf(this, arr);
 
-        this.toSQL = function() {
-            var rs = "",
-                filterArray = [],
-                filterArrayString = "";
+		//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
+		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
 
-            angular.forEach(this.filters, function(value, key) {
-                filterArray.push(this.column + " " + value.toSQL());
-            }, this);
+		if (kendoFilter) {
+			for (var i in kendoFilter.filters) {
+				var filter = kendoFilter.filters[i],
+					fe = new NoFilterExpression(filter.operator, filter.value),
+					f = new NoFilter(filter.field, kendoFilter.logic, true, true, [fe]);
 
-            filterArrayString = filterArray.join(" ");
+				this.unshift(f);
+			}
+		}
+		//arr.push.apply(arr, arguments);
 
-            if (!!this.beginning) rs = "(";
-            rs += filterArrayString;
-            if (!!this.end) rs += ")";
-            if (!!this.logic) rs += " " + logic + " ";
+		this.toSQL = function() {
+			var rs = "",
+				rsArray = [];
 
-            return rs;
-        };
-        // this.add = function(column, logic, beginning, end, filters) {
-        // 	this.column = column;
-        // 	this.logic = logic;
-        // 	this.beginning = beginning;
-        // 	this.end = end;
-        // 	this.filters = [];
+			angular.forEach(this, function(value, key) {
 
-        // 	angular.forEach(filters, function(value, key){
-        // 		this.filters.add(new NoFilterExpression(value.operator, value.value, value.logic));
-        // 	});
+				if (this.length == key + 1) {
+					value.logic = null;
+				}
 
-        // }
-    }
+				rsArray.push(value.toSQL());
+			}, this);
 
-    /*
-     * ## Class NoSort : Array
-     *
-     * NoSort is an array of NoSortExpression objects.
-     *
-     * ### Properties
-     *
-     * |Name|Type|Description|
-     * |----|----|------------|
-     * |length|Number|Number of elements in the array.|
-     * |total|Number|Total number of rows available given the current filters.|
-     * |paged|Array|An array of object sliced on the skip and take parameters passed into the constructor.|
-     *
-     * ### Methods
-     *
-     * #### add(column[, dir])
-     *
-     * Creates and adds a new NoSortExpression into the underlying array that NoSort represents.
-     *
-     * #### Parameters
-     *
-     * |Name|Type|Description|
-     * |----|----|------------|
-     * |column|String|The name of the column filter on.|
-     * |dir|String|(Optional) One of the following values: `asc`, `desc`.|
-     */
-    function NoSortExpression(column, dir) {
+			rs = rsArray.join("");
 
-        if (!column) throw "NoFilters::add requires a column to sort on.";
+			return rs;
+		};
 
-        this.column = column;
-        this.dir = dir;
+		this.add = function(column, logic, beginning, end, filters) {
+			if (!column) throw "NoFilters::add requires a column to filter on.";
+			if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
 
-        this.toSQL = function() {
-            return this.column + (this.dir ? " " + this.dir : "");
-        };
-    }
-
-    function NoSort() {
-        var arr = [];
-
-        Object.defineProperties(arr, {
-            "__type": {
-                "get": function() {
-                    return "NoSort";
-                }
-            }
-        });
-
-        if (arguments.length) {
-            var raw = arguments[0];
-
-            for (var s in raw) {
-                var sort = raw[s];
-                arr.push(new NoSortExpression(sort.field, sort.dir));
-            }
-
-        }
-
-        //arr.push.apply(arr, arguments.length ? arguments[0] : []);
-        arr.add = function(column, dir) {
-            if (!column) throw "NoSort::add requires a column to filter on.";
-
-            this.push(new NoSortExpression(column, dir));
-        };
-
-        arr.toSQL = function() {
-
-            var sqlOrder = "ORDER BY ",
-                sortExpressions = [];
-
-            angular.forEach(this, function(sort) {
-                sortExpressions.push(sort.toSQL());
-            });
+			this.unshift(new NoFilter(column, logic, beginning, end, filters));
+		};
 
 
-            return sortExpressions.length ? sqlOrder + sortExpressions.join(',') : "";
-        };
+	}
 
-        noInfoPath.setPrototypeOf(this, arr);
-    }
+	/*
+	 * ## Class NoFilter : Object
+	 *
+	 * NoFilter is an object with some properties that has an array of NoFilterExpressions hanging off of it.
+	 *
+	 * ### Properties
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|------------|
+	 * |column|String|The column that will be filtered on|
+	 * |logic|String|One of the following values: 'and', 'or'|
+	 * |beginning|Boolean|If the NoFilter is the beginning of the filter expression|
+	 * |end|Boolean|If the NoFilter is the end of the filter expression|
+	 * |filters|Array|Array of NoFilterExpressions|
+	 *
+	 * ### Methods
+	 *
+	 * #### toSQL()
+	 *
+	 * Converts the current NoFilter object to a partial SQL statement. It calls the NoFilterExpression toSQL() method for every NoFilterExpression within the filters array.
+	 *
+	 * #### Parameters
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|------------|
+	 * |column|String|The name of the column filter on.|
+	 * |operator|String|One of the following values: `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `contains`, `startswith`|
+	 * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
+	 * |logic|String|(Optional) One of the following values: `and`, `or`.|
+	 */
+	function NoFilter(column, logic, beginning, end, filters) {
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function() {
+					return "NoFilter";
+				}
+			}
+		});
 
-    function NoPage(skip, take) {
-        Object.defineProperties(this, {
-            "__type": {
-                "get": function() {
-                    return "NoPage";
-                }
-            }
-        });
+		this.column = column;
+		this.logic = logic;
+		this.beginning = beginning;
+		this.end = end;
+		this.filters = [];
 
-        this.skip = skip;
-        this.take = take;
+		angular.forEach(filters, function(value, key) {
+			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
+		}, this);
 
-        this.toSQL = function() {
-            return "LIMIT " + this.take + " OFFSET " + this.skip;
-        };
-    }
+		function normalizeColumn(incol, val){
+			var ocol = incol;
 
-    function NoResults(arrayOfThings) {
-        //Capture the length of the arrayOfThings before any changes are made to it.
-        var _total = arrayOfThings.length,
-            _page = arrayOfThings,
-            arr = arrayOfThings;
+			if(angular.isDate(val)){
+				ocol = "datetime(" + incol + ",'utc')";
+			}
 
-        //arr.push.apply(arr, arguments);
+			return ocol;
+		}
 
-        Object.defineProperties(arr, {
-            "total": {
-                "get": function() {
-                    return _total;
-                },
-				"set": function(value){
+		this.toSQL = function() {
+			var rs = "",
+				filterArray = [],
+				filterArrayString = "";
+
+			angular.forEach(this.filters, function(value, key) {
+				filterArray.push(normalizeColumn(this.column, value.value) + " " + value.toSQL());
+			}, this);
+
+			filterArrayString = filterArray.join(" ");
+
+			if (!!this.beginning) rs = "(";
+			rs += filterArrayString;
+			if (!!this.end) rs += ")";
+			if (!!this.logic) rs += " " + logic + " ";
+
+			return rs;
+		};
+		// this.add = function(column, logic, beginning, end, filters) {
+		// 	this.column = column;
+		// 	this.logic = logic;
+		// 	this.beginning = beginning;
+		// 	this.end = end;
+		// 	this.filters = [];
+
+		// 	angular.forEach(filters, function(value, key){
+		// 		this.filters.add(new NoFilterExpression(value.operator, value.value, value.logic));
+		// 	});
+
+		// }
+	}
+
+	/*
+	 * ## Class NoSort : Array
+	 *
+	 * NoSort is an array of NoSortExpression objects.
+	 *
+	 * ### Properties
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|------------|
+	 * |length|Number|Number of elements in the array.|
+	 * |total|Number|Total number of rows available given the current filters.|
+	 * |paged|Array|An array of object sliced on the skip and take parameters passed into the constructor.|
+	 *
+	 * ### Methods
+	 *
+	 * #### add(column[, dir])
+	 *
+	 * Creates and adds a new NoSortExpression into the underlying array that NoSort represents.
+	 *
+	 * #### Parameters
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|------------|
+	 * |column|String|The name of the column filter on.|
+	 * |dir|String|(Optional) One of the following values: `asc`, `desc`.|
+	 */
+	function NoSortExpression(column, dir) {
+
+		if (!column) throw "NoFilters::add requires a column to sort on.";
+
+		this.column = column;
+		this.dir = dir;
+
+		this.toSQL = function() {
+			return this.column + (this.dir ? " " + this.dir : "");
+		};
+	}
+
+	function NoSort() {
+		var arr = [];
+
+		Object.defineProperties(arr, {
+			"__type": {
+				"get": function() {
+					return "NoSort";
+				}
+			}
+		});
+
+		if (arguments.length) {
+			var raw = arguments[0];
+
+			for (var s in raw) {
+				var sort = raw[s];
+				arr.push(new NoSortExpression(sort.field, sort.dir));
+			}
+
+		}
+
+		//arr.push.apply(arr, arguments.length ? arguments[0] : []);
+		arr.add = function(column, dir) {
+			if (!column) throw "NoSort::add requires a column to filter on.";
+
+			this.push(new NoSortExpression(column, dir));
+		};
+
+		arr.toSQL = function() {
+
+			var sqlOrder = "ORDER BY ",
+				sortExpressions = [];
+
+			angular.forEach(this, function(sort) {
+				sortExpressions.push(sort.toSQL());
+			});
+
+
+			return sortExpressions.length ? sqlOrder + sortExpressions.join(',') : "";
+		};
+
+		noInfoPath.setPrototypeOf(this, arr);
+	}
+
+	function NoPage(skip, take) {
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function() {
+					return "NoPage";
+				}
+			}
+		});
+
+		this.skip = skip;
+		this.take = take;
+
+		this.toSQL = function() {
+			return "LIMIT " + this.take + " OFFSET " + this.skip;
+		};
+	}
+
+	function NoResults(arrayOfThings) {
+		//Capture the length of the arrayOfThings before any changes are made to it.
+		var _total = arrayOfThings.length,
+			_page = arrayOfThings,
+			arr = arrayOfThings;
+
+		//arr.push.apply(arr, arguments);
+
+		Object.defineProperties(arr, {
+			"total": {
+				"get": function() {
+					return _total;
+				},
+				"set": function(value) {
 					_total = value;
 				}
-            },
-            "paged": {
-                "get": function() {
-                    return _page;
-                }
-            }
-        });
+			},
+			"paged": {
+				"get": function() {
+					return _page;
+				}
+			}
+		});
 
-        arr.page = function(nopage) {
-            if (!nopage) throw "nopage is a required parameter for NoResults::page";
-            // _page = this.slice(nopage.skip, nopage.skip + nopage.take);
-        };
+		arr.page = function(nopage) {
+			if (!nopage) throw "nopage is a required parameter for NoResults::page";
+			// _page = this.slice(nopage.skip, nopage.skip + nopage.take);
+		};
 
-        noInfoPath.setPrototypeOf(this, arr);
-    }
+		noInfoPath.setPrototypeOf(this, arr);
+	}
 
-    //Expose these classes on the global namespace so that they can be used by
-    //other modules.
-    var _interface = {
-        NoFilterExpression: NoFilterExpression,
-        NoFilter: NoFilter,
-        NoFilters: NoFilters,
-        NoSortExpression: NoSortExpression,
-        NoSort: NoSort,
-        NoPage: NoPage,
-        NoResults: NoResults
-    };
+	//Expose these classes on the global namespace so that they can be used by
+	//other modules.
+	var _interface = {
+		NoFilterExpression: NoFilterExpression,
+		NoFilter: NoFilter,
+		NoFilters: NoFilters,
+		NoSortExpression: NoSortExpression,
+		NoSort: NoSort,
+		NoPage: NoPage,
+		NoResults: NoResults
+	};
 
-    noInfoPath.data = angular.extend(noInfoPath.data, _interface);
+	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
 
 })(angular);
 
@@ -2081,1130 +2129,1130 @@ var GloboTest = {};
 	;
 })(angular);
 
-
 //websql.js
 (function(angular, undefined) {
-    "use strict";
+	"use strict";
 
 
-    function NoWebSQLParser() {
-        var CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
-            CREATEVIEW = "CREATE VIEW IF NOT EXISTS ",
-            INSERT = "INSERT INTO ",
-            UPDATE = "UPDATE ",
-            DELETE = "DELETE FROM ",
-            READ = "SELECT * FROM ",
-            COLUMNDEF = "{0}",
-            PRIMARYKEY = "PRIMARY KEY ASC",
-            FOREIGNKEY = "REFERENCES ",
-            NULL = "NULL",
-            INTEGER = "INTEGER",
-            REAL = "REAL",
-            TEXT = "TEXT",
-            BLOB = "BLOB",
+	function NoWebSQLParser() {
+		var CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
+			CREATEVIEW = "CREATE VIEW IF NOT EXISTS ",
+			INSERT = "INSERT INTO ",
+			UPDATE = "UPDATE ",
+			DELETE = "DELETE FROM ",
+			READ = "SELECT * FROM ",
+			COLUMNDEF = "{0}",
+			PRIMARYKEY = "PRIMARY KEY ASC",
+			FOREIGNKEY = "REFERENCES ",
+			NULL = "NULL",
+			INTEGER = "INTEGER",
+			REAL = "REAL",
+			TEXT = "TEXT",
+			BLOB = "BLOB",
 			DATE = "DATE",
-            NUMERIC = "NUMERIC",
-            WITHOUTROWID = "WITHOUT ROWID",
-            _interface = {
-                sqlConversion: {
-                    "bigint": INTEGER,
-                    "bit": INTEGER,
-                    "decimal": NUMERIC,
-                    "int": INTEGER,
-                    "money": NUMERIC, // CHECK
-                    "numeric": NUMERIC,
-                    "smallint": INTEGER,
-                    "smallmoney": NUMERIC, // CHECK
-                    "tinyint": INTEGER,
-                    "float": REAL,
-                    "real": REAL,
-                    "date": DATE, // CHECK
-                    "datetime": DATE, // CHECK
-                    "datetime2": DATE, // CHECK
-                    "datetimeoffset": DATE, // CHECK
-                    "smalldatetime": DATE, // CHECK
-                    "time": DATE, // CHECK
-                    "char": TEXT,
-                    "nchar": TEXT,
-                    "varchar": TEXT,
-                    "nvarchar": TEXT,
-                    "text": TEXT,
-                    "ntext": TEXT,
-                    "binary": BLOB, // CHECK
-                    "varbinary": BLOB,
-                    "image": BLOB,
-                    "uniqueidentifier": TEXT
-                },
-                toSqlLiteConversionFunctions: {
-                    "TEXT": function(s) {
-                        return angular.isString(s) ? s : null;
-                    },
-                    "BLOB": function(b) {
-                        return b;
-                    },
+			NUMERIC = "NUMERIC",
+			WITHOUTROWID = "WITHOUT ROWID",
+			_interface = {
+				sqlConversion: {
+					"bigint": INTEGER,
+					"bit": INTEGER,
+					"decimal": NUMERIC,
+					"int": INTEGER,
+					"money": NUMERIC, // CHECK
+					"numeric": NUMERIC,
+					"smallint": INTEGER,
+					"smallmoney": NUMERIC, // CHECK
+					"tinyint": INTEGER,
+					"float": REAL,
+					"real": REAL,
+					"date": DATE, // CHECK
+					"datetime": DATE, // CHECK
+					"datetime2": DATE, // CHECK
+					"datetimeoffset": DATE, // CHECK
+					"smalldatetime": DATE, // CHECK
+					"time": DATE, // CHECK
+					"char": TEXT,
+					"nchar": TEXT,
+					"varchar": TEXT,
+					"nvarchar": TEXT,
+					"text": TEXT,
+					"ntext": TEXT,
+					"binary": BLOB, // CHECK
+					"varbinary": BLOB,
+					"image": BLOB,
+					"uniqueidentifier": TEXT
+				},
+				toSqlLiteConversionFunctions: {
+					"TEXT": function(s) {
+						return angular.isString(s) ? s : null;
+					},
+					"BLOB": function(b) {
+						return b;
+					},
 					"INTEGER": function(i) {
-						if(typeof i === "boolean")
+						if (typeof i === "boolean")
 							return i ? 1 : 0;
-                        else
-                            return angular.isNumber(i) ? i : 0;
-                    },
-                    "NUMERIC": function(n) {
-                        var c = Number(n);
-                        return angular.isNumber(c) ? c : 0;
-                    },
-                    "REAL": function(r) {
-                        return r;
-                    },
-					"DATE": function(d){
-                        return angular.isString(d) ? d.split("T").join(" ") : "";
-                    }
-                },
-                fromSqlLiteConversionFunctions: {
-                    "bigint": function(i) {
-                        return angular.isNumber(i) ? i : null;
-                    },
-                    "bit": function(i) {
-                        return angular.isNumber(i) ? i : null;
-                    },
-                    "decimal": function(n) {
-                        return angular.isNumber(n) ? n : null;
-                    },
-                    "int": function(i) {
-                        return angular.isNumber(i) ? i : null;
-                    },
-                    "money": function(n) {
-                        return angular.isNumber(n) ? n : null;
-                    },
-                    "numeric": function(n) {
-                        return angular.isNumber(n) ? n : null;
-                    },
-                    "smallint": function(i) {
-                        return angular.isNumber(i) ? i : null;
-                    },
-                    "smallmoney": function(n) {
-                        return angular.isNumber(n) ? n : null;
-                    },
-                    "tinyint": function(i) {
-                        return angular.isNumber(i) ? i : null;
-                    },
-                    "float": function(r) {
-                        return r;
-                    },
-                    "real": function(r) {
-                        return r;
-                    },
-                    "date": function(n) {
-                        return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-                    },
-                    "datetime": function(n) {
-                        return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-                    },
-                    "datetime2": function(n) {
-                        return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-                    },
-                    "datetimeoffset": function(n) {
-                        return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-                    },
-                    "smalldatetime": function(n) {
-                        return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-                    },
-                    "time": function(n) {
-                        return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-                    },
-                    "char": function(t) {
-                        return angular.isString(t) ? t : null;
-                    },
-                    "nchar": function(t) {
-                        return angular.isString(t) ? t : null;
-                    },
-                    "varchar": function(t) {
-                        return angular.isString(t) ? t : null;
-                    },
-                    "nvarchar": function(t) {
-                        return angular.isString(t) ? t : null;
-                    },
-                    "text": function(t) {
-                        return angular.isString(t) ? t : null;
-                    },
-                    "ntext": function(t) {
-                        return angular.isString(t) ? t : null;
-                    },
-                    "binary": function(b) {
-                        return b;
-                    },
-                    "varbinary": function(b) {
-                        return b;
-                    },
-                    "image": function(b) {
-                        return b;
-                    },
-                    "uniqueidentifier": function(t) {
-                        return angular.isString(t) ? t : null;
-                    }
-                },
-                "createTable": function(tableName, tableConfig) {
-                    var rs = CREATETABLE;
+						else
+							return angular.isNumber(i) ? i : 0;
+					},
+					"NUMERIC": function(n) {
+						var c = Number(n);
+						return angular.isNumber(c) ? c : 0;
+					},
+					"REAL": function(r) {
+						return r;
+					},
+					"DATE": function(d) {
+						return angular.isString(d) ? d.split("T").join(" ") : "";
+					}
+				},
+				fromSqlLiteConversionFunctions: {
+					"bigint": function(i) {
+						return angular.isNumber(i) ? i : null;
+					},
+					"bit": function(i) {
+						return angular.isNumber(i) ? i : null;
+					},
+					"decimal": function(n) {
+						return angular.isNumber(n) ? n : null;
+					},
+					"int": function(i) {
+						return angular.isNumber(i) ? i : null;
+					},
+					"money": function(n) {
+						return angular.isNumber(n) ? n : null;
+					},
+					"numeric": function(n) {
+						return angular.isNumber(n) ? n : null;
+					},
+					"smallint": function(i) {
+						return angular.isNumber(i) ? i : null;
+					},
+					"smallmoney": function(n) {
+						return angular.isNumber(n) ? n : null;
+					},
+					"tinyint": function(i) {
+						return angular.isNumber(i) ? i : null;
+					},
+					"float": function(r) {
+						return r;
+					},
+					"real": function(r) {
+						return r;
+					},
+					"date": function(n) {
+						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					},
+					"datetime": function(n) {
+						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					},
+					"datetime2": function(n) {
+						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					},
+					"datetimeoffset": function(n) {
+						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					},
+					"smalldatetime": function(n) {
+						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					},
+					"time": function(n) {
+						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					},
+					"char": function(t) {
+						return angular.isString(t) ? t : null;
+					},
+					"nchar": function(t) {
+						return angular.isString(t) ? t : null;
+					},
+					"varchar": function(t) {
+						return angular.isString(t) ? t : null;
+					},
+					"nvarchar": function(t) {
+						return angular.isString(t) ? t : null;
+					},
+					"text": function(t) {
+						return angular.isString(t) ? t : null;
+					},
+					"ntext": function(t) {
+						return angular.isString(t) ? t : null;
+					},
+					"binary": function(b) {
+						return b;
+					},
+					"varbinary": function(b) {
+						return b;
+					},
+					"image": function(b) {
+						return b;
+					},
+					"uniqueidentifier": function(t) {
+						return angular.isString(t) ? t : null;
+					}
+				},
+				"createTable": function(tableName, tableConfig) {
+					var rs = CREATETABLE;
 
-                    rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
+					rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
 
-                    return rs;
-                },
-                "createView": function(viewName, viewConfig) {
-                    var rs = viewConfig.entitySQL.replace("CREATE VIEW ", CREATEVIEW);
+					return rs;
+				},
+				"createView": function(viewName, viewConfig) {
+					var rs = viewConfig.entitySQL.replace("CREATE VIEW ", CREATEVIEW);
 
-                    return rs;
-                },
-                "columnDef": function(columnName, columnConfig, tableConfig) {
-                    return columnName + " " + this.typeName(columnConfig) + this.columnConstraint(columnName, columnConfig, tableConfig);
-                },
-                "columnConstraint": function(columnName, columnConfig, tableConfig) {
-                    var isPrimaryKey = this.isPrimaryKey(columnName, tableConfig),
-                        isForeignKey = this.isForeignKey(columnName, tableConfig),
-                        isNullable = this.isNullable(columnConfig),
-                        returnString = "";
+					return rs;
+				},
+				"columnDef": function(columnName, columnConfig, tableConfig) {
+					return columnName + " " + this.typeName(columnConfig) + this.columnConstraint(columnName, columnConfig, tableConfig);
+				},
+				"columnConstraint": function(columnName, columnConfig, tableConfig) {
+					var isPrimaryKey = this.isPrimaryKey(columnName, tableConfig),
+						isForeignKey = this.isForeignKey(columnName, tableConfig),
+						isNullable = this.isNullable(columnConfig),
+						returnString = "";
 
-                    returnString += this.primaryKeyClause(isPrimaryKey && (!isForeignKey && !isNullable)); // A PK cannot be a FK or nullable.
-                    returnString += this.foreignKeyClause((isForeignKey && !isPrimaryKey), columnName, tableConfig.foreignKeys); // A FK cannot be a PK
-                    returnString += this.nullableClause(isNullable && !isPrimaryKey); // A nullable field cannot be a PK
+					returnString += this.primaryKeyClause(isPrimaryKey && (!isForeignKey && !isNullable)); // A PK cannot be a FK or nullable.
+					returnString += this.foreignKeyClause((isForeignKey && !isPrimaryKey), columnName, tableConfig.foreignKeys); // A FK cannot be a PK
+					returnString += this.nullableClause(isNullable && !isPrimaryKey); // A nullable field cannot be a PK
 
-                    return returnString;
-                },
-                "typeName": function(columnConfig) {
-                    return this.sqlConversion[columnConfig.type];
-                },
-                "expr": function(Expr) {
-                    return "";
-                },
-                "foreignKeyClause": function(isForeignKey, columnName, foreignKeys) {
-                    var rs = "";
-                    if (isForeignKey) {
-                        rs = " " + FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
-                    }
-                    return rs;
-                },
-                "primaryKeyClause": function(isPrimaryKey) {
-                    var rs = "";
-                    if (isPrimaryKey) {
-                        rs = " " + PRIMARYKEY;
-                    }
-                    return rs;
-                },
-                "nullableClause": function(isNullable) {
-                    var rs = "";
-                    if (isNullable) {
-                        rs = " " + NULL;
-                    }
-                    return rs;
-                },
-                "columnConstraints": function(tableConfig) {
-                    var colConst = [];
-                    angular.forEach(tableConfig.columns, function(value, key) {
-                        colConst.push(this.columnDef(key, value, tableConfig));
-                    }, this);
-                    return colConst.join(",");
-                },
-                "isPrimaryKey": function(columnName, tableConfig) {
-                    var temp = false;
+					return returnString;
+				},
+				"typeName": function(columnConfig) {
+					return this.sqlConversion[columnConfig.type];
+				},
+				"expr": function(Expr) {
+					return "";
+				},
+				"foreignKeyClause": function(isForeignKey, columnName, foreignKeys) {
+					var rs = "";
+					if (isForeignKey) {
+						rs = " " + FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
+					}
+					return rs;
+				},
+				"primaryKeyClause": function(isPrimaryKey) {
+					var rs = "";
+					if (isPrimaryKey) {
+						rs = " " + PRIMARYKEY;
+					}
+					return rs;
+				},
+				"nullableClause": function(isNullable) {
+					var rs = "";
+					if (isNullable) {
+						rs = " " + NULL;
+					}
+					return rs;
+				},
+				"columnConstraints": function(tableConfig) {
+					var colConst = [];
+					angular.forEach(tableConfig.columns, function(value, key) {
+						colConst.push(this.columnDef(key, value, tableConfig));
+					}, this);
+					return colConst.join(",");
+				},
+				"isPrimaryKey": function(columnName, tableConfig) {
+					var temp = false;
 
-                    for (var x in tableConfig.primaryKey) {
-                        if (columnName === tableConfig.primaryKey[x]) {
-                            temp = true;
-                            break;
-                        }
-                    }
-                    return temp;
-                },
-                "isForeignKey": function(columnName, tableConfig) {
-                    return !!tableConfig.foreignKeys[columnName];
-                },
-                "isNullable": function(columnConfig) {
-                    return columnConfig.nullable;
-                },
-                "sqlInsert": function(tableName, data) {
-                    var columnString = "",
-                        placeholdersString = "",
-                        returnObject = {},
-                        val = {};
+					for (var x in tableConfig.primaryKey) {
+						if (columnName === tableConfig.primaryKey[x]) {
+							temp = true;
+							break;
+						}
+					}
+					return temp;
+				},
+				"isForeignKey": function(columnName, tableConfig) {
+					return !!tableConfig.foreignKeys[columnName];
+				},
+				"isNullable": function(columnConfig) {
+					return columnConfig.nullable;
+				},
+				"sqlInsert": function(tableName, data) {
+					var columnString = "",
+						placeholdersString = "",
+						returnObject = {},
+						val = {};
 
-                    val = this.parseData(data);
+					val = this.parseData(data);
 
-                    columnString = val.columns.join(",");
-                    placeholdersString = val.placeholders.join(",");
+					columnString = val.columns.join(",");
+					placeholdersString = val.placeholders.join(",");
 
-                    returnObject.queryString = INSERT + tableName + " (" + columnString + ") VALUES (" + placeholdersString + ");";
-                    returnObject.valueArray = val.values;
+					returnObject.queryString = INSERT + tableName + " (" + columnString + ") VALUES (" + placeholdersString + ");";
+					returnObject.valueArray = val.values;
 
-                    return returnObject;
-                },
-                "sqlUpdate": function(tableName, data, filters) {
-                    var val = {},
-                        nvps = [],
-                        nvpsString = "",
-                        returnObject = {};
+					return returnObject;
+				},
+				"sqlUpdate": function(tableName, data, filters) {
+					var val = {},
+						nvps = [],
+						nvpsString = "",
+						returnObject = {};
 
-                    val = this.parseData(data);
+					val = this.parseData(data);
 
-                    nvps = this.sqlUpdateNameValuePair(val);
+					nvps = this.sqlUpdateNameValuePair(val);
 
-                    nvpsString = nvps.join(", ");
+					nvpsString = nvps.join(", ");
 
-                    returnObject.queryString = UPDATE + tableName + " SET " + nvpsString + " WHERE " + filters.toSQL();
-                    returnObject.valueArray = val.values;
+					returnObject.queryString = UPDATE + tableName + " SET " + nvpsString + " WHERE " + filters.toSQL();
+					returnObject.valueArray = val.values;
 
-                    return returnObject;
-                },
-                "sqlUpdateNameValuePair": function(values) {
-                    var nvps = [];
+					return returnObject;
+				},
+				"sqlUpdateNameValuePair": function(values) {
+					var nvps = [];
 
-                    angular.forEach(values.columns, function(col, key) {
-                        nvps.push(col + " = ?");
-                    });
+					angular.forEach(values.columns, function(col, key) {
+						nvps.push(col + " = ?");
+					});
 
-                    return nvps;
-                },
-                "sqlDelete": function(tableName, filters) {
-                    var returnObject = {},
-                        where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
-                    returnObject.queryString = DELETE + tableName + where;
-                    return returnObject;
-                },
-                "sqlRead": function(tableName, filters, sort, page) {
-                    var fs, ss, ps, returnObject = {};
-                    fs = !!filters ? " WHERE " + filters.toSQL() : "";
-                    ss = !!sort ? " " + sort.toSQL() : "";
-                    ps = !!page ? " " + page.toSQL() : "";
-                    returnObject.queryString = READ + tableName + fs + ss + ps;
-                    return returnObject;
-                },
-                "sqlOne": function(tableName, primKey, value) {
-                    var returnObject = {};
-                    returnObject.queryString = READ + tableName + " WHERE " + primKey + " = '" + value + "'";
-                    return returnObject;
-                },
-                "parseData": function(data) {
-                    var values = [],
-                        placeholders = [],
-                        columns = [],
-                        r = {};
-                    angular.forEach(data, function(value, key) {
-                        columns.push(key);
-                        placeholders.push("?");
-                        values.push(value);
-                    });
+					return nvps;
+				},
+				"sqlDelete": function(tableName, filters) {
+					var returnObject = {},
+						where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
+					returnObject.queryString = DELETE + tableName + where;
+					return returnObject;
+				},
+				"sqlRead": function(tableName, filters, sort, page) {
+					var fs, ss, ps, returnObject = {};
+					fs = !!filters ? " WHERE " + filters.toSQL() : "";
+					ss = !!sort ? " " + sort.toSQL() : "";
+					ps = !!page ? " " + page.toSQL() : "";
+					returnObject.queryString = READ + tableName + fs + ss + ps;
+					return returnObject;
+				},
+				"sqlOne": function(tableName, primKey, value) {
+					var returnObject = {};
+					returnObject.queryString = READ + tableName + " WHERE " + primKey + " = '" + value + "'";
+					return returnObject;
+				},
+				"parseData": function(data) {
+					var values = [],
+						placeholders = [],
+						columns = [],
+						r = {};
+					angular.forEach(data, function(value, key) {
+						columns.push(key);
+						placeholders.push("?");
+						values.push(value);
+					});
 
-                    r.values = values;
-                    r.placeholders = placeholders;
-                    r.columns = columns;
+					r.values = values;
+					r.placeholders = placeholders;
+					r.columns = columns;
 
-                    return r;
-                }
-            };
+					return r;
+				}
+			};
 
-        this._interface = _interface;
+		this._interface = _interface;
 
-        this.createSqlTableStmt = function(tableName, tableConfig) {
-            return _interface.createTable(tableName, tableConfig);
-        };
+		this.createSqlTableStmt = function(tableName, tableConfig) {
+			return _interface.createTable(tableName, tableConfig);
+		};
 
-        this.createSqlViewStmt = function(tableName, viewSql) {
-            return _interface.createView(tableName, viewSql);
-        };
+		this.createSqlViewStmt = function(tableName, viewSql) {
+			return _interface.createView(tableName, viewSql);
+		};
 
-        this.createSqlInsertStmt = function(tableName, data) {
-            return _interface.sqlInsert(tableName, data);
-        };
+		this.createSqlInsertStmt = function(tableName, data) {
+			return _interface.sqlInsert(tableName, data);
+		};
 
-        this.createSqlUpdateStmt = function(tableName, data, filters) {
-            return _interface.sqlUpdate(tableName, data, filters);
-        };
+		this.createSqlUpdateStmt = function(tableName, data, filters) {
+			return _interface.sqlUpdate(tableName, data, filters);
+		};
 
-        this.createSqlDeleteStmt = function(tableName, data, filters) {
-            return _interface.sqlDelete(tableName, filters);
-        };
+		this.createSqlDeleteStmt = function(tableName, data, filters) {
+			return _interface.sqlDelete(tableName, filters);
+		};
 
-        this.createSqlReadStmt = function(tableName, filters, sort, page) {
-            return _interface.sqlRead(tableName, filters, sort, page);
-        };
+		this.createSqlReadStmt = function(tableName, filters, sort, page) {
+			return _interface.sqlRead(tableName, filters, sort, page);
+		};
 
-        this.createSqlOneStmt = function(tableName, primKey, value) {
-            return _interface.sqlOne(tableName, primKey, value);
-        };
+		this.createSqlOneStmt = function(tableName, primKey, value) {
+			return _interface.sqlOne(tableName, primKey, value);
+		};
 
-        this.createSqlClearStmt = function(tableName) {
-            return _interface.sqlDelete(tableName);
-        };
+		this.createSqlClearStmt = function(tableName) {
+			return _interface.sqlDelete(tableName);
+		};
 
-		this.convertToWebSQL = function(sqlColumn, sqlData){
+		this.convertToWebSQL = function(sqlColumn, sqlData) {
 			var sqliteColumn = _interface.sqlConversion[sqlColumn];
 
 			return _interface.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
 		};
 
-    }
+	}
 
-    function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
-        var stmts = {
-                "T": noWebSQLParser.createSqlTableStmt,
-                "V": noWebSQLParser.createSqlViewStmt
-            },
-            _name;
+	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
+		var stmts = {
+				"T": noWebSQLParser.createSqlTableStmt,
+				"V": noWebSQLParser.createSqlViewStmt
+			},
+			_name;
 
-        Object.defineProperties(this, {
-            "isInitialized": {
-                "get": function() {
-                    return !!noLocalStorage.getItem(_name);
-                }
-            }
-        });
+		Object.defineProperties(this, {
+			"isInitialized": {
+				"get": function() {
+					return !!noLocalStorage.getItem(_name);
+				}
+			}
+		});
 
-        //TODO: modify config to also contain Views, as well as, Tables.
-        this.configure = function(noUser, config, schema) {
-            var _webSQL = null,
-                promises = [],
-                noWebSQLInitialized = "noWebSQL_" + schema.config.dbName,
-                noConstructors = {
-                    "T": NoTable,
-                    "V": NoView
-                };
+		//TODO: modify config to also contain Views, as well as, Tables.
+		this.configure = function(noUser, config, schema) {
+			var _webSQL = null,
+				promises = [],
+				noWebSQLInitialized = "noWebSQL_" + schema.config.dbName,
+				noConstructors = {
+					"T": NoTable,
+					"V": NoView
+				};
 
-            _webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
+			_webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
 
-            _webSQL.currentUser = noUser;
-            _webSQL.name = schema.config.dbName;
+			_webSQL.currentUser = noUser;
+			_webSQL.name = schema.config.dbName;
 
-            angular.forEach(schema.tables, function(table, name) {
-                var t = new noConstructors[table.entityType](table, name, _webSQL);
-                this[name] = t;
-                promises.push(createEntity(table, _webSQL));
-            }, _webSQL);
+			angular.forEach(schema.tables, function(table, name) {
+				var t = new noConstructors[table.entityType](table, name, _webSQL);
+				this[name] = t;
+				promises.push(createEntity(table, _webSQL));
+			}, _webSQL);
 
-            return $q.all(promises)
-                .then(function() {
-                    $rootScope[noWebSQLInitialized] = _webSQL;
-                    noLogService.log(noWebSQLInitialized + " Ready.");
-                });
-        };
+			return $q.all(promises)
+				.then(function() {
+					$rootScope[noWebSQLInitialized] = _webSQL;
+					noLogService.log(noWebSQLInitialized + " Ready.");
+				});
+		};
 
-        this.whenReady = function(config) {
-            var deferred = $q.defer();
+		this.whenReady = function(config) {
+			var deferred = $q.defer();
 
-            $timeout(function() {
-                var noWebSQLInitialized = "noWebSQL_" + config.dbName;
+			$timeout(function() {
+				var noWebSQLInitialized = "noWebSQL_" + config.dbName;
 
-                if ($rootScope[noWebSQLInitialized]) {
-                    deferred.resolve();
-                } else {
-                    $rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope) {
-                        if (newval) {
-                            deferred.resolve();
-                        }
-                    });
-                }
-            });
+				if ($rootScope[noWebSQLInitialized]) {
+					deferred.resolve();
+				} else {
+					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope) {
+						if (newval) {
+							deferred.resolve();
+						}
+					});
+				}
+			});
 
-            return deferred.promise;
-        };
+			return deferred.promise;
+		};
 
-        this.getDatabase = function(databaseName) {
-            return $rootScope["noWebSQL_" + databaseName];
-        };
+		this.getDatabase = function(databaseName) {
+			return $rootScope["noWebSQL_" + databaseName];
+		};
 
-        /**
-         * ### createTable(tableName, table)
-         *
-         * #### Parameters
-         *
-         * |Name|Type|Description|
-         * |----|----|-----------|
-         * |type|String|One of T\|V|
-         * |tableName|String|The table's name|
-         * |table|Object|The table schema|
-         */
-        function createEntity(entity, database) {
+		/**
+		 * ### createTable(tableName, table)
+		 *
+		 * #### Parameters
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |type|String|One of T\|V|
+		 * |tableName|String|The table's name|
+		 * |table|Object|The table schema|
+		 */
+		function createEntity(entity, database) {
 
-            var deferred = $q.defer();
+			var deferred = $q.defer();
 
 
-            database.transaction(function(tx) {
-                tx.executeSql(stmts[entity.entityType](entity.entityName, entity), [],
-                    function(t, r) {
-                        deferred.resolve();
-                    },
-                    function(t, e) {
-                        deferred.reject({
-                            entity: entity,
-                            error: e
-                        });
-                    });
-            });
+			database.transaction(function(tx) {
+				tx.executeSql(stmts[entity.entityType](entity.entityName, entity), [],
+					function(t, r) {
+						deferred.resolve();
+					},
+					function(t, e) {
+						deferred.reject({
+							entity: entity,
+							error: e
+						});
+					});
+			});
 
-            return deferred.promise;
-        }
+			return deferred.promise;
+		}
 
-        /**
-         * ## NoTable
-         * CRUD interface for WebSql
-         */
-        function NoTable(table, tableName, database) {
-            if (!table) throw "table is a required parameter";
-            if (!tableName) throw "tableName is a required parameter";
-            if (!database) throw "database is a required parameter";
+		/**
+		 * ## NoTable
+		 * CRUD interface for WebSql
+		 */
+		function NoTable(table, tableName, database) {
+			if (!table) throw "table is a required parameter";
+			if (!tableName) throw "tableName is a required parameter";
+			if (!database) throw "database is a required parameter";
 
-            var _table = table,
-                _tableName = table.entityName,
-                _db = database;
+			var _table = table,
+				_tableName = table.entityName,
+				_db = database;
 
-            Object.defineProperties(this, {
-                "__type": {
-                    "get": function() {
-                        return "INoCRUD";
-                    },
-                },
-                "primaryKey": {
-                    "get": function() {
-                        return _table.primaryKey;
-                    }
-                },
-                "entityName": {
-                    "get": function() {
-                        return _tableName;
-                    }
-                }
-            });
+			Object.defineProperties(this, {
+				"__type": {
+					"get": function() {
+						return "INoCRUD";
+					},
+				},
+				"primaryKey": {
+					"get": function() {
+						return _table.primaryKey;
+					}
+				},
+				"entityName": {
+					"get": function() {
+						return _tableName;
+					}
+				}
+			});
 
-            /**
-             * ### \_getOne(rowid)
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |rowid|Number or Object| When a number assume that you are filtering on "rowId". When an Object the object will have a key, and value property.|
-             */
-            function _getOne(rowid) {
-                var deferred = $q.defer(),
-                    filters = new noInfoPath.data.NoFilters(),
-                    sqlExpressionData;
+			/**
+			 * ### \_getOne(rowid)
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |rowid|Number or Object| When a number assume that you are filtering on "rowId". When an Object the object will have a key, and value property.|
+			 */
+			function _getOne(rowid) {
+				var deferred = $q.defer(),
+					filters = new noInfoPath.data.NoFilters(),
+					sqlExpressionData;
 
-                if (angular.isObject(rowid)) {
-                    filters.add(rowid.key, null, true, true, [{
-                        "operator": "eq",
-                        "value": rowid.value,
-                        "logic": null
-                    }]);
-                } else {
-                    filters.add("rowid", null, true, true, [{
-                        "operator": "eq",
-                        "value": rowid,
-                        "logic": null
-                    }]);
-                }
+				if (angular.isObject(rowid)) {
+					filters.add(rowid.key, null, true, true, [{
+						"operator": "eq",
+						"value": rowid.value,
+						"logic": null
+					}]);
+				} else {
+					filters.add("rowid", null, true, true, [{
+						"operator": "eq",
+						"value": rowid,
+						"logic": null
+					}]);
+				}
 
-                sqlExpressionData = noWebSQLParser.createSqlReadStmt(_tableName, filters);
+				sqlExpressionData = noWebSQLParser.createSqlReadStmt(_tableName, filters);
 
-                _exec(sqlExpressionData)
-                    .then(function(resultset) {
-                        if (resultset.rows.length === 0) {
-                            deferred.resolve({});
-                        } else {
-                            deferred.resolve(resultset.rows[0]);
-                        }
-                    })
-                    .catch(deferred.reject);
+				_exec(sqlExpressionData)
+					.then(function(resultset) {
+						if (resultset.rows.length === 0) {
+							deferred.resolve({});
+						} else {
+							deferred.resolve(resultset.rows[0]);
+						}
+					})
+					.catch(deferred.reject);
 
-                return deferred.promise;
-            }
+				return deferred.promise;
+			}
 
-            /**
-             * ### \_exec(sqlExpressionData)
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |sqlExpressionData|Object|An object with two properties, queryString and valueArray. queryString is the SQL statement that will be executed, and the valueArray is the array of values for the replacement variables within the queryString.|
-             */
+			/**
+			 * ### \_exec(sqlExpressionData)
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |sqlExpressionData|Object|An object with two properties, queryString and valueArray. queryString is the SQL statement that will be executed, and the valueArray is the array of values for the replacement variables within the queryString.|
+			 */
 
-            function _exec(sqlExpressionData) {
-                var deferred = $q.defer(),
-                    valueArray;
+			function _exec(sqlExpressionData) {
+				var deferred = $q.defer(),
+					valueArray;
 
-                if (sqlExpressionData.valueArray) {
-                    valueArray = sqlExpressionData.valueArray;
-                } else {
-                    valueArray = [];
-                }
+				if (sqlExpressionData.valueArray) {
+					valueArray = sqlExpressionData.valueArray;
+				} else {
+					valueArray = [];
+				}
 
-                _db.transaction(function(tx) {
-                    tx.executeSql(
-                        sqlExpressionData.queryString,
-                        valueArray,
-                        function(t, resultset) {
-                            deferred.resolve(resultset);
-                        },
-                        function(t, r, x) {
-                            deferred.reject({
-                                tx: t,
-                                err: r
-                            });
-                        }
+				_db.transaction(function(tx) {
+					tx.executeSql(
+						sqlExpressionData.queryString,
+						valueArray,
+						function(t, resultset) {
+							deferred.resolve(resultset);
+						},
+						function(t, r, x) {
+							deferred.reject({
+								tx: t,
+								err: r
+							});
+						}
 
-                    );
-                });
+					);
+				});
 
-                return deferred.promise;
-            }
+				return deferred.promise;
+			}
 
-            /**
-             * ### webSqlOperation(operation, noTransaction, data)
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |operation|String|Either one of (C\|U\|D\|BD\|BC)|
-             * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
-             * |data|Object|Name Value Pairs|
-             *
-             *
-             */
+			/**
+			 * ### webSqlOperation(operation, noTransaction, data)
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |operation|String|Either one of (C\|U\|D\|BD\|BC)|
+			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
+			 * |data|Object|Name Value Pairs|
+			 *
+			 *
+			 */
 
-            function webSqlOperation(operation, data, noTransaction) {
-                // noTransaction is not required, but is needed to track transactions
-                var sqlExpressionData, id,
-                    deferred = $q.defer(),
-                    createObject = noWebSQLParser.createSqlInsertStmt(_tableName, data),
-                    sqlStmtFns = {
-                        "C": noWebSQLParser.createSqlInsertStmt,
-                        "U": noWebSQLParser.createSqlUpdateStmt,
-                        "D": noWebSQLParser.createSqlDeleteStmt,
-                        "BD": noWebSQLParser.createSqlClearStmt,
-                        "BC": noWebSQLParser.createSqlInsertStmt
-                    },
-                    filterOps = {
-                        "C": function(data) {
-                            return;
-                        },
-                        "U": function(data) {
-                            var noFilters = new noInfoPath.data.NoFilters(),
-                                id;
-                            id = data[_table.primaryKey];
-                            noFilters.add(_table.primaryKey, null, true, true, [{
-                                operator: "eq",
-                                value: id
-                            }]);
+			function webSqlOperation(operation, data, noTransaction) {
+				// noTransaction is not required, but is needed to track transactions
+				var sqlExpressionData, id,
+					deferred = $q.defer(),
+					createObject = noWebSQLParser.createSqlInsertStmt(_tableName, data),
+					sqlStmtFns = {
+						"C": noWebSQLParser.createSqlInsertStmt,
+						"U": noWebSQLParser.createSqlUpdateStmt,
+						"D": noWebSQLParser.createSqlDeleteStmt,
+						"BD": noWebSQLParser.createSqlClearStmt,
+						"BC": noWebSQLParser.createSqlInsertStmt
+					},
+					filterOps = {
+						"C": function(data) {
+							return;
+						},
+						"U": function(data) {
+							var noFilters = new noInfoPath.data.NoFilters(),
+								id;
+							id = data[_table.primaryKey];
+							noFilters.add(_table.primaryKey, null, true, true, [{
+								operator: "eq",
+								value: id
+							}]);
 
-                            return noFilters;
-                        },
-                        "D": function(data) {
-                            var noFilters = new noInfoPath.data.NoFilters(),
-                                id;
-                            id = data[_table.primaryKey];
-                            noFilters.add(_table.primaryKey, null, true, true, [{
-                                operator: "eq",
-                                value: id
-                            }]);
+							return noFilters;
+						},
+						"D": function(data) {
+							var noFilters = new noInfoPath.data.NoFilters(),
+								id;
+							id = data[_table.primaryKey];
+							noFilters.add(_table.primaryKey, null, true, true, [{
+								operator: "eq",
+								value: id
+							}]);
 
-                            return noFilters;
-                        },
-                        "BD": function() {},
-                        "BC": function() {}
-                    },
-                    sqlOps = {
-                        "C": function(data, noFilters, noTransaction) {
-                            console.log(_table.primaryKey);
-                            var pk = angular.isArray(_table.primaryKey) ?
-                                _table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
-                                sqlStmt;
+							return noFilters;
+						},
+						"BD": function() {},
+						"BC": function() {}
+					},
+					sqlOps = {
+						"C": function(data, noFilters, noTransaction) {
+							console.log(_table.primaryKey);
+							var pk = angular.isArray(_table.primaryKey) ?
+								_table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
+								sqlStmt;
 
-                            if(pk && !data[pk]){
-                                data[_table.primaryKey] = noInfoPath.createUUID();
-                            }
+							if (pk && !data[pk]) {
+								data[_table.primaryKey] = noInfoPath.createUUID();
+							}
 
-                            data.CreatedBy = noLoginService.user.userId;
-                            data.DateCreated = noInfoPath.toDbDate(new Date());
-                            data.ModifiedBy = noLoginService.user.userId;
-                            data.ModifiedDate = noInfoPath.toDbDate(new Date());
+							data.CreatedBy = noLoginService.user.userId;
+							data.DateCreated = noInfoPath.toDbDate(new Date());
+							data.ModifiedBy = noLoginService.user.userId;
+							data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-                            sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
+							sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
 
-                            _exec(sqlStmt)
-                                .then(function(result) {
-                                    _getOne(result.insertId)
-                                        .then(function(result) {
-                                            if (noTransaction) noTransaction.addChange(_tableName, result, operation);
-                                            deferred.resolve(result);
-                                        })
-                                        .catch(deferred.reject);
-                                })
-                                .catch(deferred.reject);
-                        },
-                        "U": function(data, noFilters, noTransaction) {
-                            data.ModifiedBy = noLoginService.user.userId;
-                            data.ModifiedDate = noInfoPath.toDbDate(new Date());
+							_exec(sqlStmt)
+								.then(function(result) {
+									_getOne(result.insertId)
+										.then(function(result) {
+											if (noTransaction) noTransaction.addChange(_tableName, result, operation);
+											deferred.resolve(result);
+										})
+										.catch(deferred.reject);
+								})
+								.catch(deferred.reject);
+						},
+						"U": function(data, noFilters, noTransaction) {
+							data.ModifiedBy = noLoginService.user.userId;
+							data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-                            var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters),
-                                keys = [];
+							var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters),
+								keys = [];
 
-                            for (var k in _table.primaryKey) {
-                                var key = _table.primaryKey[k];
+							// for (var k in _table.primaryKey) {
+							//     var key = _table.primaryKey[k];
+							//
+							//     keys.push(data[key]);
+							// }
 
-                                keys.push(data[key]);
-                            }
+							//_getOne(keys.join(","))
+							//    .then(function(result) {
+							_exec(sqlStmt)
+								.then(function(result) {
+									if (noTransaction) noTransaction.addChange(_tableName, data, "U");
+									deferred.resolve(data);
+								})
+								.catch(deferred.reject);
+							//})
+							//.catch(deferred.reject);
+						},
+						"D": function(data, noFilters, noTransaction) {
+							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters);
+							_getOne({
+									"key": _table.primaryKey,
+									"value": data[_table.primaryKey]
+								})
+								.then(function(result) {
+									_exec(sqlStmt)
+										.then(function(result) {
+											if (noTransaction) noTransaction.addChange(_tableName, data, "D");
+											deferred.resolve(result);
+										}.bind(result))
+										.catch(deferred.reject);
+								})
+								.catch(deferred.reject);
+						},
+						"BD": function() {
+							var sqlStmt = sqlStmtFns.D(_tableName);
+							_exec(sqlStmt)
+								.then(deferred.resolve)
+								.catch(deferred.reject);
 
-                            _getOne(keys.join(","))
-                                .then(function(result) {
-                                    _exec(sqlStmt)
-                                        .then(function(result) {
-                                            if (noTransaction) noTransaction.addChange(_tableName, data, "U");
-                                            deferred.resolve(data);
-                                        }.bind(result))
-                                        .catch(deferred.reject);
-                                })
-                                .catch(deferred.reject);
-                        },
-                        "D": function(data, noFilters, noTransaction) {
-                            var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters);
-                            _getOne({
-                                    "key": _table.primaryKey,
-                                    "value": data[_table.primaryKey]
-                                })
-                                .then(function(result) {
-                                    _exec(sqlStmt)
-                                        .then(function(result) {
-                                            if (noTransaction) noTransaction.addChange(_tableName, data, "D");
-                                            deferred.resolve(result);
-                                        }.bind(result))
-                                        .catch(deferred.reject);
-                                })
-                                .catch(deferred.reject);
-                        },
-                        "BD": function() {
-                            var sqlStmt = sqlStmtFns.D(_tableName);
-                            _exec(sqlStmt)
-                                .then(deferred.resolve)
-                                .catch(deferred.reject);
-
-                        },
+						},
 						"BC": function(data) {
-                            for(var c in table.columns){
-                                var col = table.columns[c];
-                                data[c] = noWebSQLParser.convertToWebSQL(col.type, data[c]);
-                            }
+							for (var c in table.columns) {
+								var col = table.columns[c];
+								data[c] = noWebSQLParser.convertToWebSQL(col.type, data[c]);
+							}
 
-                            var sqlStmt = sqlStmtFns.C(_tableName, data, null);
+							var sqlStmt = sqlStmtFns.C(_tableName, data, null);
 
-                            _exec(sqlStmt)
-                                .then(deferred.resolve)
-                                .catch(deferred.reject);
-                        }
-                    },
-                    filters = filterOps[operation](data);
+							_exec(sqlStmt)
+								.then(deferred.resolve)
+								.catch(deferred.reject);
+						}
+					},
+					filters = filterOps[operation](data);
 
-                sqlOps[operation](data, filters, noTransaction);
+				sqlOps[operation](data, filters, noTransaction);
 
 
-                return deferred.promise;
-            }
+				return deferred.promise;
+			}
 
-            /**
-             * ### noCreate(data, noTransaction)
-             *
-             * Inserts a record into the websql database with the data provided.
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |data|Object|Name Value Pairs|
-             * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
-             */
+			/**
+			 * ### noCreate(data, noTransaction)
+			 *
+			 * Inserts a record into the websql database with the data provided.
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |data|Object|Name Value Pairs|
+			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+			 */
 
-            this.noCreate = function(data, noTransaction) {
-                return webSqlOperation("C", data, noTransaction);
-            };
+			this.noCreate = function(data, noTransaction) {
+				return webSqlOperation("C", data, noTransaction);
+			};
 
-            /**
-             * ### noRead([NoFilters, NoSort, NoPage])
-             *
-             * Reads records from the websql database.
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |NoFilters|Object|(Optional) A noInfoPath NoFilters Array|
-             * |NoSort|Object|(Optional) A noInfoPath NoSort Object|
-             * |NoPage|Object|(Optional) A noInfoPath NoPage Object|
-             */
+			/**
+			 * ### noRead([NoFilters, NoSort, NoPage])
+			 *
+			 * Reads records from the websql database.
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |NoFilters|Object|(Optional) A noInfoPath NoFilters Array|
+			 * |NoSort|Object|(Optional) A noInfoPath NoSort Object|
+			 * |NoPage|Object|(Optional) A noInfoPath NoPage Object|
+			 */
 
-            this.noRead = function() {
+			this.noRead = function() {
 
-                var filters, sort, page,
-                    deferred = $q.defer(),
-                    readObject;
+				var filters, sort, page,
+					deferred = $q.defer(),
+					readObject;
 
-                for (var ai in arguments) {
-                    var arg = arguments[ai];
+				for (var ai in arguments) {
+					var arg = arguments[ai];
 
-                    //success and error must always be first, then
-                    if (angular.isObject(arg)) {
-                        switch (arg.__type) {
-                            case "NoFilters":
-                                filters = arg;
-                                break;
-                            case "NoSort":
-                                sort = arg;
-                                break;
-                            case "NoPage":
-                                page = arg;
-                                break;
-                        }
-                    }
-                }
+					//success and error must always be first, then
+					if (angular.isObject(arg)) {
+						switch (arg.__type) {
+							case "NoFilters":
+								filters = arg;
+								break;
+							case "NoSort":
+								sort = arg;
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
 
-                readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort, page);
+				readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort, page);
 
-                function _txCallback(tx) {
-                    tx.executeSql(
-                        readObject.queryString, [],
-                        function(t, r) {
-                            var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
-                            if (page) data.page(page);
-                            deferred.resolve(data);
-                        },
-                        function(t, e) {
-                            deferred.reject(arguments);
-                        });
-                }
+				function _txCallback(tx) {
+					tx.executeSql(
+						readObject.queryString, [],
+						function(t, r) {
+							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+							if (page) data.page(page);
+							deferred.resolve(data);
+						},
+						function(t, e) {
+							deferred.reject(arguments);
+						});
+				}
 
-                function _txFailure(error) {
-                    console.error("Tx Failure", error);
-                }
+				function _txFailure(error) {
+					console.error("Tx Failure", error);
+				}
 
-                function _txSuccess(data) {
-                    //console.log("Tx Success", data);
-                }
+				function _txSuccess(data) {
+					//console.log("Tx Success", data);
+				}
 
-                _db.transaction(_txCallback, _txFailure, _txSuccess);
+				_db.transaction(_txCallback, _txFailure, _txSuccess);
 
-                return deferred.promise;
-            };
+				return deferred.promise;
+			};
 
-            /**
-             * ### noUpdate(data, noTransaction)
-             *
-             * Updates a record from the websql database based on the Primary Key of the data provided.
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |data|Object|Name Value Pairs|
-             * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
-             */
+			/**
+			 * ### noUpdate(data, noTransaction)
+			 *
+			 * Updates a record from the websql database based on the Primary Key of the data provided.
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |data|Object|Name Value Pairs|
+			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+			 */
 
-            this.noUpdate = function(data, noTransaction) {
-                // removed the filters parameter as we will most likely be updating one record at a time. Expand this by potentially renaming this to noUpdateOne and the replacement noUpdate be able to handle filters?
-                return webSqlOperation("U", data, noTransaction);
-            };
+			this.noUpdate = function(data, noTransaction) {
+				// removed the filters parameter as we will most likely be updating one record at a time. Expand this by potentially renaming this to noUpdateOne and the replacement noUpdate be able to handle filters?
+				return webSqlOperation("U", data, noTransaction);
+			};
 
-            /**
-             * ### noDestroy(data, noTransaction)
-             *
-             * Deletes a record from the websql database based on the Primary Key of the data provided.
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |data|Object|Name Value Pairs|
-             * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
-             */
+			/**
+			 * ### noDestroy(data, noTransaction)
+			 *
+			 * Deletes a record from the websql database based on the Primary Key of the data provided.
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |data|Object|Name Value Pairs|
+			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+			 */
 
-            this.noDestroy = function(data, noTransaction) {
-                return webSqlOperation("D", data, noTransaction);
-            };
+			this.noDestroy = function(data, noTransaction) {
+				return webSqlOperation("D", data, noTransaction);
+			};
 
-            /**
-             * ### noOne(data)
-             *
-             * Reads a record from the websql database based on the Primary Key of the data provided.
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |data|Object|Name Value Pairs|
-             */
-            this.noOne = function(data) {
-                var deferred = $q.defer(),
-                    key = data[_table.primaryKey],
-                    oneObject = noWebSQLParser.createSqlOneStmt(_tableName, _table.primaryKey, key);
+			/**
+			 * ### noOne(data)
+			 *
+			 * Reads a record from the websql database based on the Primary Key of the data provided.
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |data|Object|Name Value Pairs|
+			 */
+			this.noOne = function(data) {
+				var deferred = $q.defer(),
+					key = data[_table.primaryKey],
+					oneObject = noWebSQLParser.createSqlOneStmt(_tableName, _table.primaryKey, key);
 
-                function _txCallback(tx) {
+				function _txCallback(tx) {
 
-                    tx.executeSql(oneObject.queryString,
-                        oneObject.valueArray,
-                        function(t, r) {
-                            var data = r.rows.length ? r.rows[0] : undefined;
-                            deferred.resolve(data);
-                        },
-                        function(t, e) {
-                            deferred.reject(e);
-                        });
+					tx.executeSql(oneObject.queryString,
+						oneObject.valueArray,
+						function(t, r) {
+							var data = r.rows.length ? r.rows[0] : undefined;
+							deferred.resolve(data);
+						},
+						function(t, e) {
+							deferred.reject(e);
+						});
 
-                }
+				}
 
-                function _txFailure(error) {
-                    console.error("Tx Failure", error);
-                }
+				function _txFailure(error) {
+					console.error("Tx Failure", error);
+				}
 
-                function _txSuccess(data) {
-                    //console.log("Tx Success", data);
-                }
+				function _txSuccess(data) {
+					//console.log("Tx Success", data);
+				}
 
-                _db.transaction(_txCallback, _txFailure, _txSuccess);
+				_db.transaction(_txCallback, _txFailure, _txSuccess);
 
-                return deferred.promise;
-            };
+				return deferred.promise;
+			};
 
-            this.bulkLoad = function(data, progress) {
-                var deferred = $q.defer(),
-                    table = this;
-                //var table = this;
-                function _import(data, progress) {
-                    var total = data ? data.length : 0;
+			this.bulkLoad = function(data, progress) {
+				var deferred = $q.defer(),
+					table = this;
+				//var table = this;
+				function _import(data, progress) {
+					var total = data ? data.length : 0;
 
-                    $timeout(function() {
-                        //progress.rows.start({max: total});
-                        deferred.notify(progress);
-                    });
+					$timeout(function() {
+						//progress.rows.start({max: total});
+						deferred.notify(progress);
+					});
 
-                    var currentItem = 0;
+					var currentItem = 0;
 
-                    //_dexie.transaction('rw', table, function (){
-                    _next();
-                    //});
+					//_dexie.transaction('rw', table, function (){
+					_next();
+					//});
 
-                    function _next() {
-                        if (currentItem < data.length) {
-                            var datum = data[currentItem];
+					function _next() {
+						if (currentItem < data.length) {
+							var datum = data[currentItem];
 
-                            table.noBulkCreate(datum)
-                                .then(function(data) {
-                                    //progress.updateRow(progress.rows);
-                                    deferred.notify(data);
-                                })
-                                .catch(function() {
-                                    deferred.reject({
-                                        entity: table,
-                                        error: arguments
-                                    });
-                                })
-                                .finally(function() {
-                                    currentItem++;
-                                    _next();
-                                });
+							table.noBulkCreate(datum)
+								.then(function(data) {
+									//progress.updateRow(progress.rows);
+									deferred.notify(data);
+								})
+								.catch(function() {
+									deferred.reject({
+										entity: table,
+										error: arguments
+									});
+								})
+								.finally(function() {
+									currentItem++;
+									_next();
+								});
 
-                        } else {
-                            deferred.resolve(table.name);
-                        }
-                    }
+						} else {
+							deferred.resolve(table.name);
+						}
+					}
 
-                }
+				}
 
-                //console.info("bulkLoad: ", table.TableName)
+				//console.info("bulkLoad: ", table.TableName)
 
-                table.noClear()
-                    .then(function() {
-                        _import(data, progress);
-                    }.bind(this));
+				table.noClear()
+					.then(function() {
+						_import(data, progress);
+					}.bind(this));
 
-                return deferred.promise;
-            };
+				return deferred.promise;
+			};
 
-            /**
-             * ### noClear()
-             *
-             * Delete all rows from the current table.
-             *
-             * #### Returns
-             * AngularJS Promise.
-             */
-            this.noClear = function() {
-                return webSqlOperation("BD", null);
-            };
+			/**
+			 * ### noClear()
+			 *
+			 * Delete all rows from the current table.
+			 *
+			 * #### Returns
+			 * AngularJS Promise.
+			 */
+			this.noClear = function() {
+				return webSqlOperation("BD", null);
+			};
 
-            this.noBulkCreate = function(data) {
-                return webSqlOperation("BC", data);
-            };
-        }
+			this.noBulkCreate = function(data) {
+				return webSqlOperation("BC", data);
+			};
+		}
 
-        /**
-         * ## NoView
-         * An in memory representation of complex SQL operation that involes
-         * multiple tables and joins, as well as grouping and aggregation
-         * functions.
-         *
-         * ##### NoView JSON Prototype
-         *
-         * ```json
-         *	{
-         *		"sql": String,
-         *		"primaryKey": String,
-         *		"params": []
-         *	}
-         * ```
-         *
-         * ##### References
-         * - https://www.sqlite.org/lang_createview.html
-         *
-         */
-        function NoView(view, viewName, database) {
-            if (!view) throw "view is a required parameter";
-            if (!viewName) throw "viewName is a required parameter";
-            if (!database) throw "database is a required parameter";
+		/**
+		 * ## NoView
+		 * An in memory representation of complex SQL operation that involes
+		 * multiple tables and joins, as well as grouping and aggregation
+		 * functions.
+		 *
+		 * ##### NoView JSON Prototype
+		 *
+		 * ```json
+		 *	{
+		 *		"sql": String,
+		 *		"primaryKey": String,
+		 *		"params": []
+		 *	}
+		 * ```
+		 *
+		 * ##### References
+		 * - https://www.sqlite.org/lang_createview.html
+		 *
+		 */
+		function NoView(view, viewName, database) {
+			if (!view) throw "view is a required parameter";
+			if (!viewName) throw "viewName is a required parameter";
+			if (!database) throw "database is a required parameter";
 
-            var _view = view,
-                _viewName = viewName,
-                _db = database;
+			var _view = view,
+				_viewName = viewName,
+				_db = database;
 
-            Object.defineProperties(this, {
-                "__type": {
-                    "get": function() {
-                        return "INoCRUD";
-                    }
-                },
-                "primaryKey": {
-                    "get": function() {
-                        return _view.primaryKey;
-                    }
-                },
-                "entityName": {
-                    "get": function() {
-                        return _viewName;
-                    }
-                }
+			Object.defineProperties(this, {
+				"__type": {
+					"get": function() {
+						return "INoCRUD";
+					}
+				},
+				"primaryKey": {
+					"get": function() {
+						return _view.primaryKey;
+					}
+				},
+				"entityName": {
+					"get": function() {
+						return _viewName;
+					}
+				}
 
-            });
+			});
 
-            this.noCreate = angular.noop;
+			this.noCreate = angular.noop;
 
-            this.noRead = function() {
+			this.noRead = function() {
 
-                var filters, sort, page,
-                    deferred = $q.defer(),
-                    readObject;
+				var filters, sort, page,
+					deferred = $q.defer(),
+					readObject;
 
-                for (var ai in arguments) {
-                    var arg = arguments[ai];
+				for (var ai in arguments) {
+					var arg = arguments[ai];
 
-                    //success and error must always be first, then
-                    if (angular.isObject(arg)) {
-                        switch (arg.__type) {
-                            case "NoFilters":
-                                filters = arg;
-                                break;
-                            case "NoSort":
-                                sort = arg;
-                                break;
-                            case "NoPage":
-                                page = arg;
-                                break;
-                        }
-                    }
-                }
+					//success and error must always be first, then
+					if (angular.isObject(arg)) {
+						switch (arg.__type) {
+							case "NoFilters":
+								filters = arg;
+								break;
+							case "NoSort":
+								sort = arg;
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
 
-                readObject = noWebSQLParser.createSqlReadStmt(_viewName, filters, sort, page);
+				readObject = noWebSQLParser.createSqlReadStmt(_viewName, filters, sort, page);
 
-                function _txCallback(tx) {
-                    tx.executeSql(
-                        readObject.queryString, [],
-                        function(t, r) {
-                            var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
-                            if (page) data.page(page);
+				function _txCallback(tx) {
+					tx.executeSql(
+						readObject.queryString, [],
+						function(t, r) {
+							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+							if (page) data.page(page);
 							_getTotal(_db, _viewName, filters)
-								.then(function(total){
+								.then(function(total) {
 									data.total = total;
 									deferred.resolve(data);
 								})
 								.catch(deferred.reject);
-                        },
-                        function(t, e) {
-                            throw e;
-                        });
-                }
+						},
+						function(t, e) {
+							console.error(e);
+							throw e;
+						});
+				}
 
-                function _txFailure(error) {
-                    throw error;
-                }
+				function _txFailure(error) {
+					throw error;
+				}
 
-                function _txSuccess(data) {
-                    //console.log("Tx Success", data);
-                }
+				function _txSuccess(data) {
+					//console.log("Tx Success", data);
+				}
 
-                _db.transaction(_txCallback, _txFailure, _txSuccess);
+				_db.transaction(_txCallback, _txFailure, _txSuccess);
 
-                return deferred.promise;
-            };
+				return deferred.promise;
+			};
 
-            /**
-             * ### noOne(data)
-             *
-             * Reads a record from the websql database based on the Primary Key of the data provided.
-             *
-             * #### Parameters
-             *
-             * |Name|Type|Description|
-             * |----|----|-----------|
-             * |data|Object|Name Value Pairs|
-             */
-            this.noOne = function(data, primaryKey) {
-                var deferred = $q.defer(),
-                    key = data[primaryKey],
-                    oneObject = noWebSQLParser.createSqlOneStmt(_viewName, primaryKey, key);
+			/**
+			 * ### noOne(data)
+			 *
+			 * Reads a record from the websql database based on the Primary Key of the data provided.
+			 *
+			 * #### Parameters
+			 *
+			 * |Name|Type|Description|
+			 * |----|----|-----------|
+			 * |data|Object|Name Value Pairs|
+			 */
+			this.noOne = function(data, primaryKey) {
+				var deferred = $q.defer(),
+					key = data[primaryKey],
+					oneObject = noWebSQLParser.createSqlOneStmt(_viewName, primaryKey, key);
 
-                function _txCallback(tx) {
+				function _txCallback(tx) {
 
-                    tx.executeSql(oneObject.queryString,
-                        oneObject.valueArray,
-                        function(t, r) {
-                            var data = r.rows.length ? r.rows[0] : undefined;
-                            deferred.resolve(data);
-                        },
-                        function(t, e) {
-                            deferred.reject(e);
-                        });
+					tx.executeSql(oneObject.queryString,
+						oneObject.valueArray,
+						function(t, r) {
+							var data = r.rows.length ? r.rows[0] : undefined;
+							deferred.resolve(data);
+						},
+						function(t, e) {
+							deferred.reject(e);
+						});
 
-                }
+				}
 
-                function _txFailure(error) {
-                    console.error("Tx Failure", error);
-                }
+				function _txFailure(error) {
+					console.error("Tx Failure", error);
+				}
 
-                function _txSuccess(data) {
-                    //console.log("Tx Success", data);
-                }
+				function _txSuccess(data) {
+					//console.log("Tx Success", data);
+				}
 
-                _db.transaction(_txCallback, _txFailure, _txSuccess);
+				_db.transaction(_txCallback, _txFailure, _txSuccess);
 
-                return deferred.promise;
-            };
+				return deferred.promise;
+			};
 
-            this.noUpdate = angular.noop;
+			this.noUpdate = angular.noop;
 
-            this.noDestroy = angular.noop;
+			this.noDestroy = angular.noop;
 
-            this.bulkLoad = angular.noop;
+			this.bulkLoad = angular.noop;
 
-            this.noClear = angular.noop;
-        }
+			this.noClear = angular.noop;
+		}
 
-		function _getTotal(db, entityName, noFilter){
+		function _getTotal(db, entityName, noFilter) {
 
 			var deferred = $q.defer(),
-				filterExpression = noFilter ? " WHERE " + noFilter.toSQL(): "",
+				filterExpression = noFilter ? " WHERE " + noFilter.toSQL() : "",
 				sqlExpressionData = {
 					"queryString": "SELECT COUNT() AS total FROM " + entityName + filterExpression
 				};
@@ -3252,76 +3300,76 @@ var GloboTest = {};
 
 			return deferred.promise;
 		}
-    }
+	}
 
-    angular.module("noinfopath.data")
-        .factory("noWebSQL", ["$parse", "$rootScope", "lodash", "$q", "$timeout", "noLogService", "noLoginService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
-            return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser);
-        }])
-        .service("noWebSQLParser", [function() {
-            return new NoWebSQLParser();
-        }]);
+	angular.module("noinfopath.data")
+		.factory("noWebSQL", ["$parse", "$rootScope", "lodash", "$q", "$timeout", "noLogService", "noLoginService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
+			return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser);
+		}])
+		.service("noWebSQLParser", [function() {
+			return new NoWebSQLParser();
+		}]);
 })(angular);
 
 //transaction.js
 /*  ## noTransactionCache service
-*
-*
-*
-*  #### noConfig notation example.
-*
-*   ```json
-*    "noTransaction": {
-*        "create": {
-*            [
-*               {
-*                    "entityName": "Observations",
-*                    "identityInsert": "lazy",
-*                    "identityType": "guid",
-*                    "order": 1
-*                }
-*            ]
-*        },
-*        "update": {
-*            [
-*               {
-*                    "entityName": "Observations",
-*                    "order": 1
-*                }
-*            ]
-*        },
-*        "destroy": {
-*            [
-*               {
-*                    "entityName": "Observations",
-*                    "order": 1
-*                }
-*            ]
-*        }
-*    }
-*   ```
-*   Each top-level property represents a crud operation that must
-*   be handled in a specific manner in order to ensure consistency.
-*   Within each operation is a list of NoTables that are part of the
-*   transaction.
-*
-*   For each table in the operation are instructions as to which entity are
-*   involved, how to carry out the transaction, and in what order.
-*
-*/
-(function(angular, undefined){
+ *
+ *
+ *
+ *  #### noConfig notation example.
+ *
+ *   ```json
+ *    "noTransaction": {
+ *        "create": {
+ *            [
+ *               {
+ *                    "entityName": "Observations",
+ *                    "identityInsert": "lazy",
+ *                    "identityType": "guid",
+ *                    "order": 1
+ *                }
+ *            ]
+ *        },
+ *        "update": {
+ *            [
+ *               {
+ *                    "entityName": "Observations",
+ *                    "order": 1
+ *                }
+ *            ]
+ *        },
+ *        "destroy": {
+ *            [
+ *               {
+ *                    "entityName": "Observations",
+ *                    "order": 1
+ *                }
+ *            ]
+ *        }
+ *    }
+ *   ```
+ *   Each top-level property represents a crud operation that must
+ *   be handled in a specific manner in order to ensure consistency.
+ *   Within each operation is a list of NoTables that are part of the
+ *   transaction.
+ *
+ *   For each table in the operation are instructions as to which entity are
+ *   involved, how to carry out the transaction, and in what order.
+ *
+ */
+(function(angular, undefined) {
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q","noIndexedDb", "lodash", "noDataSource", function($injector, $q, noIndexedDb, _, noDataSource){
+		.factory("noTransactionCache", ["$injector", "$q", "noIndexedDb", "lodash", "noDataSource", function($injector, $q, noIndexedDb, _, noDataSource) {
 
-			function NoTransaction(userId, config, thescope){
+			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
-                var scope = thescope;
+				var scope = thescope;
 
 				Object.defineProperties(this, {
 					"__type": {
-						"get" : function(){
+						"get": function() {
 							return "NoTransaction";
 						}
 					}
@@ -3331,152 +3379,157 @@ var GloboTest = {};
 				this.timestamp = new Date().valueOf();
 				this.userId = userId;
 				this.changes = new NoChanges();
+				this.state = "pending";
 
-				this.addChange = function(tableName, data, changeType){
+				this.addChange = function(tableName, data, changeType) {
 					this.changes.add(tableName, data, changeType);
 				};
 
-				this.toObject = function(){
+				this.toObject = function() {
 					var json = angular.fromJson(angular.toJson(this));
 					json.changes = _.toArray(json.changes);
 
 					return json;
 				};
 
-                this.upsert = function upsert(data){
-                    var THIS = this,
-                        deferred = $q.defer(),
-                        dsCfg = config.noDataSource,
-                        opType = data[dsCfg.primaryKey] ? "update" : "create",
-                        opEntites = dsCfg.noTransaction[opType],
-                        curOpEntity = 0,
-                        totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
-                        results = {},
-                        preOps = {
-                            "noop": angular.noop,
-                            "basic": function (curEntity, data, scope){
-                                var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
+				this.upsert = function upsert(data) {
+					var THIS = this,
+						deferred = $q.defer(),
+						dsCfg = config.noDataSource,
+						opType = data[dsCfg.primaryKey] ? "update" : "create",
+						opEntites = dsCfg.noTransaction[opType],
+						curOpEntity = 0,
+						totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
+						results = {},
+						preOps = {
+							"noop": angular.noop,
+							"basic": function(curEntity, data, scope) {
+								var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
 
-                                if(curEntity.fields){
-                                    for(var f in curEntity.fields){
-                                        var fld = curEntity.fields[f],
-                                            prov;
+								if (curEntity.fields) {
+									for (var f in curEntity.fields) {
+										var fld = curEntity.fields[f],
+											prov;
 
-                                        //When field value is get remote values then store on
-                                        //the writableData object.
-                                        if(angular.isObject(fld.value)){
-                                            if(fld.value.provider === "scope"){
-                                                prov = scope;
-                                            }else{
-                                                prov = $injector.get(fld.value.provider);
-                                            }
-                                            writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
-                                        }
+										//When field value is get remote values then store on
+										//the writableData object.
+										if (angular.isObject(fld.value)) {
+											if (fld.value.provider === "scope") {
+												prov = scope;
+											} else {
+												prov = $injector.get(fld.value.provider);
+											}
+											writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
+										}
 
-                                        //When field has a type convert before saving.
-                                        //NOTE: This is temporary and should be refactored
-                                        //      into the actual provider.  And be data
-                                        //      driven not conditional.
-                                        if(fld.type === "date"){
-                                            writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
-                                        }
-                                    }
-                                }
+										//When field has a type convert before saving.
+										//NOTE: This is temporary and should be refactored
+										//      into the actual provider.  And be data
+										//      driven not conditional.
+										if (fld.type === "date") {
+											writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
+										}
+									}
+								}
 
-                                return writableData;
+								return writableData;
 
-                            },
-                            "joiner": function (curEntity, data, scope) {
-                                var writableData =  {};
+							},
+							"joiner": function(curEntity, data, scope) {
+								var writableData = {};
 
-                                for(var f in curEntity.fields){
-                                    var fld = curEntity.fields[f],
-                                        prov, value;
+								for (var f in curEntity.fields) {
+									var fld = curEntity.fields[f],
+										prov, value;
 
-                                    switch(fld.value.provider){
-                                        case "data":
-                                            prov = data;
-                                            break;
+									switch (fld.value.provider) {
+										case "data":
+											prov = data;
+											break;
 
-                                        case "results":
-                                            prov = results;
-                                            break;
+										case "results":
+											prov = results;
+											break;
 
-                                        case "scope":
-                                            prov = scope;
-                                            break;
+										case "scope":
+											prov = scope;
+											break;
 
-                                        default:
-                                            prov = $injector.get(fld.value.provider);
-                                            break;
-                                    }
+										default:
+											prov = $injector.get(fld.value.provider);
+											break;
+									}
 
-                                    value = noInfoPath.getItem(prov, fld.value.property);
+									value = noInfoPath.getItem(prov, fld.value.property);
 
-                                    writableData[fld.field] = value;
-                                }
+									writableData[fld.field] = value;
+								}
 
-                                return writableData;
-                            }
-                        };
+								return writableData;
+							}
+						};
 
-                    function _recurse(entityCfg){
-                        var curEntity = angular.isObject(opEntites) ? opEntites[curOpEntity] : {entityName: config.noDataSource.entityName},
-                            preOp = !!curEntity.type ? curEntity.type : "basic",
-                            dsConfig, dataSource, writableData;
-                            writableData = preOps[preOp](curEntity, data, scope);
-
-
-                        curOpEntity++;
-                        dsConfig = angular.merge(config.noDataSource, {entityName: curEntity.entityName});
-                        dataSource = noDataSource.create(dsConfig, scope);
-
-                        dataSource[opType](writableData, THIS)
-                            .then(function(result){
-                                results[curEntity.entityName] = result;
-
-                                if(curOpEntity < totOpEntity){
-                                    _recurse();
-                                }else{
-                                    deferred.resolve();
-                                }
-
-                            })
-                            .catch(deferred.reject);
+					function _recurse(entityCfg) {
+						var curEntity = angular.isObject(opEntites) ? opEntites[curOpEntity] : {
+								entityName: config.noDataSource.entityName
+							},
+							preOp = !!curEntity.type ? curEntity.type : "basic",
+							dsConfig, dataSource, writableData;
+						writableData = preOps[preOp](curEntity, data, scope);
 
 
-                    }
+						curOpEntity++;
+						dsConfig = angular.merge(config.noDataSource, {
+							entityName: curEntity.entityName
+						});
+						dataSource = noDataSource.create(dsConfig, scope);
 
-                    _recurse();
+						dataSource[opType](writableData, THIS)
+							.then(function(result) {
+								results[curEntity.entityName] = result;
 
-                    return deferred.promise;
-                };
+								if (curOpEntity < totOpEntity) {
+									_recurse();
+								} else {
+									deferred.resolve();
+								}
 
-                this.destroy = function(entityName, data){
-                    var entityTxCfg = noTxConfig[entityName];
-                    console.warn("TODO: implement  NoTransaction::destroy");
-                };
+							})
+							.catch(deferred.reject);
+
+
+					}
+
+					_recurse();
+
+					return deferred.promise;
+				};
+
+				this.destroy = function(entityName, data) {
+					var entityTxCfg = noTxConfig[entityName];
+					console.warn("TODO: implement  NoTransaction::destroy");
+				};
 			}
 
-			function NoChanges(){
+			function NoChanges() {
 				Object.defineProperties(this, {
 					"__type": {
-						"get" : function(){
+						"get": function() {
 							return "NoChanges";
 						}
 					}
 				});
 				var arr = [];
 				noInfoPath.setPrototypeOf(this, arr);
-				this.add = function(tableName, data, changeType){
+				this.add = function(tableName, data, changeType) {
 					this.unshift(new NoChange(tableName, data, changeType));
 				};
 			}
 
-			function NoChange(tableName, data, changeType){
+			function NoChange(tableName, data, changeType) {
 				Object.defineProperties(this, {
 					"__type": {
-						"get" : function(){
+						"get": function() {
 							return "NoChange";
 						}
 					}
@@ -3487,18 +3540,63 @@ var GloboTest = {};
 				this.changeType = changeType;
 			}
 
-			function NoTransactionCache(){
-				var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
-                    entity = db.NoInfoPath_Changes;
+			function NoTransactionCache() {
 
 
-                this.beginTransaction = function(userId, noTransConfig, scope){
-                    return new NoTransaction(userId, noTransConfig, scope);
-                };
+				this.beginTransaction = function(userId, noTransConfig, scope) {
+					return new NoTransaction(userId, noTransConfig, scope);
+				};
 
-				this.endTransaction = function(transaction){
+				this.endTransaction = function(transaction) {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
 					return entity.noCreate(transaction.toObject());
 				};
+
+				this.getAllPending = function() {
+					return $q(function(resolve, reject) {
+						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+							entity = db.NoInfoPath_Changes;
+
+						entity
+							.where("state")
+							.equals("pending")
+							.toArray()
+							.then(resolve)
+							.catch(reject);
+
+					});
+				}
+
+				this.markTransactionSynced = function(t) {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
+
+					t.state = "synced";
+
+					return entity.noUpdate(t);
+
+				}
+
+				this.dropAllSynced = function() {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
+
+					entity
+						.where("state")
+						.equals("synced")
+						.toArray()
+						.then(function(data) {
+							for (var d in data) {
+								var datum = data[d];
+
+								entity.noDestroy(datum);
+							}
+						})
+						.catch(function(err) {
+							console.error(err);
+						});
+				}
 
 			}
 
@@ -3509,8 +3607,7 @@ var GloboTest = {};
 			// noInfoPath.data.NoTransactionCache = NoTransactionCache;
 
 			return new NoTransactionCache($q, noIndexedDb);
-		}])
-		;
+		}]);
 })(angular);
 
 //indexeddb.js
@@ -4364,193 +4461,203 @@ var GloboTest = {};
 
 //data-source.js
 /*
-*	## noDataSource Service
-*
-*	Provides a generic service that exposes the NoInfoPath data providers'
-*	underlying CRUD interface.
-*
-*	```json
-*
-*	"noDataSource": {
-*        "dataProvider": "noWebSQL",
-*        "databaseName": "FCFNv2",
-*        "entityName": "LU_PercentColor",
-*        "primaryKey": "PercentColorID",
-*        "queryParser": "noQueryParser",
-*        "sort":  [{"field": "Percentage", "dir": "asc"}]
-*    }
-*
-*	```
-*/
-(function(angular, undefined){
+ *	## noDataSource Service
+ *
+ *	Provides a generic service that exposes the NoInfoPath data providers'
+ *	underlying CRUD interface.
+ *
+ *	```json
+ *
+ *	"noDataSource": {
+ *        "dataProvider": "noWebSQL",
+ *        "databaseName": "FCFNv2",
+ *        "entityName": "LU_PercentColor",
+ *        "primaryKey": "PercentColorID",
+ *        "queryParser": "noQueryParser",
+ *        "sort":  [{"field": "Percentage", "dir": "asc"}]
+ *    }
+ *
+ *	```
+ */
+(function(angular, undefined) {
 
-	function NoDataSource($injector, $q, dsConfig, scope){
+	function NoDataSource($injector, $q, dsConfig, scope) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			entity = db[dsConfig.entityName],
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
-            _scope = scope
-		;
+			_scope = scope;
 
-        Object.defineProperties(this, {
-            "entity": {
-                "get": function() { return entity; }
-            }
-        });
+		Object.defineProperties(this, {
+			"entity": {
+				"get": function() {
+					return entity;
+				}
+			}
+		});
 
-        /**
-        *   ### resolveFilterValues(filters)
-        *   #### This is more information
-		*
-		*	> Note of some kind
-		*
-		*	|Name|Type|Description|
-		*	|----|----|-----------|
-		*	|Foo|Number|Does something fun.|
-		*
-        *   > TODO: Implement support for delayed (waitFor) filter values.
-        *
-        *   > NOTE: If a filter.value is an object and it has a source
-        *   > property set to `scope` then use the directives scope variable.
-        *   > Otherwise assume source is an injectable.
-        */
-        function resolveFilterValues(filters, scope){
-            var values = {};
+		/**
+		 *   ### resolveFilterValues(filters)
+		 *   #### This is more information
+		 *
+		 *	> Note of some kind
+		 *
+		 *	|Name|Type|Description|
+		 *	|----|----|-----------|
+		 *	|Foo|Number|Does something fun.|
+		 *
+		 *   > TODO: Implement support for delayed (waitFor) filter values.
+		 *
+		 *   > NOTE: If a filter.value is an object and it has a source
+		 *   > property set to `scope` then use the directives scope variable.
+		 *   > Otherwise assume source is an injectable.
+		 */
+		function resolveFilterValues(filters, scope) {
+			var values = {};
 
-            for(var f in filters){
-                var filter = filters[f],
-                    source, value;
+			for (var f in filters) {
+				var filter = filters[f],
+					source, value;
 
-                if(angular.isObject(filter.value)){
-                    source = filter.value.source === "scope" ? scope : $injector.get(filter.value.source);
-                    values[filter.field] = noInfoPath.getItem(source, filter.value.property);
-                }else{
-                    values[filter.field] = filter.value;
-                }
-            }
+				if (angular.isObject(filter.value)) {
+					source = filter.value.source === "scope" ? scope : $injector.get(filter.value.source);
+					values[filter.field] = noInfoPath.getItem(source, filter.value.property);
+				} else {
+					values[filter.field] = filter.value;
+				}
+			}
 
-            return values;
-        }
+			return values;
+		}
 
 		this.create = function(data, noTrans) {
-			if(isNoView) throw "create operation not support on entities of type NoView";
+			if (isNoView) throw "create operation not support on entities of type NoView";
 
-			return entity.noCreate(data, noTrans);
+			return entity.noCreate(data, noTrans)
+				.catch(function(err) {
+					throw err;
+				});
 		};
 
 		this.read = function(options) {
-            function requestData(scope, config, entity, queryParser, resolve, reject){
-                var params = angular.merge({}, options),
-                    filterValues = resolveFilterValues(dsConfig.filter, _scope);
+			function requestData(scope, config, entity, queryParser, resolve, reject) {
+				var params = angular.merge({}, options),
+					filterValues = resolveFilterValues(dsConfig.filter, _scope);
 
-                if(config.filter){
-                    var filters = [];
-                    for(var f in config.filter){
-                        var filter = config.filter[f],
-                            value = angular.isObject(filter.value) ? filterValues[filter.field] : filter.value;
+				if (config.filter) {
+					var filters = [];
+					for (var f in config.filter) {
+						var filter = config.filter[f],
+							value = angular.isObject(filter.value) ? filterValues[filter.field] : filter.value;
 
-                        filters.push({field: filter.field, operator: filter.operator, value: value});
+						filters.push({
+							field: filter.field,
+							operator: filter.operator,
+							value: value
+						});
 
-                    }
+					}
 
-                    params.filter = { filters:  filters.length ? filters : undefined };
-                }
+					params.filter = {
+						filters: filters.length ? filters : undefined
+					};
+				}
 
-                if(config.sort){
-                    params.sort = config.sort;
-                }
+				if (config.sort) {
+					params.sort = config.sort;
+				}
 
-                return entity.noRead.apply(entity, queryParser.parse(params))
-                    .then(function(data){
-                        resolve(data);
-                    })
-                    .catch(function(err){
-                        reject(err);
-                    });
+				return entity.noRead.apply(entity, queryParser.parse(params))
+					.then(function(data) {
+						resolve(data);
+					})
+					.catch(function(err) {
+						reject(err);
+					});
 
-            }
+			}
 
-            return $q(function(resolve, reject){
-                var waitFor, filterValues;
+			return $q(function(resolve, reject) {
+				var waitFor, filterValues;
 
-                if(dsConfig.waitFor){
-                    waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
-                        if(newval){
-                            requestData(scope, dsConfig, entity, qp, resolve, reject);
+				if (dsConfig.waitFor) {
+					waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
+						if (newval) {
+							requestData(scope, dsConfig, entity, qp, resolve, reject);
 
-                            waitFor();
-                        }
-                    });
-                }else{
-                    requestData(scope, dsConfig, entity, qp, resolve, reject);
-                }
+							waitFor();
+						}
+					});
+				} else {
+					requestData(scope, dsConfig, entity, qp, resolve, reject);
+				}
 
-            });
+			});
 
 		};
 
 		this.update = function(data, noTrans) {
-			if(isNoView) throw "update operation not support on entities of type NoView";
+			if (isNoView) throw "update operation not support on entities of type NoView";
 
 			return entity.noUpdate(data, noTrans);
 		};
 
 		this.destroy = function(data, noTrans) {
-			if(isNoView) throw "destroy operation not support on entities of type NoView";
+			if (isNoView) throw "destroy operation not support on entities of type NoView";
 
 			return entity.noUpdate(data, noTrans);
 		};
 
-        this.one = function(options) {
-            function requestData(scope, config, entity, resolve, reject){
-                var params = [];
+		this.one = function(options) {
+			function requestData(scope, config, entity, resolve, reject) {
+				var params = [];
 
-                if(dsConfig.lookup){
-                    filterValues =  $injector.get(dsConfig.lookup.source, _scope);
+				if (dsConfig.lookup) {
+					filterValues = $injector.get(dsConfig.lookup.source, _scope);
 
-                }else if(dsConfig.filter){
-                    filterValues = resolveFilterValues(config.filter, _scope);
-                }
+				} else if (dsConfig.filter) {
+					filterValues = resolveFilterValues(config.filter, _scope);
+				}
 
-                if(entity.constructor.name === "NoView"){
-                    params[0] = filterValues;
-                    params[1] = config.primaryKey;
-                }else{
-                    params[0]  = filterValues;
-                }
-
-
-                return entity.noOne.apply(null, params)
-                    .then(function(data){
-                        resolve(data);
-                    })
-                    .catch(function(err){
-                        reject(err);
-                    });
-
-            }
+				if (entity.constructor.name === "NoView") {
+					params[0] = filterValues;
+					params[1] = config.primaryKey;
+				} else {
+					params[0] = filterValues;
+				}
 
 
-            return $q(function(resolve, reject){
-                var waitFor, filterValues;
+				return entity.noOne.apply(null, params)
+					.then(function(data) {
+						resolve(data);
+					})
+					.catch(function(err) {
+						reject(err);
+					});
+
+			}
+
+
+			return $q(function(resolve, reject) {
+				var waitFor, filterValues;
 
 
 
-                if(dsConfig.waitFor){
-                    waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
-                        if(newval){
+				if (dsConfig.waitFor) {
+					waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
+						if (newval) {
 
-                            requestData(scope, dsConfig, entity, resolve, reject);
+							requestData(scope, dsConfig, entity, resolve, reject);
 
-                            waitFor();
-                        }
-                    });
-                }else{
-                    requestData(scope, dsConfig, entity, resolve, reject);
-                }
+							waitFor();
+						}
+					});
+				} else {
+					requestData(scope, dsConfig, entity, resolve, reject);
+				}
 
-            });
+			});
 
 		};
 
@@ -4558,28 +4665,27 @@ var GloboTest = {};
 
 	angular.module("noinfopath.data")
 
-		.service("noDataSource", ["$injector", "$q", function($injector, $q){
-			/*
-			*	#### create(dsConfigKey)
-			*
-			*	create a new instance of a NoDataSource object configured
-			*	based on the datasource configuration found in noConfig
-			*	at the given `dsConfigKey` location.
-			*
-			*	##### Parameters
-			*
-			*	|Name|Type|Description|
-			*	|----|----|-----------|
-			*	|dsConfigKey|String|The location in noConfig where the data source's configuration can be found.  Can be a complex name like the following.  `noForms.myForm1.noComponents.foo.noDataSource`|
-			*
-			*	##### Returns
-			*
-			*	An instance of a NoDataSource object.
-			*
-			*/
-			this.create = function(dsConfig, scope){
-				return new NoDataSource($injector, $q, dsConfig, scope);
-			};
-		}])
-	;
+	.service("noDataSource", ["$injector", "$q", function($injector, $q) {
+		/*
+		 *	#### create(dsConfigKey)
+		 *
+		 *	create a new instance of a NoDataSource object configured
+		 *	based on the datasource configuration found in noConfig
+		 *	at the given `dsConfigKey` location.
+		 *
+		 *	##### Parameters
+		 *
+		 *	|Name|Type|Description|
+		 *	|----|----|-----------|
+		 *	|dsConfigKey|String|The location in noConfig where the data source's configuration can be found.  Can be a complex name like the following.  `noForms.myForm1.noComponents.foo.noDataSource`|
+		 *
+		 *	##### Returns
+		 *
+		 *	An instance of a NoDataSource object.
+		 *
+		 */
+		this.create = function(dsConfig, scope) {
+			return new NoDataSource($injector, $q, dsConfig, scope);
+		};
+	}]);
 })(angular);
