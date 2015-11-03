@@ -1,192 +1,202 @@
 //data-source.js
 /*
-*	## noDataSource Service
-*
-*	Provides a generic service that exposes the NoInfoPath data providers'
-*	underlying CRUD interface.
-*
-*	```json
-*
-*	"noDataSource": {
-*        "dataProvider": "noWebSQL",
-*        "databaseName": "FCFNv2",
-*        "entityName": "LU_PercentColor",
-*        "primaryKey": "PercentColorID",
-*        "queryParser": "noQueryParser",
-*        "sort":  [{"field": "Percentage", "dir": "asc"}]
-*    }
-*
-*	```
-*/
-(function(angular, undefined){
+ *	## noDataSource Service
+ *
+ *	Provides a generic service that exposes the NoInfoPath data providers'
+ *	underlying CRUD interface.
+ *
+ *	```json
+ *
+ *	"noDataSource": {
+ *        "dataProvider": "noWebSQL",
+ *        "databaseName": "FCFNv2",
+ *        "entityName": "LU_PercentColor",
+ *        "primaryKey": "PercentColorID",
+ *        "queryParser": "noQueryParser",
+ *        "sort":  [{"field": "Percentage", "dir": "asc"}]
+ *    }
+ *
+ *	```
+ */
+(function(angular, undefined) {
 
-	function NoDataSource($injector, $q, dsConfig, scope){
+	function NoDataSource($injector, $q, dsConfig, scope) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			entity = db[dsConfig.entityName],
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
-            _scope = scope
-		;
+			_scope = scope;
 
-        Object.defineProperties(this, {
-            "entity": {
-                "get": function() { return entity; }
-            }
-        });
+		Object.defineProperties(this, {
+			"entity": {
+				"get": function() {
+					return entity;
+				}
+			}
+		});
 
-        /**
-        *   ### resolveFilterValues(filters)
-        *   #### This is more information
-		*
-		*	> Note of some kind
-		*
-		*	|Name|Type|Description|
-		*	|----|----|-----------|
-		*	|Foo|Number|Does something fun.|
-		*
-        *   > TODO: Implement support for delayed (waitFor) filter values.
-        *
-        *   > NOTE: If a filter.value is an object and it has a source
-        *   > property set to `scope` then use the directives scope variable.
-        *   > Otherwise assume source is an injectable.
-        */
-        function resolveFilterValues(filters, scope){
-            var values = {};
+		/**
+		 *   ### resolveFilterValues(filters)
+		 *   #### This is more information
+		 *
+		 *	> Note of some kind
+		 *
+		 *	|Name|Type|Description|
+		 *	|----|----|-----------|
+		 *	|Foo|Number|Does something fun.|
+		 *
+		 *   > TODO: Implement support for delayed (waitFor) filter values.
+		 *
+		 *   > NOTE: If a filter.value is an object and it has a source
+		 *   > property set to `scope` then use the directives scope variable.
+		 *   > Otherwise assume source is an injectable.
+		 */
+		function resolveFilterValues(filters, scope) {
+			var values = {};
 
-            for(var f in filters){
-                var filter = filters[f],
-                    source, value;
+			for (var f in filters) {
+				var filter = filters[f],
+					source, value;
 
-                if(angular.isObject(filter.value)){
-                    source = filter.value.source === "scope" ? scope : $injector.get(filter.value.source);
-                    values[filter.field] = noInfoPath.getItem(source, filter.value.property);
-                }else{
-                    values[filter.field] = filter.value;
-                }
-            }
+				if (angular.isObject(filter.value)) {
+					source = filter.value.source === "scope" ? scope : $injector.get(filter.value.source);
+					values[filter.field] = noInfoPath.getItem(source, filter.value.property);
+				} else {
+					values[filter.field] = filter.value;
+				}
+			}
 
-            return values;
-        }
+			return values;
+		}
 
 		this.create = function(data, noTrans) {
-			if(isNoView) throw "create operation not support on entities of type NoView";
+			if (isNoView) throw "create operation not support on entities of type NoView";
 
-			return entity.noCreate(data, noTrans);
+			return entity.noCreate(data, noTrans)
+				.catch(function(err) {
+					throw err;
+				});
 		};
 
 		this.read = function(options) {
-            function requestData(scope, config, entity, queryParser, resolve, reject){
-                var params = angular.merge({}, options),
-                    filterValues = resolveFilterValues(dsConfig.filter, _scope);
+			function requestData(scope, config, entity, queryParser, resolve, reject) {
+				var params = angular.merge({}, options),
+					filterValues = resolveFilterValues(dsConfig.filter, _scope);
 
-                if(config.filter){
-                    var filters = [];
-                    for(var f in config.filter){
-                        var filter = config.filter[f],
-                            value = angular.isObject(filter.value) ? filterValues[filter.field] : filter.value;
+				if (config.filter) {
+					var filters = [];
+					for (var f in config.filter) {
+						var filter = config.filter[f],
+							value = angular.isObject(filter.value) ? filterValues[filter.field] : filter.value;
 
-                        filters.push({field: filter.field, operator: filter.operator, value: value});
+						filters.push({
+							field: filter.field,
+							operator: filter.operator,
+							value: value
+						});
 
-                    }
+					}
 
-                    params.filter = { filters:  filters.length ? filters : undefined };
-                }
+					params.filter = {
+						filters: filters.length ? filters : undefined
+					};
+				}
 
-                if(config.sort){
-                    params.sort = config.sort;
-                }
+				if (config.sort) {
+					params.sort = config.sort;
+				}
 
-                return entity.noRead.apply(entity, queryParser.parse(params))
-                    .then(function(data){
-                        resolve(data);
-                    })
-                    .catch(function(err){
-                        reject(err);
-                    });
+				return entity.noRead.apply(entity, queryParser.parse(params))
+					.then(function(data) {
+						resolve(data);
+					})
+					.catch(function(err) {
+						reject(err);
+					});
 
-            }
+			}
 
-            return $q(function(resolve, reject){
-                var waitFor, filterValues;
+			return $q(function(resolve, reject) {
+				var waitFor, filterValues;
 
-                if(dsConfig.waitFor){
-                    waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
-                        if(newval){
-                            requestData(scope, dsConfig, entity, qp, resolve, reject);
+				if (dsConfig.waitFor) {
+					waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
+						if (newval) {
+							requestData(scope, dsConfig, entity, qp, resolve, reject);
 
-                            waitFor();
-                        }
-                    });
-                }else{
-                    requestData(scope, dsConfig, entity, qp, resolve, reject);
-                }
+							waitFor();
+						}
+					});
+				} else {
+					requestData(scope, dsConfig, entity, qp, resolve, reject);
+				}
 
-            });
+			});
 
 		};
 
 		this.update = function(data, noTrans) {
-			if(isNoView) throw "update operation not support on entities of type NoView";
+			if (isNoView) throw "update operation not support on entities of type NoView";
 
 			return entity.noUpdate(data, noTrans);
 		};
 
 		this.destroy = function(data, noTrans) {
-			if(isNoView) throw "destroy operation not support on entities of type NoView";
+			if (isNoView) throw "destroy operation not support on entities of type NoView";
 
 			return entity.noUpdate(data, noTrans);
 		};
 
-        this.one = function(options) {
-            function requestData(scope, config, entity, resolve, reject){
-                var params = [];
+		this.one = function(options) {
+			function requestData(scope, config, entity, resolve, reject) {
+				var params = [];
 
-                if(dsConfig.lookup){
-                    filterValues =  $injector.get(dsConfig.lookup.source, _scope);
+				if (dsConfig.lookup) {
+					filterValues = $injector.get(dsConfig.lookup.source, _scope);
 
-                }else if(dsConfig.filter){
-                    filterValues = resolveFilterValues(config.filter, _scope);
-                }
+				} else if (dsConfig.filter) {
+					filterValues = resolveFilterValues(config.filter, _scope);
+				}
 
-                if(entity.constructor.name === "NoView"){
-                    params[0] = filterValues;
-                    params[1] = config.primaryKey;
-                }else{
-                    params[0]  = filterValues;
-                }
-
-
-                return entity.noOne.apply(null, params)
-                    .then(function(data){
-                        resolve(data);
-                    })
-                    .catch(function(err){
-                        reject(err);
-                    });
-
-            }
+				if (entity.constructor.name === "NoView") {
+					params[0] = filterValues;
+					params[1] = config.primaryKey;
+				} else {
+					params[0] = filterValues;
+				}
 
 
-            return $q(function(resolve, reject){
-                var waitFor, filterValues;
+				return entity.noOne.apply(null, params)
+					.then(function(data) {
+						resolve(data);
+					})
+					.catch(function(err) {
+						reject(err);
+					});
+
+			}
+
+
+			return $q(function(resolve, reject) {
+				var waitFor, filterValues;
 
 
 
-                if(dsConfig.waitFor){
-                    waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope){
-                        if(newval){
+				if (dsConfig.waitFor) {
+					waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
+						if (newval) {
 
-                            requestData(scope, dsConfig, entity, resolve, reject);
+							requestData(scope, dsConfig, entity, resolve, reject);
 
-                            waitFor();
-                        }
-                    });
-                }else{
-                    requestData(scope, dsConfig, entity, resolve, reject);
-                }
+							waitFor();
+						}
+					});
+				} else {
+					requestData(scope, dsConfig, entity, resolve, reject);
+				}
 
-            });
+			});
 
 		};
 
@@ -194,28 +204,27 @@
 
 	angular.module("noinfopath.data")
 
-		.service("noDataSource", ["$injector", "$q", function($injector, $q){
-			/*
-			*	#### create(dsConfigKey)
-			*
-			*	create a new instance of a NoDataSource object configured
-			*	based on the datasource configuration found in noConfig
-			*	at the given `dsConfigKey` location.
-			*
-			*	##### Parameters
-			*
-			*	|Name|Type|Description|
-			*	|----|----|-----------|
-			*	|dsConfigKey|String|The location in noConfig where the data source's configuration can be found.  Can be a complex name like the following.  `noForms.myForm1.noComponents.foo.noDataSource`|
-			*
-			*	##### Returns
-			*
-			*	An instance of a NoDataSource object.
-			*
-			*/
-			this.create = function(dsConfig, scope){
-				return new NoDataSource($injector, $q, dsConfig, scope);
-			};
-		}])
-	;
+	.service("noDataSource", ["$injector", "$q", function($injector, $q) {
+		/*
+		 *	#### create(dsConfigKey)
+		 *
+		 *	create a new instance of a NoDataSource object configured
+		 *	based on the datasource configuration found in noConfig
+		 *	at the given `dsConfigKey` location.
+		 *
+		 *	##### Parameters
+		 *
+		 *	|Name|Type|Description|
+		 *	|----|----|-----------|
+		 *	|dsConfigKey|String|The location in noConfig where the data source's configuration can be found.  Can be a complex name like the following.  `noForms.myForm1.noComponents.foo.noDataSource`|
+		 *
+		 *	##### Returns
+		 *
+		 *	An instance of a NoDataSource object.
+		 *
+		 */
+		this.create = function(dsConfig, scope) {
+			return new NoDataSource($injector, $q, dsConfig, scope);
+		};
+	}]);
 })(angular);
