@@ -72,7 +72,12 @@
 						return r;
 					},
 					"DATE": function(d) {
-						return angular.isString(d) ? d.split("T").join(" ") : "";
+                        var r = "";
+                        if(angular.isString(d)){
+                            r = noInfoPath.toDbDate(new Date(d));
+                        }
+
+						return r;
 					}
 				},
 				fromSqlLiteConversionFunctions: {

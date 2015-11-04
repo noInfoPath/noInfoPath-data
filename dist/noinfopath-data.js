@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.4
+*	@version 1.0.5
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -152,7 +152,7 @@
 			}
 
             function _toDbDate(date){
-                return $filter("date")(date, "yyyy-MM-ddTHH:mm:ssZ");
+                return $filter("date")(date, "yyyy-MM-dd'T'HH:mm:ss.sss");
             }
 
 			var _data = {
@@ -318,8 +318,6 @@
 (function(angular, undefined) {
 	"use strict";
 
-	var $injector = angular.injector(["ng"]),
-		$filter = $injector.get("$filter");
 	/*
 	 * ## @class NoFilterExpression : Object
 	 *
@@ -349,7 +347,7 @@
 		var outval = inval;
 
 		if(angular.isDate(inval)){
-			outval = "datetime('" + $filter('date')(inval, "yyyy-MM-dd'T'HH:mm:ss.sss") + "', 'utc')";
+			outval = "datetime('" + noInfoPath.toDbDate(inval) + "', 'utc')";
 		}else if (angular.isString(inval)) {
 			outval = "'" + inval + "'";
 		}
@@ -401,7 +399,10 @@
 			},
 			"startswith": function(v) {
 				return "LIKE '" + String(v) + "%'";
-			}
+			},
+            "endswith": function(v) {
+                return "LIKE '%" + String(v) + "'";
+            }
 		},
         op = filters[inop];
 
@@ -2203,7 +2204,12 @@ var GloboTest = {};
 						return r;
 					},
 					"DATE": function(d) {
-						return angular.isString(d) ? d.split("T").join(" ") : "";
+                        var r = "";
+                        if(angular.isString(d)){
+                            r = noInfoPath.toDbDate(new Date(d));
+                        }
+
+						return r;
 					}
 				},
 				fromSqlLiteConversionFunctions: {
@@ -3566,7 +3572,7 @@ var GloboTest = {};
 							.catch(reject);
 
 					});
-				}
+				};
 
 				this.markTransactionSynced = function(t) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
@@ -3576,7 +3582,7 @@ var GloboTest = {};
 
 					return entity.noUpdate(t);
 
-				}
+				};
 
 				this.dropAllSynced = function() {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
@@ -3596,7 +3602,7 @@ var GloboTest = {};
 						.catch(function(err) {
 							console.error(err);
 						});
-				}
+				};
 
 			}
 

@@ -253,7 +253,7 @@
 							.catch(reject);
 
 					});
-				}
+				};
 
 				this.markTransactionSynced = function(t) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
@@ -263,7 +263,7 @@
 
 					return entity.noUpdate(t);
 
-				}
+				};
 
 				this.dropAllSynced = function() {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
@@ -283,7 +283,7 @@
 						.catch(function(err) {
 							console.error(err);
 						});
-				}
+				};
 
 			}
 
