@@ -147,8 +147,6 @@
 (function(angular, undefined) {
 	"use strict";
 
-	var $injector = angular.injector(["ng"]),
-		$filter = $injector.get("$filter");
 	/*
 	 * ## @class NoFilterExpression : Object
 	 *
@@ -178,7 +176,7 @@
 		var outval = inval;
 
 		if(angular.isDate(inval)){
-			outval = "datetime('" + $filter('date')(inval, "yyyy-MM-dd'T'HH:mm:ss.sss") + "', 'utc')";
+			outval = "datetime('" + noInfoPath.toDbDate(inval) + "', 'utc')";
 		}else if (angular.isString(inval)) {
 			outval = "'" + inval + "'";
 		}
@@ -230,7 +228,10 @@
 			},
 			"startswith": function(v) {
 				return "LIKE '" + String(v) + "%'";
-			}
+			},
+            "endswith": function(v) {
+                return "LIKE '%" + String(v) + "'";
+            }
 		},
         op = filters[inop];
 
