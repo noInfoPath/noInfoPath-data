@@ -69,7 +69,8 @@
 				this.state = "pending";
 
 				this.addChange = function(tableName, data, changeType) {
-					this.changes.add(tableName, data, changeType);
+                    var tableCfg = scope["noDbSchema_" + config.noDataSource.databaseName];
+					this.changes.add(tableName, data, changeType, tableCfg);
 				};
 
 				this.toObject = function() {
@@ -208,12 +209,26 @@
 				});
 				var arr = [];
 				noInfoPath.setPrototypeOf(this, arr);
-				this.add = function(tableName, data, changeType) {
-					this.unshift(new NoChange(tableName, data, changeType));
+				this.add = function(tableName, data, changeType, tableCfg) {
+					this.unshift(new NoChange(tableName, data, changeType, tableCfg));
 				};
 			}
 
-			function NoChange(tableName, data, changeType) {
+			function NoChange(tableName, data, changeType, tableCfg) {
+                var tblSchema = tableCfg.tables[tableName];
+
+                function normalizeValues(data){
+                    for(var c in data){
+                        var col = tblSchema.columns[c];
+                        if(col){
+                            if(col.type === "bit"){
+                                data[c] = !!data[c];
+                            }
+                        }
+                    }
+                    return data;
+                }
+
 				Object.defineProperties(this, {
 					"__type": {
 						"get": function() {
@@ -223,7 +238,7 @@
 				});
 
 				this.tableName = tableName;
-				this.data = data;
+				this.data = normalizeValues(data);
 				this.changeType = changeType;
 			}
 
