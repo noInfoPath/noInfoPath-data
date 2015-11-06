@@ -23,7 +23,7 @@ module.exports = function(config) {
         'node_modules/noinfopath/dist/noinfopath.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
         'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
-        'node_modules/noinfopath-logger/dist/noinfopath-logger.js',
+        'node_modules/@noinfopath/noinfopath-logger/dist/noinfopath-logger.js',
         'lib/indexedDB.polyfill.js',
         'lib/dexie.js',
         'lib/dexie.observable.js',
