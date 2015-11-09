@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.0.6
+@version 1.0.7
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -807,6 +807,15 @@ Reads a record from the websql database based on the Primary Key of the data pro
 |----|----|-----------|
 |data|Object|Name Value Pairs|
 
+
+Drop each record one at a time so that the operations
+are recorded in the current transaction.
+
+ ### joiner-many
+
+ `joiner-many` assumes that it represents a multiple choice question.
+ In order to keep the algorithm simple we drop all joiner items
+ that match the parent key. (i.e. SelectionID)
 
 ## noIndexedDB
 The noIndexedDB factory creates and configures a new instance of Dexie.

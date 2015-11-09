@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.6
+*	@version 1.0.7
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2640,11 +2640,16 @@ var GloboTest = {};
 					sqlExpressionData;
 
 				if (angular.isObject(rowid)) {
-					filters.add(rowid.key, null, true, true, [{
-						"operator": "eq",
-						"value": rowid.value,
-						"logic": null
-					}]);
+                    if(rowid.__type === "NoFilters"){
+                        filters = rowid;
+                    }else{
+                        filters.add(rowid.key, null, true, true, [{
+    						"operator": "eq",
+    						"value": rowid.value,
+    						"logic": null
+    					}]);
+                    }
+
 				} else {
 					filters.add("rowid", null, true, true, [{
 						"operator": "eq",
@@ -2722,7 +2727,7 @@ var GloboTest = {};
 			 *
 			 */
 
-			function webSqlOperation(operation, data, noTransaction) {
+			function webSqlOperation(operation, data, noTransaction, customFilters) {
 				// noTransaction is not required, but is needed to track transactions
 				var sqlExpressionData, id,
 					deferred = $q.defer(),
@@ -2749,14 +2754,20 @@ var GloboTest = {};
 
 							return noFilters;
 						},
-						"D": function(data) {
-							var noFilters = new noInfoPath.data.NoFilters(),
+						"D": function(data, filters) {
+							var noFilters,
 								id;
-							id = data[_table.primaryKey];
-							noFilters.add(_table.primaryKey, null, true, true, [{
-								operator: "eq",
-								value: id
-							}]);
+
+                            if(filters){
+                                noFilters = new noInfoPath.data.NoFilters(filters);
+                            }else{
+                                id = data[_table.primaryKey];
+    							noFilters.add(_table.primaryKey, null, true, true, [{
+    								operator: "eq",
+    								value: id
+    							}]);
+                            }
+
 
 							return noFilters;
 						},
@@ -2817,17 +2828,20 @@ var GloboTest = {};
 							//.catch(deferred.reject);
 						},
 						"D": function(data, noFilters, noTransaction) {
-							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters);
-							_getOne({
-									"key": _table.primaryKey,
-									"value": data[_table.primaryKey]
-								})
-								.then(function(result) {
+							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters),
+                                filter = !!data ? {
+    									"key": _table.primaryKey,
+    									"value": data[_table.primaryKey]
+    								} : noFilters,
+                                deleted;
+							_getOne(filter)
+								.then(function(datum) {
+                                    deleted = datum;
 									_exec(sqlStmt)
 										.then(function(result) {
-											if (noTransaction) noTransaction.addChange(_tableName, data, "D");
+											if (noTransaction) noTransaction.addChange(_tableName, deleted, "D");
 											deferred.resolve(result);
-										}.bind(result))
+										}.bind(datum))
 										.catch(deferred.reject);
 								})
 								.catch(deferred.reject);
@@ -2852,7 +2866,7 @@ var GloboTest = {};
 								.catch(deferred.reject);
 						}
 					},
-					filters = filterOps[operation](data);
+					filters = filterOps[operation](data, customFilters);
 
 				sqlOps[operation](data, filters, noTransaction);
 
@@ -2975,8 +2989,8 @@ var GloboTest = {};
 			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 			 */
 
-			this.noDestroy = function(data, noTransaction) {
-				return webSqlOperation("D", data, noTransaction);
+			this.noDestroy = function(data, noTransaction, filters) {
+				return webSqlOperation("D", data, noTransaction, filters);
 			};
 
 			/**
@@ -3371,7 +3385,8 @@ var GloboTest = {};
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
-				var scope = thescope;
+				var SELF = this,
+                    scope = thescope;
 
 				Object.defineProperties(this, {
 					"__type": {
@@ -3400,116 +3415,215 @@ var GloboTest = {};
 				};
 
 				this.upsert = function upsert(data) {
-					var THIS = this,
-						deferred = $q.defer(),
-						dsCfg = config.noDataSource,
-						opType = data[dsCfg.primaryKey] ? "update" : "create",
-						opEntites = dsCfg.noTransaction[opType],
-						curOpEntity = 0,
-						totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
-						results = {},
-						preOps = {
-							"noop": angular.noop,
-							"basic": function(curEntity, data, scope) {
-								var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
+					return $q(function(resolve, reject){
+                        var THIS = this,
+    						dsCfg = config.noDataSource,
+    						opType = data[dsCfg.primaryKey] ? "update" : "create",
+    						opEntites = dsCfg.noTransaction[opType],
+    						curOpEntity = 0,
+    						totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
+    						results = {},
+    						preOps = {
+    							"noop": angular.noop,
+    							"basic": function(curEntity, data, scope) {
+    								var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
 
-								if (curEntity.fields) {
-									for (var f in curEntity.fields) {
-										var fld = curEntity.fields[f],
-											prov;
+    								if (curEntity.fields) {
+    									for (var f in curEntity.fields) {
+    										var fld = curEntity.fields[f],
+    											prov;
 
-										//When field value is get remote values then store on
-										//the writableData object.
-										if (angular.isObject(fld.value)) {
-											if (fld.value.provider === "scope") {
-												prov = scope;
-											} else {
-												prov = $injector.get(fld.value.provider);
-											}
-											writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
-										}
+    										//When field value is get remote values then store on
+    										//the writableData object.
+    										if (angular.isObject(fld.value)) {
+    											if (fld.value.provider === "scope") {
+    												prov = scope;
+    											} else {
+    												prov = $injector.get(fld.value.provider);
+    											}
+    											writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
+    										}
 
-										//When field has a type convert before saving.
-										//NOTE: This is temporary and should be refactored
-										//      into the actual provider.  And be data
-										//      driven not conditional.
-										if (fld.type === "date") {
-											writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
-										}
-									}
-								}
+    										//When field has a type convert before saving.
+    										//NOTE: This is temporary and should be refactored
+    										//      into the actual provider.  And be data
+    										//      driven not conditional.
+    										if (fld.type === "date") {
+    											writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
+    										}
+    									}
+    								}
 
-								return writableData;
+    								return writableData;
 
-							},
-							"joiner": function(curEntity, data, scope) {
-								var writableData = {};
+    							},
+    							"joiner": function(curEntity, data, scope) {
+    								var writableData = {};
 
-								for (var f in curEntity.fields) {
-									var fld = curEntity.fields[f],
-										prov, value;
+    								for (var f in curEntity.fields) {
+    									var fld = curEntity.fields[f],
+    										prov, value;
 
-									switch (fld.value.provider) {
-										case "data":
-											prov = data;
-											break;
+    									switch (fld.value.provider) {
+    										case "data":
+                                                var t = {};
+                                                t[fld.value.property] = data;
+    											prov = t;
+    											break;
 
-										case "results":
-											prov = results;
-											break;
+    										case "results":
+    											prov = results;
+    											break;
 
-										case "scope":
-											prov = scope;
-											break;
+    										case "scope":
+    											prov = scope;
+    											break;
 
-										default:
-											prov = $injector.get(fld.value.provider);
-											break;
-									}
+    										default:
+    											prov = $injector.get(fld.value.provider);
+    											break;
+    									}
 
-									value = noInfoPath.getItem(prov, fld.value.property);
+    									value = noInfoPath.getItem(prov, fld.value.property);
 
-									writableData[fld.field] = value;
-								}
+    									writableData[fld.field] = value;
+    								}
 
-								return writableData;
+    								return writableData;
+    							},
+                                "joiner-many": function(curEntity, data, scope) {
+                                    var writableData = [],
+                                        sourceData = scope[curEntity.source.property],
+                                        createJoin = preOps.joiner;
+
+                                    for(var d in sourceData){
+                                        var sd = sourceData[d];
+                                        writableData.push(createJoin(curEntity, sd, scope));
+                                    }
+
+                                    return writableData;
+                                }
+    						};
+
+                        /*
+                        * Drop each record one at a time so that the operations
+                        * are recorded in the current transaction.
+                        */
+                        function dropAllRelatedToParentKey(ds, curEntity, data){
+                            return $q(function(resolve, reject){
+                                var d = 0;
+                                function recurse(){
+                                    var datum = data[d++],
+                                        filter = { logic: "and", filters: [ ] };
+
+                                    if(datum){
+                                        for(var p in datum){
+                                            var v  = datum[p];
+
+                                            filter.filters.push({field: p, operator: "eq", value: v });
+                                        }
+
+                                        ds.destroy(null, SELF, filter)
+                                            .then(function(r){
+                                                console.log(r);
+                                                recurse();
+                                            })
+                                            .catch(function(err){
+                                                console.error(err);
+                                                reject(err);
+                                            });
+                                    }else{
+                                        resolve();
+                                    }
+
+                                }
+
+                                recurse();
+                            });
+                        }
+
+                        function addAllRelatedToParentKey(ds, entity, data, scope){
+                            return $q(function(resolve, reject){
+                                var d = 0;
+                                function recurse(){
+                                    var datum = data[d++];
+
+                                    if(datum){
+                                        ds.create(datum, SELF)
+                                            .then(function(r){
+                                                console.log(r);
+                                                recurse();
+                                            })
+                                            .catch(function(err){
+                                                console.error(err);
+                                                reject(err);
+                                            });
+                                    }else{
+                                        resolve();
+                                    }
+
+                                }
+
+                                recurse();
+                            });
+
+
+                        }
+
+    					function _recurse() {
+    						var curEntity = opEntites[curOpEntity++],
+    							preOp, dsConfig, dataSource, writableData;
+
+
+							if (!curEntity) {
+								resolve();
+                                return;
 							}
-						};
 
-					function _recurse(entityCfg) {
-						var curEntity = angular.isObject(opEntites) ? opEntites[curOpEntity] : {
-								entityName: config.noDataSource.entityName
-							},
-							preOp = !!curEntity.type ? curEntity.type : "basic",
-							dsConfig, dataSource, writableData;
-						writableData = preOps[preOp](curEntity, data, scope);
+                            if(!angular.isObject(curEntity)){
+                                curEntity = {
+       								entityName: config.noDataSource.entityName
+       							};
+                            }
+
+                            preOp = !!curEntity.type ? curEntity.type : "basic";
+
+                            //preOp = preOp === "joiner-many" ? "joiner" : preOp;
+
+                            dsConfig = angular.merge(config.noDataSource, {
+                                entityName: curEntity.entityName
+                            });
+
+                            dataSource = noDataSource.create(dsConfig, scope);
+
+    						writableData = preOps[preOp](curEntity, data, scope);
+
+                            if(preOp === "joiner-many"){
+                                /*
+                                 *  ### joiner-many
+                                 *
+                                 *  `joiner-many` assumes that it represents a multiple choice question.
+                                 *  In order to keep the algorithm simple we drop all joiner items
+                                 *  that match the parent key. (i.e. SelectionID)
+                                */
+
+                                dropAllRelatedToParentKey(dataSource, curEntity, writableData)
+                                    .then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData, scope))
+                                    .then(_recurse)
+                                    .catch(reject);
+
+                            }else{
+        						dataSource[opType](writableData, SELF)
+        							.then(_recurse)
+        							.catch(reject);
+                            }
 
 
-						curOpEntity++;
-						dsConfig = angular.merge(config.noDataSource, {
-							entityName: curEntity.entityName
-						});
-						dataSource = noDataSource.create(dsConfig, scope);
 
-						dataSource[opType](writableData, THIS)
-							.then(function(result) {
-								results[curEntity.entityName] = result;
+    					}
 
-								if (curOpEntity < totOpEntity) {
-									_recurse();
-								} else {
-									deferred.resolve();
-								}
-
-							})
-							.catch(deferred.reject);
-
-
-					}
-
-					_recurse();
-
-					return deferred.promise;
+    					_recurse();
+                    });
 				};
 
 				this.destroy = function(entityName, data) {
@@ -4553,7 +4667,7 @@ var GloboTest = {};
 		}
 
 		this.create = function(data, noTrans) {
-			if (isNoView) throw "create operation not support on entities of type NoView";
+			if (isNoView) throw "create operation not supported on entities of type NoView";
 
 			return entity.noCreate(data, noTrans)
 				.catch(function(err) {
@@ -4619,15 +4733,15 @@ var GloboTest = {};
 		};
 
 		this.update = function(data, noTrans) {
-			if (isNoView) throw "update operation not support on entities of type NoView";
+			if (isNoView) throw "update operation not supported on entities of type NoView";
 
 			return entity.noUpdate(data, noTrans);
 		};
 
-		this.destroy = function(data, noTrans) {
-			if (isNoView) throw "destroy operation not support on entities of type NoView";
+		this.destroy = function(data, noTrans, filters) {
+			if (isNoView) throw "destroy operation not supported on entities of type NoView";
 
-			return entity.noUpdate(data, noTrans);
+			return entity.noDestroy(data, noTrans, filters);
 		};
 
 		this.one = function(options) {
