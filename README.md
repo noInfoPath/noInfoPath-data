@@ -808,6 +808,15 @@ Reads a record from the websql database based on the Primary Key of the data pro
 |data|Object|Name Value Pairs|
 
 
+Drop each record one at a time so that the operations
+are recorded in the current transaction.
+
+ ### joiner-many
+
+ `joiner-many` assumes that it represents a multiple choice question.
+ In order to keep the algorithm simple we drop all joiner items
+ that match the parent key. (i.e. SelectionID)
+
 ## noIndexedDB
 The noIndexedDB factory creates and configures a new instance of Dexie.
 Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that

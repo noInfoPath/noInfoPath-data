@@ -71,7 +71,7 @@
 		}
 
 		this.create = function(data, noTrans) {
-			if (isNoView) throw "create operation not support on entities of type NoView";
+			if (isNoView) throw "create operation not supported on entities of type NoView";
 
 			return entity.noCreate(data, noTrans)
 				.catch(function(err) {
@@ -137,15 +137,15 @@
 		};
 
 		this.update = function(data, noTrans) {
-			if (isNoView) throw "update operation not support on entities of type NoView";
+			if (isNoView) throw "update operation not supported on entities of type NoView";
 
 			return entity.noUpdate(data, noTrans);
 		};
 
-		this.destroy = function(data, noTrans) {
-			if (isNoView) throw "destroy operation not support on entities of type NoView";
+		this.destroy = function(data, noTrans, filters) {
+			if (isNoView) throw "destroy operation not supported on entities of type NoView";
 
-			return entity.noUpdate(data, noTrans);
+			return entity.noDestroy(data, noTrans, filters);
 		};
 
 		this.one = function(options) {

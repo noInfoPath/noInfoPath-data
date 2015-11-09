@@ -508,11 +508,16 @@
 					sqlExpressionData;
 
 				if (angular.isObject(rowid)) {
-					filters.add(rowid.key, null, true, true, [{
-						"operator": "eq",
-						"value": rowid.value,
-						"logic": null
-					}]);
+                    if(rowid.__type === "NoFilters"){
+                        filters = rowid;
+                    }else{
+                        filters.add(rowid.key, null, true, true, [{
+    						"operator": "eq",
+    						"value": rowid.value,
+    						"logic": null
+    					}]);
+                    }
+
 				} else {
 					filters.add("rowid", null, true, true, [{
 						"operator": "eq",
@@ -590,7 +595,7 @@
 			 *
 			 */
 
-			function webSqlOperation(operation, data, noTransaction) {
+			function webSqlOperation(operation, data, noTransaction, customFilters) {
 				// noTransaction is not required, but is needed to track transactions
 				var sqlExpressionData, id,
 					deferred = $q.defer(),
@@ -617,14 +622,20 @@
 
 							return noFilters;
 						},
-						"D": function(data) {
-							var noFilters = new noInfoPath.data.NoFilters(),
+						"D": function(data, filters) {
+							var noFilters,
 								id;
-							id = data[_table.primaryKey];
-							noFilters.add(_table.primaryKey, null, true, true, [{
-								operator: "eq",
-								value: id
-							}]);
+
+                            if(filters){
+                                noFilters = new noInfoPath.data.NoFilters(filters);
+                            }else{
+                                id = data[_table.primaryKey];
+    							noFilters.add(_table.primaryKey, null, true, true, [{
+    								operator: "eq",
+    								value: id
+    							}]);
+                            }
+
 
 							return noFilters;
 						},
@@ -685,17 +696,20 @@
 							//.catch(deferred.reject);
 						},
 						"D": function(data, noFilters, noTransaction) {
-							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters);
-							_getOne({
-									"key": _table.primaryKey,
-									"value": data[_table.primaryKey]
-								})
-								.then(function(result) {
+							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters),
+                                filter = !!data ? {
+    									"key": _table.primaryKey,
+    									"value": data[_table.primaryKey]
+    								} : noFilters,
+                                deleted;
+							_getOne(filter)
+								.then(function(datum) {
+                                    deleted = datum;
 									_exec(sqlStmt)
 										.then(function(result) {
-											if (noTransaction) noTransaction.addChange(_tableName, data, "D");
+											if (noTransaction) noTransaction.addChange(_tableName, deleted, "D");
 											deferred.resolve(result);
-										}.bind(result))
+										}.bind(datum))
 										.catch(deferred.reject);
 								})
 								.catch(deferred.reject);
@@ -720,7 +734,7 @@
 								.catch(deferred.reject);
 						}
 					},
-					filters = filterOps[operation](data);
+					filters = filterOps[operation](data, customFilters);
 
 				sqlOps[operation](data, filters, noTransaction);
 
@@ -843,8 +857,8 @@
 			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 			 */
 
-			this.noDestroy = function(data, noTransaction) {
-				return webSqlOperation("D", data, noTransaction);
+			this.noDestroy = function(data, noTransaction, filters) {
+				return webSqlOperation("D", data, noTransaction, filters);
 			};
 
 			/**
