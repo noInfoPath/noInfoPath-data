@@ -159,13 +159,19 @@
     								return writableData;
     							},
                                 "joiner-many": function(curEntity, data, scope) {
-                                    var writableData = [],
-                                        sourceData = scope[curEntity.source.property],
+                                    var writableData = {drop: [], add: []},
+                                        sourceDataDrop = _.pluck(scope[curEntity.source.drop.property], curEntity.source.drop.pluck),
+                                        sourceDataAdd =  scope[curEntity.source.add.property],
                                         createJoin = preOps.joiner;
 
-                                    for(var d in sourceData){
-                                        var sd = sourceData[d];
-                                        writableData.push(createJoin(curEntity, sd, scope));
+                                    for(var dd = 0; dd < sourceDataDrop.length; dd++){
+                                        var sdd = sourceDataDrop[dd];
+                                        writableData.drop.push(createJoin(curEntity, sdd, scope));
+                                    }
+
+                                    for(var da = 0; da < sourceDataAdd.length; da++){
+                                        var sda = sourceDataAdd[da];
+                                        writableData.add.push(createJoin(curEntity, sda, scope));
                                     }
 
                                     return writableData;
@@ -278,8 +284,8 @@
                                  *  that match the parent key. (i.e. SelectionID)
                                 */
 
-                                dropAllRelatedToParentKey(dataSource, curEntity, writableData)
-                                    .then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData, scope))
+                                dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
+                                    .then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
                                     .then(_recurse)
                                     .catch(reject);
 
