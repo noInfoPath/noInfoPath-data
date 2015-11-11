@@ -72,7 +72,7 @@
 						return r;
 					},
 					"DATE": function(d) {
-                        var r = "";
+                        var r = null;
                         if(angular.isString(d)){
                             r = noInfoPath.toDbDate(new Date(d));
                         }
