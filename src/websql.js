@@ -59,14 +59,14 @@
 						return b;
 					},
 					"INTEGER": function(i) {
-						if (typeof i === "boolean")
-							return i ? 1 : 0;
+						if (typeof i === "boolean") // typeof null is object, thanks javascript!
+							return i ? 1 : 0; // converts true to 1 and false to 0
 						else
-							return angular.isNumber(i) ? i : 0;
+							return angular.isNumber(i) ? i : null;
 					},
 					"NUMERIC": function(n) {
-						var c = Number(n);
-						return angular.isNumber(c) ? c : 0;
+						var c = n === null ? null : Number(n);
+						return c;
 					},
 					"REAL": function(r) {
 						return r;
