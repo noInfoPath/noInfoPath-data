@@ -68,11 +68,11 @@ describe("Testing noWebSQLParser", function(){
 				expect(result).toEqual(expected);
 			});
 
-			it("Testing INTEGER without proper datatype, expecting 0", function(){
+			it("Testing INTEGER without proper datatype, expecting null", function(){
 				expect(noWebSQLParser._interface.toSqlLiteConversionFunctions.INTEGER).toBeDefined();
 				var result,
 				input = "hi",
-				expected = 0;
+				expected = null;
 
 				result = noWebSQLParser._interface.toSqlLiteConversionFunctions.INTEGER(input);
 
