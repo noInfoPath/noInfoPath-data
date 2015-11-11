@@ -65,8 +65,8 @@
 							return angular.isNumber(i) ? i : null;
 					},
 					"NUMERIC": function(n) {
-						var c = Number(n);
-						return angular.isNumber(c) ? c : null;
+						var c = n === null ? null : Number(n);
+						return c;
 					},
 					"REAL": function(r) {
 						return r;
