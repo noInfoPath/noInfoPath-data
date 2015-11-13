@@ -291,7 +291,12 @@
 
                             }else{
         						dataSource[opType](writableData, SELF)
-        							.then(_recurse)
+        							.then(function(data){
+										if(curEntity.cacheOnScope){
+											scope[curEntity.entityName] = data;
+										}
+										_recurse();
+									})
         							.catch(reject);
                             }
 
