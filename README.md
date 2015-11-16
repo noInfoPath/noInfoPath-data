@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.0.13
+@version 1.0.14
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
