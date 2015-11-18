@@ -436,7 +436,7 @@
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
-					entity
+					return entity
 						.where("state")
 						.equals("synced")
 						.toArray()
