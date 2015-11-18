@@ -48,7 +48,7 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "noIndexedDb", "lodash", "noDataSource", function($injector, $q, noIndexedDb, _, noDataSource) {
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource) {
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
@@ -386,7 +386,10 @@
 				this.endTransaction = function(transaction) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
-					return entity.noCreate(transaction.toObject());
+					return entity.noCreate(transaction.toObject())
+                        .then(function(){
+                            $rootScope.$broadcast("noTransactionCache::localDataUpdated");
+                        });
 				};
 
 				this.getAllPending = function() {

@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.15
+*	@version 1.0.16
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3389,7 +3389,7 @@ var GloboTest = {};
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "noIndexedDb", "lodash", "noDataSource", function($injector, $q, noIndexedDb, _, noDataSource) {
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource) {
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
@@ -3727,7 +3727,10 @@ var GloboTest = {};
 				this.endTransaction = function(transaction) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
-					return entity.noCreate(transaction.toObject());
+					return entity.noCreate(transaction.toObject())
+                        .then(function(){
+                            $rootScope.$broadcast("noTransactionCache::localDataUpdated");
+                        });
 				};
 
 				this.getAllPending = function() {
