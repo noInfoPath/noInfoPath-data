@@ -959,6 +959,14 @@
 				return deferred.promise;
 			};
 
+            this.noUpsert = function(data){
+                if(data[this.primaryKey]){
+                    return this.noUpdate(data);
+                }else{
+                    return this.noCreate(data);
+                }
+            };
+
 			/**
 			 * ### noClear()
 			 *

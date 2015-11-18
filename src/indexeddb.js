@@ -313,7 +313,7 @@
 
 					table.add(data)
 						.then(function(data){
-							noLogService.log("addSuccessful", data);
+							//noLogService.log("addSuccessful", data);
 							table.get(data)
 								.then(function(data){
 									//deferred.resolve(data);
@@ -329,9 +329,6 @@
 							//deferred.reject("noCRUD::create " + err);
 							window.noInfoPath.digestError(deferred.reject, err);
 						});
-				})
-				.then(function(){
-					noLogService.log("transaction successful for Create");
 				})
 				.catch(function(err){
 					deferred.reject("noCRUD::createTrans " + err);
