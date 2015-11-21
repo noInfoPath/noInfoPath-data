@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.18
+*	@version 1.0.19
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3514,25 +3514,32 @@ var GloboTest = {};
 
     								return writableData;
     							},
-                                "joiner-many": function(curEntity, data, scope) {
-                                    var writableData = {drop: [], add: []},
-                                        sourceDataDrop = _.pluck(scope[curEntity.source.drop.property], curEntity.source.drop.pluck),
-                                        sourceDataAdd =  scope[curEntity.source.add.property],
-                                        createJoin = preOps.joiner;
+								"joiner-many": function(curEntity, data, scope) {
+									var writableData = {
+											drop: [],
+											add: []
+										},
+										sourceDataDrop = _.pluck(scope[curEntity.source.drop.property], curEntity.source.drop.pluck),
+										sourceDataAdd = scope[curEntity.source.add.property],
+										createJoin = preOps.joiner;
 
-                                    for(var dd = 0; dd < sourceDataDrop.length; dd++){
-                                        var sdd = sourceDataDrop[dd];
-                                        writableData.drop.push(createJoin(curEntity, sdd, scope));
-                                    }
+									if (sourceDataDrop) {
+										for (var dd = 0; dd < sourceDataDrop.length; dd++) {
+											var sdd = sourceDataDrop[dd];
+											writableData.drop.push(createJoin(curEntity, sdd, scope));
+										}
+									}
 
-                                    for(var da = 0; da < sourceDataAdd.length; da++){
-                                        var sda = sourceDataAdd[da];
-                                        writableData.add.push(createJoin(curEntity, sda, scope));
-                                    }
+									if (sourceDataAdd) {
+										for (var da = 0; da < sourceDataAdd.length; da++) {
+											var sda = sourceDataAdd[da];
+											writableData.add.push(createJoin(curEntity, sda, scope));
+										}
+									}
 
-                                    return writableData;
-                                }
-    						};
+									return writableData;
+								}
+							};
 
                         /*
                         * Drop each record one at a time so that the operations
