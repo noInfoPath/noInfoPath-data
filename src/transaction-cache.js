@@ -97,8 +97,10 @@
 				normalizeTransactions(config);
 
 				this.upsert = function upsert(data) {
+					data = data ? data : {};
+
 					return $q(function(resolve, reject){
-                        var THIS = this,
+                        var THIS = SELF,
     						dsCfg = config.noDataSource,
     						opType = data[dsCfg.primaryKey] ? "update" : "create",
     						opEntites = dsCfg.noTransaction[opType],
