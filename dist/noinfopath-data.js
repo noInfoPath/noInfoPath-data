@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.18
+*	@version 1.0.21
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2204,10 +2204,10 @@ var GloboTest = {};
 						return r;
 					},
 					"DATE": function(d) {
-                        var r = null;
-                        if(angular.isString(d)){
-                            r = noInfoPath.toDbDate(new Date(d));
-                        }
+						var r = null;
+						if (angular.isString(d)) {
+							r = noInfoPath.toDbDate(new Date(d));
+						}
 
 						return r;
 					}
@@ -2640,15 +2640,15 @@ var GloboTest = {};
 					sqlExpressionData;
 
 				if (angular.isObject(rowid)) {
-                    if(rowid.__type === "NoFilters"){
-                        filters = rowid;
-                    }else{
-                        filters.add(rowid.key, null, true, true, [{
-    						"operator": "eq",
-    						"value": rowid.value,
-    						"logic": null
-    					}]);
-                    }
+					if (rowid.__type === "NoFilters") {
+						filters = rowid;
+					} else {
+						filters.add(rowid.key, null, true, true, [{
+							"operator": "eq",
+							"value": rowid.value,
+							"logic": null
+						}]);
+					}
 
 				} else {
 					filters.add("rowid", null, true, true, [{
@@ -2758,15 +2758,16 @@ var GloboTest = {};
 							var noFilters,
 								id;
 
-                            if(filters){
-                                noFilters = new noInfoPath.data.NoFilters(filters);
-                            }else{
-                                id = data[_table.primaryKey];
-    							noFilters.add(_table.primaryKey, null, true, true, [{
-    								operator: "eq",
-    								value: id
-    							}]);
-                            }
+							if (filters) {
+								noFilters = new noInfoPath.data.NoFilters(filters);
+							} else {
+								noFilters = new noInfoPath.data.NoFilters();
+								id = data[_table.primaryKey];
+								noFilters.add(_table.primaryKey, null, true, true, [{
+									operator: "eq",
+									value: id
+								}]);
+							}
 
 
 							return noFilters;
@@ -2829,14 +2830,14 @@ var GloboTest = {};
 						},
 						"D": function(data, noFilters, noTransaction) {
 							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters),
-                                filter = !!data ? {
-    									"key": _table.primaryKey,
-    									"value": data[_table.primaryKey]
-    								} : noFilters,
-                                deleted;
+								filter = !!data ? {
+									"key": _table.primaryKey,
+									"value": data[_table.primaryKey]
+								} : noFilters,
+								deleted;
 							_getOne(filter)
 								.then(function(datum) {
-                                    deleted = datum;
+									deleted = datum;
 									_exec(sqlStmt)
 										.then(function(result) {
 											if (noTransaction) noTransaction.addChange(_tableName, deleted, "D");
@@ -3091,13 +3092,13 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-            this.noUpsert = function(data){
-                if(data[this.primaryKey]){
-                    return this.noUpdate(data);
-                }else{
-                    return this.noCreate(data);
-                }
-            };
+			this.noUpsert = function(data) {
+				if (data[this.primaryKey]) {
+					return this.noUpdate(data);
+				} else {
+					return this.noCreate(data);
+				}
+			};
 
 			/**
 			 * ### noClear()
@@ -3394,7 +3395,7 @@ var GloboTest = {};
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
 				var SELF = this,
-                    scope = thescope;
+					scope = thescope;
 
 				Object.defineProperties(this, {
 					"__type": {
@@ -3411,7 +3412,7 @@ var GloboTest = {};
 				this.state = "pending";
 
 				this.addChange = function(tableName, data, changeType) {
-                    var tableCfg = scope["noDbSchema_" + config.noDataSource.databaseName];
+					var tableCfg = scope["noDbSchema_" + config.noDataSource.databaseName];
 					this.changes.add(tableName, data, changeType, tableCfg);
 				};
 
@@ -3422,15 +3423,17 @@ var GloboTest = {};
 					return json;
 				};
 
-				function normalizeTransactions(config){
+				function normalizeTransactions(config) {
 
 					var noTransactions = config.noDataSource.noTransaction;
 
-					for(var t in noTransactions){
+					for (var t in noTransactions) {
 						var transaction = noTransactions[t];
 
-						if(_.isBoolean(transaction)){
-							noTransactions[t] = [{entityName: config.noDataSource.entityName}];
+						if (_.isBoolean(transaction)) {
+							noTransactions[t] = [{
+								entityName: config.noDataSource.entityName
+							}];
 						}
 					}
 				}
@@ -3438,235 +3441,309 @@ var GloboTest = {};
 				normalizeTransactions(config);
 
 				this.upsert = function upsert(data) {
-					return $q(function(resolve, reject){
-                        var THIS = this,
-    						dsCfg = config.noDataSource,
-    						opType = data[dsCfg.primaryKey] ? "update" : "create",
-    						opEntites = dsCfg.noTransaction[opType],
-    						curOpEntity = 0,
-    						totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
-    						results = {},
-    						preOps = {
-    							"noop": angular.noop,
-    							"basic": function(curEntity, data, scope) {
-    								var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
+					data = data ? data : {};
 
-    								if (curEntity.fields) {
-    									for (var f in curEntity.fields) {
-    										var fld = curEntity.fields[f],
-    											prov;
+					return $q(function(resolve, reject) {
+						var THIS = SELF,
+							dsCfg = config.noDataSource,
+							opType = data[dsCfg.primaryKey] ? "update" : "create",
+							opEntites = dsCfg.noTransaction[opType],
+							curOpEntity = 0,
+							totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
+							results = {},
+							preOps = {
+								"noop": angular.noop,
+								"basic": function(curEntity, data, scope) {
+									var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
 
-    										//When field value is get remote values then store on
-    										//the writableData object.
-    										if (angular.isObject(fld.value)) {
-    											if (fld.value.provider === "scope") {
-    												prov = scope;
-    											} else {
-    												prov = $injector.get(fld.value.provider);
-    											}
-    											writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
-    										}
+									if (curEntity.fields) {
+										for (var f in curEntity.fields) {
+											var fld = curEntity.fields[f],
+												prov;
 
-    										//When field has a type convert before saving.
-    										//NOTE: This is temporary and should be refactored
-    										//      into the actual provider.  And be data
-    										//      driven not conditional.
-    										if (fld.type === "date") {
-    											writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
-    										}
-    									}
-    								}
+											//When field value is get remote values then store on
+											//the writableData object.
+											if (angular.isObject(fld.value)) {
+												if (fld.value.provider === "scope") {
+													prov = scope;
+												} else {
+													prov = $injector.get(fld.value.provider);
+												}
+												writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
+											}
 
-    								return writableData;
+											//When field has a type convert before saving.
+											//NOTE: This is temporary and should be refactored
+											//      into the actual provider.  And be data
+											//      driven not conditional.
+											if (fld.type === "date") {
+												writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
+											}
+										}
+									}
 
-    							},
-    							"joiner": function(curEntity, data, scope) {
-    								var writableData = {};
+									return writableData;
 
-    								for (var f in curEntity.fields) {
-    									var fld = curEntity.fields[f],
-    										prov, value;
+								},
+								"joiner": function(curEntity, data, scope) {
+									var writableData = {};
 
-    									switch (fld.value.provider) {
-    										case "data":
-                                                var t = {};
-                                                t[fld.value.property] = data;
-    											prov = t;
-    											break;
+									for (var f in curEntity.fields) {
+										var fld = curEntity.fields[f],
+											prov, value;
 
-    										case "results":
-    											prov = results;
-    											break;
+										switch (fld.value.provider) {
+											case "data":
+												var t = {};
+												t[fld.value.property] = data;
+												prov = t;
+												break;
 
-    										case "scope":
-    											prov = scope;
-    											break;
+											case "results":
+												prov = results;
+												break;
 
-    										default:
-    											prov = $injector.get(fld.value.provider);
-    											break;
-    									}
+											case "scope":
+												prov = scope;
+												break;
 
-    									value = noInfoPath.getItem(prov, fld.value.property);
+											default:
+												prov = $injector.get(fld.value.provider);
+												break;
+										}
 
-    									writableData[fld.field] = value;
-    								}
+										value = noInfoPath.getItem(prov, fld.value.property);
 
-    								return writableData;
-    							},
-                                "joiner-many": function(curEntity, data, scope) {
-                                    var writableData = {drop: [], add: []},
-                                        sourceDataDrop = _.pluck(scope[curEntity.source.drop.property], curEntity.source.drop.pluck),
-                                        sourceDataAdd =  scope[curEntity.source.add.property],
-                                        createJoin = preOps.joiner;
+										writableData[fld.field] = value;
+									}
 
-                                    for(var dd = 0; dd < sourceDataDrop.length; dd++){
-                                        var sdd = sourceDataDrop[dd];
-                                        writableData.drop.push(createJoin(curEntity, sdd, scope));
-                                    }
+									return writableData;
+								},
+								"joiner-many": function(curEntity, data, scope) {
+									var writableData = {
+											drop: [],
+											add: []
+										},
+										sourceDataDrop = _.pluck(scope[curEntity.source.drop.property], curEntity.source.drop.pluck),
+										sourceDataAdd = scope[curEntity.source.add.property],
+										createJoin = preOps.joiner;
 
-                                    for(var da = 0; da < sourceDataAdd.length; da++){
-                                        var sda = sourceDataAdd[da];
-                                        writableData.add.push(createJoin(curEntity, sda, scope));
-                                    }
+									if (sourceDataDrop) {
+										for (var dd = 0; dd < sourceDataDrop.length; dd++) {
+											var sdd = sourceDataDrop[dd];
+											writableData.drop.push(createJoin(curEntity, sdd, scope));
+										}
+									}
 
-                                    return writableData;
-                                }
-    						};
+									if (sourceDataAdd) {
+										for (var da = 0; da < sourceDataAdd.length; da++) {
+											var sda = sourceDataAdd[da];
+											writableData.add.push(createJoin(curEntity, sda, scope));
+										}
+									}
 
-                        /*
-                        * Drop each record one at a time so that the operations
-                        * are recorded in the current transaction.
-                        */
-                        function dropAllRelatedToParentKey(ds, curEntity, data){
-                            return $q(function(resolve, reject){
-                                var d = 0;
-                                function recurse(){
-                                    var datum = data[d++],
-                                        filter = { logic: "and", filters: [ ] };
+									return writableData;
+								}
+							};
 
-                                    if(datum){
-                                        for(var p in datum){
-                                            var v  = datum[p];
+						/*
+						 * Drop each record one at a time so that the operations
+						 * are recorded in the current transaction.
+						 */
+						function dropAllRelatedToParentKey(ds, curEntity, data) {
+							return $q(function(resolve, reject) {
+								var d = 0;
 
-                                            filter.filters.push({field: p, operator: "eq", value: v });
-                                        }
+								function recurse() {
+									var datum = data[d++],
+										filter = {
+											logic: "and",
+											filters: []
+										};
 
-                                        ds.destroy(null, SELF, filter)
-                                            .then(function(r){
-                                                console.log(r);
-                                                recurse();
-                                            })
-                                            .catch(function(err){
-                                                console.error(err);
-                                                reject(err);
-                                            });
-                                    }else{
-                                        resolve();
-                                    }
+									if (datum) {
+										for (var p in datum) {
+											var v = datum[p];
 
-                                }
+											filter.filters.push({
+												field: p,
+												operator: "eq",
+												value: v
+											});
+										}
 
-                                recurse();
-                            });
-                        }
+										ds.destroy(null, SELF, filter)
+											.then(function(r) {
+												console.log(r);
+												recurse();
+											})
+											.catch(function(err) {
+												console.error(err);
+												reject(err);
+											});
+									} else {
+										resolve();
+									}
 
-                        function addAllRelatedToParentKey(ds, entity, data, scope){
-                            return $q(function(resolve, reject){
-                                var d = 0;
-                                function recurse(){
-                                    var datum = data[d++];
+								}
 
-                                    if(datum){
-                                        ds.create(datum, SELF)
-                                            .then(function(r){
-                                                console.log(r);
-                                                recurse();
-                                            })
-                                            .catch(function(err){
-                                                console.error(err);
-                                                reject(err);
-                                            });
-                                    }else{
-                                        resolve();
-                                    }
+								recurse();
+							});
+						}
 
-                                }
+						function addAllRelatedToParentKey(ds, entity, data, scope) {
+							return $q(function(resolve, reject) {
+								var d = 0;
 
-                                recurse();
-                            });
+								function recurse() {
+									var datum = data[d++];
+
+									if (datum) {
+										ds.create(datum, SELF)
+											.then(function(r) {
+												console.log(r);
+												recurse();
+											})
+											.catch(function(err) {
+												console.error(err);
+												reject(err);
+											});
+									} else {
+										resolve();
+									}
+
+								}
+
+								recurse();
+							});
 
 
-                        }
+						}
 
-    					function _recurse() {
-                            // if(_.isBoolean(opEntites)){
-                            //     opEntites = [{entityName: config.noDataSource.entityName}];
-                            // }
-    						var curEntity = opEntites[curOpEntity],
-    							preOp, dsConfig, dataSource, writableData;
+						function _recurse() {
+							// if(_.isBoolean(opEntites)){
+							//     opEntites = [{entityName: config.noDataSource.entityName}];
+							// }
+							var curEntity = opEntites[curOpEntity],
+								preOp, dsConfig, dataSource, writableData;
 
-                            if (!curEntity || curOpEntity >= opEntites.length) {
-								resolve();
-                                return;
+							if (!curEntity || curOpEntity >= opEntites.length) {
+								resolve(results);
+								return;
 							}
 
-                            curOpEntity++;
+							curOpEntity++;
 
-                            // if(!angular.isObject(curEntity)){
-                            //     curEntity = {
-       			// 					entityName: config.noDataSource.entityName
-       			// 				};
-                            // }
+							// if(!angular.isObject(curEntity)){
+							//     curEntity = {
+							// 					entityName: config.noDataSource.entityName
+							// 				};
+							// }
 
-                            preOp = !!curEntity.type ? curEntity.type : "basic";
+							preOp = !!curEntity.type ? curEntity.type : "basic";
 
-                            //preOp = preOp === "joiner-many" ? "joiner" : preOp;
+							//preOp = preOp === "joiner-many" ? "joiner" : preOp;
 
-                            dsConfig = angular.merge(config.noDataSource, {
-                                entityName: curEntity.entityName
-                            });
+							dsConfig = angular.merge({}, config.noDataSource, {
+								entityName: curEntity.entityName
+							});
 
-                            dataSource = noDataSource.create(dsConfig, scope);
+							dataSource = noDataSource.create(dsConfig, scope);
 
-    						writableData = preOps[preOp](curEntity, data, scope);
+							writableData = preOps[preOp](curEntity, data, scope);
 
-                            if(preOp === "joiner-many"){
-                                /*
-                                 *  ### joiner-many
-                                 *
-                                 *  `joiner-many` assumes that it represents a multiple choice question.
-                                 *  In order to keep the algorithm simple we drop all joiner items
-                                 *  that match the parent key. (i.e. SelectionID)
-                                */
+							if (preOp === "joiner-many") {
+								/*
+								 *  ### joiner-many
+								 *
+								 *  `joiner-many` assumes that it represents a multiple choice question.
+								 *  In order to keep the algorithm simple we drop all joiner items
+								 *  that match the parent key. (i.e. SelectionID)
+								 */
 
-                                dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
-                                    .then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
-                                    .then(_recurse)
-                                    .catch(reject);
+								dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
+									.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
+									.then(_recurse)
+									.catch(reject);
 
-                            }else{
-        						dataSource[opType](writableData, SELF)
-        							.then(function(data){
-										if(curEntity.cacheOnScope){
-											scope[curEntity.entityName] = data;
-										}
-										_recurse();
+							} else {
+								dataSource[opType](writableData, SELF)
+									.then(function(data) {
+										//get row from base data source
+										var ds = noDataSource.create(config.noDataSource, scope),
+											id = data[config.noDataSource.primaryKey];
+
+										ds.one(id)
+											.then(function(resp) {
+												if (curEntity.cacheOnScope) {
+													scope[curEntity.entityName] = resp;
+												}
+
+
+												results[config.noDataSource.entityName] = resp;
+
+												_recurse();
+
+											})
+											.catch(function(err) {
+												console.error(err);
+												_recurse();
+											});
+
 									})
-        							.catch(reject);
-                            }
+									.catch(reject);
+							}
 
 
 
-    					}
+						}
 
-    					_recurse();
-                    });
+						_recurse();
+					});
 				};
 
-				this.destroy = function(entityName, data) {
-					var entityTxCfg = noTxConfig[entityName];
-					console.warn("TODO: implement  NoTransaction::destroy");
+				this.destroy = function(data) {
+					data = data ? data : {};
+
+					return $q(function(resolve, reject) {
+						var THIS = SELF,
+							dsCfg = config.noDataSource,
+							opType = "destroy",
+							opEntites = dsCfg.noTransaction[opType],
+							curOpEntity = 0,
+							totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
+							results = {};
+
+						function _recurse() {
+							var curEntity = opEntites[curOpEntity],
+								preOp, dsConfig, dataSource, writableData;
+
+							if (!curEntity || curOpEntity >= opEntites.length) {
+								resolve(results);
+								return;
+							}
+
+							curOpEntity++;
+
+							dsConfig = angular.merge({}, config.noDataSource, {
+								entityName: curEntity.entityName
+							});
+
+							dataSource = noDataSource.create(dsConfig, scope);
+
+							writableData = data; //preOps[preOp](curEntity, data, scope);
+
+							dataSource[opType](writableData, SELF)
+								.then(function(data) {
+									results[config.noDataSource.entityName] = writableData;
+									_recurse();
+
+								})
+								.catch(reject);
+						}
+
+						_recurse();
+					});
 				};
 			}
 
@@ -3686,38 +3763,42 @@ var GloboTest = {};
 			}
 
 			function NoChange(tableName, data, changeType, tableCfg) {
-                var tblSchema = tableCfg.tables[tableName];
+				var tblSchema = tableCfg.tables[tableName];
 
-                function normalizeValues(data){
+				function normalizeValues(data) {
 					var converters = {
-						"bit": function(d){ return !!d; },
-						"decimal" : function(d){
+						"bit": function(d) {
+							return !!d;
+						},
+						"decimal": function(d) {
 							var r = d;
-							if (r){
+							if (r) {
 								r = String(r);
 							}
 
 							return r;
 						},
-						"undefined": function(d){return d;}
+						"undefined": function(d) {
+							return d;
+						}
 					};
 
-                    for(var c in data){
-                        var dt,
+					for (var c in data) {
+						var dt,
 							col = tblSchema.columns[c];
 
-                        if(col){
+						if (col) {
 							dt = converters[col.type];
 
-                            if(!dt){
-                                dt = converters["undefined"];
-                            }
+							if (!dt) {
+								dt = converters["undefined"];
+							}
 
 							data[c] = dt(data[c]);
-                        }
-                    }
-                    return data;
-                }
+						}
+					}
+					return data;
+				}
 
 				Object.defineProperties(this, {
 					"__type": {
@@ -3743,9 +3824,9 @@ var GloboTest = {};
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 					return entity.noCreate(transaction.toObject())
-                        .then(function(){
-                            $rootScope.$broadcast("noTransactionCache::localDataUpdated");
-                        });
+						.then(function() {
+							$rootScope.$broadcast("noTransactionCache::localDataUpdated");
+						});
 				};
 
 				this.getAllPending = function() {
@@ -4708,6 +4789,8 @@ var GloboTest = {};
 		function resolveFilterValues(filters, scope) {
 			var values = {};
 
+
+
 			for (var f in filters) {
 				var filter = filters[f],
 					source, value;
@@ -4726,10 +4809,8 @@ var GloboTest = {};
 		this.create = function(data, noTrans) {
 			if (isNoView) throw "create operation not supported on entities of type NoView";
 
-			return entity.noCreate(data, noTrans)
-				.catch(function(err) {
-					throw err;
-				});
+			return entity.noCreate(data, noTrans);
+
 		};
 
 		this.read = function(options) {
@@ -4801,11 +4882,14 @@ var GloboTest = {};
 			return entity.noDestroy(data, noTrans, filters);
 		};
 
-		this.one = function(options) {
+		this.one = function(id) {
 			function requestData(scope, config, entity, resolve, reject) {
 				var params = [];
 
-				if (dsConfig.lookup) {
+				if (id) {
+					filterValues = {};
+					filterValues[config.primaryKey] = id;
+				} else if (dsConfig.lookup) {
 					filterValues = $injector.get(dsConfig.lookup.source, _scope);
 
 				} else if (dsConfig.filter) {

@@ -72,10 +72,10 @@
 						return r;
 					},
 					"DATE": function(d) {
-                        var r = null;
-                        if(angular.isString(d)){
-                            r = noInfoPath.toDbDate(new Date(d));
-                        }
+						var r = null;
+						if (angular.isString(d)) {
+							r = noInfoPath.toDbDate(new Date(d));
+						}
 
 						return r;
 					}
@@ -508,15 +508,15 @@
 					sqlExpressionData;
 
 				if (angular.isObject(rowid)) {
-                    if(rowid.__type === "NoFilters"){
-                        filters = rowid;
-                    }else{
-                        filters.add(rowid.key, null, true, true, [{
-    						"operator": "eq",
-    						"value": rowid.value,
-    						"logic": null
-    					}]);
-                    }
+					if (rowid.__type === "NoFilters") {
+						filters = rowid;
+					} else {
+						filters.add(rowid.key, null, true, true, [{
+							"operator": "eq",
+							"value": rowid.value,
+							"logic": null
+						}]);
+					}
 
 				} else {
 					filters.add("rowid", null, true, true, [{
@@ -626,15 +626,16 @@
 							var noFilters,
 								id;
 
-                            if(filters){
-                                noFilters = new noInfoPath.data.NoFilters(filters);
-                            }else{
-                                id = data[_table.primaryKey];
-    							noFilters.add(_table.primaryKey, null, true, true, [{
-    								operator: "eq",
-    								value: id
-    							}]);
-                            }
+							if (filters) {
+								noFilters = new noInfoPath.data.NoFilters(filters);
+							} else {
+								noFilters = new noInfoPath.data.NoFilters();
+								id = data[_table.primaryKey];
+								noFilters.add(_table.primaryKey, null, true, true, [{
+									operator: "eq",
+									value: id
+								}]);
+							}
 
 
 							return noFilters;
@@ -697,14 +698,14 @@
 						},
 						"D": function(data, noFilters, noTransaction) {
 							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters),
-                                filter = !!data ? {
-    									"key": _table.primaryKey,
-    									"value": data[_table.primaryKey]
-    								} : noFilters,
-                                deleted;
+								filter = !!data ? {
+									"key": _table.primaryKey,
+									"value": data[_table.primaryKey]
+								} : noFilters,
+								deleted;
 							_getOne(filter)
 								.then(function(datum) {
-                                    deleted = datum;
+									deleted = datum;
 									_exec(sqlStmt)
 										.then(function(result) {
 											if (noTransaction) noTransaction.addChange(_tableName, deleted, "D");
@@ -959,13 +960,13 @@
 				return deferred.promise;
 			};
 
-            this.noUpsert = function(data){
-                if(data[this.primaryKey]){
-                    return this.noUpdate(data);
-                }else{
-                    return this.noCreate(data);
-                }
-            };
+			this.noUpsert = function(data) {
+				if (data[this.primaryKey]) {
+					return this.noUpdate(data);
+				} else {
+					return this.noCreate(data);
+				}
+			};
 
 			/**
 			 * ### noClear()

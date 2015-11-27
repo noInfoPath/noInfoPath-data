@@ -55,6 +55,8 @@
 		function resolveFilterValues(filters, scope) {
 			var values = {};
 
+
+
 			for (var f in filters) {
 				var filter = filters[f],
 					source, value;
@@ -73,10 +75,8 @@
 		this.create = function(data, noTrans) {
 			if (isNoView) throw "create operation not supported on entities of type NoView";
 
-			return entity.noCreate(data, noTrans)
-				.catch(function(err) {
-					throw err;
-				});
+			return entity.noCreate(data, noTrans);
+
 		};
 
 		this.read = function(options) {
@@ -148,11 +148,14 @@
 			return entity.noDestroy(data, noTrans, filters);
 		};
 
-		this.one = function(options) {
+		this.one = function(id) {
 			function requestData(scope, config, entity, resolve, reject) {
 				var params = [];
 
-				if (dsConfig.lookup) {
+				if (id) {
+					filterValues = {};
+					filterValues[config.primaryKey] = id;
+				} else if (dsConfig.lookup) {
 					filterValues = $injector.get(dsConfig.lookup.source, _scope);
 
 				} else if (dsConfig.filter) {
