@@ -48,12 +48,13 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource) {
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema) {
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
 				var SELF = this,
-					scope = thescope;
+					scope = thescope,
+					schema = noDbSchema.getSchema(config.noDataSource.databaseName);
 
 				Object.defineProperties(this, {
 					"__type": {
@@ -64,7 +65,8 @@
 				});
 
 				this.transactionId = noInfoPath.createUUID();
-				this.timestamp = new Date().valueOf();
+				this.timestamp = new Date()
+					.valueOf();
 				this.userId = userId;
 				this.changes = new NoChanges();
 				this.state = "pending";
@@ -81,22 +83,34 @@
 					return json;
 				};
 
-				function normalizeTransactions(config) {
+				function normalizeTransactions(config, schema) {
 
-					var noTransactions = config.noDataSource.noTransaction;
+					var noTransactions = config.noDataSource.noTransaction,
+						lu = schema.entity(config.noDataSource.crudEntity),
+						vw = schema.entity(config.noDataSource.entityName),
+						keyst = _.keys(lu.columns),
+						keysv = vw ? _.keys(vw.columns) : [],
+						keysd = _.difference(keysv, keyst);
+
+					keysd.push("DateCreated");
+					keysd.push("CreatedBy");
 
 					for (var t in noTransactions) {
-						var transaction = noTransactions[t];
+						var transaction = noTransactions[t],
+							en = config.noDataSource.crudEntity ? config.noDataSource.crudEntity : config.noDataSource.entityName;
 
 						if (_.isBoolean(transaction)) {
 							noTransactions[t] = [{
-								entityName: config.noDataSource.entityName
+								entityName: en,
+								omit_fields: keysd
 							}];
 						}
 					}
+
+					console.log(noTransactions);
 				}
 
-				normalizeTransactions(config);
+				normalizeTransactions(config, schema);
 
 				this.upsert = function upsert(data) {
 					data = data ? data : {};
