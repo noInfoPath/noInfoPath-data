@@ -1574,322 +1574,349 @@
 
 //schema.js
 /*
-* ## noDbSchema
-* The noDbSchema service provides access to the database configuration that
-* defines how to configure the local IndexedDB data store.
-*
-*
-*	### Properties
-*
-*	|Name|Type|Description|
-*	|----|----|-----------|
-*	|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-*	|tables|Object|A hash table of NoInfoPath database schema definitions|
-*	|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
-*
-*
-*	### Methods
-*
-*	#### \_processDbJson
-*	Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
-*
-*	##### Parameters
-*	|Name|Type|Descriptions|
-*	|----|----|------------|
-*	|resp|Object|The raw HTTP response received from the noinfopath-rest service|
-*
-*	### load()
-*	Loads and processes the database schema from the noinfopath-rest service.
-*
-*	#### Returns
-*	AngularJS::Promise
-*
-*
-*	### whenReady
-*	whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
-*
-*	#### Returns
-*	AngularJS::Promise
-*/
+ * ## noDbSchema
+ * The noDbSchema service provides access to the database configuration that
+ * defines how to configure the local IndexedDB data store.
+ *
+ *
+ *	### Properties
+ *
+ *	|Name|Type|Description|
+ *	|----|----|-----------|
+ *	|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+ *	|tables|Object|A hash table of NoInfoPath database schema definitions|
+ *	|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+ *
+ *
+ *	### Methods
+ *
+ *	#### \_processDbJson
+ *	Converts the schema received from the noinfopath-rest service and converts it to a Dexie compatible object.
+ *
+ *	##### Parameters
+ *	|Name|Type|Descriptions|
+ *	|----|----|------------|
+ *	|resp|Object|The raw HTTP response received from the noinfopath-rest service|
+ *
+ *	### load()
+ *	Loads and processes the database schema from the noinfopath-rest service.
+ *
+ *	#### Returns
+ *	AngularJS::Promise
+ *
+ *
+ *	### whenReady
+ *	whenReady is used to check if this service has completed its load phase. If it has not is calls the internal load method.
+ *
+ *	#### Returns
+ *	AngularJS::Promise
+ */
 var GloboTest = {};
-(function (angular, Dexie, undefined){
+(function(angular, Dexie, undefined) {
 	"use strict";
 
 	angular.module("noinfopath.data")
 
+	/*
+	 * ## noDbSchema
+	 * The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+	 */
+	/*
+		### Properties
+
+		|Name|Type|Description|
+		|----|----|-----------|
+		|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+		|tables|Object|A hash table of NoInfoPath database schema definitions|
+		|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+	*/
+
+	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
+		// TODO: Finish documentation
 		/*
-		 * ## noDbSchema
-		 * The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
-		*/
+		 * ## NoDbSchema : Class
+		 * This provides
+		 *
+		 * ### Constructors
+		 *
+		 * #### Constructor()
+		 *
+		 * ##### Usage
+		 * ```js
+		 * var x = new NoDbSchema();
+		 * ```
+		 *
+		 * ##### Parameters
+		 *
+		 * None
+		 *
+		 * ### Methods
+		 *
+		 * #### createSqlTableStmt(tableName, tableConfig)
+		 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
+		 *
+		 * ##### Usage
+		 * ```js
+		 * var x = createSqlTableStmt(tableName, tableConfig);
+		 * ```
+		 * ##### Parameters
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |tableName|String|The name of the table to be created|
+		 * |tableConfig|Object|The schema of the table to be created|
+		 *
+		 * ##### Returns
+		 * Returns a SQL query string
+		 *
+		 * ### Properties
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
+		 */
 		/*
-			### Properties
-
-			|Name|Type|Description|
-			|----|----|-----------|
-			|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-			|tables|Object|A hash table of NoInfoPath database schema definitions|
-			|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
-		*/
-
-		.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector){
-			// TODO: Finish documentation
-			/*
-			 * ## NoDbSchema : Class
-			 * This provides
-			 *
-			 * ### Constructors
-			 *
-			 * #### Constructor()
-			 *
-			 * ##### Usage
-			 * ```js
-			 * var x = new NoDbSchema();
-			 * ```
-			 *
-			 * ##### Parameters
-			 *
-			 * None
-			 *
-			 * ### Methods
-			 *
-			 * #### createSqlTableStmt(tableName, tableConfig)
-			 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
-			 *
-			 * ##### Usage
-			 * ```js
-			 * var x = createSqlTableStmt(tableName, tableConfig);
-			 * ```
-			 * ##### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |tableName|String|The name of the table to be created|
-			 * |tableConfig|Object|The schema of the table to be created|
-			 *
-			 * ##### Returns
-			 * Returns a SQL query string
-			 *
-			 * ### Properties
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
-			*/
-			/*
-			* ```json
-			* {
-			*		"dbName": "NoInfoPath_dtc_v1",
-			*		"provider": "noIndexedDB",
-			*		"remoteProvider:": "noHTTP",
-			*		"version": 1,
-			*		"schemaSource": {
-			*			"provider": "inline",
-			*			"schema": {
-			*				"store": {
-			*					"NoInfoPath_Changes": "$$ChangeID"
-			*				},
-			*				"tables": {
-			*					"NoInfoPath_Changes": {
-			*						"primaryKey": "ChangeID"
-			*					}
-			*				}
-			*			}
-			*		}
-			*	}
-			* ```
-			*/
+		 * ```json
+		 * {
+		 *		"dbName": "NoInfoPath_dtc_v1",
+		 *		"provider": "noIndexedDB",
+		 *		"remoteProvider:": "noHTTP",
+		 *		"version": 1,
+		 *		"schemaSource": {
+		 *			"provider": "inline",
+		 *			"schema": {
+		 *				"store": {
+		 *					"NoInfoPath_Changes": "$$ChangeID"
+		 *				},
+		 *				"tables": {
+		 *					"NoInfoPath_Changes": {
+		 *						"primaryKey": "ChangeID"
+		 *					}
+		 *				}
+		 *			}
+		 *		}
+		 *	}
+		 * ```
+		 */
 
 
-			function NoDbSchema(noConfig, noDbConfig, rawDbSchema){
-				//console.warn(rawDbSchema);
+		function NoDbSchema(noConfig, noDbConfig, rawDbSchema) {
+			//console.warn(rawDbSchema);
 
-				var _config = {},
-					_tables = rawDbSchema,
-					_views = {},
-					_sql = {},
-					_schemaConfig = noDbConfig;
+			var _config = {},
+				_tables = rawDbSchema,
+				_views = {},
+				_sql = {},
+				_schemaConfig = noDbConfig;
 
-				Object.defineProperties(this, {
-					"store": {
-						"get": function() { return _config; }
-					},
-					"tables": {
-						"get": function() { return _tables; }
-					},
-					"isReady": {
-						"get": function() { return _.size(_tables) > 0; }
-					},
-					"sql": {
-						"get": function() { return _sql; }
-					},
-					"views": {
-						"get": function() { return _views; }
-					},
-					"config": {
-						"get": function() { return _schemaConfig; }
+			Object.defineProperties(this, {
+				"store": {
+					"get": function() {
+						return _config;
 					}
-				});
-
-
-
-				angular.forEach(_tables, function(table, tableName){
-					var primKey = "$$" + table.primaryKey,
-						foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column")).join(",");
-
-					//Prep as a Dexie Store config
-					_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-				});
-
-			}
-
-			/**
-			*	### NoDbSchemaFactory
-			*
-			*	Creates unique instances of NoDbSchema based on noDBSchema configuration data.
-			*/
-
-			function NoDbSchemaFactory(){
-				var noConfig,
-					promises =[],
-					schemaSourceProviders = {
-						"inline": function(key, schemaConfig){
-							return $timeout(function(){
-								return schemaConfig.schemaSource.schema;
-							});
-						},
-						"noDBSchema": function(key, schemaConfig) {
-							return getRemoteSchema(noConfig)
-								.then(function(resp){
-									return resp.data;
-								})
-								.catch(function(err){
-									throw err;
-								});
-						},
-						"cached": function(key, schemaConfig){
-							var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
-
-							return $q(function(resolve, reject){
-								$rootScope.$watch(schemaKey, function(newval){
-									if(newval){
-										resolve(newval.tables);
-									}
-								});
-
-							});
-						}
-					};
-
-				function getRemoteSchema(config){
-					var req = {
-						method: "GET",
-						url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
-						headers: {
-							"Content-Type": "application/json",
-							"Accept": "application/json"
-						},
-						withCredentials: true
-					};
-
-					return $http(req)
-						.then(function(resp){
-							return resp;
-						})
-						.catch(function(resp){
-							throw resp;
+				},
+				"tables": {
+					"get": function() {
+						return _tables;
+					}
+				},
+				"lookups": {
+					"get": function() {
+						return _.filter(_tables, function(o) {
+							return o.entityName.indexOf("LU") === 0;
 						});
+					}
+				},
+				"isReady": {
+					"get": function() {
+						return _.size(_tables) > 0;
+					}
+				},
+				"sql": {
+					"get": function() {
+						return _sql;
+					}
+				},
+				"views": {
+					"get": function() {
+						return _views;
+					}
+				},
+				"config": {
+					"get": function() {
+						return _schemaConfig;
+					}
 				}
+			});
 
-				function checkCache(schemaKey){
-					return  noLocalStorage.getItem(schemaKey);
-				}
+			this.entity = function(name) {
+				return _.find(_tables, function(v) {
+					return v.entityName === name;
+				});
+			};
 
-				function getSchema(schemaKey, schemaConfig){
-					var deferred = $q.defer(),
-						schemaProvider = schemaConfig.schemaSource.provider;
+			_views = _.filter(_tables, function(o) {
+				return o.entityType == "V";
+			});
 
-					if($rootScope[schemaKey])
-					{
-						deferred.resolve(schemaKey);
-					}else{
-						$rootScope.$watch(schemaKey, function(newval, oldval){
-							if(newval){
-								noLocalStorage.setItem(schemaKey, newval.tables);
-								deferred.resolve(schemaKey);
-							}
+
+			angular.forEach(_tables, function(table, tableName) {
+				var primKey = "$$" + table.primaryKey,
+					foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column"))
+					.join(",");
+
+				//Prep as a Dexie Store config
+				_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+			});
+
+		}
+
+		/**
+		 *	### NoDbSchemaFactory
+		 *
+		 *	Creates unique instances of NoDbSchema based on noDBSchema configuration data.
+		 */
+
+		function NoDbSchemaFactory() {
+			var noConfig,
+				promises = [],
+				schemaSourceProviders = {
+					"inline": function(key, schemaConfig) {
+						return $timeout(function() {
+							return schemaConfig.schemaSource.schema;
 						});
-
-						schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
-							.then(function (schema){
-								$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+					},
+					"noDBSchema": function(key, schemaConfig) {
+						return getRemoteSchema(noConfig)
+							.then(function(resp) {
+								return resp.data;
 							})
-							.catch(function(){
-								var schema = checkCache(schemaKey);
-								if(schema){
-									$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
-								}else{
-									deferred.reject("noDbSchemaServiceOffline");
+							.catch(function(err) {
+								throw err;
+							});
+					},
+					"cached": function(key, schemaConfig) {
+						var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
+
+						return $q(function(resolve, reject) {
+							$rootScope.$watch(schemaKey, function(newval) {
+								if (newval) {
+									resolve(newval.tables);
 								}
 							});
-					}
 
-					return deferred.promise;
-				}
-
-				// when calling noDbSchema.whenReady you need to bind the call
-				// with the configuration.
-
-				/**
-				 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
-				*/
-				this.whenReady = function(config){
-					noConfig = config.current;
-
-					var noDbSchemaConfig = noConfig.noDbSchema,
-						promises = [];
-
-					for(var c in noDbSchemaConfig){
-						var schemaConfig = noDbSchemaConfig[c],
-							schemaKey = "noDbSchema_" + schemaConfig.dbName;
-
-						promises.push(getSchema(schemaKey, schemaConfig));
-					}
-
-					return $q.all(promises)
-						.then(function(results){
-							$rootScope.noDbSchema_names = results;
-							return results;
-						})
-						.catch(function (err) {
-							throw err;
 						});
-
-				};
-
-				this.configureDatabases = function(noUser, noDbSchemaConfigs){
-					var promises = [];
-
-					for(var s in noDbSchemaConfigs){
-						var schemaName = noDbSchemaConfigs[s],
-							schema = $rootScope[schemaName],
-							provider = $injector.get(schema.config.provider);
-
-						promises.push(provider.configure(noUser, schemaName, schema));
-
 					}
-
-					return $q.all(promises);
-
 				};
 
-				this.getSchema = function(dbName){
-					var schema = $rootScope["noDbSchema_" + dbName];
-					return schema;
+			function getRemoteSchema(config) {
+				var req = {
+					method: "GET",
+					url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
+					headers: {
+						"Content-Type": "application/json",
+						"Accept": "application/json"
+					},
+					withCredentials: true
 				};
+
+				return $http(req)
+					.then(function(resp) {
+						return resp;
+					})
+					.catch(function(resp) {
+						throw resp;
+					});
 			}
 
-			return new NoDbSchemaFactory();
-		}])
-	;
+			function checkCache(schemaKey) {
+				return noLocalStorage.getItem(schemaKey);
+			}
+
+			function getSchema(schemaKey, schemaConfig) {
+				var deferred = $q.defer(),
+					schemaProvider = schemaConfig.schemaSource.provider;
+
+				if ($rootScope[schemaKey]) {
+					deferred.resolve(schemaKey);
+				} else {
+					$rootScope.$watch(schemaKey, function(newval, oldval) {
+						if (newval) {
+							noLocalStorage.setItem(schemaKey, newval.tables);
+							deferred.resolve(schemaKey);
+						}
+					});
+
+					schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
+						.then(function(schema) {
+							$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+						})
+						.catch(function() {
+							var schema = checkCache(schemaKey);
+							if (schema) {
+								$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+							} else {
+								deferred.reject("noDbSchemaServiceOffline");
+							}
+						});
+				}
+
+				return deferred.promise;
+			}
+
+			// when calling noDbSchema.whenReady you need to bind the call
+			// with the configuration.
+
+			/**
+			 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
+			 */
+			this.whenReady = function(config) {
+				noConfig = config.current;
+
+				var noDbSchemaConfig = noConfig.noDbSchema,
+					promises = [];
+
+				for (var c in noDbSchemaConfig) {
+					var schemaConfig = noDbSchemaConfig[c],
+						schemaKey = "noDbSchema_" + schemaConfig.dbName;
+
+					promises.push(getSchema(schemaKey, schemaConfig));
+				}
+
+				return $q.all(promises)
+					.then(function(results) {
+						$rootScope.noDbSchema_names = results;
+						return results;
+					})
+					.catch(function(err) {
+						throw err;
+					});
+
+			};
+
+			this.configureDatabases = function(noUser, noDbSchemaConfigs) {
+				var promises = [];
+
+				for (var s in noDbSchemaConfigs) {
+					var schemaName = noDbSchemaConfigs[s],
+						schema = $rootScope[schemaName],
+						provider = $injector.get(schema.config.provider);
+
+					promises.push(provider.configure(noUser, schemaName, schema));
+
+				}
+
+				return $q.all(promises);
+
+			};
+
+			this.getSchema = function(dbName) {
+				var schema = $rootScope["noDbSchema_" + dbName];
+				return schema;
+			};
+		}
+
+		return new NoDbSchemaFactory();
+	}]);
 
 })(angular);
 
