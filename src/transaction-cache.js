@@ -86,7 +86,7 @@
 				function normalizeTransactions(config, schema) {
 
 					var noTransactions = config.noDataSource.noTransaction,
-						lu = schema.entity(config.noDataSource.crudEntity),
+						lu = schema.entity(config.noDataSource.crudEntity ? config.noDataSource.crudEntity : config.noDataSource.entityName),
 						vw = schema.entity(config.noDataSource.entityName),
 						keyst = _.keys(lu.columns),
 						keysv = vw ? _.keys(vw.columns) : [],
