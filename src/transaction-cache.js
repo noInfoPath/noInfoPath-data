@@ -86,10 +86,10 @@
 				function normalizeTransactions(config, schema) {
 
 					var noTransactions = config.noDataSource.noTransaction,
-						lu = schema.entity(config.noDataSource.crudEntity),
-						vw = schema.entity(config.noDataSource.entityName),
-						keyst = _.keys(lu.columns),
-						keysv = vw ? _.keys(vw.columns) : [],
+						vw = schema.entity(config.noDataSource.crudEntity),
+						lu = schema.entity(config.noDataSource.entityName),
+						keysv = _.keys(lu.columns),
+						keyst = vw ? _.keys(vw.columns) : [],
 						keysd = _.difference(keysv, keyst);
 
 					keysd.push("DateCreated");
