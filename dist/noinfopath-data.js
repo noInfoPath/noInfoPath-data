@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.23
+*	@version 1.0.24
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3459,7 +3459,7 @@ var GloboTest = {};
 						lu = schema.entity(config.noDataSource.entityName),
 						keysv = _.keys(lu.columns),
 						keyst = vw ? _.keys(vw.columns) : [],
-						keysd = _.difference(keysv, keyst);
+						keysd = !config.noDataSource.crudEntity && !keyst.length ? [] : _.difference(keysv, keyst);
 
 					keysd.push("DateCreated");
 					keysd.push("CreatedBy");

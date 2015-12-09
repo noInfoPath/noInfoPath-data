@@ -90,7 +90,7 @@
 						lu = schema.entity(config.noDataSource.entityName),
 						keysv = _.keys(lu.columns),
 						keyst = vw ? _.keys(vw.columns) : [],
-						keysd = _.difference(keysv, keyst);
+						keysd = !config.noDataSource.crudEntity && !keyst.length ? [] : _.difference(keysv, keyst);
 
 					keysd.push("DateCreated");
 					keysd.push("CreatedBy");
