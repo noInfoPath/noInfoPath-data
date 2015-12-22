@@ -26,9 +26,12 @@ module.exports = function(config) {
         'node_modules/noinfopath-logger/dist/noinfopath-logger.js',
 		'src/globals.js',
 		'src/classes.js',
-        'test/mock/schema.mock.js',
+        'test/mock/websql-identifiers.mock.js',
+        'test/mock/statement-builders.mock.js',
+        'test/mock/statement-factory.mock.js',
         'src/storage.js',
         'src/websql-2.js',
+        'test/websql2/sql-conversion.spec.js',
         'test/websql2/statement-factory.spec.js'
     ],
 
@@ -75,7 +78,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['PhantomJS'],
 
 
     // Continuous Integration mode

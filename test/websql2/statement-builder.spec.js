@@ -1,14 +1,13 @@
-var noWebSqlStatementFactory;
+var WEBSQL_STATEMENT_BUILDERS;
 
-describe("Tesing noWebSqlStatementFactory", function() {
+describe("Tesing WEBSQL_STATEMENT_BUILDERS", function() {
 	beforeEach(function() {
 		module("noinfopath.data");
 
 		inject(function($injector) {
-			noWebSqlStatementFactory = $injector.get("noWebSqlStatementFactory");
+			WEBSQL_STATEMENT_BUILDERS = $injector.get("WEBSQL_STATEMENT_BUILDERS");
 		});
 	});
-
 
 	it("should have been injected.", function() {
 		expect(noWebSqlStatementFactory);
@@ -35,10 +34,9 @@ describe("Tesing noWebSqlStatementFactory", function() {
 		}
 
 		for(var m in noWebSqlStatmentFactoryMocks){
-			var data = noWebSqlStatmentFactoryMocks[m];
+			var data = methods[m];
 
 			createTest(m, data);
-
 		}
 	});
 

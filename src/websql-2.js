@@ -129,29 +129,29 @@
 				"tinyint": function(i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"float": function(r) {
-					return r;
+				"float": function(i) {
+					return  angular.isNumber(i) ? i : null;
 				},
-				"real": function(r) {
-					return r;
+				"real": function(i) {
+					return  angular.isNumber(i) ? i : null;
 				},
 				"date": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"datetime": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"datetime2": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"datetimeoffset": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"smalldatetime": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"time": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"char": function(t) {
 					return angular.isString(t) ? t : null;
@@ -171,14 +171,14 @@
 				"ntext": function(t) {
 					return angular.isString(t) ? t : null;
 				},
-				"binary": function(b) {
-					return b;
+				"binary": function(i) {
+					return  !angular.isNumber(i) ? i : null;
 				},
-				"varbinary": function(b) {
-					return b;
+				"varbinary": function(i) {
+					return !angular.isNumber(i) ? i : null;
 				},
-				"image": function(b) {
-					return b;
+				"image": function(i) {
+					return !angular.isNumber(i) ? i : null;
 				},
 				"uniqueidentifier": function(t) {
 					return angular.isString(t) ? t : null;
@@ -580,6 +580,7 @@
 		 *	#### Remarks
 		 */
 		this.noCreate = function(data, noTransaction) {
+
 			if(entityConfig.entityType === "V") throw "Create operation not support by SQL Views.";
 
 			/*
@@ -594,9 +595,11 @@
 			*	> this results in the primary key resolving to `Undefined`.
 			*/
 
-			console.warm("TODO: See document note `Bug #00001`");
+			console.warn("TODO: See document note `Bug #00001`");
 
-			var pk = angular.isArray(_table.primaryKey) ?
+			var
+				THIS = this,
+				pk = angular.isArray(_table.primaryKey) ?
 				_table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
 				sqlStmt;
 
@@ -622,7 +625,7 @@
 
 			return _exec(sqlStmt)
 				.then(function(result) {
-					return _getOne(result.insertId)
+					return THIS.getOne(result.insertId)
 						.then(_recordTransaction.bind(null, deferred, _tableName, "C", noTransaction))
 						.catch(deferred.reject);
 				})
@@ -677,7 +680,7 @@
 
 			function _txCallback(tx) {
 				tx.executeSql(
-					readObject.queryString, [],
+					readObject.queryString, readObject.valueArray,
 					function(t, r) {
 						var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
 						if (page) data.page(page);
@@ -798,6 +801,10 @@
 		*	- Object
 		*
 		* #### Remarks
+		*
+		* > NOTE: noinfopath-data only support primary keys that are strings. This
+		* > is because we are expecting GUID or UUID as primary key, as the are
+		* > inherently replicatable.
 		*
 		*/
 		this.noOne = function(query) {
@@ -984,6 +991,7 @@
 			return new NoWebSqlEntity(noWebSQLStatementFactory, entityConfig, entityName, database);
 		};
 	}
+
 	/*
 	*	## @class NoWebSqlService
 	*/
