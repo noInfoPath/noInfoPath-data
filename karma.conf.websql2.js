@@ -32,6 +32,7 @@ module.exports = function(config) {
         'src/storage.js',
         'src/websql-2.js',
         'test/websql2/sql-conversion.spec.js',
+        'test/websql2/statement-builder.spec.js',
         'test/websql2/statement-factory.spec.js'
     ],
 
