@@ -2,11 +2,11 @@ var
 	noWebSqlStatmentFactoryMocks = {
 		"createSqlTableStmt": {
 			params: ["foo", noDbSchemaMock.foo],
-			expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC)"
+			expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
 		},
 		"createSqlViewStmt": {
 			params: ["vw_foo", noDbSchemaMock.vw_foo],
-			expected: "CREATE VIEW IF NOT EXISTS vw_cooperator_summary AS SELECT Cooperators.CooperatorID, Cooperators.Account, Cooperators.CooperatorName, Cooperators.Inactive, Users.UserName AS CreatedBy, Users_1.UserName AS ModifiedBy, Cooperators.DateCreated, Cooperators.ModifiedDate, Cooperators.Notes FROM Cooperators INNER JOIN Users ON Cooperators.CreatedBy = Users.UserID INNER JOIN Users AS Users_1 ON Cooperators.ModifiedBy = Users_1.UserID"
+			expected: "CREATE VIEW IF NOT EXISTS vw_foo AS SELECT * from foo"
 		},
 		"createSqlInsertStmt": {
 			params: ["foo", sampleCreateData],

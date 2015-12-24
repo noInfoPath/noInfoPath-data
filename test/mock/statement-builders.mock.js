@@ -39,6 +39,30 @@ var
 					"type": "decimal",
 					"length": 0,
 					"columnName": "price"
+				},
+				"CreatedBy": {
+					"nullable": false,
+					"type": "uniqueidentifier",
+					"length": 0,
+					"columnName": "CreatedBy"
+				},
+				"DateCreated": {
+					"nullable": false,
+					"type": "Date",
+					"length": 0,
+					"columnName": "DateCreated"
+				},
+				"ModifiedBy": {
+					"nullable": false,
+					"type": "uniqueidentifier",
+					"length": 0,
+					"columnName": "CreatedBy"
+				},
+				"ModifiedDate": {
+					"nullable": false,
+					"type": "Date",
+					"length": 0,
+					"columnName": "DateCreated"
 				}
 			},
 			"foreignKeys": {
@@ -115,8 +139,20 @@ var
 
 			],
 			"entityType": "V",
-			"entityName": "vw_cooperator_summary",
-			"entitySQL": "CREATE VIEW vw_cooperator_summary AS SELECT Cooperators.CooperatorID, Cooperators.Account, Cooperators.CooperatorName, Cooperators.Inactive, Users.UserName AS CreatedBy, Users_1.UserName AS ModifiedBy, Cooperators.DateCreated, Cooperators.ModifiedDate, Cooperators.Notes FROM Cooperators INNER JOIN Users ON Cooperators.CreatedBy = Users.UserID INNER JOIN Users AS Users_1 ON Cooperators.ModifiedBy = Users_1.UserID"
+			"entityName": "vw_foo",
+			"entitySQL": "CREATE VIEW vw_foo AS SELECT * from foo"
+		}
+	},
+	noDbConfig = {
+		"dbName": "FCFNv2",
+		"provider": "noWebSQL",
+		"remoteProvider": "noHTTP",
+		"version": 1,
+		"description": "Fall Creek Variety Development Database",
+		"size": 51200,
+		"schemaSource": {
+			"provider": "noDBSchema",
+			"sourceDB": "fcfn2"
 		}
 	},
 	sampleCreateData = {
@@ -126,6 +162,19 @@ var
 		"number": 12,
 		"price": 4.87
 	},
+	sampleUpsertData1 = {
+		"Description": "Test1",
+		"barID": null,
+		"number": 1111,
+		"price": 111.87
+	},
+	sampleUpsertData2 = {
+		"fooID": "0eec54c3-1c7e-48af-a9da-d7da62820090",
+		"Description": "Test2",
+		"barID": "128f28ca-e926-4259-d202-b754fe5b11c7",
+		"number": 2222,
+		"price": 222.87
+	},
 	sampleUpdateData = {
 		"fooID": "0eec54c3-1c7e-48af-a9da-d7da62820083",
 		"Description": "noTest",
@@ -133,14 +182,38 @@ var
 		"number": 42,
 		"price": 19.95
 	},
+	bulkLoadData = [
+		{
+			"fooID": "0eec54c3-1c7e-48af-a9da-d7da62820090",
+			"Description": "Test1",
+			"barID": "128f28ca-e926-4259-d202-b754fe5b11c7",
+			"number": 111,
+			"price": 111.87,
+			"CreatedBy": "228f28ca-e926-4259-d202-b754fe5b11c7",
+			"DateCreated": "2015-12-24T15:52:00",
+			"ModifiedBy": "328f28ca-e926-4259-d202-b754fe5b11c7",
+			"ModifiedDate": "2015-12-24T15:52:00"
+		},
+		{
+			"fooID": "0eec54c3-1c7e-48af-a9da-d7da62820091",
+			"Description": "Test2",
+			"barID": "128f28ca-e926-4259-d202-b754fe5b11c7",
+			"number": 2222,
+			"price": 222.87,
+			"CreatedBy": "228f28ca-e926-4259-d202-b754fe5b11c7",
+			"DateCreated": "2015-12-24T15:52:00",
+			"ModifiedBy": "328f28ca-e926-4259-d202-b754fe5b11c7",
+			"ModifiedDate": "2015-12-24T15:52:00"
+		}
+	],
 	WEBSQL_STATEMENT_BUILDERS_MOCKS = {
 		"createTable": {
 			params: ["foo", noDbSchemaMock.foo],
-			expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC)"
+			expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
 		},
 		"createView": {
 			params: ["vw_foo", noDbSchemaMock.vw_foo],
-			expected: "CREATE VIEW IF NOT EXISTS vw_cooperator_summary AS SELECT Cooperators.CooperatorID, Cooperators.Account, Cooperators.CooperatorName, Cooperators.Inactive, Users.UserName AS CreatedBy, Users_1.UserName AS ModifiedBy, Cooperators.DateCreated, Cooperators.ModifiedDate, Cooperators.Notes FROM Cooperators INNER JOIN Users ON Cooperators.CreatedBy = Users.UserID INNER JOIN Users AS Users_1 ON Cooperators.ModifiedBy = Users_1.UserID"
+			expected: "CREATE VIEW IF NOT EXISTS vw_foo AS SELECT * from foo"
 		},
 		"sqlInsert": {
 			params: ["foo", sampleCreateData],

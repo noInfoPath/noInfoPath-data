@@ -212,7 +212,7 @@
 				return returnString;
 			},
 			"typeName": function(columnConfig) {
-				return WEBSQL_STATEMENT_BUILDERS.sqlConversion[columnConfig.type];
+				return WEBSQL_STATEMENT_BUILDERS.sqlConversion[columnConfig.type.toLowerCase()];
 			},
 			"expr": function(Expr) {
 				console.warn("TODO: Determine why this function exists.");
@@ -332,12 +332,12 @@
 				return returnObject;
 			},
 			"sqlRead": function(tableName, filters, sort, page) {
-				var fs, ss, ps, returnObject = {}, safeFilter = filters.toSafeSQL();
+				var fs, ss, ps, returnObject = {}, safeFilter = filters ? filters.toSafeSQL() : undefined;
 				fs = !!filters ? " WHERE " +  safeFilter.queryString : "";
 				ss = !!sort ? " " + sort.toSQL() : "";
 				ps = !!page ? " " + page.toSQL() : "";
 				returnObject.queryString = WEBSQL_IDENTIFIERS.READ + tableName + fs + ss + ps;
-				returnObject.valueArray = safeFilter.valueArray;
+				returnObject.valueArray = safeFilter ? safeFilter.valueArray : [];
 				return returnObject;
 			},
 			"sqlOne": function(tableName, primKey, value) {
@@ -411,7 +411,7 @@
 		};
 
 		this.convertToWebSQL = function(sqlColumn, sqlData) {
-			var sqliteColumn = WEBSQL_STATEMENT_BUILDERS.sqlConversion[sqlColumn];
+			var sqliteColumn = WEBSQL_STATEMENT_BUILDERS.sqlConversion[sqlColumn.toLowerCase()];
 
 			return WEBSQL_STATEMENT_BUILDERS.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
 		};
@@ -423,17 +423,19 @@
 	*
 	*	This class encapulates the CRUD functionality for NoInfoPath's implementation
 	*	of WebSQL. It abstracts the fundimental differences between SQL Views and Tables.
-	*	Exceptions will be thrown when a method is called that a SQL View connot support.
+	*	Exceptions will be thrown when a method is called that a SQL View connot supported.
 	*/
-	function NoWebSqlEntity(noWebSQLStatementFactory, entityConfig, entityName, database) {
-		var _entityConfig, _entityName, _db;
+	function NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSQLStatementFactory, entityConfig, entityName, database) {
+		var
+			THIS = this,
+			_entityConfig, _entityName, _db;
 
 		if (!entityConfig) throw "entityConfig is a required parameter";
 		if (!entityName) throw "entityName is a required parameter";
 		if (!database) throw "database is a required parameter";
 
 		_entityConfig = entityConfig;
-		_entityName = table.entityName;
+		_entityName = _entityConfig.entityName;
 		_db = database;
 
 		Object.defineProperties(this, {
@@ -474,12 +476,14 @@
 					valueArray,
 					function(t, resultset) {
 						deferred.resolve(resultset);
+						$rootScope.$digest();
 					},
 					function(t, r, x) {
 						deferred.reject({
-							tx: t,
-							err: r
+							entity: _entityConfig,
+							error: r.message
 						});
+						$rootScope.$digest();
 					}
 				);
 			});
@@ -500,28 +504,32 @@
 		 *
 		 */
 		function _getOne(filters) {
-			var
-				deferred = $q.defer(),
-				sqlExpressionData = noWebSQLStatementFactory.createSqlReadStmt(_tableName, filters);
+			var sqlExpressionData = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters);
 
-			_exec(sqlExpressionData)
+			return _exec(sqlExpressionData)
 				.then(function(resultset) {
-					if (resultset.rows.length === 0) {
-						deferred.resolve({});
-					} else {
-						deferred.resolve(resultset.rows[0]);
-					}
-				})
-				.catch(deferred.reject);
+					var data;
 
-			return deferred.promise;
+					if (resultset.rows.length === 0) {
+						data = {};
+					} else {
+						data = resultset.rows[0];
+					}
+
+					return data;
+				});
 		}
 
-		function _recordTransaction(deferred, tableName, operation, trans, result1, result2){
-			var transData = result2 ? result2 : result1;
+		function _recordTransaction(resolve, tableName, operation, trans, result1, result2){
+			var transData = result2 && result2.rows.length ? result2 : result1;
 
 			if (trans) trans.addChange(tableName, transData, operation);
-			deferred.resolve(transData);
+			resolve(transData);
+
+		}
+
+		function _transactionFault(reject, err){
+			reject(err);
 		}
 
 		function _txFailure(recject, err) {
@@ -544,8 +552,8 @@
 
 			var
 				stmts = {
-					"T": WEBSQL_STATEMENT_BUILDERS.createSqlTableStmt,
-					"V": WEBSQL_STATEMENT_BUILDERS.createSqlViewStmt
+					"T": WEBSQL_STATEMENT_BUILDERS.createTable,
+					"V": WEBSQL_STATEMENT_BUILDERS.createView
 				},
 				deferred = $q.defer();
 
@@ -553,12 +561,15 @@
 				tx.executeSql(stmts[_entityConfig.entityType](_entityConfig.entityName, _entityConfig), [],
 					function(t, r) {
 						deferred.resolve();
+						$rootScope.$digest();
 					},
 					function(t, e) {
 						deferred.reject({
 							entity: _entityConfig,
 							error: e
 						});
+
+						$rootScope.$digest();
 					});
 			});
 
@@ -581,7 +592,7 @@
 		 */
 		this.noCreate = function(data, noTransaction) {
 
-			if(entityConfig.entityType === "V") throw "Create operation not support by SQL Views.";
+			if(_entityConfig.entityType === "V") throw "Create operation not supported by SQL Views.";
 
 			/*
 			*	When resolving the primary key for the purpose of createing a new record, it is
@@ -595,18 +606,16 @@
 			*	> this results in the primary key resolving to `Undefined`.
 			*/
 
-			console.warn("TODO: See document note `Bug #00001`");
+			console.warn("TODO: See readme note `Bug #00001`");
 
 			var
-				THIS = this,
-				pk = angular.isArray(_table.primaryKey) ?
-				_table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
+				pk = angular.isArray(_entityConfig.primaryKey) ?
+					_entityConfig.primaryKey.length > 1 ? undefined :
+					_entityConfig.primaryKey[0] : _entityConfig.primaryKey,
 				sqlStmt;
 
 			if (pk && !data[pk]) {
-				data[_table.primaryKey] = noInfoPath.createUUID();
-			}else{
-				throw "All noWebSQL tables must have a primary key";
+				data[_entityConfig.primaryKey] = noInfoPath.createUUID();
 			}
 
 			/*
@@ -621,15 +630,19 @@
 			data.ModifiedBy = _db.currentUser.userId;
 			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_tableName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data);
 
-			return _exec(sqlStmt)
-				.then(function(result) {
-					return THIS.getOne(result.insertId)
-						.then(_recordTransaction.bind(null, deferred, _tableName, "C", noTransaction))
-						.catch(deferred.reject);
-				})
-				.catch(deferred.reject);
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(function(result) {
+						return THIS.noOne(result.insertId)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "C", noTransaction))
+							.catch(_transactionFault.bind(null, reject));
+					})
+					.catch(reject);
+			});
+
+
 
 		};
 
@@ -653,9 +666,7 @@
 		 */
 		this.noRead = function() {
 
-			var filters, sort, page,
-				deferred = $q.defer(),
-				readObject;
+			var filters, sort, page, readObject;
 
 			for (var ai in arguments) {
 				var arg = arguments[ai];
@@ -676,23 +687,17 @@
 				}
 			}
 
-			readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort, page);
+			readObject = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters, sort, page);
 
-			function _txCallback(tx) {
-				tx.executeSql(
-					readObject.queryString, readObject.valueArray,
-					function(t, r) {
-						var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+			return $q(function(resolve, reject){
+				_exec(readObject)
+					.then(function(resultset) {
+						var data = new noInfoPath.data.NoResults(_.toArray(resultset.rows));
 						if (page) data.page(page);
-						deferred.resolve(data);
-					},function(err){
-						throw err; //Fail the transaction.
-					});
-			}
-
-			_db.transaction(_txCallback, _txFailure.bind(null, deferred.reject), _txSuccess);
-
-			return deferred.promise;
+						resolve(data);
+					})
+					.catch(reject);
+			});
 		};
 
 		/*
@@ -710,18 +715,18 @@
 		 *	Returns an AngularJS Promise.
 		 */
 		this.noUpdate = function(data, noTransaction) {
-			if(entityConfig.entityType === "V") throw "Update operation not support by SQL Views.";
+			if(_entityConfig.entityType === "V") throw "Update operation not supported by SQL Views.";
 
 			/*
 			*	When resolving the primary key of the object to update
 			*	the id value must exist. If it does not an exception is thrown.
 			*/
 			var noFilters = new noInfoPath.data.NoFilters(),
-				id = data[_table.primaryKey], sqlStmt;
+				id = data[_entityConfig.primaryKey], sqlStmt;
 
 			if(!id) throw "Primary key value must exist an object being updated.";
 
-			noFilters.quickAdd(_table.primaryKey, "eq", id);
+			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
 			/*
 			*	When updating a record in the WebSQL DB all tables are expected to have
@@ -732,11 +737,15 @@
 			data.ModifiedBy = _db.currentUser.userId;
 			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSqlStatementFactory.createSqlUpdateStmt(_tableName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
-			return _exec(sqlStmt)
-				.then(_recordTransaction.bind(null, deferred, _tableName, "U", noTransaction, data))
-				.catch(deferred.reject);
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(function(resultset) {
+						resolve(data);
+					})
+					.catch(reject);
+			});
 		};
 
 		/*
@@ -752,29 +761,34 @@
 		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 		 */
 		this.noDestroy = function(data, noTransaction, filters) {
-			if(entityConfig.entityType === "V") throw "Delete operation not support by SQL Views.";
+			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
 			var
 				noFilters = new noInfoPath.data.NoFilters(filters),
-				id = data[_table.primaryKey],
+				id = data[_entityConfig.primaryKey],
 				sqlStmt, deleted;
 
 			if(!id) throw "Could not resolve primary key for delete operation.";
 
 			if(!noFilters.length)
 			{
-				noFilters.quickAdd(_table.primaryKey, "eq", id);
+				noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 			}
 
-			sqlStmt = noWebSqlStatementFactory.createSqlDeleteStmt(_tableName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, data, noFilters);
 
-			_getOne(noFilters)
-				.then(function(datum) {
-					_exec(sqlStmt)
-						.then(_recordTransaction.bind(null, deferred, _tableName, "D", noTransaction, datum))
-						.catch(deferred.reject);
-				})
-				.catch(deferred.reject);
+			return $q(function(resolve, reject){
+
+				_getOne(noFilters)
+					.then(function(datum) {
+						_exec(sqlStmt)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
+							.catch(reject);
+					})
+					.catch(reject);
+			});
+
+
 		};
 
 		/*
@@ -834,7 +848,7 @@
 				* > Passing a string when the entity is
 				* a SQL View is not allowed.
 				*/
-				if(entityConfig.entityType === "V") throw "One operation not support by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+				if(_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
 
 				filters.quickAdd(_entityConfig.primaryKey, "eq", query);
 
@@ -854,6 +868,69 @@
 			return _getOne(filters);
 		};
 
+
+		/*
+		*	### @method noUpsert(data)
+		*/
+		this.noUpsert = function(data) {
+			if(_entityConfig.entityType === "V") throw "Upsert operation not supported by SQL Views.";
+
+			if (data[this.primaryKey]) {
+				return this.noUpdate(data);
+			} else {
+				return this.noCreate(data);
+			}
+		};
+
+		/*
+		 * ### @method noClear()
+		 *
+		 * Delete all rows from the current table, without recording each delete transaction.
+		 *
+		 * #### Returns
+		 * AngularJS Promise.
+		 */
+		this.noClear = function() {
+			if(_entityConfig.entityType === "V") throw "Clear operation not supported by SQL Views.";
+
+			var sqlStmt = noWebSQLStatementFactory.createSqlClearStmt(_entityName);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(resolve)
+					.catch(reject);
+			});
+
+		};
+
+		/*
+		*	### @method noBulkCreate(data)
+		*
+		*	Inserts object in to the WebSQL database, converting data from
+		*	ANSI SQL to WebSQL.  No transactions are recorded during this operation.
+		*/
+		this.noBulkCreate = function(data) {
+			if(_entityConfig.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
+
+			for (var c in _entityConfig.columns) {
+				var col = _entityConfig.columns[c];
+				data[c] = noWebSQLStatementFactory.convertToWebSQL(col.type, data[c]);
+			}
+
+			var sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data, null);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(resolve)
+					.catch(reject);
+			}) ;
+
+
+
+
+
+		};
+
 		/*
 		*	### @method bulkload(data, progress)
 		*
@@ -861,7 +938,7 @@
 		*	Promise.notify to report project of the bulkLoad operation.
 		*/
 		this.bulkLoad = function(data, progress) {
-			if(entityConfig.entityType === "V") throw "BulkLoad operation not support by SQL Views.";
+			if(entityConfig.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
 
 			var deferred = $q.defer(),
 				table = this;
@@ -917,58 +994,7 @@
 			return deferred.promise;
 		};
 
-		/*
-		*	### @method noUpsert(data)
-		*/
-		this.noUpsert = function(data) {
-			if(entityConfig.entityType === "V") throw "Upsert operation not support by SQL Views.";
 
-			if (data[this.primaryKey]) {
-				return this.noUpdate(data);
-			} else {
-				return this.noCreate(data);
-			}
-		};
-
-		/*
-		 * ### @method noClear()
-		 *
-		 * Delete all rows from the current table, without recording each delete transaction.
-		 *
-		 * #### Returns
-		 * AngularJS Promise.
-		 */
-		this.noClear = function() {
-			if(entityConfig.entityType === "V") throw "Clear operation not support by SQL Views.";
-
-			var sqlStmt = noWebSqlStatementFactory.createSqlClearStmt(_tableName);
-
-			return _exec(sqlStmt)
-				.then(deferred.resolve)
-				.catch(deferred.reject);
-
-
-		};
-
-		/*
-		*	### @method noBulkCreate(data)
-		*
-		*	Inserts object in to the WebSQL database, converting data from
-		*	ANSI SQL to WebSQL.  No transactions are recorded during this operation.
-		*/
-		this.noBulkCreate = function(data) {
-			if(entityConfig.entityType === "V") throw "BulkCreate operation not support by SQL Views.";
-			for (var c in _tableConfig.columns) {
-				var col = _tableConfig.columns[c];
-				data[c] = noWebSqlStatementFactory.convertToWebSQL(col.type, data[c]);
-			}
-
-			var sqlStmt = noWebSqlStatementFactory.createSqlInsertStmt(_tableName, data, null);
-
-			_exec(sqlStmt)
-				.then(deferred.resolve)
-				.catch(deferred.reject);
-		};
 	}
 
 	/*
@@ -979,7 +1005,7 @@
 	*
 	*
 	*/
-	function NoWebSqlEntityFactory(NoWebSQLStatementFactory){
+	function NoWebSqlEntityFactory($rootScope, $q, $timeout, _, noWebSqlStatementFactory){
 		/*
 		*	### @method create(entityConfig, entityName, database)
 		*
@@ -988,7 +1014,8 @@
 		*
 		*/
 		this.create = function (entityConfig, entityName, database) {
-			return new NoWebSqlEntity(noWebSQLStatementFactory, entityConfig, entityName, database);
+			var entity = new NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSqlStatementFactory, entityConfig, entityName, database);
+			return entity;
 		};
 	}
 
@@ -1068,8 +1095,8 @@
 			return new NoWebSqlStatementFactory(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS);
 		}])
 
-		.factory("noWebSqlEntityFactory", ["noWebSqlStatementFactory", function(noWebSqlStatementFactory){
-			return new NoWebSqlEntityFactory(noWebSqlStatementFactory);
+		.factory("noWebSqlEntityFactory", ["$rootScope", "$q", "$timeout", "lodash", "noWebSqlStatementFactory", function($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory){
+			return new NoWebSqlEntityFactory($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory);
 		}])
 
 		.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noLocalStorage, noWebSqlStatementFactory) {
