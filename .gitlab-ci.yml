@@ -2,7 +2,7 @@ variables:
   CHROME_BIN: "/usr/bin/google-chrome-stable"
 
 test1:
-    script: 
+    script:
         - npm install
         - bower install
-        - xvfb-run grunt karma:continuous
+        - xvfb-run grunt karma:noWebSQL2_ci

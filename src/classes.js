@@ -184,6 +184,24 @@
 		return outval;
 	}
 
+	function normalizeSafeValue(inval) {
+		var outval = inval;
+
+		if(angular.isDate(inval)){
+			outval = "datetime( ?, 'utc')";
+		}else if (angular.isString(inval)) {
+			outval = "?";
+		}
+
+		return outval;
+	}
+
+	function safeValue(inval) {
+		var outval = "?";
+
+		return outval;
+	}
+
 	function normalizeLogic(inval) {
 		return inval ? " " + inval : "";
 	}
@@ -203,22 +221,22 @@
 		},
         sqlOperators = {
 			"eq": function(v) {
-				return "= " + normalizeValue(v);
+				return "= " + normalizeSafeValue(v);
 			},
 			"ne": function(v) {
-				return "!= " + normalizeValue(v);
+				return "!= " + normalizeSafeValue(v);
 			},
 			"gt": function(v) {
-				return "> " + normalizeValue(v);
+				return "> " + normalizeSafeValue(v);
 			},
 			"ge": function(v) {
-				return ">= " + normalizeValue(v);
+				return ">= " + normalizeSafeValue(v);
 			},
 			"lt": function(v) {
-				return "< " + normalizeValue(v);
+				return "< " + normalizeSafeValue(v);
 			},
 			"le": function(v) {
-				return "<= " + normalizeValue(v);
+				return "<= " + normalizeSafeValue(v);
 			},
 			"contains": function(v) {
 				return "LIKE '%" + String(v) + "%'";
@@ -245,12 +263,19 @@
 
 
 		this.operator = operator;
-		this.value = value ? value : "";
+		this.value = value;
 		this.logic = logic;
 
 		this.toSQL = function() {
 			var opFn = normalizeOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
+
+			return rs;
+		};
+
+		this.toSafeSQL = function() {
+			var opFn = normalizeOperator(this.operator),
+				rs = opFn("?") + normalizeLogic(this.logic);
 
 			return rs;
 		};
@@ -346,6 +371,28 @@
 			return rs;
 		};
 
+		this.toSafeSQL = function () {
+			var rs = "",
+				rsArray = [],
+				values  = [];
+
+			angular.forEach(this, function(filter, key) {
+
+				if (this.length == key + 1) {
+					filter.logic = null;
+				}
+
+				var tmp = filter.toSafeSQL();
+
+				rsArray.push(tmp.sql);
+				values = values.concat(tmp.values);
+			}, this);
+
+			rs = rsArray.join("");
+
+			return {queryString: rs, valueArray: values};
+		};
+
 		this.add = function(column, logic, beginning, end, filters) {
 			if (!column) throw "NoFilters::add requires a column to filter on.";
 			if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
@@ -353,7 +400,13 @@
 			this.unshift(new NoFilter(column, logic, beginning, end, filters));
 		};
 
-
+		this.quickAdd = function(column, logic, value) {
+			this.add(column, null, true, true, [{
+				"operator": logic,
+				"value": value,
+				"logic": null
+			}]);
+		};
 	}
 
 	/*
@@ -432,6 +485,27 @@
 			if (!!this.logic) rs += " " + logic + " ";
 
 			return rs;
+		};
+
+		this.toSafeSQL = function() {
+			var rs = "",
+				filterArray = [],
+				filterArrayString = "",
+				values = [];
+
+			angular.forEach(this.filters, function(exp, key) {
+				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+				values.push(exp.value);
+			}, this);
+
+			filterArrayString = filterArray.join(" ");
+
+			if (!!this.beginning) rs = "(";
+			rs += filterArrayString;
+			if (!!this.end) rs += ")";
+			if (!!this.logic) rs += " " + logic + " ";
+
+			return {sql: rs, values: values};
 		};
 		// this.add = function(column, logic, beginning, end, filters) {
 		// 	this.column = column;

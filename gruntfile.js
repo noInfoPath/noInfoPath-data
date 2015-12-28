@@ -29,7 +29,7 @@ module.exports = function(grunt) {
 					'src/http.js',
 					'src/schema.js',
 					'src/sql-builder.js',
-					'src/websql.js',
+					'src/websql-2.js',
 					//'src/manifest.js',
 					'src/transaction-cache.js',
 					//'src/noInitDatabases.js',
@@ -62,6 +62,15 @@ module.exports = function(grunt) {
 			noConfig: {
 				configFile: "karma.conf.noConfig.js",
 				singleRun: true
+			},
+			noWebSQL2: {
+				configFile: "karma.conf.websql2.js",
+				singleRun: false
+			},
+			noWebSQL2_ci: {
+				configFile: "karma.conf.websql2.js",
+				singleRun: true,
+				logLevel: "error"
 			},
 			/*noInitDatabases: {
 				configFile: "karma.conf.noInitDatabases.js",
@@ -106,8 +115,8 @@ module.exports = function(grunt) {
 			}
 		},
 		watch: {
-			files: ['src/*.js', 'test/*.spec.js'],
-			tasks: ['test']
+			files: ['src/*.js', 'test/**/*.spec.js'],
+			tasks: ['compile']
 		},
 		uglify: {
 			options: {
@@ -131,7 +140,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-nodocs');
 	//Default task(s).
 
-	grunt.registerTask('build', ['karma:continuous', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
+	grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
 	grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
@@ -139,7 +148,7 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
-	grunt.registerTask('compile', ['karma:continuous', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+	grunt.registerTask('compile', ['karma:noWebSQL2', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
 	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 

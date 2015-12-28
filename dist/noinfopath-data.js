@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.24
+*	@version 1.1.3
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -355,6 +355,24 @@
 		return outval;
 	}
 
+	function normalizeSafeValue(inval) {
+		var outval = inval;
+
+		if(angular.isDate(inval)){
+			outval = "datetime( ?, 'utc')";
+		}else if (angular.isString(inval)) {
+			outval = "?";
+		}
+
+		return outval;
+	}
+
+	function safeValue(inval) {
+		var outval = "?";
+
+		return outval;
+	}
+
 	function normalizeLogic(inval) {
 		return inval ? " " + inval : "";
 	}
@@ -374,22 +392,22 @@
 		},
         sqlOperators = {
 			"eq": function(v) {
-				return "= " + normalizeValue(v);
+				return "= " + normalizeSafeValue(v);
 			},
 			"ne": function(v) {
-				return "!= " + normalizeValue(v);
+				return "!= " + normalizeSafeValue(v);
 			},
 			"gt": function(v) {
-				return "> " + normalizeValue(v);
+				return "> " + normalizeSafeValue(v);
 			},
 			"ge": function(v) {
-				return ">= " + normalizeValue(v);
+				return ">= " + normalizeSafeValue(v);
 			},
 			"lt": function(v) {
-				return "< " + normalizeValue(v);
+				return "< " + normalizeSafeValue(v);
 			},
 			"le": function(v) {
-				return "<= " + normalizeValue(v);
+				return "<= " + normalizeSafeValue(v);
 			},
 			"contains": function(v) {
 				return "LIKE '%" + String(v) + "%'";
@@ -416,12 +434,19 @@
 
 
 		this.operator = operator;
-		this.value = value ? value : "";
+		this.value = value;
 		this.logic = logic;
 
 		this.toSQL = function() {
 			var opFn = normalizeOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
+
+			return rs;
+		};
+
+		this.toSafeSQL = function() {
+			var opFn = normalizeOperator(this.operator),
+				rs = opFn("?") + normalizeLogic(this.logic);
 
 			return rs;
 		};
@@ -517,6 +542,28 @@
 			return rs;
 		};
 
+		this.toSafeSQL = function () {
+			var rs = "",
+				rsArray = [],
+				values  = [];
+
+			angular.forEach(this, function(filter, key) {
+
+				if (this.length == key + 1) {
+					filter.logic = null;
+				}
+
+				var tmp = filter.toSafeSQL();
+
+				rsArray.push(tmp.sql);
+				values = values.concat(tmp.values);
+			}, this);
+
+			rs = rsArray.join("");
+
+			return {queryString: rs, valueArray: values};
+		};
+
 		this.add = function(column, logic, beginning, end, filters) {
 			if (!column) throw "NoFilters::add requires a column to filter on.";
 			if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
@@ -524,7 +571,13 @@
 			this.unshift(new NoFilter(column, logic, beginning, end, filters));
 		};
 
-
+		this.quickAdd = function(column, logic, value) {
+			this.add(column, null, true, true, [{
+				"operator": logic,
+				"value": value,
+				"logic": null
+			}]);
+		};
 	}
 
 	/*
@@ -603,6 +656,27 @@
 			if (!!this.logic) rs += " " + logic + " ";
 
 			return rs;
+		};
+
+		this.toSafeSQL = function() {
+			var rs = "",
+				filterArray = [],
+				filterArrayString = "",
+				values = [];
+
+			angular.forEach(this.filters, function(exp, key) {
+				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+				values.push(exp.value);
+			}, this);
+
+			filterArrayString = filterArray.join(" ");
+
+			if (!!this.beginning) rs = "(";
+			rs += filterArrayString;
+			if (!!this.end) rs += ")";
+			if (!!this.logic) rs += " " + logic + " ";
+
+			return {sql: rs, values: values};
 		};
 		// this.add = function(column, logic, beginning, end, filters) {
 		// 	this.column = column;
@@ -1614,8 +1688,301 @@
 var GloboTest = {};
 (function(angular, Dexie, undefined) {
 	"use strict";
+	// TODO: Finish documentation
+	/*
+	 * ## NoDbSchema : Class
+	 * This provides
+	 *
+	 * ### Constructors
+	 *
+	 * #### Constructor()
+	 *
+	 * ##### Usage
+	 * ```js
+	 * var x = new NoDbSchema();
+	 * ```
+	 *
+	 * ##### Parameters
+	 *
+	 * None
+	 *
+	 * ### Methods
+	 *
+	 * #### createSqlTableStmt(tableName, tableConfig)
+	 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
+	 *
+	 * ##### Usage
+	 * ```js
+	 * var x = createSqlTableStmt(tableName, tableConfig);
+	 * ```
+	 * ##### Parameters
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|-----------|
+	 * |tableName|String|The name of the table to be created|
+	 * |tableConfig|Object|The schema of the table to be created|
+	 *
+	 * ##### Returns
+	 * Returns a SQL query string
+	 *
+	 * ### Properties
+	 * |Name|Type|Description|
+	 * |----|----|-----------|
+	 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
+	 */
+	/*
+	 * ```json
+	 * {
+	 *		"dbName": "NoInfoPath_dtc_v1",
+	 *		"provider": "noIndexedDB",
+	 *		"remoteProvider:": "noHTTP",
+	 *		"version": 1,
+	 *		"schemaSource": {
+	 *			"provider": "inline",
+	 *			"schema": {
+	 *				"store": {
+	 *					"NoInfoPath_Changes": "$$ChangeID"
+	 *				},
+	 *				"tables": {
+	 *					"NoInfoPath_Changes": {
+	 *						"primaryKey": "ChangeID"
+	 *					}
+	 *				}
+	 *			}
+	 *		}
+	 *	}
+	 * ```
+	 */
+
+
+	function NoDbSchema(_, noConfig, noDbConfig, rawDbSchema) {
+		//console.warn(rawDbSchema);
+
+		var _config = {},
+			_tables = rawDbSchema,
+			_views = {},
+			_sql = {},
+			_schemaConfig = noDbConfig;
+
+		Object.defineProperties(this, {
+			"store": {
+				"get": function() {
+					return _config;
+				}
+			},
+			"tables": {
+				"get": function() {
+					return _tables;
+				}
+			},
+			"lookups": {
+				"get": function() {
+					return _.filter(_tables, function(o) {
+						return o.entityName.indexOf("LU") === 0;
+					});
+				}
+			},
+			"isReady": {
+				"get": function() {
+					return _.size(_tables) > 0;
+				}
+			},
+			"sql": {
+				"get": function() {
+					return _sql;
+				}
+			},
+			"views": {
+				"get": function() {
+					return _views;
+				}
+			},
+			"config": {
+				"get": function() {
+					return _schemaConfig;
+				}
+			}
+		});
+
+		this.entity = function(name) {
+			return _.find(_tables, function(v) {
+				return v.entityName === name;
+			});
+		};
+
+		_views = _.filter(_tables, function(o) {
+			return o.entityType == "V";
+		});
+
+
+		angular.forEach(_tables, function(table, tableName) {
+			var primKey = "$$" + table.primaryKey,
+				foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column"))
+				.join(",");
+
+			//Prep as a Dexie Store config
+			_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+		});
+
+	}
+
+	/**
+	 *	### NoDbSchemaFactory
+	 *
+	 *	Creates unique instances of NoDbSchema based on noDBSchema configuration data.
+	 */
+
+	function NoDbSchemaFactory($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
+		var noConfig,
+			promises = [],
+			schemaSourceProviders = {
+				"inline": function(key, schemaConfig) {
+					return $timeout(function() {
+						return schemaConfig.schemaSource.schema;
+					});
+				},
+				"noDBSchema": function(key, schemaConfig) {
+					return getRemoteSchema(noConfig)
+						.then(function(resp) {
+							return resp.data;
+						})
+						.catch(function(err) {
+							throw err;
+						});
+				},
+				"cached": function(key, schemaConfig) {
+					var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
+
+					return $q(function(resolve, reject) {
+						$rootScope.$watch(schemaKey, function(newval) {
+							if (newval) {
+								resolve(newval.tables);
+							}
+						});
+
+					});
+				}
+			};
+
+		function getRemoteSchema(config) {
+			var req = {
+				method: "GET",
+				url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
+				headers: {
+					"Content-Type": "application/json",
+					"Accept": "application/json"
+				},
+				withCredentials: true
+			};
+
+			return $http(req)
+				.then(function(resp) {
+					return resp;
+				})
+				.catch(function(resp) {
+					throw resp;
+				});
+		}
+
+		function checkCache(schemaKey) {
+			return noLocalStorage.getItem(schemaKey);
+		}
+
+		function resolveSchema(schemaKey, schemaConfig) {
+			var deferred = $q.defer(),
+				schemaProvider = schemaConfig.schemaSource.provider;
+
+			if ($rootScope[schemaKey]) {
+				deferred.resolve(schemaKey);
+			} else {
+				$rootScope.$watch(schemaKey, function(newval, oldval) {
+					if (newval) {
+						noLocalStorage.setItem(schemaKey, newval.tables);
+						deferred.resolve(schemaKey);
+					}
+				});
+
+				schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
+					.then(function(schema) {
+						$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
+					})
+					.catch(function() {
+						var schema = checkCache(schemaKey);
+						if (schema) {
+							$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+						} else {
+							deferred.reject("noDbSchemaServiceOffline");
+						}
+					});
+			}
+
+			return deferred.promise;
+		}
+
+		// when calling noDbSchema.whenReady you need to bind the call
+		// with the configuration.
+
+		/**
+		 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
+		 */
+		this.whenReady = function(config) {
+			noConfig = config.current;
+
+			var noDbSchemaConfig = noConfig.noDbSchema,
+				promises = [];
+
+			for (var c in noDbSchemaConfig) {
+				var schemaConfig = noDbSchemaConfig[c],
+					schemaKey = "noDbSchema_" + schemaConfig.dbName;
+
+				promises.push(resolveSchema(schemaKey, schemaConfig));
+			}
+
+			return $q.all(promises)
+				.then(function(results) {
+					$rootScope.noDbSchema_names = results;
+					return results;
+				})
+				.catch(function(err) {
+					throw err;
+				});
+
+		};
+
+		this.configureDatabases = function(noUser, noDbSchemaConfigs) {
+			var promises = [];
+
+			for (var s in noDbSchemaConfigs) {
+				var schemaName = noDbSchemaConfigs[s],
+					schema = $rootScope[schemaName],
+					provider = $injector.get(schema.config.provider);
+
+				promises.push(provider.configure(noUser, schema));
+
+			}
+
+			return $q.all(promises)
+				.then(function(resp){
+					console.log(resp);
+				})
+				.catch(function(err){
+					console.error(err);
+				});
+
+		};
+
+		this.getSchema = function(dbName) {
+			var schema = $rootScope["noDbSchema_" + dbName];
+			return schema;
+		};
+
+		this.create = function(noConfig, noDbConfig, rawDbSchema) {
+			return new NoDbSchema(_, noConfig, noDbConfig, rawDbSchema);
+		};
+	}
 
 	angular.module("noinfopath.data")
+
 
 	/*
 	 * ## noDbSchema
@@ -1632,290 +1999,8 @@ var GloboTest = {};
 	*/
 
 	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
-		// TODO: Finish documentation
-		/*
-		 * ## NoDbSchema : Class
-		 * This provides
-		 *
-		 * ### Constructors
-		 *
-		 * #### Constructor()
-		 *
-		 * ##### Usage
-		 * ```js
-		 * var x = new NoDbSchema();
-		 * ```
-		 *
-		 * ##### Parameters
-		 *
-		 * None
-		 *
-		 * ### Methods
-		 *
-		 * #### createSqlTableStmt(tableName, tableConfig)
-		 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
-		 *
-		 * ##### Usage
-		 * ```js
-		 * var x = createSqlTableStmt(tableName, tableConfig);
-		 * ```
-		 * ##### Parameters
-		 *
-		 * |Name|Type|Description|
-		 * |----|----|-----------|
-		 * |tableName|String|The name of the table to be created|
-		 * |tableConfig|Object|The schema of the table to be created|
-		 *
-		 * ##### Returns
-		 * Returns a SQL query string
-		 *
-		 * ### Properties
-		 * |Name|Type|Description|
-		 * |----|----|-----------|
-		 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
-		 */
-		/*
-		 * ```json
-		 * {
-		 *		"dbName": "NoInfoPath_dtc_v1",
-		 *		"provider": "noIndexedDB",
-		 *		"remoteProvider:": "noHTTP",
-		 *		"version": 1,
-		 *		"schemaSource": {
-		 *			"provider": "inline",
-		 *			"schema": {
-		 *				"store": {
-		 *					"NoInfoPath_Changes": "$$ChangeID"
-		 *				},
-		 *				"tables": {
-		 *					"NoInfoPath_Changes": {
-		 *						"primaryKey": "ChangeID"
-		 *					}
-		 *				}
-		 *			}
-		 *		}
-		 *	}
-		 * ```
-		 */
 
-
-		function NoDbSchema(noConfig, noDbConfig, rawDbSchema) {
-			//console.warn(rawDbSchema);
-
-			var _config = {},
-				_tables = rawDbSchema,
-				_views = {},
-				_sql = {},
-				_schemaConfig = noDbConfig;
-
-			Object.defineProperties(this, {
-				"store": {
-					"get": function() {
-						return _config;
-					}
-				},
-				"tables": {
-					"get": function() {
-						return _tables;
-					}
-				},
-				"lookups": {
-					"get": function() {
-						return _.filter(_tables, function(o) {
-							return o.entityName.indexOf("LU") === 0;
-						});
-					}
-				},
-				"isReady": {
-					"get": function() {
-						return _.size(_tables) > 0;
-					}
-				},
-				"sql": {
-					"get": function() {
-						return _sql;
-					}
-				},
-				"views": {
-					"get": function() {
-						return _views;
-					}
-				},
-				"config": {
-					"get": function() {
-						return _schemaConfig;
-					}
-				}
-			});
-
-			this.entity = function(name) {
-				return _.find(_tables, function(v) {
-					return v.entityName === name;
-				});
-			};
-
-			_views = _.filter(_tables, function(o) {
-				return o.entityType == "V";
-			});
-
-
-			angular.forEach(_tables, function(table, tableName) {
-				var primKey = "$$" + table.primaryKey,
-					foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column"))
-					.join(",");
-
-				//Prep as a Dexie Store config
-				_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-			});
-
-		}
-
-		/**
-		 *	### NoDbSchemaFactory
-		 *
-		 *	Creates unique instances of NoDbSchema based on noDBSchema configuration data.
-		 */
-
-		function NoDbSchemaFactory() {
-			var noConfig,
-				promises = [],
-				schemaSourceProviders = {
-					"inline": function(key, schemaConfig) {
-						return $timeout(function() {
-							return schemaConfig.schemaSource.schema;
-						});
-					},
-					"noDBSchema": function(key, schemaConfig) {
-						return getRemoteSchema(noConfig)
-							.then(function(resp) {
-								return resp.data;
-							})
-							.catch(function(err) {
-								throw err;
-							});
-					},
-					"cached": function(key, schemaConfig) {
-						var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
-
-						return $q(function(resolve, reject) {
-							$rootScope.$watch(schemaKey, function(newval) {
-								if (newval) {
-									resolve(newval.tables);
-								}
-							});
-
-						});
-					}
-				};
-
-			function getRemoteSchema(config) {
-				var req = {
-					method: "GET",
-					url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
-					headers: {
-						"Content-Type": "application/json",
-						"Accept": "application/json"
-					},
-					withCredentials: true
-				};
-
-				return $http(req)
-					.then(function(resp) {
-						return resp;
-					})
-					.catch(function(resp) {
-						throw resp;
-					});
-			}
-
-			function checkCache(schemaKey) {
-				return noLocalStorage.getItem(schemaKey);
-			}
-
-			function getSchema(schemaKey, schemaConfig) {
-				var deferred = $q.defer(),
-					schemaProvider = schemaConfig.schemaSource.provider;
-
-				if ($rootScope[schemaKey]) {
-					deferred.resolve(schemaKey);
-				} else {
-					$rootScope.$watch(schemaKey, function(newval, oldval) {
-						if (newval) {
-							noLocalStorage.setItem(schemaKey, newval.tables);
-							deferred.resolve(schemaKey);
-						}
-					});
-
-					schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
-						.then(function(schema) {
-							$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
-						})
-						.catch(function() {
-							var schema = checkCache(schemaKey);
-							if (schema) {
-								$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
-							} else {
-								deferred.reject("noDbSchemaServiceOffline");
-							}
-						});
-				}
-
-				return deferred.promise;
-			}
-
-			// when calling noDbSchema.whenReady you need to bind the call
-			// with the configuration.
-
-			/**
-			 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
-			 */
-			this.whenReady = function(config) {
-				noConfig = config.current;
-
-				var noDbSchemaConfig = noConfig.noDbSchema,
-					promises = [];
-
-				for (var c in noDbSchemaConfig) {
-					var schemaConfig = noDbSchemaConfig[c],
-						schemaKey = "noDbSchema_" + schemaConfig.dbName;
-
-					promises.push(getSchema(schemaKey, schemaConfig));
-				}
-
-				return $q.all(promises)
-					.then(function(results) {
-						$rootScope.noDbSchema_names = results;
-						return results;
-					})
-					.catch(function(err) {
-						throw err;
-					});
-
-			};
-
-			this.configureDatabases = function(noUser, noDbSchemaConfigs) {
-				var promises = [];
-
-				for (var s in noDbSchemaConfigs) {
-					var schemaName = noDbSchemaConfigs[s],
-						schema = $rootScope[schemaName],
-						provider = $injector.get(schema.config.provider);
-
-					promises.push(provider.configure(noUser, schemaName, schema));
-
-				}
-
-				return $q.all(promises);
-
-			};
-
-			this.getSchema = function(dbName) {
-				var schema = $rootScope["noDbSchema_" + dbName];
-				return schema;
-			};
-		}
-
-		return new NoDbSchemaFactory();
+		return new NoDbSchemaFactory($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector);
 	}]);
 
 })(angular);
@@ -2158,376 +2243,1031 @@ var GloboTest = {};
 })(angular);
 
 //websql.js
+/*
+*	# @module NoInfoPath WebSql
+*
+*	> noinfopath.data @version 0.0.1 #websql
+*
+*	This module provides full CRUD operations, along with the ability to bulk
+*	bulkload data into the WebSql database, and to perform a lookup for a single item,
+*	and the abilty to perform upserts.
+*/
 (function(angular, undefined) {
 	"use strict";
 
+	var
+		/*
+		*	## @constant WEBSQL_IDENTIFIERS
+		*
+		*	Exposes a set of JavaScript idetentified that map to WebSQL DDL and DML expressions.
+		*/
+		WEBSQL_IDENTIFIERS = {
+			CREATETABLE: "CREATE TABLE IF NOT EXISTS ",
+			CREATEVIEW: "CREATE VIEW IF NOT EXISTS ",
+			INSERT: "INSERT INTO ",
+			UPDATE: "UPDATE ",
+			DELETE: "DELETE FROM ",
+			READ: "SELECT * FROM ",
+			COLUMNDEF: "{0}",
+			PRIMARYKEY: "PRIMARY KEY ASC",
+			FOREIGNKEY: "REFERENCES ",
+			NULL: "NULL",
+			INTEGER: "INTEGER",
+			REAL: "REAL",
+			TEXT: "TEXT",
+			BLOB: "BLOB",
+			DATE: "DATE",
+			NUMERIC: "NUMERIC",
+			WITHOUTROWID: "WITHOUT ROWID"
+		},
 
-	function NoWebSQLParser() {
-		var CREATETABLE = "CREATE TABLE IF NOT EXISTS ",
-			CREATEVIEW = "CREATE VIEW IF NOT EXISTS ",
-			INSERT = "INSERT INTO ",
-			UPDATE = "UPDATE ",
-			DELETE = "DELETE FROM ",
-			READ = "SELECT * FROM ",
-			COLUMNDEF = "{0}",
-			PRIMARYKEY = "PRIMARY KEY ASC",
-			FOREIGNKEY = "REFERENCES ",
-			NULL = "NULL",
-			INTEGER = "INTEGER",
-			REAL = "REAL",
-			TEXT = "TEXT",
-			BLOB = "BLOB",
-			DATE = "DATE",
-			NUMERIC = "NUMERIC",
-			WITHOUTROWID = "WITHOUT ROWID",
-			_interface = {
-				sqlConversion: {
-					"bigint": INTEGER,
-					"bit": INTEGER,
-					"decimal": NUMERIC,
-					"int": INTEGER,
-					"money": NUMERIC, // CHECK
-					"numeric": NUMERIC,
-					"smallint": INTEGER,
-					"smallmoney": NUMERIC, // CHECK
-					"tinyint": INTEGER,
-					"float": REAL,
-					"real": REAL,
-					"date": DATE, // CHECK
-					"datetime": DATE, // CHECK
-					"datetime2": DATE, // CHECK
-					"datetimeoffset": DATE, // CHECK
-					"smalldatetime": DATE, // CHECK
-					"time": DATE, // CHECK
-					"char": TEXT,
-					"nchar": TEXT,
-					"varchar": TEXT,
-					"nvarchar": TEXT,
-					"text": TEXT,
-					"ntext": TEXT,
-					"binary": BLOB, // CHECK
-					"varbinary": BLOB,
-					"image": BLOB,
-					"uniqueidentifier": TEXT
+		/*
+		*	## @constant WEBSQL_STATEMENT_BUILDERS
+		*
+		*	Exposes a setup of helper function that construct safe, WebSQL DDL and DML expressions.
+		*/
+		WEBSQL_STATEMENT_BUILDERS = {
+			sqlConversion: {
+				"bigint": WEBSQL_IDENTIFIERS.INTEGER,
+				"bit": WEBSQL_IDENTIFIERS.INTEGER,
+				"decimal": WEBSQL_IDENTIFIERS.NUMERIC,
+				"int": WEBSQL_IDENTIFIERS.INTEGER,
+				"money": WEBSQL_IDENTIFIERS.NUMERIC, // CHECK
+				"numeric": WEBSQL_IDENTIFIERS.NUMERIC,
+				"smallint": WEBSQL_IDENTIFIERS.INTEGER,
+				"smallmoney": WEBSQL_IDENTIFIERS.NUMERIC, // CHECK
+				"tinyint": WEBSQL_IDENTIFIERS.INTEGER,
+				"float": WEBSQL_IDENTIFIERS.REAL,
+				"real": WEBSQL_IDENTIFIERS.REAL,
+				"date": WEBSQL_IDENTIFIERS.DATE, // CHECK
+				"datetime": WEBSQL_IDENTIFIERS.DATE, // CHECK
+				"datetime2": WEBSQL_IDENTIFIERS.DATE, // CHECK
+				"datetimeoffset": WEBSQL_IDENTIFIERS.DATE, // CHECK
+				"smalldatetime": WEBSQL_IDENTIFIERS.DATE, // CHECK
+				"time": WEBSQL_IDENTIFIERS.DATE, // CHECK
+				"char": WEBSQL_IDENTIFIERS.TEXT,
+				"nchar": WEBSQL_IDENTIFIERS.TEXT,
+				"varchar": WEBSQL_IDENTIFIERS.TEXT,
+				"nvarchar": WEBSQL_IDENTIFIERS.TEXT,
+				"text": WEBSQL_IDENTIFIERS.TEXT,
+				"ntext": WEBSQL_IDENTIFIERS.TEXT,
+				"binary": WEBSQL_IDENTIFIERS.BLOB, // CHECK
+				"varbinary": WEBSQL_IDENTIFIERS.BLOB,
+				"image": WEBSQL_IDENTIFIERS.BLOB,
+				"uniqueidentifier": WEBSQL_IDENTIFIERS.TEXT
+			},
+			toSqlLiteConversionFunctions: {
+				"TEXT": function(s) {
+					return angular.isString(s) ? s : null;
 				},
-				toSqlLiteConversionFunctions: {
-					"TEXT": function(s) {
-						return angular.isString(s) ? s : null;
-					},
-					"BLOB": function(b) {
-						return b;
-					},
-					"INTEGER": function(i) {
-						if (typeof i === "boolean") // typeof null is object, thanks javascript!
-							return i ? 1 : 0; // converts true to 1 and false to 0
-						else
-							return angular.isNumber(i) ? i : null;
-					},
-					"NUMERIC": function(n) {
-						var c = n === null ? null : Number(n);
-						return c;
-					},
-					"REAL": function(r) {
-						return r;
-					},
-					"DATE": function(d) {
-						var r = null;
-						if (angular.isString(d)) {
-							r = noInfoPath.toDbDate(new Date(d));
-						}
-
-						return r;
-					}
+				"BLOB": function(b) {
+					return b;
 				},
-				fromSqlLiteConversionFunctions: {
-					"bigint": function(i) {
+				"INTEGER": function(i) {
+					if (typeof i === "boolean") // typeof null is object, thanks javascript!
+						return i ? 1 : 0; // converts true to 1 and false to 0
+					else
 						return angular.isNumber(i) ? i : null;
-					},
-					"bit": function(i) {
-						return angular.isNumber(i) ? i : null;
-					},
-					"decimal": function(n) {
-						return angular.isNumber(n) ? n : null;
-					},
-					"int": function(i) {
-						return angular.isNumber(i) ? i : null;
-					},
-					"money": function(n) {
-						return angular.isNumber(n) ? n : null;
-					},
-					"numeric": function(n) {
-						return angular.isNumber(n) ? n : null;
-					},
-					"smallint": function(i) {
-						return angular.isNumber(i) ? i : null;
-					},
-					"smallmoney": function(n) {
-						return angular.isNumber(n) ? n : null;
-					},
-					"tinyint": function(i) {
-						return angular.isNumber(i) ? i : null;
-					},
-					"float": function(r) {
-						return r;
-					},
-					"real": function(r) {
-						return r;
-					},
-					"date": function(n) {
-						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-					},
-					"datetime": function(n) {
-						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-					},
-					"datetime2": function(n) {
-						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-					},
-					"datetimeoffset": function(n) {
-						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-					},
-					"smalldatetime": function(n) {
-						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-					},
-					"time": function(n) {
-						return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
-					},
-					"char": function(t) {
-						return angular.isString(t) ? t : null;
-					},
-					"nchar": function(t) {
-						return angular.isString(t) ? t : null;
-					},
-					"varchar": function(t) {
-						return angular.isString(t) ? t : null;
-					},
-					"nvarchar": function(t) {
-						return angular.isString(t) ? t : null;
-					},
-					"text": function(t) {
-						return angular.isString(t) ? t : null;
-					},
-					"ntext": function(t) {
-						return angular.isString(t) ? t : null;
-					},
-					"binary": function(b) {
-						return b;
-					},
-					"varbinary": function(b) {
-						return b;
-					},
-					"image": function(b) {
-						return b;
-					},
-					"uniqueidentifier": function(t) {
-						return angular.isString(t) ? t : null;
+				},
+				"NUMERIC": function(n) {
+					var c = n === null ? null : Number(n);
+					return c;
+				},
+				"REAL": function(r) {
+					return r;
+				},
+				"DATE": function(d) {
+					var r = null;
+					if (angular.isString(d)) {
+						r = noInfoPath.toDbDate(new Date(d));
 					}
-				},
-				"createTable": function(tableName, tableConfig) {
-					var rs = CREATETABLE;
-
-					rs += tableName + " (" + this.columnConstraints(tableConfig) + ")";
-
-					return rs;
-				},
-				"createView": function(viewName, viewConfig) {
-					var rs = viewConfig.entitySQL.replace("CREATE VIEW ", CREATEVIEW);
-
-					return rs;
-				},
-				"columnDef": function(columnName, columnConfig, tableConfig) {
-					return columnName + " " + this.typeName(columnConfig) + this.columnConstraint(columnName, columnConfig, tableConfig);
-				},
-				"columnConstraint": function(columnName, columnConfig, tableConfig) {
-					var isPrimaryKey = this.isPrimaryKey(columnName, tableConfig),
-						isForeignKey = this.isForeignKey(columnName, tableConfig),
-						isNullable = this.isNullable(columnConfig),
-						returnString = "";
-
-					returnString += this.primaryKeyClause(isPrimaryKey && (!isForeignKey && !isNullable)); // A PK cannot be a FK or nullable.
-					returnString += this.foreignKeyClause((isForeignKey && !isPrimaryKey), columnName, tableConfig.foreignKeys); // A FK cannot be a PK
-					returnString += this.nullableClause(isNullable && !isPrimaryKey); // A nullable field cannot be a PK
-
-					return returnString;
-				},
-				"typeName": function(columnConfig) {
-					return this.sqlConversion[columnConfig.type];
-				},
-				"expr": function(Expr) {
-					return "";
-				},
-				"foreignKeyClause": function(isForeignKey, columnName, foreignKeys) {
-					var rs = "";
-					if (isForeignKey) {
-						rs = " " + FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
-					}
-					return rs;
-				},
-				"primaryKeyClause": function(isPrimaryKey) {
-					var rs = "";
-					if (isPrimaryKey) {
-						rs = " " + PRIMARYKEY;
-					}
-					return rs;
-				},
-				"nullableClause": function(isNullable) {
-					var rs = "";
-					if (isNullable) {
-						rs = " " + NULL;
-					}
-					return rs;
-				},
-				"columnConstraints": function(tableConfig) {
-					var colConst = [];
-					angular.forEach(tableConfig.columns, function(value, key) {
-						colConst.push(this.columnDef(key, value, tableConfig));
-					}, this);
-					return colConst.join(",");
-				},
-				"isPrimaryKey": function(columnName, tableConfig) {
-					var temp = false;
-
-					for (var x in tableConfig.primaryKey) {
-						if (columnName === tableConfig.primaryKey[x]) {
-							temp = true;
-							break;
-						}
-					}
-					return temp;
-				},
-				"isForeignKey": function(columnName, tableConfig) {
-					return !!tableConfig.foreignKeys[columnName];
-				},
-				"isNullable": function(columnConfig) {
-					return columnConfig.nullable;
-				},
-				"sqlInsert": function(tableName, data) {
-					var columnString = "",
-						placeholdersString = "",
-						returnObject = {},
-						val = {};
-
-					val = this.parseData(data);
-
-					columnString = val.columns.join(",");
-					placeholdersString = val.placeholders.join(",");
-
-					returnObject.queryString = INSERT + tableName + " (" + columnString + ") VALUES (" + placeholdersString + ");";
-					returnObject.valueArray = val.values;
-
-					return returnObject;
-				},
-				"sqlUpdate": function(tableName, data, filters) {
-					var val = {},
-						nvps = [],
-						nvpsString = "",
-						returnObject = {};
-
-					val = this.parseData(data);
-
-					nvps = this.sqlUpdateNameValuePair(val);
-
-					nvpsString = nvps.join(", ");
-
-					returnObject.queryString = UPDATE + tableName + " SET " + nvpsString + " WHERE " + filters.toSQL();
-					returnObject.valueArray = val.values;
-
-					return returnObject;
-				},
-				"sqlUpdateNameValuePair": function(values) {
-					var nvps = [];
-
-					angular.forEach(values.columns, function(col, key) {
-						nvps.push(col + " = ?");
-					});
-
-					return nvps;
-				},
-				"sqlDelete": function(tableName, filters) {
-					var returnObject = {},
-						where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
-					returnObject.queryString = DELETE + tableName + where;
-					return returnObject;
-				},
-				"sqlRead": function(tableName, filters, sort, page) {
-					var fs, ss, ps, returnObject = {};
-					fs = !!filters ? " WHERE " + filters.toSQL() : "";
-					ss = !!sort ? " " + sort.toSQL() : "";
-					ps = !!page ? " " + page.toSQL() : "";
-					returnObject.queryString = READ + tableName + fs + ss + ps;
-					return returnObject;
-				},
-				"sqlOne": function(tableName, primKey, value) {
-					var returnObject = {};
-					returnObject.queryString = READ + tableName + " WHERE " + primKey + " = '" + value + "'";
-					return returnObject;
-				},
-				"parseData": function(data) {
-					var values = [],
-						placeholders = [],
-						columns = [],
-						r = {};
-					angular.forEach(data, function(value, key) {
-						columns.push(key);
-						placeholders.push("?");
-						values.push(value);
-					});
-
-					r.values = values;
-					r.placeholders = placeholders;
-					r.columns = columns;
 
 					return r;
 				}
-			};
+			},
+			fromSqlLiteConversionFunctions: {
+				"bigint": function(i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"bit": function(i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"decimal": function(n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"int": function(i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"money": function(n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"numeric": function(n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"smallint": function(i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"smallmoney": function(n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"tinyint": function(i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"float": function(i) {
+					return  angular.isNumber(i) ? i : null;
+				},
+				"real": function(i) {
+					return  angular.isNumber(i) ? i : null;
+				},
+				"date": function(n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"datetime": function(n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"datetime2": function(n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"datetimeoffset": function(n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"smalldatetime": function(n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"time": function(n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"char": function(t) {
+					return angular.isString(t) ? t : null;
+				},
+				"nchar": function(t) {
+					return angular.isString(t) ? t : null;
+				},
+				"varchar": function(t) {
+					return angular.isString(t) ? t : null;
+				},
+				"nvarchar": function(t) {
+					return angular.isString(t) ? t : null;
+				},
+				"text": function(t) {
+					return angular.isString(t) ? t : null;
+				},
+				"ntext": function(t) {
+					return angular.isString(t) ? t : null;
+				},
+				"binary": function(i) {
+					return  !angular.isNumber(i) ? i : null;
+				},
+				"varbinary": function(i) {
+					return !angular.isNumber(i) ? i : null;
+				},
+				"image": function(i) {
+					return !angular.isNumber(i) ? i : null;
+				},
+				"uniqueidentifier": function(t) {
+					return angular.isString(t) ? t : null;
+				}
+			},
+			"createTable": function(tableName, tableConfig) {
+				var rs = WEBSQL_IDENTIFIERS.CREATETABLE;
 
-		this._interface = _interface;
+				rs += tableName + " (" + WEBSQL_STATEMENT_BUILDERS.columnConstraints(tableConfig) + ")";
+
+				return rs;
+			},
+			"createView": function(viewName, viewConfig) {
+				var rs = viewConfig.entitySQL.replace("CREATE VIEW ", WEBSQL_IDENTIFIERS.CREATEVIEW);
+
+				return rs;
+			},
+			"columnDef": function(columnName, columnConfig, tableConfig) {
+				return columnName + " " + WEBSQL_STATEMENT_BUILDERS.typeName(columnConfig) + WEBSQL_STATEMENT_BUILDERS.columnConstraint(columnName, columnConfig, tableConfig);
+			},
+			"columnConstraint": function(columnName, columnConfig, tableConfig) {
+				var isPrimaryKey = WEBSQL_STATEMENT_BUILDERS.isPrimaryKey(columnName, tableConfig),
+					isForeignKey = WEBSQL_STATEMENT_BUILDERS.isForeignKey(columnName, tableConfig),
+					isNullable = WEBSQL_STATEMENT_BUILDERS.isNullable(columnConfig),
+					returnString = "";
+
+				returnString += WEBSQL_STATEMENT_BUILDERS.primaryKeyClause(isPrimaryKey && (!isForeignKey && !isNullable)); // A PK cannot be a FK or nullable.
+				returnString += WEBSQL_STATEMENT_BUILDERS.foreignKeyClause((isForeignKey && !isPrimaryKey), columnName, tableConfig.foreignKeys); // A FK cannot be a PK
+				returnString += WEBSQL_STATEMENT_BUILDERS.nullableClause(isNullable && !isPrimaryKey); // A nullable field cannot be a PK
+
+				return returnString;
+			},
+			"typeName": function(columnConfig) {
+				return WEBSQL_STATEMENT_BUILDERS.sqlConversion[columnConfig.type.toLowerCase()];
+			},
+			"expr": function(Expr) {
+				console.warn("TODO: Determine why this function exists.");
+				return "";
+			},
+			"foreignKeyClause": function(isForeignKey, columnName, foreignKeys) {
+				var rs = "";
+				if (isForeignKey) {
+					rs = " " + WEBSQL_IDENTIFIERS.FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
+				}
+				return rs;
+			},
+			"primaryKeyClause": function(isPrimaryKey) {
+				var rs = "";
+				if (isPrimaryKey) {
+					rs = " " + WEBSQL_IDENTIFIERS.PRIMARYKEY;
+				}
+				return rs;
+			},
+			"nullableClause": function(isNullable) {
+				var rs = "";
+				if (isNullable) {
+					rs = " " + WEBSQL_IDENTIFIERS.NULL;
+				}
+				return rs;
+			},
+			"columnConstraints": function(tableConfig) {
+				var colConst = [];
+				angular.forEach(tableConfig.columns, function(value, key) {
+					colConst.push(WEBSQL_STATEMENT_BUILDERS.columnDef(key, value, tableConfig));
+				}, this);
+				return colConst.join(",");
+			},
+			"isPrimaryKey": function(columnName, tableConfig) {
+				var temp = false;
+
+				for (var x in tableConfig.primaryKey) {
+					if (columnName === tableConfig.primaryKey[x]) {
+						temp = true;
+						break;
+					}
+				}
+				return temp;
+			},
+			"isForeignKey": function(columnName, tableConfig) {
+				return !!tableConfig.foreignKeys[columnName];
+			},
+			"isNullable": function(columnConfig) {
+				return columnConfig.nullable;
+			},
+			"sqlInsert": function(tableName, data) {
+				var columnString = "",
+					placeholdersString = "",
+					returnObject = {},
+					val = {};
+
+				val = WEBSQL_STATEMENT_BUILDERS.parseData(data);
+
+				columnString = val.columns.join(",");
+				placeholdersString = val.placeholders.join(",");
+
+				returnObject.queryString = WEBSQL_IDENTIFIERS.INSERT + tableName + " (" + columnString + ") VALUES (" + placeholdersString + ");";
+				returnObject.valueArray = val.values;
+
+				return returnObject;
+			},
+			"sqlUpdate": function(tableName, data, filters) {
+				var val = {},
+					nvps = [],
+					nvpsString = "",
+					returnObject = {},
+					safeFilter = filters.toSafeSQL();
+
+				//console.log(safeFilter);
+
+				val = WEBSQL_STATEMENT_BUILDERS.parseData(data);
+
+				nvps = WEBSQL_STATEMENT_BUILDERS.sqlUpdateNameValuePair(val);
+
+				nvpsString = nvps.join(", ");
+
+
+				returnObject.queryString = WEBSQL_IDENTIFIERS.UPDATE + tableName + " SET " + nvpsString + " WHERE " + safeFilter.queryString;
+				returnObject.valueArray = val.values.concat(safeFilter.valueArray);
+
+				return returnObject;
+			},
+			"sqlUpdateNameValuePair": function(values) {
+				var nvps = [];
+
+				angular.forEach(values.columns, function(col, key) {
+					nvps.push(col + " = ?");
+				});
+
+				return nvps;
+			},
+			"sqlDelete": function(tableName, filters) {
+				var val = {},
+					nvps = [],
+					nvpsString = "",
+					returnObject = {},
+					safeFilter = filters ? filters.toSafeSQL() : (new noInfoPath.data.NoFilters()).toSafeSQL(),
+					where;
+
+				nvps = WEBSQL_STATEMENT_BUILDERS.sqlUpdateNameValuePair(safeFilter.valueArray);
+
+				nvpsString = nvps.join(", ");
+
+				//console.log(safeFilter, nvps, nvpsString);
+
+				// var returnObject = {},
+				// 	safeSql = filters.toSaveSQL(),
+				where = safeFilter.queryString ? " WHERE " + safeFilter.queryString : "";
+
+				returnObject.queryString = WEBSQL_IDENTIFIERS.DELETE + tableName + where;
+				returnObject.valueArray = safeFilter.valueArray;
+				return returnObject;
+			},
+			"sqlRead": function(tableName, filters, sort, page) {
+				var fs, ss, ps, returnObject = {}, safeFilter = filters ? filters.toSafeSQL() : undefined;
+				fs = !!filters ? " WHERE " +  safeFilter.queryString : "";
+				ss = !!sort ? " " + sort.toSQL() : "";
+				ps = !!page ? " " + page.toSQL() : "";
+				returnObject.queryString = WEBSQL_IDENTIFIERS.READ + tableName + fs + ss + ps;
+				returnObject.valueArray = safeFilter ? safeFilter.valueArray : [];
+				return returnObject;
+			},
+			"sqlOne": function(tableName, primKey, value) {
+				var returnObject = {};
+				console.warn("TODO: Need to detect if the value is a string or number");
+
+				returnObject.queryString = WEBSQL_IDENTIFIERS.READ + tableName + " WHERE " + primKey + " = '" + value + "'";
+				return returnObject;
+			},
+			"parseData": function(data) {
+				var values = [],
+					placeholders = [],
+					columns = [],
+					r = {};
+				angular.forEach(data, function(value, key) {
+					columns.push(key);
+					placeholders.push("?");
+					values.push(value);
+				});
+
+				r.values = values;
+				r.placeholders = placeholders;
+				r.columns = columns;
+
+				return r;
+			}
+		}
+	;
+
+	/*
+	*	### @class NoWebSqlStatementFactory
+	*
+	*	This class is an injecton container that uses WEBSQL_IDENTIFIERS, and
+	*	WEBSQL_STATEMENT_BUILDERS to construct the various SQL statements
+	*	required to create and use a WebSQL database.
+	*
+	*/
+	function NoWebSqlStatementFactory(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS) {
 
 		this.createSqlTableStmt = function(tableName, tableConfig) {
-			return _interface.createTable(tableName, tableConfig);
+			return WEBSQL_STATEMENT_BUILDERS.createTable(tableName, tableConfig);
 		};
 
 		this.createSqlViewStmt = function(tableName, viewSql) {
-			return _interface.createView(tableName, viewSql);
+			return WEBSQL_STATEMENT_BUILDERS.createView(tableName, viewSql);
 		};
 
 		this.createSqlInsertStmt = function(tableName, data) {
-			return _interface.sqlInsert(tableName, data);
+			return WEBSQL_STATEMENT_BUILDERS.sqlInsert(tableName, data);
 		};
 
 		this.createSqlUpdateStmt = function(tableName, data, filters) {
-			return _interface.sqlUpdate(tableName, data, filters);
+			return WEBSQL_STATEMENT_BUILDERS.sqlUpdate(tableName, data, filters);
 		};
 
 		this.createSqlDeleteStmt = function(tableName, data, filters) {
-			return _interface.sqlDelete(tableName, filters);
+			return WEBSQL_STATEMENT_BUILDERS.sqlDelete(tableName, filters);
 		};
 
 		this.createSqlReadStmt = function(tableName, filters, sort, page) {
-			return _interface.sqlRead(tableName, filters, sort, page);
+			return WEBSQL_STATEMENT_BUILDERS.sqlRead(tableName, filters, sort, page);
 		};
 
+		//console.warn("This method does not ever get used.");
 		this.createSqlOneStmt = function(tableName, primKey, value) {
-			return _interface.sqlOne(tableName, primKey, value);
+			return WEBSQL_STATEMENT_BUILDERS.sqlOne(tableName, primKey, value);
 		};
 
 		this.createSqlClearStmt = function(tableName) {
-			return _interface.sqlDelete(tableName);
+			return WEBSQL_STATEMENT_BUILDERS.sqlDelete(tableName);
 		};
 
 		this.convertToWebSQL = function(sqlColumn, sqlData) {
-			var sqliteColumn = _interface.sqlConversion[sqlColumn];
+			var sqliteColumn = WEBSQL_STATEMENT_BUILDERS.sqlConversion[sqlColumn.toLowerCase()];
 
-			return _interface.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
+			return WEBSQL_STATEMENT_BUILDERS.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
 		};
 
 	}
 
-	function NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
-		var stmts = {
-				"T": noWebSQLParser.createSqlTableStmt,
-				"V": noWebSQLParser.createSqlViewStmt
+	/**
+	*	### @class NoWebSqlEntity
+	*
+	*	This class encapulates the CRUD functionality for NoInfoPath's implementation
+	*	of WebSQL. It abstracts the fundimental differences between SQL Views and Tables.
+	*	Exceptions will be thrown when a method is called that a SQL View connot supported.
+	*/
+	function NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSQLStatementFactory, entityConfig, entityName, database) {
+		var
+			THIS = this,
+			_entityConfig, _entityName, _db;
+
+		if (!entityConfig) throw "entityConfig is a required parameter";
+		if (!entityName) throw "entityName is a required parameter";
+		if (!database) throw "database is a required parameter";
+
+		_entityConfig = entityConfig;
+		_entityName = _entityConfig.entityName;
+		_db = database;
+
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function() {
+					return "INoCRUD";
+				},
 			},
-			_name;
+			"primaryKey": {
+				"get": function() {
+					return _entityConfig.primaryKey;
+				}
+			},
+			"entityName": {
+				"get": function() {
+					return _entityName;
+				}
+			}
+		});
+
+		/*-
+		 * ### @method private \_exec(sqlExpressionData)
+		 *
+		 * #### Parameters
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |sqlExpressionData|Object|An object with two properties, queryString and valueArray. queryString is the SQL statement that will be executed, and the valueArray is the array of values for the replacement variables within the queryString.|
+		 */
+		function _exec(sqlExpressionData) {
+			var
+				deferred = $q.defer(),
+				valueArray = sqlExpressionData.valueArray  ? sqlExpressionData.valueArray : [];
+
+			_db.transaction(function(tx) {
+				tx.executeSql(
+					sqlExpressionData.queryString,
+					valueArray,
+					function(t, resultset) {
+						deferred.resolve(resultset);
+						$rootScope.$digest();
+					},
+					function(t, r, x) {
+						deferred.reject({
+							entity: _entityConfig,
+							error: r.message
+						});
+						$rootScope.$digest();
+					}
+				);
+			});
+
+			return deferred.promise;
+		}
+
+		/*-
+		 * ### \_getOne(rowid)
+		 *
+		 * #### Parameters
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |filters|NoFilters||
+		 *
+		 * #### Remarks
+		 *
+		 */
+		function _getOne(filters) {
+			var sqlExpressionData = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters);
+
+			return _exec(sqlExpressionData)
+				.then(function(resultset) {
+					var data;
+
+					if (resultset.rows.length === 0) {
+						data = {};
+					} else {
+						data = resultset.rows[0];
+					}
+
+					return data;
+				});
+		}
+
+		function _recordTransaction(resolve, tableName, operation, trans, result1, result2){
+			var transData = result2 && result2.rows.length ? result2 : result1;
+
+			if (trans) trans.addChange(tableName, transData, operation);
+			resolve(transData);
+
+		}
+
+		function _transactionFault(reject, err){
+			reject(err);
+		}
+
+		function _txFailure(recject, err) {
+			recject(err);
+		}
+
+		function _txSuccess(data) {
+			//console.log("Tx Success", data);
+		}
+
+		/*
+		 * ### @method configure()
+		 *
+		 * Creates the WebSQL Entity based on the configuration data and the database passed in
+		 * during the construction of the NoWebSqlEntity object.
+		 *
+		 *	This method returns an Angular Promise.
+		 */
+		this.configure = function () {
+
+			var
+				stmts = {
+					"T": WEBSQL_STATEMENT_BUILDERS.createTable,
+					"V": WEBSQL_STATEMENT_BUILDERS.createView
+				},
+				deferred = $q.defer();
+
+			_db.transaction(function(tx) {
+				tx.executeSql(stmts[_entityConfig.entityType](_entityConfig.entityName, _entityConfig), [],
+					function(t, r) {
+						deferred.resolve();
+						$rootScope.$digest();
+					},
+					function(t, e) {
+						deferred.reject({
+							entity: _entityConfig,
+							error: e
+						});
+
+						$rootScope.$digest();
+					});
+			});
+
+			return deferred.promise;
+		};
+
+		/*
+		 * ### noCreate(data, noTransaction)
+		 *
+		 * Inserts a record into the websql database with the data provided.
+		 *
+		 * #### Parameters
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |data|Object|Name Value Pairs|
+		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+		 *
+		 *	#### Remarks
+		 */
+		this.noCreate = function(data, noTransaction) {
+
+			if(_entityConfig.entityType === "V") throw "Create operation not supported by SQL Views.";
+
+			/*
+			*	When resolving the primary key for the purpose of createing a new record, it is
+			*	required that a primary key exist on the given table. Once discovered, if the
+			*	value already exists that value will be used as the primary value. If the key
+			*	value is undefined that a new UUID is created.
+			*
+			*	> NOTE: Bug #00001
+			*	> There is a bug with current implementation that does not take into account
+			*	> the case when the primary key is a compond key. In the current implementation
+			*	> this results in the primary key resolving to `Undefined`.
+			*/
+
+			console.warn("TODO: See readme note `Bug #00001`");
+
+			var
+				pk = angular.isArray(_entityConfig.primaryKey) ?
+					_entityConfig.primaryKey.length > 1 ? undefined :
+					_entityConfig.primaryKey[0] : _entityConfig.primaryKey,
+				sqlStmt;
+
+			if (pk && !data[pk]) {
+				data[_entityConfig.primaryKey] = noInfoPath.createUUID();
+			}
+
+			/*
+			*
+			*	When creating a new record in the WebSQL DB all tables are expected to have
+			*	the `tracking columns`: CreatedBy, DateCreated, ModifiedBy, ModifiedDate.
+			*	The values for these column are automatically added to the new data being
+			*	added to the DB.
+			*/
+			data.CreatedBy = _db.currentUser.userId;
+			data.DateCreated = noInfoPath.toDbDate(new Date());
+			data.ModifiedBy = _db.currentUser.userId;
+			data.ModifiedDate = noInfoPath.toDbDate(new Date());
+
+			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(function(result) {
+						return THIS.noOne(result.insertId)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "C", noTransaction))
+							.catch(_transactionFault.bind(null, reject));
+					})
+					.catch(reject);
+			});
+
+
+
+		};
+
+		/*
+		 * ### noRead([NoFilters, NoSort, NoPage])
+		 *
+		 * Reads records from the websql database filtering, sorting and paging
+		 * as required by the provied parameters.
+		 *
+		 * #### Parameters
+		 *
+		 *	> NOTE: All parameters are optional and may be provided in any order, as long as,
+		 *	> they are of one of the known NoInfoPath query classes: NoFilters,
+		 *	> NoSort, and NoPage
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |NoFilters|Object|(Optional) A noInfoPath NoFilters Array|
+		 * |NoSort|Object|(Optional) A noInfoPath NoSort Object|
+		 * |NoPage|Object|(Optional) A noInfoPath NoPage Object|
+		 */
+		this.noRead = function() {
+
+			var filters, sort, page, readObject;
+
+			for (var ai in arguments) {
+				var arg = arguments[ai];
+
+				//success and error must always be first, then
+				if (angular.isObject(arg)) {
+					switch (arg.__type) {
+						case "NoFilters":
+							filters = arg;
+							break;
+						case "NoSort":
+							sort = arg;
+							break;
+						case "NoPage":
+							page = arg;
+							break;
+					}
+				}
+			}
+
+			readObject = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters, sort, page);
+
+			return $q(function(resolve, reject){
+				_exec(readObject)
+					.then(function(resultset) {
+						var data = new noInfoPath.data.NoResults(_.toArray(resultset.rows));
+						if (page) data.page(page);
+						resolve(data);
+					})
+					.catch(reject);
+			});
+		};
+
+		/*
+		 * ### noUpdate(data, noTransaction)
+		 *
+		 * Updates a record from the websql database based on the Primary Key of the data provided.
+		 *
+		 * #### Parameters
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |data|Object|Name Value Pairs|
+		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+		 *
+		 *	Returns an AngularJS Promise.
+		 */
+		this.noUpdate = function(data, noTransaction) {
+			if(_entityConfig.entityType === "V") throw "Update operation not supported by SQL Views.";
+
+			/*
+			*	When resolving the primary key of the object to update
+			*	the id value must exist. If it does not an exception is thrown.
+			*/
+			var noFilters = new noInfoPath.data.NoFilters(),
+				id = data[_entityConfig.primaryKey], sqlStmt;
+
+			if(!id) throw "Primary key value must exist an object being updated.";
+
+			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
+
+			/*
+			*	When updating a record in the WebSQL DB all tables are expected to have
+			*	the `tracking columns`: ModifiedBy, ModifiedDate.
+			*	The values for these column are automatically set on the object
+			*	being updated in the DB.
+			*/
+			data.ModifiedBy = _db.currentUser.userId;
+			data.ModifiedDate = noInfoPath.toDbDate(new Date());
+
+			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(function(resultset) {
+						resolve(data);
+					})
+					.catch(reject);
+			});
+		};
+
+		/*
+		 * ### noDestroy(data, noTransaction)
+		 *
+		 * Deletes a record from the websql database based on the Primary Key of the data provided.
+		 *
+		 * #### Parameters
+		 *
+		 * |Name|Type|Description|
+		 * |----|----|-----------|
+		 * |data|Object|Name Value Pairs|
+		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
+		 */
+		this.noDestroy = function(data, noTransaction, filters) {
+			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
+
+			var
+				noFilters = new noInfoPath.data.NoFilters(filters),
+				id = data[_entityConfig.primaryKey],
+				sqlStmt, deleted;
+
+			if(!id) throw "Could not resolve primary key for delete operation.";
+
+			if(!noFilters.length)
+			{
+				noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
+			}
+
+			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, data, noFilters);
+
+			return $q(function(resolve, reject){
+
+				_getOne(noFilters)
+					.then(function(datum) {
+						_exec(sqlStmt)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
+							.catch(reject);
+					})
+					.catch(reject);
+			});
+
+
+		};
+
+		/*
+		* ### @method noOne(data)
+		*
+		* Reads exactly one record from the websql database based on the filter derived the data provided.
+		*
+		* > NOTE: Returns single object, not an array of objects. When more than one result is found it returns
+		* > the first item in the array of results.  If none are found, returns an single empty object.
+		*
+		* #### Parameters
+		*
+		*	##### @parameter `query`
+		*
+		*	The `query` parameter can be a Number, String or Object. When it
+		*	is as Number the it is a WebSQL `RowId`. When a String the value
+		*	is expectd to be the guid that is the primary key for the given
+		*	entity.  When an object, and is of the NoFilters class it is treated
+		*	as such. When not, then it expected to be a special object.
+		*
+		*	*Expected Types*
+		*	- Number
+		*	- String
+		*	- Object
+		*
+		* #### Remarks
+		*
+		* > NOTE: noinfopath-data only support primary keys that are strings. This
+		* > is because we are expecting GUID or UUID as primary key, as the are
+		* > inherently replicatable.
+		*
+		*/
+		this.noOne = function(query) {
+			/**
+			 *	When 'query' is an object then check to see if it is a
+			 *	NoFilters object.  If not, add a filter to the intrinsic filters object
+			 *	based on the query's key property, and the query's value.
+			 */
+			var filters = new noInfoPath.data.NoFilters();
+
+			if(angular.isNumber(query)){
+				//Assume rowid
+				/*
+				*	When query a number, a filter is created on the instrinsic
+				*	filters object using the `rowid`  WebSQL column as the column
+				*	to filter on. Query will be the target
+				*	value of query.
+				*/
+				filters.quickAdd("rowid", "eq", query);
+
+			}else if(angular.isString(query)){
+				//Assume guid
+				/*
+				* When the query is a string it is assumed a table is being queried
+				* by it's primary key.
+				*
+				* > Passing a string when the entity is
+				* a SQL View is not allowed.
+				*/
+				if(_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+
+				filters.quickAdd(_entityConfig.primaryKey, "eq", query);
+
+			}else if (angular.isObject(query)) {
+				if (query.__type === "NoFilters") {
+					filters = query;
+				} else {
+					//Simple key/value pair
+					filters.quickAdd(query.key, "eq", query.value);
+				}
+
+			} else {
+				throw "One requires a query parameter. May be a Number, String or Object";
+			}
+
+			//Internal _getOne requires and NoFilters object.
+			return _getOne(filters);
+		};
+
+
+		/*
+		*	### @method noUpsert(data)
+		*/
+		this.noUpsert = function(data) {
+			if(_entityConfig.entityType === "V") throw "Upsert operation not supported by SQL Views.";
+
+			if (data[this.primaryKey]) {
+				return this.noUpdate(data);
+			} else {
+				return this.noCreate(data);
+			}
+		};
+
+		/*
+		 * ### @method noClear()
+		 *
+		 * Delete all rows from the current table, without recording each delete transaction.
+		 *
+		 * #### Returns
+		 * AngularJS Promise.
+		 */
+		this.noClear = function() {
+			if(_entityConfig.entityType === "V") throw "Clear operation not supported by SQL Views.";
+
+			var sqlStmt = noWebSQLStatementFactory.createSqlClearStmt(_entityName);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(resolve)
+					.catch(reject);
+			});
+
+		};
+
+		/*
+		*	### @method noBulkCreate(data)
+		*
+		*	Inserts object in to the WebSQL database, converting data from
+		*	ANSI SQL to WebSQL.  No transactions are recorded during this operation.
+		*/
+		this.noBulkCreate = function(data) {
+			if(_entityConfig.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
+
+			for (var c in _entityConfig.columns) {
+				var col = _entityConfig.columns[c];
+				data[c] = noWebSQLStatementFactory.convertToWebSQL(col.type, data[c]);
+			}
+
+			var sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data, null);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(resolve)
+					.catch(reject);
+			}) ;
+
+
+
+
+
+		};
+
+		/*
+		*	### @method bulkload(data, progress)
+		*
+		*	Returns an AngularJS Promise.  Takes advantage of
+		*	Promise.notify to report project of the bulkLoad operation.
+		*/
+		this.bulkLoad = function(data, progress) {
+			if(entityConfig.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
+
+			var deferred = $q.defer(),
+				table = this;
+			//var table = this;
+			function _import(data, progress) {
+				var total = data ? data.length : 0;
+
+				$timeout(function() {
+					//progress.rows.start({max: total});
+					deferred.notify(progress);
+				});
+
+				var currentItem = 0;
+
+				//_dexie.transaction('rw', table, function (){
+				_next();
+				//});
+
+				function _next() {
+					if (currentItem < data.length) {
+						var datum = data[currentItem];
+
+						table.noBulkCreate(datum)
+							.then(function(data) {
+								//progress.updateRow(progress.rows);
+								deferred.notify(data);
+							})
+							.catch(function() {
+								deferred.reject({
+									entity: table,
+									error: arguments
+								});
+							})
+							.finally(function() {
+								currentItem++;
+								_next();
+							});
+
+					} else {
+						deferred.resolve(table.name);
+					}
+				}
+
+			}
+
+			//console.info("bulkLoad: ", table.TableName)
+
+			table.noClear()
+				.then(function() {
+					_import(data, progress);
+				}.bind(this));
+
+			return deferred.promise;
+		};
+
+
+	}
+
+	/*
+	*	## @class NoWebSqlEntityFactory
+	*
+	*	Creates instances of the NoWebSqlEntity class, providing an Entity
+	*	configuration object, name of the entity, and a reference to the database.
+	*
+	*
+	*/
+	function NoWebSqlEntityFactory($rootScope, $q, $timeout, _, noWebSqlStatementFactory){
+		/*
+		*	### @method create(entityConfig, entityName, database)
+		*
+		*	Returns a new instance of the NoWebSqlEntity object configured with the
+		*	supplied Entity Configuration and Datbase.
+		*
+		*/
+		this.create = function (entityConfig, entityName, database) {
+			var entity = new NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSqlStatementFactory, entityConfig, entityName, database);
+			return entity;
+		};
+	}
+
+	/*
+	*	## @class NoWebSqlService
+	*/
+	function NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
+		var _name;
 
 		Object.defineProperties(this, {
 			"isInitialized": {
@@ -2538,14 +3278,13 @@ var GloboTest = {};
 		});
 
 		//TODO: modify config to also contain Views, as well as, Tables.
-		this.configure = function(noUser, config, schema) {
+		this.configure = function(noUser, schema) {
+			if(!noUser || noUser.constructor.name !== "NoInfoPathUser") throw "noWebSql::configure requires the first parameter to be a NoInfoPathUser object.";
+			if(!schema || schema.constructor.name !== "NoDbSchema") throw "noWebSql::configure requires the second parameter to be a NoDbSchema object.";
+
 			var _webSQL = null,
 				promises = [],
-				noWebSQLInitialized = "noWebSQL_" + schema.config.dbName,
-				noConstructors = {
-					"T": NoTable,
-					"V": NoView
-				};
+				noWebSQLInitialized = "noWebSQL_" + schema.dbName;
 
 			_webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
 
@@ -2553,818 +3292,68 @@ var GloboTest = {};
 			_webSQL.name = schema.config.dbName;
 
 			angular.forEach(schema.tables, function(table, name) {
-				var t = new noConstructors[table.entityType](table, name, _webSQL);
-				this[name] = t;
-				promises.push(createEntity(table, _webSQL));
+
+				var
+					db = this,
+					t = noWebSqlEntityFactory.create(table, name, db);
+
+				db[name] = t;
+				promises.push(t.configure());
 			}, _webSQL);
 
 			return $q.all(promises)
 				.then(function() {
 					$rootScope[noWebSQLInitialized] = _webSQL;
-					noLogService.log(noWebSQLInitialized + " Ready.");
+					return _webSQL;
+				})
+				.catch(function(err){
+					console.error(err);
 				});
 		};
 
-		this.whenReady = function(config) {
-			var deferred = $q.defer();
-
-			$timeout(function() {
+		this.whenReady = function() {
+			return $q(function(resolve, reject){
 				var noWebSQLInitialized = "noWebSQL_" + config.dbName;
 
 				if ($rootScope[noWebSQLInitialized]) {
-					deferred.resolve();
+					resolve();
 				} else {
 					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope) {
 						if (newval) {
-							deferred.resolve();
+							resolve();
 						}
 					});
 				}
 			});
-
-			return deferred.promise;
 		};
 
 		this.getDatabase = function(databaseName) {
 			return $rootScope["noWebSQL_" + databaseName];
 		};
 
-		/**
-		 * ### createTable(tableName, table)
-		 *
-		 * #### Parameters
-		 *
-		 * |Name|Type|Description|
-		 * |----|----|-----------|
-		 * |type|String|One of T\|V|
-		 * |tableName|String|The table's name|
-		 * |table|Object|The table schema|
-		 */
-		function createEntity(entity, database) {
-
-			var deferred = $q.defer();
-
-
-			database.transaction(function(tx) {
-				tx.executeSql(stmts[entity.entityType](entity.entityName, entity), [],
-					function(t, r) {
-						deferred.resolve();
-					},
-					function(t, e) {
-						deferred.reject({
-							entity: entity,
-							error: e
-						});
-					});
-			});
-
-			return deferred.promise;
-		}
-
-		/**
-		 * ## NoTable
-		 * CRUD interface for WebSql
-		 */
-		function NoTable(table, tableName, database) {
-			if (!table) throw "table is a required parameter";
-			if (!tableName) throw "tableName is a required parameter";
-			if (!database) throw "database is a required parameter";
-
-			var _table = table,
-				_tableName = table.entityName,
-				_db = database;
-
-			Object.defineProperties(this, {
-				"__type": {
-					"get": function() {
-						return "INoCRUD";
-					},
-				},
-				"primaryKey": {
-					"get": function() {
-						return _table.primaryKey;
-					}
-				},
-				"entityName": {
-					"get": function() {
-						return _tableName;
-					}
-				}
-			});
-
-			/**
-			 * ### \_getOne(rowid)
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |rowid|Number or Object| When a number assume that you are filtering on "rowId". When an Object the object will have a key, and value property.|
-			 */
-			function _getOne(rowid) {
-				var deferred = $q.defer(),
-					filters = new noInfoPath.data.NoFilters(),
-					sqlExpressionData;
-
-				if (angular.isObject(rowid)) {
-					if (rowid.__type === "NoFilters") {
-						filters = rowid;
-					} else {
-						filters.add(rowid.key, null, true, true, [{
-							"operator": "eq",
-							"value": rowid.value,
-							"logic": null
-						}]);
-					}
-
-				} else {
-					filters.add("rowid", null, true, true, [{
-						"operator": "eq",
-						"value": rowid,
-						"logic": null
-					}]);
-				}
-
-				sqlExpressionData = noWebSQLParser.createSqlReadStmt(_tableName, filters);
-
-				_exec(sqlExpressionData)
-					.then(function(resultset) {
-						if (resultset.rows.length === 0) {
-							deferred.resolve({});
-						} else {
-							deferred.resolve(resultset.rows[0]);
-						}
-					})
-					.catch(deferred.reject);
-
-				return deferred.promise;
-			}
-
-			/**
-			 * ### \_exec(sqlExpressionData)
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |sqlExpressionData|Object|An object with two properties, queryString and valueArray. queryString is the SQL statement that will be executed, and the valueArray is the array of values for the replacement variables within the queryString.|
-			 */
-
-			function _exec(sqlExpressionData) {
-				var deferred = $q.defer(),
-					valueArray;
-
-				if (sqlExpressionData.valueArray) {
-					valueArray = sqlExpressionData.valueArray;
-				} else {
-					valueArray = [];
-				}
-
-				_db.transaction(function(tx) {
-					tx.executeSql(
-						sqlExpressionData.queryString,
-						valueArray,
-						function(t, resultset) {
-							deferred.resolve(resultset);
-						},
-						function(t, r, x) {
-							deferred.reject({
-								tx: t,
-								err: r
-							});
-						}
-
-					);
-				});
-
-				return deferred.promise;
-			}
-
-			/**
-			 * ### webSqlOperation(operation, noTransaction, data)
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |operation|String|Either one of (C\|U\|D\|BD\|BC)|
-			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization. This parameter is required, but can be `null`.|
-			 * |data|Object|Name Value Pairs|
-			 *
-			 *
-			 */
-
-			function webSqlOperation(operation, data, noTransaction, customFilters) {
-				// noTransaction is not required, but is needed to track transactions
-				var sqlExpressionData, id,
-					deferred = $q.defer(),
-					createObject = noWebSQLParser.createSqlInsertStmt(_tableName, data),
-					sqlStmtFns = {
-						"C": noWebSQLParser.createSqlInsertStmt,
-						"U": noWebSQLParser.createSqlUpdateStmt,
-						"D": noWebSQLParser.createSqlDeleteStmt,
-						"BD": noWebSQLParser.createSqlClearStmt,
-						"BC": noWebSQLParser.createSqlInsertStmt
-					},
-					filterOps = {
-						"C": function(data) {
-							return;
-						},
-						"U": function(data) {
-							var noFilters = new noInfoPath.data.NoFilters(),
-								id;
-							id = data[_table.primaryKey];
-							noFilters.add(_table.primaryKey, null, true, true, [{
-								operator: "eq",
-								value: id
-							}]);
-
-							return noFilters;
-						},
-						"D": function(data, filters) {
-							var noFilters,
-								id;
-
-							if (filters) {
-								noFilters = new noInfoPath.data.NoFilters(filters);
-							} else {
-								noFilters = new noInfoPath.data.NoFilters();
-								id = data[_table.primaryKey];
-								noFilters.add(_table.primaryKey, null, true, true, [{
-									operator: "eq",
-									value: id
-								}]);
-							}
-
-
-							return noFilters;
-						},
-						"BD": function() {},
-						"BC": function() {}
-					},
-					sqlOps = {
-						"C": function(data, noFilters, noTransaction) {
-							console.log(_table.primaryKey);
-							var pk = angular.isArray(_table.primaryKey) ?
-								_table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
-								sqlStmt;
-
-							if (pk && !data[pk]) {
-								data[_table.primaryKey] = noInfoPath.createUUID();
-							}
-
-							data.CreatedBy = noLoginService.user.userId;
-							data.DateCreated = noInfoPath.toDbDate(new Date());
-							data.ModifiedBy = noLoginService.user.userId;
-							data.ModifiedDate = noInfoPath.toDbDate(new Date());
-
-							sqlStmt = sqlStmtFns.C(_tableName, data, noFilters);
-
-							_exec(sqlStmt)
-								.then(function(result) {
-									_getOne(result.insertId)
-										.then(function(result) {
-											if (noTransaction) noTransaction.addChange(_tableName, result, operation);
-											deferred.resolve(result);
-										})
-										.catch(deferred.reject);
-								})
-								.catch(deferred.reject);
-						},
-						"U": function(data, noFilters, noTransaction) {
-							data.ModifiedBy = noLoginService.user.userId;
-							data.ModifiedDate = noInfoPath.toDbDate(new Date());
-
-							var sqlStmt = sqlStmtFns.U(_tableName, data, noFilters),
-								keys = [];
-
-							// for (var k in _table.primaryKey) {
-							//     var key = _table.primaryKey[k];
-							//
-							//     keys.push(data[key]);
-							// }
-
-							//_getOne(keys.join(","))
-							//    .then(function(result) {
-							_exec(sqlStmt)
-								.then(function(result) {
-									if (noTransaction) noTransaction.addChange(_tableName, data, "U");
-									deferred.resolve(data);
-								})
-								.catch(deferred.reject);
-							//})
-							//.catch(deferred.reject);
-						},
-						"D": function(data, noFilters, noTransaction) {
-							var sqlStmt = sqlStmtFns.D(_tableName, data, noFilters),
-								filter = !!data ? {
-									"key": _table.primaryKey,
-									"value": data[_table.primaryKey]
-								} : noFilters,
-								deleted;
-							_getOne(filter)
-								.then(function(datum) {
-									deleted = datum;
-									_exec(sqlStmt)
-										.then(function(result) {
-											if (noTransaction) noTransaction.addChange(_tableName, deleted, "D");
-											deferred.resolve(result);
-										}.bind(datum))
-										.catch(deferred.reject);
-								})
-								.catch(deferred.reject);
-						},
-						"BD": function() {
-							var sqlStmt = sqlStmtFns.D(_tableName);
-							_exec(sqlStmt)
-								.then(deferred.resolve)
-								.catch(deferred.reject);
-
-						},
-						"BC": function(data) {
-							for (var c in table.columns) {
-								var col = table.columns[c];
-								data[c] = noWebSQLParser.convertToWebSQL(col.type, data[c]);
-							}
-
-							var sqlStmt = sqlStmtFns.C(_tableName, data, null);
-
-							_exec(sqlStmt)
-								.then(deferred.resolve)
-								.catch(deferred.reject);
-						}
-					},
-					filters = filterOps[operation](data, customFilters);
-
-				sqlOps[operation](data, filters, noTransaction);
-
-
-				return deferred.promise;
-			}
-
-			/**
-			 * ### noCreate(data, noTransaction)
-			 *
-			 * Inserts a record into the websql database with the data provided.
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |data|Object|Name Value Pairs|
-			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
-			 */
-
-			this.noCreate = function(data, noTransaction) {
-				return webSqlOperation("C", data, noTransaction);
-			};
-
-			/**
-			 * ### noRead([NoFilters, NoSort, NoPage])
-			 *
-			 * Reads records from the websql database.
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |NoFilters|Object|(Optional) A noInfoPath NoFilters Array|
-			 * |NoSort|Object|(Optional) A noInfoPath NoSort Object|
-			 * |NoPage|Object|(Optional) A noInfoPath NoPage Object|
-			 */
-
-			this.noRead = function() {
-
-				var filters, sort, page,
-					deferred = $q.defer(),
-					readObject;
-
-				for (var ai in arguments) {
-					var arg = arguments[ai];
-
-					//success and error must always be first, then
-					if (angular.isObject(arg)) {
-						switch (arg.__type) {
-							case "NoFilters":
-								filters = arg;
-								break;
-							case "NoSort":
-								sort = arg;
-								break;
-							case "NoPage":
-								page = arg;
-								break;
-						}
-					}
-				}
-
-				readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort, page);
-
-				function _txCallback(tx) {
-					tx.executeSql(
-						readObject.queryString, [],
-						function(t, r) {
-							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
-							if (page) data.page(page);
-							deferred.resolve(data);
-						},
-						function(t, e) {
-							deferred.reject(arguments);
-						});
-				}
-
-				function _txFailure(error) {
-					console.error("Tx Failure", error);
-				}
-
-				function _txSuccess(data) {
-					//console.log("Tx Success", data);
-				}
-
-				_db.transaction(_txCallback, _txFailure, _txSuccess);
-
-				return deferred.promise;
-			};
-
-			/**
-			 * ### noUpdate(data, noTransaction)
-			 *
-			 * Updates a record from the websql database based on the Primary Key of the data provided.
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |data|Object|Name Value Pairs|
-			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
-			 */
-
-			this.noUpdate = function(data, noTransaction) {
-				// removed the filters parameter as we will most likely be updating one record at a time. Expand this by potentially renaming this to noUpdateOne and the replacement noUpdate be able to handle filters?
-				return webSqlOperation("U", data, noTransaction);
-			};
-
-			/**
-			 * ### noDestroy(data, noTransaction)
-			 *
-			 * Deletes a record from the websql database based on the Primary Key of the data provided.
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |data|Object|Name Value Pairs|
-			 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
-			 */
-
-			this.noDestroy = function(data, noTransaction, filters) {
-				return webSqlOperation("D", data, noTransaction, filters);
-			};
-
-			/**
-			 * ### noOne(data)
-			 *
-			 * Reads a record from the websql database based on the Primary Key of the data provided.
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |data|Object|Name Value Pairs|
-			 */
-			this.noOne = function(data) {
-				var deferred = $q.defer(),
-					key = data[_table.primaryKey],
-					oneObject = noWebSQLParser.createSqlOneStmt(_tableName, _table.primaryKey, key);
-
-				function _txCallback(tx) {
-
-					tx.executeSql(oneObject.queryString,
-						oneObject.valueArray,
-						function(t, r) {
-							var data = r.rows.length ? r.rows[0] : undefined;
-							deferred.resolve(data);
-						},
-						function(t, e) {
-							deferred.reject(e);
-						});
-
-				}
-
-				function _txFailure(error) {
-					console.error("Tx Failure", error);
-				}
-
-				function _txSuccess(data) {
-					//console.log("Tx Success", data);
-				}
-
-				_db.transaction(_txCallback, _txFailure, _txSuccess);
-
-				return deferred.promise;
-			};
-
-			this.bulkLoad = function(data, progress) {
-				var deferred = $q.defer(),
-					table = this;
-				//var table = this;
-				function _import(data, progress) {
-					var total = data ? data.length : 0;
-
-					$timeout(function() {
-						//progress.rows.start({max: total});
-						deferred.notify(progress);
-					});
-
-					var currentItem = 0;
-
-					//_dexie.transaction('rw', table, function (){
-					_next();
-					//});
-
-					function _next() {
-						if (currentItem < data.length) {
-							var datum = data[currentItem];
-
-							table.noBulkCreate(datum)
-								.then(function(data) {
-									//progress.updateRow(progress.rows);
-									deferred.notify(data);
-								})
-								.catch(function() {
-									deferred.reject({
-										entity: table,
-										error: arguments
-									});
-								})
-								.finally(function() {
-									currentItem++;
-									_next();
-								});
-
-						} else {
-							deferred.resolve(table.name);
-						}
-					}
-
-				}
-
-				//console.info("bulkLoad: ", table.TableName)
-
-				table.noClear()
-					.then(function() {
-						_import(data, progress);
-					}.bind(this));
-
-				return deferred.promise;
-			};
-
-			this.noUpsert = function(data) {
-				if (data[this.primaryKey]) {
-					return this.noUpdate(data);
-				} else {
-					return this.noCreate(data);
-				}
-			};
-
-			/**
-			 * ### noClear()
-			 *
-			 * Delete all rows from the current table.
-			 *
-			 * #### Returns
-			 * AngularJS Promise.
-			 */
-			this.noClear = function() {
-				return webSqlOperation("BD", null);
-			};
-
-			this.noBulkCreate = function(data) {
-				return webSqlOperation("BC", data);
-			};
-		}
-
-		/**
-		 * ## NoView
-		 * An in memory representation of complex SQL operation that involes
-		 * multiple tables and joins, as well as grouping and aggregation
-		 * functions.
-		 *
-		 * ##### NoView JSON Prototype
-		 *
-		 * ```json
-		 *	{
-		 *		"sql": String,
-		 *		"primaryKey": String,
-		 *		"params": []
-		 *	}
-		 * ```
-		 *
-		 * ##### References
-		 * - https://www.sqlite.org/lang_createview.html
-		 *
-		 */
-		function NoView(view, viewName, database) {
-			if (!view) throw "view is a required parameter";
-			if (!viewName) throw "viewName is a required parameter";
-			if (!database) throw "database is a required parameter";
-
-			var _view = view,
-				_viewName = viewName,
-				_db = database;
-
-			Object.defineProperties(this, {
-				"__type": {
-					"get": function() {
-						return "INoCRUD";
-					}
-				},
-				"primaryKey": {
-					"get": function() {
-						return _view.primaryKey;
-					}
-				},
-				"entityName": {
-					"get": function() {
-						return _viewName;
-					}
-				}
-
-			});
-
-			this.noCreate = angular.noop;
-
-			this.noRead = function() {
-
-				var filters, sort, page,
-					deferred = $q.defer(),
-					readObject;
-
-				for (var ai in arguments) {
-					var arg = arguments[ai];
-
-					//success and error must always be first, then
-					if (angular.isObject(arg)) {
-						switch (arg.__type) {
-							case "NoFilters":
-								filters = arg;
-								break;
-							case "NoSort":
-								sort = arg;
-								break;
-							case "NoPage":
-								page = arg;
-								break;
-						}
-					}
-				}
-
-				readObject = noWebSQLParser.createSqlReadStmt(_viewName, filters, sort, page);
-
-				function _txCallback(tx) {
-					tx.executeSql(
-						readObject.queryString, [],
-						function(t, r) {
-							var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
-							if (page) data.page(page);
-							_getTotal(_db, _viewName, filters)
-								.then(function(total) {
-									data.total = total;
-									deferred.resolve(data);
-								})
-								.catch(deferred.reject);
-						},
-						function(t, e) {
-							console.error(e);
-							throw e;
-						});
-				}
-
-				function _txFailure(error) {
-					throw error;
-				}
-
-				function _txSuccess(data) {
-					//console.log("Tx Success", data);
-				}
-
-				_db.transaction(_txCallback, _txFailure, _txSuccess);
-
-				return deferred.promise;
-			};
-
-			/**
-			 * ### noOne(data)
-			 *
-			 * Reads a record from the websql database based on the Primary Key of the data provided.
-			 *
-			 * #### Parameters
-			 *
-			 * |Name|Type|Description|
-			 * |----|----|-----------|
-			 * |data|Object|Name Value Pairs|
-			 */
-			this.noOne = function(data, primaryKey) {
-				var deferred = $q.defer(),
-					key = data[primaryKey],
-					oneObject = noWebSQLParser.createSqlOneStmt(_viewName, primaryKey, key);
-
-				function _txCallback(tx) {
-
-					tx.executeSql(oneObject.queryString,
-						oneObject.valueArray,
-						function(t, r) {
-							var data = r.rows.length ? r.rows[0] : undefined;
-							deferred.resolve(data);
-						},
-						function(t, e) {
-							deferred.reject(e);
-						});
-
-				}
-
-				function _txFailure(error) {
-					console.error("Tx Failure", error);
-				}
-
-				function _txSuccess(data) {
-					//console.log("Tx Success", data);
-				}
-
-				_db.transaction(_txCallback, _txFailure, _txSuccess);
-
-				return deferred.promise;
-			};
-
-			this.noUpdate = angular.noop;
-
-			this.noDestroy = angular.noop;
-
-			this.bulkLoad = angular.noop;
-
-			this.noClear = angular.noop;
-		}
-
-		function _getTotal(db, entityName, noFilter) {
-
-			var deferred = $q.defer(),
-				filterExpression = noFilter ? " WHERE " + noFilter.toSQL() : "",
-				sqlExpressionData = {
-					"queryString": "SELECT COUNT() AS total FROM " + entityName + filterExpression
-				};
-
-			_exec(db, sqlExpressionData)
-				.then(function(resultset) {
-					if (resultset.rows.length === 0) {
-						deferred.resolve(0);
-					} else {
-						deferred.resolve(resultset.rows[0].total);
-					}
-				})
-				.catch(deferred.reject);
-
-			return deferred.promise;
-
-		}
-
-		function _exec(db, sqlExpressionData) {
-			var deferred = $q.defer(),
-				valueArray;
-
-			if (sqlExpressionData.valueArray) {
-				valueArray = sqlExpressionData.valueArray;
-			} else {
-				valueArray = [];
-			}
-
-			db.transaction(function(tx) {
-				tx.executeSql(
-					sqlExpressionData.queryString,
-					valueArray,
-					function(t, resultset) {
-						deferred.resolve(resultset);
-					},
-					function(t, r, x) {
-						deferred.reject({
-							tx: t,
-							err: r
-						});
-					}
-
-				);
-			});
-
-			return deferred.promise;
-		}
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noWebSQL", ["$parse", "$rootScope", "lodash", "$q", "$timeout", "noLogService", "noLoginService", "noLocalStorage", "noWebSQLParser", function($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
-			return new NoWebSQLService($parse, $rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser);
+		.constant("WEBSQL_IDENTIFIERS", WEBSQL_IDENTIFIERS)
+
+		.constant("WEBSQL_STATEMENT_BUILDERS", WEBSQL_STATEMENT_BUILDERS)
+
+		.factory("noWebSqlStatementFactory", ["WEBSQL_IDENTIFIERS", "WEBSQL_STATEMENT_BUILDERS", function(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS){
+			return new NoWebSqlStatementFactory(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS);
 		}])
-		.service("noWebSQLParser", [function() {
-			return new NoWebSQLParser();
-		}]);
+
+		.factory("noWebSqlEntityFactory", ["$rootScope", "$q", "$timeout", "lodash", "noWebSqlStatementFactory", function($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory){
+			return new NoWebSqlEntityFactory($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory);
+		}])
+
+		.factory("noWebSql", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory) {
+			return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory);
+		}])
+
+		.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory) {
+			return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory);
+		}])
+	;
 })(angular);
 
 //transaction.js
@@ -3455,6 +3444,7 @@ var GloboTest = {};
 				function normalizeTransactions(config, schema) {
 
 					var noTransactions = config.noDataSource.noTransaction,
+
 						vw = schema.entity(config.noDataSource.crudEntity),
 						lu = schema.entity(config.noDataSource.entityName),
 						keysv = _.keys(lu.columns),
@@ -4093,6 +4083,8 @@ var GloboTest = {};
 (function(angular, Dexie, undefined) {
 	"use strict";
 
+	console.log("Hello from IndexedDB");
+
 	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
 
 		var _name;
@@ -4105,59 +4097,9 @@ var GloboTest = {};
 			}
 		});
 
-		this.configure = function(noUser, config, schema) {
-			var deferred = $q.defer(),
-				_dexie = new Dexie(schema.config.dbName),
+		this.configure = function(noUser, schema) {
+			var _dexie = new Dexie(schema.config.dbName),
 				noIndexedDbInitialized = "noIndexedDb_" + schema.config.dbName;
-
-			$timeout(function() {
-				_dexie.currentUser = noUser;
-				_dexie.on('error', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("Dexie Error: " + err);
-					deferred.reject(err);
-				});
-
-				_dexie.on('blocked', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndexedDB is currently execting a blocking operation.");
-					deferred.reject(err);
-				});
-
-				_dexie.on('versionchange', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("IndexedDB as detected a version change");
-				});
-
-				_dexie.on('populate', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndedexDB populate...  not implemented.");
-				});
-
-				_dexie.on('ready', function(data) {
-					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
-					// Log to console or show en error indicator somewhere in your GUI...
-					$rootScope[noIndexedDbInitialized] = _dexie;
-					deferred.resolve();
-				});
-
-				if (_dexie.isOpen()) {
-					$timeout(function() {
-						//noLogService.log("Dexie already open.")
-						window.noInfoPath.digest(deferred.resolve);
-					});
-				} else {
-					if (_.size(schema.store)) {
-						_dexie.version(schema.config.version)
-							.stores(schema.store);
-						_extendDexieTables.call(_dexie, schema.tables);
-						_dexie.open();
-					} else {
-						noLogService.warn("Waiting for noDbSchema data.");
-					}
-
-				}
-			});
 
 			function _extendDexieTables(dbSchema) {
 				function _toDexieClass(tsqlTableSchema) {
@@ -4197,7 +4139,60 @@ var GloboTest = {};
 				});
 			}
 
-			return deferred.promise;
+
+			return $q(function(resolve, reject) {
+				_dexie.currentUser = noUser;
+				_dexie.on('error', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.error("Dexie Error: " + err);
+					reject(err);
+					$rootScope.$digest();
+				});
+
+				_dexie.on('blocked', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.warn("IndexedDB is currently execting a blocking operation.");
+					reject(err);
+					$rootScope.$digest();
+				});
+
+				_dexie.on('versionchange', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.error("IndexedDB as detected a version change");
+				});
+
+				_dexie.on('populate', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.warn("IndedexDB populate...  not implemented.");
+				});
+
+				_dexie.on('ready', function(data) {
+					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
+					// Log to console or show en error indicator somewhere in your GUI...
+					$rootScope[noIndexedDbInitialized] = _dexie;
+					resolve();
+					$rootScope.$digest();
+				});
+
+				if (_dexie.isOpen()) {
+					$timeout(function() {
+						//noLogService.log("Dexie already open.")
+						window.noInfoPath.digest(deferred.resolve);
+					});
+				} else {
+					if (_.size(schema.store)) {
+						_dexie.version(schema.config.version)
+							.stores(schema.store);
+						_extendDexieTables.call(_dexie, schema.tables);
+						_dexie.open();
+					} else {
+						noLogService.warn("Waiting for noDbSchema data.");
+					}
+
+				}
+			});
+
+
 		};
 
 		this.whenReady = function(config) {
@@ -4780,9 +4775,6 @@ var GloboTest = {};
 
 	}
 
-	//noInfoPath.data.noIndexedDb = noIndexedDb;
-
-	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
 		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
