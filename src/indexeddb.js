@@ -164,6 +164,8 @@
 (function(angular, Dexie, undefined) {
 	"use strict";
 
+	console.log("Hello from IndexedDB");
+
 	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
 
 		var _name;
@@ -176,59 +178,9 @@
 			}
 		});
 
-		this.configure = function(noUser, config, schema) {
-			var deferred = $q.defer(),
-				_dexie = new Dexie(schema.config.dbName),
+		this.configure = function(noUser, schema) {
+			var _dexie = new Dexie(schema.config.dbName),
 				noIndexedDbInitialized = "noIndexedDb_" + schema.config.dbName;
-
-			$timeout(function() {
-				_dexie.currentUser = noUser;
-				_dexie.on('error', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("Dexie Error: " + err);
-					deferred.reject(err);
-				});
-
-				_dexie.on('blocked', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndexedDB is currently execting a blocking operation.");
-					deferred.reject(err);
-				});
-
-				_dexie.on('versionchange', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("IndexedDB as detected a version change");
-				});
-
-				_dexie.on('populate', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndedexDB populate...  not implemented.");
-				});
-
-				_dexie.on('ready', function(data) {
-					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
-					// Log to console or show en error indicator somewhere in your GUI...
-					$rootScope[noIndexedDbInitialized] = _dexie;
-					deferred.resolve();
-				});
-
-				if (_dexie.isOpen()) {
-					$timeout(function() {
-						//noLogService.log("Dexie already open.")
-						window.noInfoPath.digest(deferred.resolve);
-					});
-				} else {
-					if (_.size(schema.store)) {
-						_dexie.version(schema.config.version)
-							.stores(schema.store);
-						_extendDexieTables.call(_dexie, schema.tables);
-						_dexie.open();
-					} else {
-						noLogService.warn("Waiting for noDbSchema data.");
-					}
-
-				}
-			});
 
 			function _extendDexieTables(dbSchema) {
 				function _toDexieClass(tsqlTableSchema) {
@@ -268,7 +220,60 @@
 				});
 			}
 
-			return deferred.promise;
+
+			return $q(function(resolve, reject) {
+				_dexie.currentUser = noUser;
+				_dexie.on('error', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.error("Dexie Error: " + err);
+					reject(err);
+					$rootScope.$digest();
+				});
+
+				_dexie.on('blocked', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.warn("IndexedDB is currently execting a blocking operation.");
+					reject(err);
+					$rootScope.$digest();
+				});
+
+				_dexie.on('versionchange', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.error("IndexedDB as detected a version change");
+				});
+
+				_dexie.on('populate', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.warn("IndedexDB populate...  not implemented.");
+				});
+
+				_dexie.on('ready', function(data) {
+					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
+					// Log to console or show en error indicator somewhere in your GUI...
+					$rootScope[noIndexedDbInitialized] = _dexie;
+					resolve();
+					$rootScope.$digest();
+				});
+
+				if (_dexie.isOpen()) {
+					$timeout(function() {
+						//noLogService.log("Dexie already open.")
+						window.noInfoPath.digest(deferred.resolve);
+					});
+				} else {
+					if (_.size(schema.store)) {
+						_dexie.version(schema.config.version)
+							.stores(schema.store);
+						_extendDexieTables.call(_dexie, schema.tables);
+						_dexie.open();
+					} else {
+						noLogService.warn("Waiting for noDbSchema data.");
+					}
+
+				}
+			});
+
+
 		};
 
 		this.whenReady = function(config) {
@@ -851,9 +856,6 @@
 
 	}
 
-	//noInfoPath.data.noIndexedDb = noIndexedDb;
-
-	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
 		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);

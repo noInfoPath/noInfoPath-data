@@ -23,6 +23,8 @@
   },
   "devDependencies": {
     "@noinfopath/noinfopath-logger": "^1.0.1",
+    "@noinfopath/noinfopath-user": "^1.0.0",
+    "angular-base64": "^2.0.5",
     "angular-mocks": "^1.4.7",
     "es5-shim": "^4.1.6",
     "grunt": "^0.4.5",

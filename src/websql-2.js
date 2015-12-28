@@ -1022,7 +1022,7 @@
 	/*
 	*	## @class NoWebSqlService
 	*/
-	function NoWebSqlService($rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
+	function NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
 		var _name;
 
 		Object.defineProperties(this, {
@@ -1034,14 +1034,13 @@
 		});
 
 		//TODO: modify config to also contain Views, as well as, Tables.
-		this.configure = function(noUser, config, schema) {
+		this.configure = function(noUser, schema) {
+			if(!noUser || noUser.constructor.name !== "NoInfoPathUser") throw "noWebSql::configure requires the first parameter to be a NoInfoPathUser object.";
+			if(!schema || schema.constructor.name !== "NoDbSchema") throw "noWebSql::configure requires the second parameter to be a NoDbSchema object.";
+
 			var _webSQL = null,
 				promises = [],
-				noWebSQLInitialized = "noWebSQL_" + schema.config.dbName,
-				noConstructors = {
-					"T": NoTable,
-					"V": NoView
-				};
+				noWebSQLInitialized = "noWebSQL_" + schema.dbName;
 
 			_webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
 
@@ -1051,8 +1050,8 @@
 			angular.forEach(schema.tables, function(table, name) {
 
 				var
-					db = this;
-					t = new NoWebSqlEntity(table, name, db);
+					db = this,
+					t = noWebSqlEntityFactory.create(table, name, db);
 
 				db[name] = t;
 				promises.push(t.configure());
@@ -1061,10 +1060,14 @@
 			return $q.all(promises)
 				.then(function() {
 					$rootScope[noWebSQLInitialized] = _webSQL;
+					return _webSQL;
+				})
+				.catch(function(err){
+					console.error(err);
 				});
 		};
 
-		this.whenReady = function(config) {
+		this.whenReady = function() {
 			return $q(function(resolve, reject){
 				var noWebSQLInitialized = "noWebSQL_" + config.dbName;
 
@@ -1099,8 +1102,8 @@
 			return new NoWebSqlEntityFactory($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory);
 		}])
 
-		.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noLocalStorage, noWebSqlStatementFactory) {
-			return new NoWebSQLService($rootScope, _, $q, $timeout, noLocalStorage, noWebSqlStatementFactory);
+		.factory("noWebSql", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory) {
+			return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory);
 		}])
 	;
 })(angular);

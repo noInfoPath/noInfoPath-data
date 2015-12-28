@@ -1,5 +1,5 @@
 //configuration.mock.js
-console.warn("TODO: Refactor actual noConfig service to work more like this mock");
+//console.warn("TODO: Refactor actual noConfig service to work more like this mock");
 
 var mockConfig = {
 	"RESTURI": "http://fcfn-rest.img.local/odata",
@@ -8,7 +8,7 @@ var mockConfig = {
 	"noDbSchema": [
 		{
 			"dbName": "NoInfoPath_dtc_v1",
-			"provider": "noIndexedDB",
+			"provider": "noIndexedDb",
 			"remoteProvider:": "noHTTP",
 			"version": 1,
 			"schemaSource": {
@@ -22,7 +22,7 @@ var mockConfig = {
 		},
 		{
 			"dbName": "FCFNv2",
-			"provider": "noWebSQL",
+			"provider": "noWebSql",
 			"remoteProvider": "noHTTP",
 			"version": 1,
 			"description": "Fall Creek Variety Development Database",
@@ -44,7 +44,140 @@ var mockConfig = {
 		"description" : "noinfopath",
 		"size": 500000000
 	}
+},
+tablesMock = {
+	"foo": {
+		"columns": {
+			"Description": {
+				"nullable": true,
+				"type": "varchar",
+				"length": 50,
+				"columnName": "Description"
+			},
+			"fooID": {
+				"nullable": false,
+				"type": "uniqueidentifier",
+				"length": 0,
+				"columnName": "fooID"
+			},
+			"barID": {
+				"nullable": true,
+				"type": "uniqueidentifier",
+				"length": 0,
+				"columnName": "barID"
+			},
+			"number": {
+				"nullable": true,
+				"type": "int",
+				"length": 0,
+				"columnName": "number"
+			},
+			"price": {
+				"nullable": false,
+				"type": "decimal",
+				"length": 0,
+				"columnName": "price"
+			},
+			"CreatedBy": {
+				"nullable": false,
+				"type": "uniqueidentifier",
+				"length": 0,
+				"columnName": "CreatedBy"
+			},
+			"DateCreated": {
+				"nullable": false,
+				"type": "Date",
+				"length": 0,
+				"columnName": "DateCreated"
+			},
+			"ModifiedBy": {
+				"nullable": false,
+				"type": "uniqueidentifier",
+				"length": 0,
+				"columnName": "CreatedBy"
+			},
+			"ModifiedDate": {
+				"nullable": false,
+				"type": "Date",
+				"length": 0,
+				"columnName": "DateCreated"
+			}
+		},
+		"foreignKeys": {
+			"barID": {
+				"table": "bar",
+				"column": "barID"
+			}
+		},
+		"primaryKey": ["fooID"],
+		"entityType": "T",
+		"entityName": "foo"
+	},
+	"vw_foo": {
+		"columns": {
+			"CooperatorID": {
+				"nullable": false,
+				"type": "uniqueidentifier",
+				"length": 16,
+				"columnName": "CooperatorID"
+			},
+			"Account": {
+				"nullable": true,
+				"type": "nvarchar",
+				"length": 510,
+				"columnName": "Account"
+			},
+			"CooperatorName": {
+				"nullable": true,
+				"type": "nvarchar",
+				"length": 100,
+				"columnName": "CooperatorName"
+			},
+			"Inactive": {
+				"nullable": true,
+				"type": "bit",
+				"length": 1,
+				"columnName": "Inactive"
+			},
+			"CreatedBy": {
+				"nullable": true,
+				"type": "nvarchar",
+				"length": 100,
+				"columnName": "CreatedBy"
+			},
+			"ModifiedBy": {
+				"nullable": true,
+				"type": "nvarchar",
+				"length": 100,
+				"columnName": "ModifiedBy"
+			},
+			"DateCreated": {
+				"nullable": true,
+				"type": "datetime",
+				"length": 8,
+				"columnName": "DateCreated"
+			},
+			"ModifiedDate": {
+				"nullable": true,
+				"type": "datetime",
+				"length": 8,
+				"columnName": "ModifiedDate"
+			},
+			"Notes": {
+				"nullable": true,
+				"type": "nvarchar",
+				"length": -1,
+				"columnName": "Notes"
+			}
+		},
+		"foreignKeys": {},
+		"primaryKey": [],
+		"entityType": "V",
+		"entityName": "vw_foo",
+		"entitySQL": "CREATE VIEW vw_foo AS SELECT * from foo"
+	}
 };
+
 
 (function(angular, undefined){
 	"use strict";
