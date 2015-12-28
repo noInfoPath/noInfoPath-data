@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.0.22
+@version 1.1.1
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -559,18 +559,6 @@ whenReady is used to check if this service has completed its load phase. If it h
 #### Returns
 AngularJS::Promise
 
-## noDbSchema
-The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
-
-### Properties
-
-
-|Name|Type|Description|
-|----|----|-----------|
-|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-|tables|Object|A hash table of NoInfoPath database schema definitions|
-|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
-
 ## NoDbSchema : Class
 This provides
 
@@ -639,6 +627,18 @@ Creates unique instances of NoDbSchema based on noDBSchema configuration data.
 
 > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
 
+## noDbSchema
+The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
+
+### Properties
+
+
+|Name|Type|Description|
+|----|----|-----------|
+|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
+|tables|Object|A hash table of NoInfoPath database schema definitions|
+|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
+
 ## @interface INoQueryBuilder
 
 > INoQueryBuilder is a conceptual entity, it does not really exist
@@ -702,7 +702,7 @@ required to create and use a WebSQL database.
 
 This class encapulates the CRUD functionality for NoInfoPath's implementation
 of WebSQL. It abstracts the fundimental differences between SQL Views and Tables.
-Exceptions will be thrown when a method is called that a SQL View connot support.
+Exceptions will be thrown when a method is called that a SQL View connot supported.
 
 
 
@@ -814,6 +814,10 @@ as such. When not, then it expected to be a special object.
 
 #### Remarks
 
+> NOTE: noinfopath-data only support primary keys that are strings. This
+> is because we are expecting GUID or UUID as primary key, as the are
+> inherently replicatable.
+
 
 When 'query' is an object then check to see if it is a
 NoFilters object.  If not, add a filter to the intrinsic filters object
@@ -830,11 +834,6 @@ by it's primary key.
 > Passing a string when the entity is
 a SQL View is not allowed.
 
-### @method bulkload(data, progress)
-
-Returns an AngularJS Promise.  Takes advantage of
-Promise.notify to report project of the bulkLoad operation.
-
 ### @method noUpsert(data)
 
 ### @method noClear()
@@ -848,6 +847,11 @@ AngularJS Promise.
 
 Inserts object in to the WebSQL database, converting data from
 ANSI SQL to WebSQL.  No transactions are recorded during this operation.
+
+### @method bulkload(data, progress)
+
+Returns an AngularJS Promise.  Takes advantage of
+Promise.notify to report project of the bulkLoad operation.
 
 ## @class NoWebSqlEntityFactory
 

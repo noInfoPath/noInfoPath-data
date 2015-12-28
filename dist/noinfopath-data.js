@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.0.22
+*	@version 1.1.1
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -355,6 +355,24 @@
 		return outval;
 	}
 
+	function normalizeSafeValue(inval) {
+		var outval = inval;
+
+		if(angular.isDate(inval)){
+			outval = "datetime( ?, 'utc')";
+		}else if (angular.isString(inval)) {
+			outval = "?";
+		}
+
+		return outval;
+	}
+
+	function safeValue(inval) {
+		var outval = "?";
+
+		return outval;
+	}
+
 	function normalizeLogic(inval) {
 		return inval ? " " + inval : "";
 	}
@@ -374,22 +392,22 @@
 		},
         sqlOperators = {
 			"eq": function(v) {
-				return "= " + normalizeValue(v);
+				return "= " + normalizeSafeValue(v);
 			},
 			"ne": function(v) {
-				return "!= " + normalizeValue(v);
+				return "!= " + normalizeSafeValue(v);
 			},
 			"gt": function(v) {
-				return "> " + normalizeValue(v);
+				return "> " + normalizeSafeValue(v);
 			},
 			"ge": function(v) {
-				return ">= " + normalizeValue(v);
+				return ">= " + normalizeSafeValue(v);
 			},
 			"lt": function(v) {
-				return "< " + normalizeValue(v);
+				return "< " + normalizeSafeValue(v);
 			},
 			"le": function(v) {
-				return "<= " + normalizeValue(v);
+				return "<= " + normalizeSafeValue(v);
 			},
 			"contains": function(v) {
 				return "LIKE '%" + String(v) + "%'";
@@ -416,12 +434,19 @@
 
 
 		this.operator = operator;
-		this.value = value ? value : "";
+		this.value = value;
 		this.logic = logic;
 
 		this.toSQL = function() {
 			var opFn = normalizeOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
+
+			return rs;
+		};
+
+		this.toSafeSQL = function() {
+			var opFn = normalizeOperator(this.operator),
+				rs = opFn("?") + normalizeLogic(this.logic);
 
 			return rs;
 		};
@@ -517,6 +542,28 @@
 			return rs;
 		};
 
+		this.toSafeSQL = function () {
+			var rs = "",
+				rsArray = [],
+				values  = [];
+
+			angular.forEach(this, function(filter, key) {
+
+				if (this.length == key + 1) {
+					filter.logic = null;
+				}
+
+				var tmp = filter.toSafeSQL();
+
+				rsArray.push(tmp.sql);
+				values = values.concat(tmp.values);
+			}, this);
+
+			rs = rsArray.join("");
+
+			return {queryString: rs, valueArray: values};
+		};
+
 		this.add = function(column, logic, beginning, end, filters) {
 			if (!column) throw "NoFilters::add requires a column to filter on.";
 			if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
@@ -609,6 +656,27 @@
 			if (!!this.logic) rs += " " + logic + " ";
 
 			return rs;
+		};
+
+		this.toSafeSQL = function() {
+			var rs = "",
+				filterArray = [],
+				filterArrayString = "",
+				values = [];
+
+			angular.forEach(this.filters, function(exp, key) {
+				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+				values.push(exp.value);
+			}, this);
+
+			filterArrayString = filterArray.join(" ");
+
+			if (!!this.beginning) rs = "(";
+			rs += filterArrayString;
+			if (!!this.end) rs += ")";
+			if (!!this.logic) rs += " " + logic + " ";
+
+			return {sql: rs, values: values};
 		};
 		// this.add = function(column, logic, beginning, end, filters) {
 		// 	this.column = column;
@@ -1620,8 +1688,301 @@
 var GloboTest = {};
 (function(angular, Dexie, undefined) {
 	"use strict";
+	// TODO: Finish documentation
+	/*
+	 * ## NoDbSchema : Class
+	 * This provides
+	 *
+	 * ### Constructors
+	 *
+	 * #### Constructor()
+	 *
+	 * ##### Usage
+	 * ```js
+	 * var x = new NoDbSchema();
+	 * ```
+	 *
+	 * ##### Parameters
+	 *
+	 * None
+	 *
+	 * ### Methods
+	 *
+	 * #### createSqlTableStmt(tableName, tableConfig)
+	 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
+	 *
+	 * ##### Usage
+	 * ```js
+	 * var x = createSqlTableStmt(tableName, tableConfig);
+	 * ```
+	 * ##### Parameters
+	 *
+	 * |Name|Type|Description|
+	 * |----|----|-----------|
+	 * |tableName|String|The name of the table to be created|
+	 * |tableConfig|Object|The schema of the table to be created|
+	 *
+	 * ##### Returns
+	 * Returns a SQL query string
+	 *
+	 * ### Properties
+	 * |Name|Type|Description|
+	 * |----|----|-----------|
+	 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
+	 */
+	/*
+	 * ```json
+	 * {
+	 *		"dbName": "NoInfoPath_dtc_v1",
+	 *		"provider": "noIndexedDB",
+	 *		"remoteProvider:": "noHTTP",
+	 *		"version": 1,
+	 *		"schemaSource": {
+	 *			"provider": "inline",
+	 *			"schema": {
+	 *				"store": {
+	 *					"NoInfoPath_Changes": "$$ChangeID"
+	 *				},
+	 *				"tables": {
+	 *					"NoInfoPath_Changes": {
+	 *						"primaryKey": "ChangeID"
+	 *					}
+	 *				}
+	 *			}
+	 *		}
+	 *	}
+	 * ```
+	 */
+
+
+	function NoDbSchema(_, noConfig, noDbConfig, rawDbSchema) {
+		//console.warn(rawDbSchema);
+
+		var _config = {},
+			_tables = rawDbSchema,
+			_views = {},
+			_sql = {},
+			_schemaConfig = noDbConfig;
+
+		Object.defineProperties(this, {
+			"store": {
+				"get": function() {
+					return _config;
+				}
+			},
+			"tables": {
+				"get": function() {
+					return _tables;
+				}
+			},
+			"lookups": {
+				"get": function() {
+					return _.filter(_tables, function(o) {
+						return o.entityName.indexOf("LU") === 0;
+					});
+				}
+			},
+			"isReady": {
+				"get": function() {
+					return _.size(_tables) > 0;
+				}
+			},
+			"sql": {
+				"get": function() {
+					return _sql;
+				}
+			},
+			"views": {
+				"get": function() {
+					return _views;
+				}
+			},
+			"config": {
+				"get": function() {
+					return _schemaConfig;
+				}
+			}
+		});
+
+		this.entity = function(name) {
+			return _.find(_tables, function(v) {
+				return v.entityName === name;
+			});
+		};
+
+		_views = _.filter(_tables, function(o) {
+			return o.entityType == "V";
+		});
+
+
+		angular.forEach(_tables, function(table, tableName) {
+			var primKey = "$$" + table.primaryKey,
+				foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column"))
+				.join(",");
+
+			//Prep as a Dexie Store config
+			_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+		});
+
+	}
+
+	/**
+	 *	### NoDbSchemaFactory
+	 *
+	 *	Creates unique instances of NoDbSchema based on noDBSchema configuration data.
+	 */
+
+	function NoDbSchemaFactory($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
+		var noConfig,
+			promises = [],
+			schemaSourceProviders = {
+				"inline": function(key, schemaConfig) {
+					return $timeout(function() {
+						return schemaConfig.schemaSource.schema;
+					});
+				},
+				"noDBSchema": function(key, schemaConfig) {
+					return getRemoteSchema(noConfig)
+						.then(function(resp) {
+							return resp.data;
+						})
+						.catch(function(err) {
+							throw err;
+						});
+				},
+				"cached": function(key, schemaConfig) {
+					var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
+
+					return $q(function(resolve, reject) {
+						$rootScope.$watch(schemaKey, function(newval) {
+							if (newval) {
+								resolve(newval.tables);
+							}
+						});
+
+					});
+				}
+			};
+
+		function getRemoteSchema(config) {
+			var req = {
+				method: "GET",
+				url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
+				headers: {
+					"Content-Type": "application/json",
+					"Accept": "application/json"
+				},
+				withCredentials: true
+			};
+
+			return $http(req)
+				.then(function(resp) {
+					return resp;
+				})
+				.catch(function(resp) {
+					throw resp;
+				});
+		}
+
+		function checkCache(schemaKey) {
+			return noLocalStorage.getItem(schemaKey);
+		}
+
+		function resolveSchema(schemaKey, schemaConfig) {
+			var deferred = $q.defer(),
+				schemaProvider = schemaConfig.schemaSource.provider;
+
+			if ($rootScope[schemaKey]) {
+				deferred.resolve(schemaKey);
+			} else {
+				$rootScope.$watch(schemaKey, function(newval, oldval) {
+					if (newval) {
+						noLocalStorage.setItem(schemaKey, newval.tables);
+						deferred.resolve(schemaKey);
+					}
+				});
+
+				schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
+					.then(function(schema) {
+						$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
+					})
+					.catch(function() {
+						var schema = checkCache(schemaKey);
+						if (schema) {
+							$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+						} else {
+							deferred.reject("noDbSchemaServiceOffline");
+						}
+					});
+			}
+
+			return deferred.promise;
+		}
+
+		// when calling noDbSchema.whenReady you need to bind the call
+		// with the configuration.
+
+		/**
+		 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
+		 */
+		this.whenReady = function(config) {
+			noConfig = config.current;
+
+			var noDbSchemaConfig = noConfig.noDbSchema,
+				promises = [];
+
+			for (var c in noDbSchemaConfig) {
+				var schemaConfig = noDbSchemaConfig[c],
+					schemaKey = "noDbSchema_" + schemaConfig.dbName;
+
+				promises.push(resolveSchema(schemaKey, schemaConfig));
+			}
+
+			return $q.all(promises)
+				.then(function(results) {
+					$rootScope.noDbSchema_names = results;
+					return results;
+				})
+				.catch(function(err) {
+					throw err;
+				});
+
+		};
+
+		this.configureDatabases = function(noUser, noDbSchemaConfigs) {
+			var promises = [];
+
+			for (var s in noDbSchemaConfigs) {
+				var schemaName = noDbSchemaConfigs[s],
+					schema = $rootScope[schemaName],
+					provider = $injector.get(schema.config.provider);
+
+				promises.push(provider.configure(noUser, schema));
+
+			}
+
+			return $q.all(promises)
+				.then(function(resp){
+					console.log(resp);
+				})
+				.catch(function(err){
+					console.error(err);
+				});
+
+		};
+
+		this.getSchema = function(dbName) {
+			var schema = $rootScope["noDbSchema_" + dbName];
+			return schema;
+		};
+
+		this.create = function(noConfig, noDbConfig, rawDbSchema) {
+			return new NoDbSchema(_, noConfig, noDbConfig, rawDbSchema);
+		};
+	}
 
 	angular.module("noinfopath.data")
+
 
 	/*
 	 * ## noDbSchema
@@ -1638,290 +1999,8 @@ var GloboTest = {};
 	*/
 
 	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
-		// TODO: Finish documentation
-		/*
-		 * ## NoDbSchema : Class
-		 * This provides
-		 *
-		 * ### Constructors
-		 *
-		 * #### Constructor()
-		 *
-		 * ##### Usage
-		 * ```js
-		 * var x = new NoDbSchema();
-		 * ```
-		 *
-		 * ##### Parameters
-		 *
-		 * None
-		 *
-		 * ### Methods
-		 *
-		 * #### createSqlTableStmt(tableName, tableConfig)
-		 * Returns a SQL query string that creates a table given the provided tableName and tableConfig
-		 *
-		 * ##### Usage
-		 * ```js
-		 * var x = createSqlTableStmt(tableName, tableConfig);
-		 * ```
-		 * ##### Parameters
-		 *
-		 * |Name|Type|Description|
-		 * |----|----|-----------|
-		 * |tableName|String|The name of the table to be created|
-		 * |tableConfig|Object|The schema of the table to be created|
-		 *
-		 * ##### Returns
-		 * Returns a SQL query string
-		 *
-		 * ### Properties
-		 * |Name|Type|Description|
-		 * |----|----|-----------|
-		 * |queryString|String|Returns a SQL query string that creates a table given the provided tableName and tableConfig|
-		 */
-		/*
-		 * ```json
-		 * {
-		 *		"dbName": "NoInfoPath_dtc_v1",
-		 *		"provider": "noIndexedDB",
-		 *		"remoteProvider:": "noHTTP",
-		 *		"version": 1,
-		 *		"schemaSource": {
-		 *			"provider": "inline",
-		 *			"schema": {
-		 *				"store": {
-		 *					"NoInfoPath_Changes": "$$ChangeID"
-		 *				},
-		 *				"tables": {
-		 *					"NoInfoPath_Changes": {
-		 *						"primaryKey": "ChangeID"
-		 *					}
-		 *				}
-		 *			}
-		 *		}
-		 *	}
-		 * ```
-		 */
 
-
-		function NoDbSchema(noConfig, noDbConfig, rawDbSchema) {
-			//console.warn(rawDbSchema);
-
-			var _config = {},
-				_tables = rawDbSchema,
-				_views = {},
-				_sql = {},
-				_schemaConfig = noDbConfig;
-
-			Object.defineProperties(this, {
-				"store": {
-					"get": function() {
-						return _config;
-					}
-				},
-				"tables": {
-					"get": function() {
-						return _tables;
-					}
-				},
-				"lookups": {
-					"get": function() {
-						return _.filter(_tables, function(o) {
-							return o.entityName.indexOf("LU") === 0;
-						});
-					}
-				},
-				"isReady": {
-					"get": function() {
-						return _.size(_tables) > 0;
-					}
-				},
-				"sql": {
-					"get": function() {
-						return _sql;
-					}
-				},
-				"views": {
-					"get": function() {
-						return _views;
-					}
-				},
-				"config": {
-					"get": function() {
-						return _schemaConfig;
-					}
-				}
-			});
-
-			this.entity = function(name) {
-				return _.find(_tables, function(v) {
-					return v.entityName === name;
-				});
-			};
-
-			_views = _.filter(_tables, function(o) {
-				return o.entityType == "V";
-			});
-
-
-			angular.forEach(_tables, function(table, tableName) {
-				var primKey = "$$" + table.primaryKey,
-					foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column"))
-					.join(",");
-
-				//Prep as a Dexie Store config
-				_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
-			});
-
-		}
-
-		/**
-		 *	### NoDbSchemaFactory
-		 *
-		 *	Creates unique instances of NoDbSchema based on noDBSchema configuration data.
-		 */
-
-		function NoDbSchemaFactory() {
-			var noConfig,
-				promises = [],
-				schemaSourceProviders = {
-					"inline": function(key, schemaConfig) {
-						return $timeout(function() {
-							return schemaConfig.schemaSource.schema;
-						});
-					},
-					"noDBSchema": function(key, schemaConfig) {
-						return getRemoteSchema(noConfig)
-							.then(function(resp) {
-								return resp.data;
-							})
-							.catch(function(err) {
-								throw err;
-							});
-					},
-					"cached": function(key, schemaConfig) {
-						var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
-
-						return $q(function(resolve, reject) {
-							$rootScope.$watch(schemaKey, function(newval) {
-								if (newval) {
-									resolve(newval.tables);
-								}
-							});
-
-						});
-					}
-				};
-
-			function getRemoteSchema(config) {
-				var req = {
-					method: "GET",
-					url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
-					headers: {
-						"Content-Type": "application/json",
-						"Accept": "application/json"
-					},
-					withCredentials: true
-				};
-
-				return $http(req)
-					.then(function(resp) {
-						return resp;
-					})
-					.catch(function(resp) {
-						throw resp;
-					});
-			}
-
-			function checkCache(schemaKey) {
-				return noLocalStorage.getItem(schemaKey);
-			}
-
-			function getSchema(schemaKey, schemaConfig) {
-				var deferred = $q.defer(),
-					schemaProvider = schemaConfig.schemaSource.provider;
-
-				if ($rootScope[schemaKey]) {
-					deferred.resolve(schemaKey);
-				} else {
-					$rootScope.$watch(schemaKey, function(newval, oldval) {
-						if (newval) {
-							noLocalStorage.setItem(schemaKey, newval.tables);
-							deferred.resolve(schemaKey);
-						}
-					});
-
-					schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
-						.then(function(schema) {
-							$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
-						})
-						.catch(function() {
-							var schema = checkCache(schemaKey);
-							if (schema) {
-								$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
-							} else {
-								deferred.reject("noDbSchemaServiceOffline");
-							}
-						});
-				}
-
-				return deferred.promise;
-			}
-
-			// when calling noDbSchema.whenReady you need to bind the call
-			// with the configuration.
-
-			/**
-			 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
-			 */
-			this.whenReady = function(config) {
-				noConfig = config.current;
-
-				var noDbSchemaConfig = noConfig.noDbSchema,
-					promises = [];
-
-				for (var c in noDbSchemaConfig) {
-					var schemaConfig = noDbSchemaConfig[c],
-						schemaKey = "noDbSchema_" + schemaConfig.dbName;
-
-					promises.push(getSchema(schemaKey, schemaConfig));
-				}
-
-				return $q.all(promises)
-					.then(function(results) {
-						$rootScope.noDbSchema_names = results;
-						return results;
-					})
-					.catch(function(err) {
-						throw err;
-					});
-
-			};
-
-			this.configureDatabases = function(noUser, noDbSchemaConfigs) {
-				var promises = [];
-
-				for (var s in noDbSchemaConfigs) {
-					var schemaName = noDbSchemaConfigs[s],
-						schema = $rootScope[schemaName],
-						provider = $injector.get(schema.config.provider);
-
-					promises.push(provider.configure(noUser, schemaName, schema));
-
-				}
-
-				return $q.all(promises);
-
-			};
-
-			this.getSchema = function(dbName) {
-				var schema = $rootScope["noDbSchema_" + dbName];
-				return schema;
-			};
-		}
-
-		return new NoDbSchemaFactory();
+		return new NoDbSchemaFactory($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector);
 	}]);
 
 })(angular);
@@ -2294,29 +2373,29 @@ var GloboTest = {};
 				"tinyint": function(i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"float": function(r) {
-					return r;
+				"float": function(i) {
+					return  angular.isNumber(i) ? i : null;
 				},
-				"real": function(r) {
-					return r;
+				"real": function(i) {
+					return  angular.isNumber(i) ? i : null;
 				},
 				"date": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"datetime": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"datetime2": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"datetimeoffset": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"smalldatetime": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"time": function(n) {
-					return angular.isDate(n) ? Date.UTC(n.getFullYear(), n.getMonth(), n.getDay(), n.getHours(), n.getMinutes(), n.getSeconds(), n.getMilliseconds()) : Date.now();
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
 				"char": function(t) {
 					return angular.isString(t) ? t : null;
@@ -2336,14 +2415,14 @@ var GloboTest = {};
 				"ntext": function(t) {
 					return angular.isString(t) ? t : null;
 				},
-				"binary": function(b) {
-					return b;
+				"binary": function(i) {
+					return  !angular.isNumber(i) ? i : null;
 				},
-				"varbinary": function(b) {
-					return b;
+				"varbinary": function(i) {
+					return !angular.isNumber(i) ? i : null;
 				},
-				"image": function(b) {
-					return b;
+				"image": function(i) {
+					return !angular.isNumber(i) ? i : null;
 				},
 				"uniqueidentifier": function(t) {
 					return angular.isString(t) ? t : null;
@@ -2377,7 +2456,7 @@ var GloboTest = {};
 				return returnString;
 			},
 			"typeName": function(columnConfig) {
-				return WEBSQL_STATEMENT_BUILDERS.sqlConversion[columnConfig.type];
+				return WEBSQL_STATEMENT_BUILDERS.sqlConversion[columnConfig.type.toLowerCase()];
 			},
 			"expr": function(Expr) {
 				console.warn("TODO: Determine why this function exists.");
@@ -2448,7 +2527,10 @@ var GloboTest = {};
 				var val = {},
 					nvps = [],
 					nvpsString = "",
-					returnObject = {};
+					returnObject = {},
+					safeFilter = filters.toSafeSQL();
+
+				//console.log(safeFilter);
 
 				val = WEBSQL_STATEMENT_BUILDERS.parseData(data);
 
@@ -2456,8 +2538,9 @@ var GloboTest = {};
 
 				nvpsString = nvps.join(", ");
 
-				returnObject.queryString = WEBSQL_IDENTIFIERS.UPDATE + tableName + " SET " + nvpsString + " WHERE " + filters.toSQL();
-				returnObject.valueArray = val.values;
+
+				returnObject.queryString = WEBSQL_IDENTIFIERS.UPDATE + tableName + " SET " + nvpsString + " WHERE " + safeFilter.queryString;
+				returnObject.valueArray = val.values.concat(safeFilter.valueArray);
 
 				return returnObject;
 			},
@@ -2471,17 +2554,34 @@ var GloboTest = {};
 				return nvps;
 			},
 			"sqlDelete": function(tableName, filters) {
-				var returnObject = {},
-					where = filters && filters.length ? " WHERE " + filters.toSQL() : "";
+				var val = {},
+					nvps = [],
+					nvpsString = "",
+					returnObject = {},
+					safeFilter = filters ? filters.toSafeSQL() : (new noInfoPath.data.NoFilters()).toSafeSQL(),
+					where;
+
+				nvps = WEBSQL_STATEMENT_BUILDERS.sqlUpdateNameValuePair(safeFilter.valueArray);
+
+				nvpsString = nvps.join(", ");
+
+				//console.log(safeFilter, nvps, nvpsString);
+
+				// var returnObject = {},
+				// 	safeSql = filters.toSaveSQL(),
+				where = safeFilter.queryString ? " WHERE " + safeFilter.queryString : "";
+
 				returnObject.queryString = WEBSQL_IDENTIFIERS.DELETE + tableName + where;
+				returnObject.valueArray = safeFilter.valueArray;
 				return returnObject;
 			},
 			"sqlRead": function(tableName, filters, sort, page) {
-				var fs, ss, ps, returnObject = {};
-				fs = !!filters ? " WHERE " + filters.toSQL() : "";
+				var fs, ss, ps, returnObject = {}, safeFilter = filters ? filters.toSafeSQL() : undefined;
+				fs = !!filters ? " WHERE " +  safeFilter.queryString : "";
 				ss = !!sort ? " " + sort.toSQL() : "";
 				ps = !!page ? " " + page.toSQL() : "";
 				returnObject.queryString = WEBSQL_IDENTIFIERS.READ + tableName + fs + ss + ps;
+				returnObject.valueArray = safeFilter ? safeFilter.valueArray : [];
 				return returnObject;
 			},
 			"sqlOne": function(tableName, primKey, value) {
@@ -2545,7 +2645,7 @@ var GloboTest = {};
 			return WEBSQL_STATEMENT_BUILDERS.sqlRead(tableName, filters, sort, page);
 		};
 
-		console.warn("This method does not ever get used.");
+		//console.warn("This method does not ever get used.");
 		this.createSqlOneStmt = function(tableName, primKey, value) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlOne(tableName, primKey, value);
 		};
@@ -2555,7 +2655,7 @@ var GloboTest = {};
 		};
 
 		this.convertToWebSQL = function(sqlColumn, sqlData) {
-			var sqliteColumn = WEBSQL_STATEMENT_BUILDERS.sqlConversion[sqlColumn];
+			var sqliteColumn = WEBSQL_STATEMENT_BUILDERS.sqlConversion[sqlColumn.toLowerCase()];
 
 			return WEBSQL_STATEMENT_BUILDERS.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
 		};
@@ -2567,17 +2667,19 @@ var GloboTest = {};
 	*
 	*	This class encapulates the CRUD functionality for NoInfoPath's implementation
 	*	of WebSQL. It abstracts the fundimental differences between SQL Views and Tables.
-	*	Exceptions will be thrown when a method is called that a SQL View connot support.
+	*	Exceptions will be thrown when a method is called that a SQL View connot supported.
 	*/
-	function NoWebSqlEntity(noWebSQLStatementFactory, entityConfig, entityName, database) {
-		var _entityConfig, _entityName, _db;
+	function NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSQLStatementFactory, entityConfig, entityName, database) {
+		var
+			THIS = this,
+			_entityConfig, _entityName, _db;
 
 		if (!entityConfig) throw "entityConfig is a required parameter";
 		if (!entityName) throw "entityName is a required parameter";
 		if (!database) throw "database is a required parameter";
 
 		_entityConfig = entityConfig;
-		_entityName = table.entityName;
+		_entityName = _entityConfig.entityName;
 		_db = database;
 
 		Object.defineProperties(this, {
@@ -2618,12 +2720,14 @@ var GloboTest = {};
 					valueArray,
 					function(t, resultset) {
 						deferred.resolve(resultset);
+						$rootScope.$digest();
 					},
 					function(t, r, x) {
 						deferred.reject({
-							tx: t,
-							err: r
+							entity: _entityConfig,
+							error: r.message
 						});
+						$rootScope.$digest();
 					}
 				);
 			});
@@ -2644,28 +2748,32 @@ var GloboTest = {};
 		 *
 		 */
 		function _getOne(filters) {
-			var
-				deferred = $q.defer(),
-				sqlExpressionData = noWebSQLStatementFactory.createSqlReadStmt(_tableName, filters);
+			var sqlExpressionData = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters);
 
-			_exec(sqlExpressionData)
+			return _exec(sqlExpressionData)
 				.then(function(resultset) {
-					if (resultset.rows.length === 0) {
-						deferred.resolve({});
-					} else {
-						deferred.resolve(resultset.rows[0]);
-					}
-				})
-				.catch(deferred.reject);
+					var data;
 
-			return deferred.promise;
+					if (resultset.rows.length === 0) {
+						data = {};
+					} else {
+						data = resultset.rows[0];
+					}
+
+					return data;
+				});
 		}
 
-		function _recordTransaction(deferred, tableName, operation, trans, result1, result2){
-			var transData = result2 ? result2 : result1;
+		function _recordTransaction(resolve, tableName, operation, trans, result1, result2){
+			var transData = result2 && result2.rows.length ? result2 : result1;
 
 			if (trans) trans.addChange(tableName, transData, operation);
-			deferred.resolve(transData);
+			resolve(transData);
+
+		}
+
+		function _transactionFault(reject, err){
+			reject(err);
 		}
 
 		function _txFailure(recject, err) {
@@ -2688,8 +2796,8 @@ var GloboTest = {};
 
 			var
 				stmts = {
-					"T": WEBSQL_STATEMENT_BUILDERS.createSqlTableStmt,
-					"V": WEBSQL_STATEMENT_BUILDERS.createSqlViewStmt
+					"T": WEBSQL_STATEMENT_BUILDERS.createTable,
+					"V": WEBSQL_STATEMENT_BUILDERS.createView
 				},
 				deferred = $q.defer();
 
@@ -2697,12 +2805,15 @@ var GloboTest = {};
 				tx.executeSql(stmts[_entityConfig.entityType](_entityConfig.entityName, _entityConfig), [],
 					function(t, r) {
 						deferred.resolve();
+						$rootScope.$digest();
 					},
 					function(t, e) {
 						deferred.reject({
 							entity: _entityConfig,
 							error: e
 						});
+
+						$rootScope.$digest();
 					});
 			});
 
@@ -2724,7 +2835,8 @@ var GloboTest = {};
 		 *	#### Remarks
 		 */
 		this.noCreate = function(data, noTransaction) {
-			if(entityConfig.entityType === "V") throw "Create operation not support by SQL Views.";
+
+			if(_entityConfig.entityType === "V") throw "Create operation not supported by SQL Views.";
 
 			/*
 			*	When resolving the primary key for the purpose of createing a new record, it is
@@ -2738,16 +2850,16 @@ var GloboTest = {};
 			*	> this results in the primary key resolving to `Undefined`.
 			*/
 
-			console.warm("TODO: See document note `Bug #00001`");
+			console.warn("TODO: See readme note `Bug #00001`");
 
-			var pk = angular.isArray(_table.primaryKey) ?
-				_table.primaryKey.length > 1 ? undefined : _table.primaryKey[0] : _table.primaryKey,
+			var
+				pk = angular.isArray(_entityConfig.primaryKey) ?
+					_entityConfig.primaryKey.length > 1 ? undefined :
+					_entityConfig.primaryKey[0] : _entityConfig.primaryKey,
 				sqlStmt;
 
 			if (pk && !data[pk]) {
-				data[_table.primaryKey] = noInfoPath.createUUID();
-			}else{
-				throw "All noWebSQL tables must have a primary key";
+				data[_entityConfig.primaryKey] = noInfoPath.createUUID();
 			}
 
 			/*
@@ -2762,15 +2874,19 @@ var GloboTest = {};
 			data.ModifiedBy = _db.currentUser.userId;
 			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_tableName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data);
 
-			return _exec(sqlStmt)
-				.then(function(result) {
-					return _getOne(result.insertId)
-						.then(_recordTransaction.bind(null, deferred, _tableName, "C", noTransaction))
-						.catch(deferred.reject);
-				})
-				.catch(deferred.reject);
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(function(result) {
+						return THIS.noOne(result.insertId)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "C", noTransaction))
+							.catch(_transactionFault.bind(null, reject));
+					})
+					.catch(reject);
+			});
+
+
 
 		};
 
@@ -2794,9 +2910,7 @@ var GloboTest = {};
 		 */
 		this.noRead = function() {
 
-			var filters, sort, page,
-				deferred = $q.defer(),
-				readObject;
+			var filters, sort, page, readObject;
 
 			for (var ai in arguments) {
 				var arg = arguments[ai];
@@ -2817,23 +2931,17 @@ var GloboTest = {};
 				}
 			}
 
-			readObject = noWebSQLParser.createSqlReadStmt(_tableName, filters, sort, page);
+			readObject = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters, sort, page);
 
-			function _txCallback(tx) {
-				tx.executeSql(
-					readObject.queryString, [],
-					function(t, r) {
-						var data = new noInfoPath.data.NoResults(_.toArray(r.rows));
+			return $q(function(resolve, reject){
+				_exec(readObject)
+					.then(function(resultset) {
+						var data = new noInfoPath.data.NoResults(_.toArray(resultset.rows));
 						if (page) data.page(page);
-						deferred.resolve(data);
-					},function(err){
-						throw err; //Fail the transaction.
-					});
-			}
-
-			_db.transaction(_txCallback, _txFailure.bind(null, deferred.reject), _txSuccess);
-
-			return deferred.promise;
+						resolve(data);
+					})
+					.catch(reject);
+			});
 		};
 
 		/*
@@ -2851,18 +2959,18 @@ var GloboTest = {};
 		 *	Returns an AngularJS Promise.
 		 */
 		this.noUpdate = function(data, noTransaction) {
-			if(entityConfig.entityType === "V") throw "Update operation not support by SQL Views.";
+			if(_entityConfig.entityType === "V") throw "Update operation not supported by SQL Views.";
 
 			/*
 			*	When resolving the primary key of the object to update
 			*	the id value must exist. If it does not an exception is thrown.
 			*/
 			var noFilters = new noInfoPath.data.NoFilters(),
-				id = data[_table.primaryKey], sqlStmt;
+				id = data[_entityConfig.primaryKey], sqlStmt;
 
 			if(!id) throw "Primary key value must exist an object being updated.";
 
-			noFilters.quickAdd(_table.primaryKey, "eq", id);
+			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
 			/*
 			*	When updating a record in the WebSQL DB all tables are expected to have
@@ -2873,11 +2981,15 @@ var GloboTest = {};
 			data.ModifiedBy = _db.currentUser.userId;
 			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSqlStatementFactory.createSqlUpdateStmt(_tableName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
-			return _exec(sqlStmt)
-				.then(_recordTransaction.bind(null, deferred, _tableName, "U", noTransaction, data))
-				.catch(deferred.reject);
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(function(resultset) {
+						resolve(data);
+					})
+					.catch(reject);
+			});
 		};
 
 		/*
@@ -2893,29 +3005,34 @@ var GloboTest = {};
 		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 		 */
 		this.noDestroy = function(data, noTransaction, filters) {
-			if(entityConfig.entityType === "V") throw "Delete operation not support by SQL Views.";
+			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
 			var
 				noFilters = new noInfoPath.data.NoFilters(filters),
-				id = data[_table.primaryKey],
+				id = data[_entityConfig.primaryKey],
 				sqlStmt, deleted;
 
 			if(!id) throw "Could not resolve primary key for delete operation.";
 
 			if(!noFilters.length)
 			{
-				noFilters.quickAdd(_table.primaryKey, "eq", id);
+				noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 			}
 
-			sqlStmt = noWebSqlStatementFactory.createSqlDeleteStmt(_tableName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, data, noFilters);
 
-			_getOne(noFilters)
-				.then(function(datum) {
-					_exec(sqlStmt)
-						.then(_recordTransaction.bind(null, deferred, _tableName, "D", noTransaction, datum))
-						.catch(deferred.reject);
-				})
-				.catch(deferred.reject);
+			return $q(function(resolve, reject){
+
+				_getOne(noFilters)
+					.then(function(datum) {
+						_exec(sqlStmt)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
+							.catch(reject);
+					})
+					.catch(reject);
+			});
+
+
 		};
 
 		/*
@@ -2942,6 +3059,10 @@ var GloboTest = {};
 		*	- Object
 		*
 		* #### Remarks
+		*
+		* > NOTE: noinfopath-data only support primary keys that are strings. This
+		* > is because we are expecting GUID or UUID as primary key, as the are
+		* > inherently replicatable.
 		*
 		*/
 		this.noOne = function(query) {
@@ -2971,7 +3092,7 @@ var GloboTest = {};
 				* > Passing a string when the entity is
 				* a SQL View is not allowed.
 				*/
-				if(entityConfig.entityType === "V") throw "One operation not support by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+				if(_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
 
 				filters.quickAdd(_entityConfig.primaryKey, "eq", query);
 
@@ -2991,6 +3112,69 @@ var GloboTest = {};
 			return _getOne(filters);
 		};
 
+
+		/*
+		*	### @method noUpsert(data)
+		*/
+		this.noUpsert = function(data) {
+			if(_entityConfig.entityType === "V") throw "Upsert operation not supported by SQL Views.";
+
+			if (data[this.primaryKey]) {
+				return this.noUpdate(data);
+			} else {
+				return this.noCreate(data);
+			}
+		};
+
+		/*
+		 * ### @method noClear()
+		 *
+		 * Delete all rows from the current table, without recording each delete transaction.
+		 *
+		 * #### Returns
+		 * AngularJS Promise.
+		 */
+		this.noClear = function() {
+			if(_entityConfig.entityType === "V") throw "Clear operation not supported by SQL Views.";
+
+			var sqlStmt = noWebSQLStatementFactory.createSqlClearStmt(_entityName);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(resolve)
+					.catch(reject);
+			});
+
+		};
+
+		/*
+		*	### @method noBulkCreate(data)
+		*
+		*	Inserts object in to the WebSQL database, converting data from
+		*	ANSI SQL to WebSQL.  No transactions are recorded during this operation.
+		*/
+		this.noBulkCreate = function(data) {
+			if(_entityConfig.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
+
+			for (var c in _entityConfig.columns) {
+				var col = _entityConfig.columns[c];
+				data[c] = noWebSQLStatementFactory.convertToWebSQL(col.type, data[c]);
+			}
+
+			var sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data, null);
+
+			return $q(function(resolve, reject){
+				_exec(sqlStmt)
+					.then(resolve)
+					.catch(reject);
+			}) ;
+
+
+
+
+
+		};
+
 		/*
 		*	### @method bulkload(data, progress)
 		*
@@ -2998,7 +3182,7 @@ var GloboTest = {};
 		*	Promise.notify to report project of the bulkLoad operation.
 		*/
 		this.bulkLoad = function(data, progress) {
-			if(entityConfig.entityType === "V") throw "BulkLoad operation not support by SQL Views.";
+			if(entityConfig.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
 
 			var deferred = $q.defer(),
 				table = this;
@@ -3054,58 +3238,7 @@ var GloboTest = {};
 			return deferred.promise;
 		};
 
-		/*
-		*	### @method noUpsert(data)
-		*/
-		this.noUpsert = function(data) {
-			if(entityConfig.entityType === "V") throw "Upsert operation not support by SQL Views.";
 
-			if (data[this.primaryKey]) {
-				return this.noUpdate(data);
-			} else {
-				return this.noCreate(data);
-			}
-		};
-
-		/*
-		 * ### @method noClear()
-		 *
-		 * Delete all rows from the current table, without recording each delete transaction.
-		 *
-		 * #### Returns
-		 * AngularJS Promise.
-		 */
-		this.noClear = function() {
-			if(entityConfig.entityType === "V") throw "Clear operation not support by SQL Views.";
-
-			var sqlStmt = noWebSqlStatementFactory.createSqlClearStmt(_tableName);
-
-			return _exec(sqlStmt)
-				.then(deferred.resolve)
-				.catch(deferred.reject);
-
-
-		};
-
-		/*
-		*	### @method noBulkCreate(data)
-		*
-		*	Inserts object in to the WebSQL database, converting data from
-		*	ANSI SQL to WebSQL.  No transactions are recorded during this operation.
-		*/
-		this.noBulkCreate = function(data) {
-			if(entityConfig.entityType === "V") throw "BulkCreate operation not support by SQL Views.";
-			for (var c in _tableConfig.columns) {
-				var col = _tableConfig.columns[c];
-				data[c] = noWebSqlStatementFactory.convertToWebSQL(col.type, data[c]);
-			}
-
-			var sqlStmt = noWebSqlStatementFactory.createSqlInsertStmt(_tableName, data, null);
-
-			_exec(sqlStmt)
-				.then(deferred.resolve)
-				.catch(deferred.reject);
-		};
 	}
 
 	/*
@@ -3116,7 +3249,7 @@ var GloboTest = {};
 	*
 	*
 	*/
-	function NoWebSqlEntityFactory(NoWebSQLStatementFactory){
+	function NoWebSqlEntityFactory($rootScope, $q, $timeout, _, noWebSqlStatementFactory){
 		/*
 		*	### @method create(entityConfig, entityName, database)
 		*
@@ -3125,15 +3258,15 @@ var GloboTest = {};
 		*
 		*/
 		this.create = function (entityConfig, entityName, database) {
-			return new NoWebSqlEntity(noWebSQLStatementFactory, entityConfig, entityName, database);
+			var entity = new NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSqlStatementFactory, entityConfig, entityName, database);
+			return entity;
 		};
-
-
 	}
+
 	/*
 	*	## @class NoWebSqlService
 	*/
-	function NoWebSqlService($rootScope, _, $q, $timeout, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
+	function NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLogService, noLoginService, noLocalStorage, noWebSQLParser) {
 		var _name;
 
 		Object.defineProperties(this, {
@@ -3145,14 +3278,13 @@ var GloboTest = {};
 		});
 
 		//TODO: modify config to also contain Views, as well as, Tables.
-		this.configure = function(noUser, config, schema) {
+		this.configure = function(noUser, schema) {
+			if(!noUser || noUser.constructor.name !== "NoInfoPathUser") throw "noWebSql::configure requires the first parameter to be a NoInfoPathUser object.";
+			if(!schema || schema.constructor.name !== "NoDbSchema") throw "noWebSql::configure requires the second parameter to be a NoDbSchema object.";
+
 			var _webSQL = null,
 				promises = [],
-				noWebSQLInitialized = "noWebSQL_" + schema.config.dbName,
-				noConstructors = {
-					"T": NoTable,
-					"V": NoView
-				};
+				noWebSQLInitialized = "noWebSQL_" + schema.dbName;
 
 			_webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
 
@@ -3162,8 +3294,8 @@ var GloboTest = {};
 			angular.forEach(schema.tables, function(table, name) {
 
 				var
-					db = this;
-					t = new NoWebSqlEntity(table, name, db);
+					db = this,
+					t = noWebSqlEntityFactory.create(table, name, db);
 
 				db[name] = t;
 				promises.push(t.configure());
@@ -3172,10 +3304,14 @@ var GloboTest = {};
 			return $q.all(promises)
 				.then(function() {
 					$rootScope[noWebSQLInitialized] = _webSQL;
+					return _webSQL;
+				})
+				.catch(function(err){
+					console.error(err);
 				});
 		};
 
-		this.whenReady = function(config) {
+		this.whenReady = function() {
 			return $q(function(resolve, reject){
 				var noWebSQLInitialized = "noWebSQL_" + config.dbName;
 
@@ -3206,12 +3342,12 @@ var GloboTest = {};
 			return new NoWebSqlStatementFactory(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS);
 		}])
 
-		.factory("noWebSqlEntityFactory", ["noWebSqlStatementFactory", function(noWebSqlStatementFactory){
-			return new NoWebSqlEntityFactory(noWebSqlStatementFactory);
+		.factory("noWebSqlEntityFactory", ["$rootScope", "$q", "$timeout", "lodash", "noWebSqlStatementFactory", function($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory){
+			return new NoWebSqlEntityFactory($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory);
 		}])
 
-		.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noLocalStorage, noWebSqlStatementFactory) {
-			return new NoWebSQLService($rootScope, _, $q, $timeout, noLocalStorage, noWebSqlStatementFactory);
+		.factory("noWebSql", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory) {
+			return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory);
 		}])
 	;
 })(angular);
@@ -3942,6 +4078,8 @@ var GloboTest = {};
 (function(angular, Dexie, undefined) {
 	"use strict";
 
+	console.log("Hello from IndexedDB");
+
 	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
 
 		var _name;
@@ -3954,59 +4092,9 @@ var GloboTest = {};
 			}
 		});
 
-		this.configure = function(noUser, config, schema) {
-			var deferred = $q.defer(),
-				_dexie = new Dexie(schema.config.dbName),
+		this.configure = function(noUser, schema) {
+			var _dexie = new Dexie(schema.config.dbName),
 				noIndexedDbInitialized = "noIndexedDb_" + schema.config.dbName;
-
-			$timeout(function() {
-				_dexie.currentUser = noUser;
-				_dexie.on('error', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("Dexie Error: " + err);
-					deferred.reject(err);
-				});
-
-				_dexie.on('blocked', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndexedDB is currently execting a blocking operation.");
-					deferred.reject(err);
-				});
-
-				_dexie.on('versionchange', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("IndexedDB as detected a version change");
-				});
-
-				_dexie.on('populate', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndedexDB populate...  not implemented.");
-				});
-
-				_dexie.on('ready', function(data) {
-					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
-					// Log to console or show en error indicator somewhere in your GUI...
-					$rootScope[noIndexedDbInitialized] = _dexie;
-					deferred.resolve();
-				});
-
-				if (_dexie.isOpen()) {
-					$timeout(function() {
-						//noLogService.log("Dexie already open.")
-						window.noInfoPath.digest(deferred.resolve);
-					});
-				} else {
-					if (_.size(schema.store)) {
-						_dexie.version(schema.config.version)
-							.stores(schema.store);
-						_extendDexieTables.call(_dexie, schema.tables);
-						_dexie.open();
-					} else {
-						noLogService.warn("Waiting for noDbSchema data.");
-					}
-
-				}
-			});
 
 			function _extendDexieTables(dbSchema) {
 				function _toDexieClass(tsqlTableSchema) {
@@ -4046,7 +4134,60 @@ var GloboTest = {};
 				});
 			}
 
-			return deferred.promise;
+
+			return $q(function(resolve, reject) {
+				_dexie.currentUser = noUser;
+				_dexie.on('error', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.error("Dexie Error: " + err);
+					reject(err);
+					$rootScope.$digest();
+				});
+
+				_dexie.on('blocked', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.warn("IndexedDB is currently execting a blocking operation.");
+					reject(err);
+					$rootScope.$digest();
+				});
+
+				_dexie.on('versionchange', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.error("IndexedDB as detected a version change");
+				});
+
+				_dexie.on('populate', function(err) {
+					// Log to console or show en error indicator somewhere in your GUI...
+					noLogService.warn("IndedexDB populate...  not implemented.");
+				});
+
+				_dexie.on('ready', function(data) {
+					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
+					// Log to console or show en error indicator somewhere in your GUI...
+					$rootScope[noIndexedDbInitialized] = _dexie;
+					resolve();
+					$rootScope.$digest();
+				});
+
+				if (_dexie.isOpen()) {
+					$timeout(function() {
+						//noLogService.log("Dexie already open.")
+						window.noInfoPath.digest(deferred.resolve);
+					});
+				} else {
+					if (_.size(schema.store)) {
+						_dexie.version(schema.config.version)
+							.stores(schema.store);
+						_extendDexieTables.call(_dexie, schema.tables);
+						_dexie.open();
+					} else {
+						noLogService.warn("Waiting for noDbSchema data.");
+					}
+
+				}
+			});
+
+
 		};
 
 		this.whenReady = function(config) {
@@ -4629,9 +4770,6 @@ var GloboTest = {};
 
 	}
 
-	//noInfoPath.data.noIndexedDb = noIndexedDb;
-
-	// The application will create the factories that expose the noDb service. Will be renaming noDb service to noIndexedDb
 	angular.module("noinfopath.data")
 		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
