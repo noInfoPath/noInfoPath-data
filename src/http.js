@@ -65,7 +65,7 @@
 	angular.module('noinfopath.data')
 
 		.provider("noHTTP",[function(){
-			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', function($rootScope, $q, $timeout, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder, noLogService){
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig){
 
 				function NoHTTP(queryBuilder){
 					var THIS = this;
@@ -73,39 +73,38 @@
 					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
 
 					this.whenReady = function(tables){
-						var deferred = $q.defer();
 
-						$timeout(function(){
+						return $q(function(resolve, reject){
 							if($rootScope.noHTTPInitialized)
 							{
 								noLogService.log("noHTTP Ready.");
-								deferred.resolve();
+								resolve();
 							}else{
 								//noLogService.log("noDbSchema is not ready yet.")
 								$rootScope.$watch("noHTTPInitialized", function(newval){
 									if(newval){
 										noLogService.log("noHTTP ready.");
-										deferred.resolve();
+										resolve();
 									}
 								});
 
 							}
 						});
-
-						return deferred.promise;
 					};
 
-					this.configure = function(noUser, config, schema){
+					this.configure = function(noUser, schema){
 
-						return $timeout(function(){
+						var promise = $q(function(resolve, reject){
 							for(var t in schema.tables){
 								var table = schema.tables[t];
 								THIS[t] = new NoTable(t, table, queryBuilder);
 							}
 							$rootScope.noHTTPInitialized = true;
 							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
+							resolve();
 						});
 
+						return promise;
 					};
 
 				}

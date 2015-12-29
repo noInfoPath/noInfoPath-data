@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.3
+*	@version 1.1.4
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -152,7 +152,9 @@
 			}
 
             function _toDbDate(date){
-                return $filter("date")(date, "yyyy-MM-dd'T'HH:mm:ss.sss");
+                var dateResult = moment.utc(date).format("YYYY-MM-DDTHH:mm:ss.sss");
+
+                return dateResult;
             }
 
 			var _data = {
@@ -1459,7 +1461,7 @@
 	angular.module('noinfopath.data')
 
 		.provider("noHTTP",[function(){
-			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noConfig', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', function($rootScope, $q, $timeout, $http, $filter, noUrl, noConfig, noDbSchema, noOdataQueryBuilder, noLogService){
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig){
 
 				function NoHTTP(queryBuilder){
 					var THIS = this;
@@ -1467,39 +1469,38 @@
 					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
 
 					this.whenReady = function(tables){
-						var deferred = $q.defer();
 
-						$timeout(function(){
+						return $q(function(resolve, reject){
 							if($rootScope.noHTTPInitialized)
 							{
 								noLogService.log("noHTTP Ready.");
-								deferred.resolve();
+								resolve();
 							}else{
 								//noLogService.log("noDbSchema is not ready yet.")
 								$rootScope.$watch("noHTTPInitialized", function(newval){
 									if(newval){
 										noLogService.log("noHTTP ready.");
-										deferred.resolve();
+										resolve();
 									}
 								});
 
 							}
 						});
-
-						return deferred.promise;
 					};
 
-					this.configure = function(noUser, config, schema){
+					this.configure = function(noUser, schema){
 
-						return $timeout(function(){
+						var promise = $q(function(resolve, reject){
 							for(var t in schema.tables){
 								var table = schema.tables[t];
 								THIS[t] = new NoTable(t, table, queryBuilder);
 							}
 							$rootScope.noHTTPInitialized = true;
 							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
+							resolve();
 						});
 
+						return promise;
 					};
 
 				}
@@ -4139,46 +4140,57 @@ var GloboTest = {};
 				});
 			}
 
+			function _reject($rootScope, reject, err) {
+				reject(err);
+				$rootScope.$digest();
+			}
+
+			function _resolve($rootScope, resolve, data) {
+				resolve(data);
+				$rootScope.$digest();
+			}
 
 			return $q(function(resolve, reject) {
 				_dexie.currentUser = noUser;
 				_dexie.on('error', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.error("Dexie Error: " + err);
-					reject(err);
-					$rootScope.$digest();
+ 					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('blocked', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.warn("IndexedDB is currently execting a blocking operation.");
-					reject(err);
-					$rootScope.$digest();
+					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('versionchange', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("IndexedDB as detected a version change");
+					//noLogService.error("IndexedDB as detected a version change");
+					_reject($rootScope, reject, "IndexedDB as detected a version change");
 				});
 
 				_dexie.on('populate', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndedexDB populate...  not implemented.");
+					//Log to console or show en error indicator somewhere in your GUI...
+					//noLogService.warn("IndedexDB populate...  not implemented.");
 				});
 
 				_dexie.on('ready', function(data) {
 					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
 					// Log to console or show en error indicator somewhere in your GUI...
 					$rootScope[noIndexedDbInitialized] = _dexie;
-					resolve();
-					$rootScope.$digest();
+
+					_resolve($rootScope, resolve, _dexie);
+
 				});
 
 				if (_dexie.isOpen()) {
-					$timeout(function() {
-						//noLogService.log("Dexie already open.")
-						window.noInfoPath.digest(deferred.resolve);
-					});
+					//Do nothing, `ready` event should bubble up.
+
+					// $timeout(function() {
+					// 	//noLogService.log("Dexie already open.")
+					// 	window.noInfoPath.digest(deferred.resolve);
+					// });
 				} else {
 					if (_.size(schema.store)) {
 						_dexie.version(schema.config.version)

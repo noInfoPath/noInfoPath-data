@@ -11,7 +11,7 @@ describe("Testing noDbSchema Full Database Configuration functionality", functio
 		inject(function($injector){
 			$httpBackend = $injector.get("$httpBackend");
 			noDbSchema = $injector.get("noDbSchema");
-			noConfig = $injector.get("noConfigMock");
+			noConfig = $injector.get("noConfig");
 			$timeout = $injector.get("$timeout");
 			$rootScope = $injector.get("$rootScope");
 		});

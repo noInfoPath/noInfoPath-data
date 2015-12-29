@@ -185,8 +185,8 @@ tablesMock = {
 	var noODATAProv;
 
 	angular.module("noinfopath.data.mocks", [])
-		.provider("noConfigMock", [function(){
-			var _currentConfig, _status;
+		.provider("noConfig", [function(){
+			var _currentConfig = mockConfig, _status;
 
 			function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage){
 				var SELF = this;

@@ -8,13 +8,6 @@ describe("Testing noHTTP service", function(){
 		module("noinfopath.data");
 		module("noinfopath.data.mocks");
 
-		// angular.module('dummyModule', [])
-	 //  		.config(['noHTTPProvider', function(_noHTTPProvider_) {
-	    // 		noHTTPProvider = _noHTTPProvider_;
-	 //  		}]);
-		//
-		// module('dummyModule');
-
 		inject(function($injector){
 			noDbSchema = $injector.get("noDbSchema");
 			noHTTP = $injector.get("noHTTP");
@@ -31,28 +24,24 @@ describe("Testing noHTTP service", function(){
 			expect(noHTTP).toBeDefined();
 		});
 
-		xit("should have added tables specified by noDbSchema to the instance NoDb returned.", function(done){
-			noHTTP.whenReady()
-				.then(function(){
-					expect(noHTTP.Addresses).toBeDefined();
-					expect(noHTTP.CoolerTrials).toBeDefined();
-					expect(noHTTP.Harvests).toBeDefined();
-					expect(noHTTP.LU_Firmness).toBeDefined();
-					expect(noHTTP.LU_Flavor).toBeDefined();
-					expect(noHTTP.Selections).toBeDefined();
+		it("should have added tables specified by noDbSchema to the instance NoDb returned.", function(done){
+			var schema = noDbSchema.create(mockConfig, mockConfig.noDbSchema[1], tablesMock);
 
+			noHTTP.configure(currentUser, schema)
+				.then(function(){
+					expect(noHTTP.foo).toBeDefined();
+					expect(noHTTP.vw_foo).toBeDefined();
+					done();
 				})
 				.catch(function(err){
 					console.error(err);
-				})
-				.finally(function(){
 					done();
 				});
 
 				$timeout.flush();
 		});
 
-		xit("Any given table should be a NoTable class. Testing Addrsses.", function(){
+		it("Any given table should be a NoTable class. Testing Addrsses.", function(){
 			noHTTP.whenReady()
 				.then(function(){
 					expect(noHTTP.Addresses.constructor.name).toBe("NoTable");
@@ -68,7 +57,7 @@ describe("Testing noHTTP service", function(){
 					done();
 				});
 
-				$timeout.flush();
+				//$timeout.flush();
 
 		});
 	});

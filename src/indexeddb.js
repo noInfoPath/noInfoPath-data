@@ -220,46 +220,57 @@
 				});
 			}
 
+			function _reject($rootScope, reject, err) {
+				reject(err);
+				$rootScope.$digest();
+			}
+
+			function _resolve($rootScope, resolve, data) {
+				resolve(data);
+				$rootScope.$digest();
+			}
 
 			return $q(function(resolve, reject) {
 				_dexie.currentUser = noUser;
 				_dexie.on('error', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.error("Dexie Error: " + err);
-					reject(err);
-					$rootScope.$digest();
+ 					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('blocked', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.warn("IndexedDB is currently execting a blocking operation.");
-					reject(err);
-					$rootScope.$digest();
+					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('versionchange', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("IndexedDB as detected a version change");
+					//noLogService.error("IndexedDB as detected a version change");
+					_reject($rootScope, reject, "IndexedDB as detected a version change");
 				});
 
 				_dexie.on('populate', function(err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndedexDB populate...  not implemented.");
+					//Log to console or show en error indicator somewhere in your GUI...
+					//noLogService.warn("IndedexDB populate...  not implemented.");
 				});
 
 				_dexie.on('ready', function(data) {
 					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
 					// Log to console or show en error indicator somewhere in your GUI...
 					$rootScope[noIndexedDbInitialized] = _dexie;
-					resolve();
-					$rootScope.$digest();
+
+					_resolve($rootScope, resolve, _dexie);
+
 				});
 
 				if (_dexie.isOpen()) {
-					$timeout(function() {
-						//noLogService.log("Dexie already open.")
-						window.noInfoPath.digest(deferred.resolve);
-					});
+					//Do nothing, `ready` event should bubble up.
+
+					// $timeout(function() {
+					// 	//noLogService.log("Dexie already open.")
+					// 	window.noInfoPath.digest(deferred.resolve);
+					// });
 				} else {
 					if (_.size(schema.store)) {
 						_dexie.version(schema.config.version)
