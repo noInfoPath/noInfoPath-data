@@ -323,58 +323,89 @@
 
 							dataSource = noDataSource.create(dsConfig, scope);
 
-							writableData = preOps[preOp](curEntity, data, scope);
+							switch (preOp) {
+								case "joiner-many":
+									/*
+									 *  ### joiner-many
+									 *
+									 *  `joiner-many` assumes that it represents a multiple choice question.
+									 *  In order to keep the algorithm simple we drop all joiner items
+									 *  that match the parent key. (i.e. SelectionID)
+									 */
 
-							if (preOp === "joiner-many") {
+									writableData = preOps[preOp](curEntity, data, scope);
+
+									dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
+										.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
+										.then(_recurse)
+										.catch(reject);
+
+									break;
+								case "one-one":
 								/*
-								 *  ### joiner-many
-								 *
-								 *  `joiner-many` assumes that it represents a multiple choice question.
-								 *  In order to keep the algorithm simple we drop all joiner items
-								 *  that match the parent key. (i.e. SelectionID)
-								 */
-
-								dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
-									.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
-									.then(_recurse)
-									.catch(reject);
-
-							} else {
-								dataSource[opType](writableData, SELF)
-									.then(function(data) {
-										//get row from base data source
-										var ds = noDataSource.create(config.noDataSource, scope),
-											id = data[config.noDataSource.primaryKey];
-
-										ds.one(id)
-											.then(function(resp) {
-												if (curEntity.cacheOnScope) {
-													scope[curEntity.entityName] = resp;
-												}
+								*	### one-one
+								*
+								*	`one-one` enforces referential integrity between two table in a
+								*	transaction that share a one to one relationship.  When the child
+								*	data/table as defined in the noTransaction configuration has it's
+								*	primary key value undefined an create is performed, otherwise
+								*	an update is performed.
+								*
+								*/
+									var keyData = preOps.joiner(curEntity, data, scope),
+										op = data[curEntity.primaryKey] ? "update" : "create";
 
 
-												results[config.noDataSource.entityName] = resp;
+									writableData = preOps.basic(curEntity, data, scope);
 
-												_recurse();
+									writableData = angular.merge({}, writableData, keyData);
 
-											})
-											.catch(function(err) {
-												console.error(err);
-												_recurse();
-											});
+									dataSource[op](writableData, SELF)
+										.then(function(data) {
+											results[curEntity.entityName] = data;
 
-									})
-									.catch(reject);
+											_recurse();
+										})
+										.catch(function(err) {
+											console.error(err);
+											_recurse();
+										});
+									break;
+								default:
+									writableData = preOps[preOp](curEntity, data, scope);
+									dataSource[opType](writableData, SELF)
+										.then(function(data) {
+											//get row from base data source
+											var ds = noDataSource.create(config.noDataSource, scope),
+												id = data[config.noDataSource.primaryKey];
+
+											ds.one(id)
+												.then(function(resp) {
+													if (curEntity.cacheOnScope) {
+														scope[curEntity.entityName] = resp;
+													}
+
+													results[config.noDataSource.entityName] = resp;
+
+													_recurse();
+
+												})
+												.catch(function(err) {
+													console.error(err);
+													_recurse();
+												});
+
+										})
+										.catch(reject);
+
+									break;
 							}
-
-
 
 						}
 
 						_recurse();
 					});
 				};
-
 				this.destroy = function(data) {
 					data = data ? data : {};
 

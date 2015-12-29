@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.1.5
+@version 1.1.6
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -877,6 +877,14 @@ are recorded in the current transaction.
  `joiner-many` assumes that it represents a multiple choice question.
  In order to keep the algorithm simple we drop all joiner items
  that match the parent key. (i.e. SelectionID)
+
+### one-one
+
+`one-one` enforces referential integrity between two table in a
+transaction that share a one to one relationship.  When the child
+data/table as defined in the noTransaction configuration has it's
+an update is performed.
+
 
 ## noIndexedDB
 The noIndexedDB factory creates and configures a new instance of Dexie.
