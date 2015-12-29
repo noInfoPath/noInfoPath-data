@@ -856,8 +856,10 @@
 				if (query.__type === "NoFilters") {
 					filters = query;
 				} else {
-					//Simple key/value pair
-					filters.quickAdd(query.key, "eq", query.value);
+					//Simple key/value pairs. Assuming all are equal operators and are anded.
+					for(var k in query){
+						filters.quickAdd(k, "eq", query[k]);					
+					}
 				}
 
 			} else {
