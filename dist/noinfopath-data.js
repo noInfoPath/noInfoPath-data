@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.4
+*	@version 1.1.5
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3285,7 +3285,7 @@ var GloboTest = {};
 
 			var _webSQL = null,
 				promises = [],
-				noWebSQLInitialized = "noWebSQL_" + schema.dbName;
+				noWebSQLInitialized = "noWebSQL_" + schema.config.dbName;
 
 			_webSQL = openDatabase(schema.config.dbName, schema.config.version, schema.config.description, schema.config.size);
 
