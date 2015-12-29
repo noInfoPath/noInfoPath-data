@@ -49,6 +49,7 @@
     "karma-phantomjs-launcher": "^0.1.4",
     "karma-safari-launcher": "^0.1.1",
     "karma-verbose-reporter": "0.0.1",
+    "moment": "^2.10.6",
     "phantomjs": "^1.9.15"
   }
 }

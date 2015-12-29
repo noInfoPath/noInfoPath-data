@@ -152,7 +152,9 @@
 			}
 
             function _toDbDate(date){
-                return $filter("date")(date, "yyyy-MM-dd'T'HH:mm:ss.sss");
+                var dateResult = moment.utc(date).format("YYYY-MM-DDTHH:mm:ss.sss");
+
+                return dateResult;
             }
 
 			var _data = {
