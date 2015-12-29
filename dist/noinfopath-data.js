@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.6
+*	@version 1.1.7
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3703,16 +3703,16 @@ var GloboTest = {};
 
 									break;
 								case "one-one":
-								/*
-								*	### one-one
-								*
-								*	`one-one` enforces referential integrity between two table in a
-								*	transaction that share a one to one relationship.  When the child
-								*	data/table as defined in the noTransaction configuration has it's
-								*	primary key value undefined an create is performed, otherwise
-								*	an update is performed.
-								*
-								*/
+									/*
+									 *	### one-one
+									 *
+									 *	`one-one` enforces referential integrity between two table in a
+									 *	transaction that share a one to one relationship.  When the child
+									 *	data/table as defined in the noTransaction configuration has it's
+									 *	primary key value undefined an create is performed, otherwise
+									 *	an update is performed.
+									 *
+									 */
 									var keyData = preOps.joiner(curEntity, data, scope),
 										op = data[curEntity.primaryKey] ? "update" : "create";
 
@@ -3737,24 +3737,14 @@ var GloboTest = {};
 									dataSource[opType](writableData, SELF)
 										.then(function(data) {
 											//get row from base data source
-											var ds = noDataSource.create(config.noDataSource, scope),
-												id = data[config.noDataSource.primaryKey];
 
-											ds.one(id)
-												.then(function(resp) {
-													if (curEntity.cacheOnScope) {
-														scope[curEntity.entityName] = resp;
-													}
+											if (curEntity.cacheOnScope) {
+												scope[curEntity.entityName] = data;
+											}
 
-													results[config.noDataSource.entityName] = resp;
+											results[config.noDataSource.entityName] = data;
 
-													_recurse();
-
-												})
-												.catch(function(err) {
-													console.error(err);
-													_recurse();
-												});
+											_recurse();
 
 										})
 										.catch(reject);
