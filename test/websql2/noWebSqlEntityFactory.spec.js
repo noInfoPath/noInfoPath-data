@@ -367,7 +367,7 @@ describe("Tesing noWebSqlEntityFactory", function() {
 
 				it("should get a single existing record based on a simple key/value object", function(done){
 
-					foo.noOne({key: "fooID", value: "0eec54c3-1c7e-48af-a9da-d7da62820090"})
+					foo.noOne({"fooID": "0eec54c3-1c7e-48af-a9da-d7da62820090"})
 						.then(function(data){
 							expect(objectsToBeEquivalant(data, sampleUpsertData2)).toBeTruthy();
 
