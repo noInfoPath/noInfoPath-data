@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.8
+*	@version 1.1.9
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3025,36 +3025,35 @@ var GloboTest = {};
 		 * |data|Object|Name Value Pairs|
 		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 		 */
-		this.noDestroy = function(data, noTransaction, filters) {
-			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
+		 this.noDestroy = function(data, noTransaction, filters) {
+ 			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
-			var
-				noFilters = new noInfoPath.data.NoFilters(filters),
-				id = data[_entityConfig.primaryKey],
-				sqlStmt, deleted;
+ 			var
+ 				noFilters = new noInfoPath.data.NoFilters(filters),
+ 				id = data ? data[_entityConfig.primaryKey] : false,
+ 				sqlStmt, deleted;
 
-			if(!id) throw "Could not resolve primary key for delete operation.";
+ 			//if(!id) throw "Could not resolve primary key for delete operation.";
 
-			if(!noFilters.length)
-			{
-				noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
-			}
+ 			if(!noFilters.length && !!id){
+ 				noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
+ 			}
 
-			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, data, noFilters);
+ 			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, data, noFilters);
 
-			return $q(function(resolve, reject){
+ 			return $q(function(resolve, reject){
 
-				_getOne(noFilters)
-					.then(function(datum) {
-						_exec(sqlStmt)
-							.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
-							.catch(reject);
-					})
-					.catch(reject);
-			});
+ 				_getOne(noFilters)
+ 					.then(function(datum) {
+ 						_exec(sqlStmt)
+ 							.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
+ 							.catch(reject);
+ 					})
+ 					.catch(reject);
+ 			});
 
 
-		};
+ 		};
 
 		/*
 		* ### @method noOne(data)
@@ -3123,7 +3122,7 @@ var GloboTest = {};
 				} else {
 					//Simple key/value pairs. Assuming all are equal operators and are anded.
 					for(var k in query){
-						filters.quickAdd(k, "eq", query[k]);					
+						filters.quickAdd(k, "eq", query[k]);
 					}
 				}
 
