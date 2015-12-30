@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.10
+*	@version 1.1.11
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2772,10 +2772,11 @@ var GloboTest = {};
 		function _getTotal(noFilter) {
 			return $q(function(resolve, reject){
 				var
-					filterExpression = noFilter ? " WHERE " + noFilter.toSQL() : "",
+					safeFilter = noFilter ? noFilter.toSafeSQL() : false,
+					filterExpression = safeFilter ? " WHERE " + safeFilter.queryString : "",
 	 				sqlExpressionData = {
 	 					"queryString": "SELECT COUNT() AS total FROM " + _entityName + filterExpression,
-						"valueArray": []
+						"valueArray": safeFilter.valueArray
 					};
 
 	 			_exec(sqlExpressionData)

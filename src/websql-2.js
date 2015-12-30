@@ -507,10 +507,11 @@
 		function _getTotal(noFilter) {
 			return $q(function(resolve, reject){
 				var
-					filterExpression = noFilter ? " WHERE " + noFilter.toSQL() : "",
+					safeFilter = noFilter ? noFilter.toSafeSQL() : false,
+					filterExpression = safeFilter ? " WHERE " + safeFilter.queryString : "",
 	 				sqlExpressionData = {
 	 					"queryString": "SELECT COUNT() AS total FROM " + _entityName + filterExpression,
-						"valueArray": []
+						"valueArray": safeFilter.valueArray
 					};
 
 	 			_exec(sqlExpressionData)
