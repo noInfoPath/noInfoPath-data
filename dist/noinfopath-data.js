@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.9
+*	@version 1.1.10
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1930,7 +1930,7 @@ var GloboTest = {};
 					.catch(function() {
 						var schema = checkCache(schemaKey);
 						if (schema) {
-							$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+							$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
 						} else {
 							deferred.reject("noDbSchemaServiceOffline");
 						}
@@ -2746,7 +2746,8 @@ var GloboTest = {};
 					function(t, r, x) {
 						deferred.reject({
 							entity: _entityConfig,
-							error: r.message
+							error: r.message,
+							sql: sqlExpressionData
 						});
 						$rootScope.$digest();
 					}
@@ -2768,6 +2769,29 @@ var GloboTest = {};
 		 * #### Remarks
 		 *
 		 */
+		function _getTotal(noFilter) {
+			return $q(function(resolve, reject){
+				var
+					filterExpression = noFilter ? " WHERE " + noFilter.toSQL() : "",
+	 				sqlExpressionData = {
+	 					"queryString": "SELECT COUNT() AS total FROM " + _entityName + filterExpression,
+						"valueArray": []
+					};
+
+	 			_exec(sqlExpressionData)
+	 				.then(function(resultset) {
+	 					if (resultset.rows.length === 0) {
+	 						resolve(0);
+	 					} else {
+	 						resolve(resultset.rows[0].total);
+	 					}
+	 				})
+	 				.catch(function(err){
+						console.error(err);
+					});
+			});
+ 		}
+
 		function _getOne(filters) {
 			var sqlExpressionData = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters);
 
@@ -2955,11 +2979,22 @@ var GloboTest = {};
 			readObject = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters, sort, page);
 
 			return $q(function(resolve, reject){
+				var resp;
+
 				_exec(readObject)
 					.then(function(resultset) {
-						var data = new noInfoPath.data.NoResults(_.toArray(resultset.rows));
-						if (page) data.page(page);
-						resolve(data);
+						resp = new noInfoPath.data.NoResults(_.toArray(resultset.rows));
+						if (page){
+							_getTotal(filters)
+								.then(function(total){
+									resp.total = total;
+									resp.page(page);
+									resolve(resp);
+								})
+								.catch(reject);
+						}else{
+							resolve(resp);
+						}
 					})
 					.catch(reject);
 			});
@@ -3025,7 +3060,7 @@ var GloboTest = {};
 		 * |data|Object|Name Value Pairs|
 		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 		 */
-		 this.noDestroy = function(data, noTransaction, filters) {
+		this.noDestroy = function(data, noTransaction, filters) {
  			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
  			var
@@ -3133,7 +3168,6 @@ var GloboTest = {};
 			//Internal _getOne requires and NoFilters object.
 			return _getOne(filters);
 		};
-
 
 		/*
 		*	### @method noUpsert(data)
@@ -3259,7 +3293,6 @@ var GloboTest = {};
 
 			return deferred.promise;
 		};
-
 
 	}
 

@@ -261,7 +261,7 @@ var GloboTest = {};
 					.catch(function() {
 						var schema = checkCache(schemaKey);
 						if (schema) {
-							$rootScope[schemaKey] = new NoDbSchema(noConfig, schemaConfig, schema);
+							$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
 						} else {
 							deferred.reject("noDbSchemaServiceOffline");
 						}
