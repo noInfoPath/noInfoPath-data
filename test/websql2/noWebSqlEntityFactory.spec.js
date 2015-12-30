@@ -218,12 +218,15 @@ describe("Tesing noWebSqlEntityFactory", function() {
 				});
 
 				it("simple read w/o filter, sort or page", function(done){
-
-					foo.noRead()
+					var page = new noInfoPath.data.NoPage(0, 10);
+					foo.noRead(page)
 						.then(function(data){
+							console.log("xxxx", data.total);
+
 							var tmp1 = _.toArray(data),
 								tmp2 = _.toArray([sampleCreateData]);
 
+							expect(data.total).toBe(1);
 							expect(tmp1).toEqual(tmp2);
 							done();
 						})
