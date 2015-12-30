@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.7
+*	@version 1.1.8
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -319,6 +319,59 @@
  */
 (function(angular, undefined) {
 	"use strict";
+	var
+		stringSearch = {
+			"contains": true,
+			"notcontains": true,
+			"startswith": true,
+			"endswith": true
+		},
+
+		filters = {
+			eq: "eq",
+			neq: "ne",
+			gt: "gt",
+			gte: "ge",
+			lt: "lt",
+			lte: "le",
+			contains: "contains",
+			doesnotcontain: "notcontains",
+			endswith: "endswith",
+			startswith: "startswith"
+		},
+
+		sqlOperators = {
+			"eq": function(v) {
+				return "= " + normalizeSafeValue(v);
+			},
+			"ne": function(v) {
+				return "!= " + normalizeSafeValue(v);
+			},
+			"gt": function(v) {
+				return "> " + normalizeSafeValue(v);
+			},
+			"ge": function(v) {
+				return ">= " + normalizeSafeValue(v);
+			},
+			"lt": function(v) {
+				return "< " + normalizeSafeValue(v);
+			},
+			"le": function(v) {
+				return "<= " + normalizeSafeValue(v);
+			},
+			"contains": function(v) {
+				return "LIKE '%" + String(v) + "%'";
+			},
+			"notcontains": function(v) {
+				return "NOT LIKE '%" + String(v) + "%'";
+			},
+			"startswith": function(v) {
+				return "LIKE '" + String(v) + "%'";
+			},
+			"endswith": function(v) {
+				return "LIKE '%" + String(v) + "'";
+			}
+		};
 
 	/*
 	 * ## @class NoFilterExpression : Object
@@ -348,9 +401,9 @@
 	function normalizeValue(inval) {
 		var outval = inval;
 
-		if(angular.isDate(inval)){
+		if (angular.isDate(inval)) {
 			outval = "datetime('" + noInfoPath.toDbDate(inval) + "', 'utc')";
-		}else if (angular.isString(inval)) {
+		} else if (angular.isString(inval)) {
 			outval = "'" + inval + "'";
 		}
 
@@ -360,9 +413,9 @@
 	function normalizeSafeValue(inval) {
 		var outval = inval;
 
-		if(angular.isDate(inval)){
+		if (angular.isDate(inval)) {
 			outval = "datetime( ?, 'utc')";
-		}else if (angular.isString(inval)) {
+		} else if (angular.isString(inval)) {
 			outval = "?";
 		}
 
@@ -380,53 +433,9 @@
 	}
 
 	function normalizeOperator(inop) {
-		var filters = {
-			eq: "eq",
-			neq: "ne",
-			gt: "gt",
-			gte: "ge",
-			lt: "lt",
-			lte: "le",
-			contains: "contains",
-			doesnotcontain: "notcontains",
-			endswith: "endswith",
-			startswith: "startswith"
-		},
-        sqlOperators = {
-			"eq": function(v) {
-				return "= " + normalizeSafeValue(v);
-			},
-			"ne": function(v) {
-				return "!= " + normalizeSafeValue(v);
-			},
-			"gt": function(v) {
-				return "> " + normalizeSafeValue(v);
-			},
-			"ge": function(v) {
-				return ">= " + normalizeSafeValue(v);
-			},
-			"lt": function(v) {
-				return "< " + normalizeSafeValue(v);
-			},
-			"le": function(v) {
-				return "<= " + normalizeSafeValue(v);
-			},
-			"contains": function(v) {
-				return "LIKE '%" + String(v) + "%'";
-			},
-            "notcontains": function(v) {
-				return "NOT LIKE '%" + String(v) + "%'";
-			},
-			"startswith": function(v) {
-				return "LIKE '" + String(v) + "%'";
-			},
-            "endswith": function(v) {
-                return "LIKE '%" + String(v) + "'";
-            }
-		},
-        op = filters[inop];
+		var op = filters[inop];
 
-        return sqlOperators[op];
+		return sqlOperators[op];
 	}
 
 	function NoFilterExpression(operator, value, logic) {
@@ -448,7 +457,8 @@
 
 		this.toSafeSQL = function() {
 			var opFn = normalizeOperator(this.operator),
-				rs = opFn("?") + normalizeLogic(this.logic);
+				v = stringSearch[this.operator] ? this.value : "?",
+				rs = opFn(v) + normalizeLogic(this.logic);
 
 			return rs;
 		};
@@ -544,10 +554,10 @@
 			return rs;
 		};
 
-		this.toSafeSQL = function () {
+		this.toSafeSQL = function() {
 			var rs = "",
 				rsArray = [],
-				values  = [];
+				values = [];
 
 			angular.forEach(this, function(filter, key) {
 
@@ -563,7 +573,10 @@
 
 			rs = rsArray.join("");
 
-			return {queryString: rs, valueArray: values};
+			return {
+				queryString: rs,
+				valueArray: values
+			};
 		};
 
 		this.add = function(column, logic, beginning, end, filters) {
@@ -631,10 +644,10 @@
 			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
 		}, this);
 
-		function normalizeColumn(incol, val){
+		function normalizeColumn(incol, val) {
 			var ocol = incol;
 
-			if(angular.isDate(val)){
+			if (angular.isDate(val)) {
 				ocol = "datetime(" + incol + ",'utc')";
 			}
 
@@ -668,7 +681,11 @@
 
 			angular.forEach(this.filters, function(exp, key) {
 				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
-				values.push(exp.value);
+
+                if(!stringSearch[exp.operator])
+                {
+                    values.push(exp.value);
+                }
 			}, this);
 
 			filterArrayString = filterArray.join(" ");
@@ -678,7 +695,10 @@
 			if (!!this.end) rs += ")";
 			if (!!this.logic) rs += " " + logic + " ";
 
-			return {sql: rs, values: values};
+			return {
+				sql: rs,
+				values: values
+			};
 		};
 		// this.add = function(column, logic, beginning, end, filters) {
 		// 	this.column = column;
