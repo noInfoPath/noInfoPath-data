@@ -348,11 +348,15 @@
 				return returnObject;
 			},
 			"parseData": function(data) {
+
 				var values = [],
 					placeholders = [],
 					columns = [],
 					r = {};
+
 				angular.forEach(data, function(value, key) {
+                    //var datum = value === "undefined" || value === undefined ? "" : value;
+
 					columns.push(key);
 					placeholders.push("?");
 					values.push(value);
@@ -456,6 +460,31 @@
 			}
 		});
 
+        /**
+        *   Data is scrubed for undesirable data artifacts such as `undefined`.
+        */
+        function scrubData(data){
+            var scrubbed = {};
+
+            for(var ck in _entityConfig.columns){
+                var col = _entityConfig.columns[ck],
+                    val = data[ck];
+
+                //scrub undefined.
+                val = val === "undefined" || val === undefined ? null : val;
+
+                //perform data conversion
+                val = noWebSQLStatementFactory.convertToWebSQL(col.type, data[ck]);
+
+                //clean up NaN's
+                val = isNaN(val) && typeof val === "number" ? null : val;
+
+                scrubbed[col.columnName] = val;
+            }
+
+            return scrubbed;
+        }
+
 		/*-
 		 * ### @method private \_exec(sqlExpressionData)
 		 *
@@ -468,7 +497,7 @@
 		function _exec(sqlExpressionData) {
 			var
 				deferred = $q.defer(),
-				valueArray = sqlExpressionData.valueArray  ? sqlExpressionData.valueArray : [];
+				valueArray =  sqlExpressionData.valueArray  ? sqlExpressionData.valueArray : [];
 
 			_db.transaction(function(tx) {
 				tx.executeSql(
@@ -655,7 +684,7 @@
 			data.ModifiedBy = _db.currentUser.userId;
 			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data);
+			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, scrubData(data));
 
 			return $q(function(resolve, reject){
 				_exec(sqlStmt)
@@ -773,7 +802,7 @@
 			data.ModifiedBy = _db.currentUser.userId;
 			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, scrubData(data), noFilters);
 
 			return $q(function(resolve, reject){
 				_exec(sqlStmt)
