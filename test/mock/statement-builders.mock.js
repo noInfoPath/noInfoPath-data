@@ -56,13 +56,13 @@ var
 					"nullable": false,
 					"type": "uniqueidentifier",
 					"length": 0,
-					"columnName": "CreatedBy"
+					"columnName": "ModifiedBy"
 				},
 				"ModifiedDate": {
 					"nullable": false,
 					"type": "Date",
 					"length": 0,
-					"columnName": "DateCreated"
+					"columnName": "ModifiedDate"
 				}
 			},
 			"foreignKeys": {

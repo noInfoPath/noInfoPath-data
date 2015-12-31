@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.1.11
+@version 1.1.12
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -706,6 +706,7 @@ Exceptions will be thrown when a method is called that a SQL View connot support
 
 
 
+
 ### @method configure()
 
 Creates the WebSQL Entity based on the configuration data and the database passed in
@@ -872,6 +873,19 @@ supplied Entity Configuration and Datbase.
 Drop each record one at a time so that the operations
 are recorded in the current transaction.
 
+Add each record one at a time to ensure that the transaction is recorded.
+
+  #### @property scopeKey
+
+  Use this property allow NoTransaction to store a reference
+  to the entity upon which this data operation was performed.
+  This is useful when you have tables that rely on a one to one
+  relationship.
+
+  It is best practice use this property when ever possible,
+  but it not a required configuration property.
+
+
  ### joiner-many
 
  `joiner-many` assumes that it represents a multiple choice question.
@@ -882,7 +896,7 @@ are recorded in the current transaction.
 
 `one-one` enforces referential integrity between two table in a
 transaction that share a one to one relationship.  When the child
-data/table as defined in the noTransaction configuration has it's
+data/table as defined in the noTransaction configuration and it's
 an update is performed.
 
 
