@@ -398,7 +398,7 @@
 									 */
 									var keyData = preOps.joiner(curEntity, data, scope);
 
-									opType = data[curEntity.primaryKey] ? "update" : "create";
+									opType = keyData[curEntity.primaryKey] ? "update" : "create";
 
 									writableData = preOps.basic(curEntity, data, scope);
 
