@@ -102,8 +102,8 @@
 
 						if (_.isBoolean(transaction)) {
 							noTransactions[t] = [{
-								entityName: en,
-								omit_fields: keysd
+								entityName: en
+								//omit_fields: keysd
 							}];
 						}
 					}
