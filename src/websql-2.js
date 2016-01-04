@@ -94,7 +94,7 @@
 				},
 				"DATE": function(d) {
 					var r = null;
-					if (angular.isString(d)) {
+					if (!!d) {
 						r = noInfoPath.toDbDate(new Date(d));
 					}
 
@@ -488,6 +488,8 @@
 			return scrubbed;
 		}
 
+
+
 		/*-
 		 * ### @method private \_exec(sqlExpressionData)
 		 *
@@ -796,7 +798,7 @@
 
 			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
-			scrubbed = scrubData(data);
+			data = scrubData(data);
 
 			/*
 			 *	When updating a record in the WebSQL DB all tables are expected to have
@@ -804,10 +806,10 @@
 			 *	The values for these column are automatically set on the object
 			 *	being updated in the DB.
 			 */
-			scrubbed.ModifiedBy = _db.currentUser.userId;
-			scrubbed.ModifiedDate = noInfoPath.toDbDate(new Date());
+			data.ModifiedBy = _db.currentUser.userId;
+			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, scrubbed, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
 			return $q(function(resolve, reject) {
 				_exec(sqlStmt)

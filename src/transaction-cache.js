@@ -302,6 +302,7 @@
                             return dataSource[opType](writableData, SELF)
                                 .then(function(data) {
                                     //get row from base data source
+                                    var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
                                     //TODO: see where and when this is used.
                                     if (curEntity.cacheOnScope) {
@@ -320,11 +321,10 @@
                                     *   but it not a required configuration property.
                                     *
                                     */
-                                    if(curEntity.scopeKey){
-                                        scope[curEntity.scopeKey] = data;
-                                    }
 
-                                    results[config.noDataSource.entityName] = data;
+                                    scope[sk] = data;
+
+                                    results[sk] = data;
 
                                     _recurse();
 

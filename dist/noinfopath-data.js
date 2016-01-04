@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.15
+*	@version 1.1.16
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2359,7 +2359,7 @@ var GloboTest = {};
 				},
 				"DATE": function(d) {
 					var r = null;
-					if (angular.isString(d)) {
+					if (!!d) {
 						r = noInfoPath.toDbDate(new Date(d));
 					}
 
@@ -2753,6 +2753,8 @@ var GloboTest = {};
 			return scrubbed;
 		}
 
+
+
 		/*-
 		 * ### @method private \_exec(sqlExpressionData)
 		 *
@@ -3061,7 +3063,7 @@ var GloboTest = {};
 
 			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
-			scrubbed = scrubData(data);
+			data = scrubData(data);
 
 			/*
 			 *	When updating a record in the WebSQL DB all tables are expected to have
@@ -3069,10 +3071,10 @@ var GloboTest = {};
 			 *	The values for these column are automatically set on the object
 			 *	being updated in the DB.
 			 */
-			scrubbed.ModifiedBy = _db.currentUser.userId;
-			scrubbed.ModifiedDate = noInfoPath.toDbDate(new Date());
+			data.ModifiedBy = _db.currentUser.userId;
+			data.ModifiedDate = noInfoPath.toDbDate(new Date());
 
-			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, scrubbed, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
 			return $q(function(resolve, reject) {
 				_exec(sqlStmt)
@@ -3749,6 +3751,7 @@ var GloboTest = {};
                             return dataSource[opType](writableData, SELF)
                                 .then(function(data) {
                                     //get row from base data source
+                                    var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
                                     //TODO: see where and when this is used.
                                     if (curEntity.cacheOnScope) {
@@ -3767,11 +3770,10 @@ var GloboTest = {};
                                     *   but it not a required configuration property.
                                     *
                                     */
-                                    if(curEntity.scopeKey){
-                                        scope[curEntity.scopeKey] = data;
-                                    }
 
-                                    results[config.noDataSource.entityName] = data;
+                                    scope[sk] = data;
+
+                                    results[sk] = data;
 
                                     _recurse();
 
