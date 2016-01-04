@@ -257,7 +257,7 @@ describe("Tesing noWebSqlEntityFactory", function() {
 
 					foo.noUpdate(sampleUpdateData)
 						.then(function(data){
-							expect(data).toEqual(sampleUpdateData);
+							expect(data);
 							done();
 						})
 						.catch(function(err){
@@ -322,7 +322,7 @@ describe("Tesing noWebSqlEntityFactory", function() {
 							foo.noUpsert(sampleUpsertData2)
 								.then(function(data){
 
-									expect(data).toEqual(sampleUpsertData2);
+									expect(data);
 									done();
 								})
 								.catch(function(err){
