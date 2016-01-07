@@ -812,11 +812,14 @@
 			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
 			return $q(function(resolve, reject) {
-				_exec(sqlStmt)
-					.then(function(resultset) {
-						resolve(data);
-					})
+                _exec(sqlStmt)
+					.then(function(id, result) {
+						return THIS.noOne(id)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "U", noTransaction))
+							.catch(_transactionFault.bind(null, reject));
+					}.bind(null, id))
 					.catch(reject);
+
 			});
 		};
 

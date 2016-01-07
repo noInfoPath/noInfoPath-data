@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.16
+*	@version 1.1.17
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -3077,11 +3077,14 @@ var GloboTest = {};
 			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
 			return $q(function(resolve, reject) {
-				_exec(sqlStmt)
-					.then(function(resultset) {
-						resolve(data);
-					})
+                _exec(sqlStmt)
+					.then(function(id, result) {
+						return THIS.noOne(id)
+							.then(_recordTransaction.bind(null, resolve, _entityName, "U", noTransaction))
+							.catch(_transactionFault.bind(null, reject));
+					}.bind(null, id))
 					.catch(reject);
+
 			});
 		};
 
