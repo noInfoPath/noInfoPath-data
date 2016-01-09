@@ -48,7 +48,7 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema) {
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage) {
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
@@ -65,8 +65,7 @@
 				});
 
 				this.transactionId = noInfoPath.createUUID();
-				this.timestamp = new Date()
-					.valueOf();
+				this.timestamp = (new Date()).toJSON();
 				this.userId = userId;
 				this.changes = new NoChanges();
 				this.state = "pending";
@@ -103,7 +102,7 @@
 						if (_.isBoolean(transaction)) {
 							noTransactions[t] = [{
 								entityName: en
-								//omit_fields: keysd
+									//omit_fields: keysd
 							}];
 						}
 					}
@@ -118,7 +117,7 @@
 
 					return $q(function(resolve, reject) {
 						var
-                            THIS = SELF,
+							THIS = SELF,
 							dsCfg = config.noDataSource,
 							opType = data[dsCfg.primaryKey] ? "update" : "create",
 							opEntites = dsCfg.noTransaction[opType],
@@ -265,9 +264,9 @@
 							});
 						}
 
-                        /*
-                        * Add each record one at a time to ensure that the transaction is recorded.
-                        */
+						/*
+						 * Add each record one at a time to ensure that the transaction is recorded.
+						 */
 						function addAllRelatedToParentKey(ds, entity, data, scope) {
 							return $q(function(resolve, reject) {
 								var d = 0;
@@ -297,75 +296,75 @@
 
 						}
 
-                        //Perform create or update operation.
-                        function executeDataOperation(dataSource, curEntity, opType, writableData){
-                            return dataSource[opType](writableData, SELF)
-                                .then(function(data) {
-                                    //get row from base data source
-                                    var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
+						//Perform create or update operation.
+						function executeDataOperation(dataSource, curEntity, opType, writableData) {
+							return dataSource[opType](writableData, SELF)
+								.then(function(data) {
+									//get row from base data source
+									var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
-                                    //TODO: see where and when this is used.
-                                    if (curEntity.cacheOnScope) {
-                                        scope[curEntity.entityName] = data;
-                                    }
+									//TODO: see where and when this is used.
+									if (curEntity.cacheOnScope) {
+										scope[curEntity.entityName] = data;
+									}
 
-                                    /*
-                                    *   #### @property scopeKey
-                                    *
-                                    *   Use this property allow NoTransaction to store a reference
-                                    *   to the entity upon which this data operation was performed.
-                                    *   This is useful when you have tables that rely on a one to one
-                                    *   relationship.
-                                    *
-                                    *   It is best practice use this property when ever possible,
-                                    *   but it not a required configuration property.
-                                    *
-                                    */
+									/*
+									 *   #### @property scopeKey
+									 *
+									 *   Use this property allow NoTransaction to store a reference
+									 *   to the entity upon which this data operation was performed.
+									 *   This is useful when you have tables that rely on a one to one
+									 *   relationship.
+									 *
+									 *   It is best practice use this property when ever possible,
+									 *   but it not a required configuration property.
+									 *
+									 */
 
-                                    scope[sk] = data;
+									scope[sk] = data;
 
-                                    results[sk] = data;
+									results[sk] = data;
 
-                                    _recurse();
+									_recurse();
 
-                                })
-                                .catch(reject);
-                        }
+								})
+								.catch(reject);
+						}
 
 						function _recurse() {
 
 							var curEntity = opEntites[curOpEntity],
-                                primaryKey,
-                                opType,
+								primaryKey,
+								opType,
 								preOp, dsConfig, dataSource, writableData, exec;
 
-                            //Check to see if we have run out of entities to recurse.
+							//Check to see if we have run out of entities to recurse.
 							if (!curEntity || curOpEntity >= opEntites.length) {
 								resolve(results);
 								return;
 							}
 
-                            //Increment counter for next recursion.
+							//Increment counter for next recursion.
 							curOpEntity++;
 
-                            //Resolve primary key
-                            primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
+							//Resolve primary key
+							primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
 
-                            //Create or Update the curEntity.
-                            opType = data[primaryKey] ? "update" : "create";
+							//Create or Update the curEntity.
+							opType = data[primaryKey] ? "update" : "create";
 
-                            //check entity type, if none found use `basic`
+							//check entity type, if none found use `basic`
 							preOp = !!curEntity.type ? curEntity.type : "basic";
 
-                            //create the datasource config used to create datasource.
+							//create the datasource config used to create datasource.
 							dsConfig = angular.merge({}, config.noDataSource, {
 								entityName: curEntity.entityName
 							});
 
-                            //create the noDataSource object.
+							//create the noDataSource object.
 							dataSource = noDataSource.create(dsConfig, scope);
 
-                            //resolve writeable data, execution function.
+							//resolve writeable data, execution function.
 							switch (preOp) {
 								case "joiner-many":
 									/*
@@ -378,11 +377,11 @@
 									writableData = preOps[preOp](curEntity, data, scope);
 
 									exec = function() {
-                                        return dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
-    										.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
-    										.then(_recurse)
-    										.catch(reject);
-                                    };
+										return dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
+											.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
+											.then(_recurse)
+											.catch(reject);
+									};
 									break;
 
 								case "one-one":
@@ -404,17 +403,17 @@
 
 									writableData = angular.merge({}, writableData, keyData);
 
-                                    exec = executeDataOperation;
+									exec = executeDataOperation;
 
-                                    break;
+									break;
 
-                                default:
-                                    writableData = preOps[preOp](curEntity, data, scope);
-                                    exec = executeDataOperation;
+								default:
+									writableData = preOps[preOp](curEntity, data, scope);
+									exec = executeDataOperation;
 									break;
 							}
 
-                            exec(dataSource, curEntity, opType, writableData);
+							exec(dataSource, curEntity, opType, writableData);
 						}
 
 						_recurse();
@@ -477,11 +476,14 @@
 				var arr = [];
 				noInfoPath.setPrototypeOf(this, arr);
 				this.add = function(tableName, data, changeType, tableCfg) {
-					this.unshift(new NoChange(tableName, data, changeType, tableCfg));
+					var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
+						change = new NoChange(tableName, data, changeType, tableCfg, syncVer.version);
+
+					this.unshift(change);
 				};
 			}
 
-			function NoChange(tableName, data, changeType, tableCfg) {
+			function NoChange(tableName, data, changeType, tableCfg, version) {
 				var tblSchema = tableCfg.tables[tableName];
 
 				function normalizeValues(data) {
@@ -530,6 +532,7 @@
 				this.tableName = tableName;
 				this.data = normalizeValues(data);
 				this.changeType = changeType;
+				this.version = version;
 			}
 
 			function NoTransactionCache() {
@@ -542,9 +545,12 @@
 				this.endTransaction = function(transaction) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
+
+					console.log(transaction);
+
 					return entity.noCreate(transaction.toObject())
 						.then(function() {
-							$rootScope.$broadcast("noTransactionCache::localDataUpdated");
+							$rootScope.$broadcast("noTransactionCache::localDataUpdated", transaction);
 						});
 				};
 

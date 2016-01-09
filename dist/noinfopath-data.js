@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.17
+*	@version 1.1.18
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2697,7 +2697,8 @@ var GloboTest = {};
 	function NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSQLStatementFactory, entityConfig, entityName, database) {
 		var
 			THIS = this,
-			_entityConfig, _entityName, _db;
+			_entityConfig, _entityName, _db,
+			SQLOPS = {};
 
 		if (!entityConfig) throw "entityConfig is a required parameter";
 		if (!entityName) throw "entityName is a required parameter";
@@ -2752,8 +2753,6 @@ var GloboTest = {};
 
 			return scrubbed;
 		}
-
-
 
 		/*-
 		 * ### @method private \_exec(sqlExpressionData)
@@ -2942,21 +2941,23 @@ var GloboTest = {};
 				data[_entityConfig.primaryKey] = noInfoPath.createUUID();
 			}
 
-			scrubbed = scrubData(data);
+			if (noTransaction) {
+				data = scrubData(data);
 
-			/*
-			 *
-			 *	When creating a new record in the WebSQL DB all tables are expected to have
-			 *	the `tracking columns`: CreatedBy, DateCreated, ModifiedBy, ModifiedDate.
-			 *	The values for these column are automatically added to the new data being
-			 *	added to the DB.
-			 */
-			scrubbed.CreatedBy = _db.currentUser.userId;
-			scrubbed.DateCreated = noInfoPath.toDbDate(new Date());
-			scrubbed.ModifiedBy = _db.currentUser.userId;
-			scrubbed.ModifiedDate = noInfoPath.toDbDate(new Date());
+				/*
+				 *
+				 *	When creating a new record in the WebSQL DB all tables are expected to have
+				 *	the `tracking columns`: CreatedBy, DateCreated, ModifiedBy, ModifiedDate.
+				 *	The values for these column are automatically added to the new data being
+				 *	added to the DB.
+				 */
+				data.CreatedBy = _db.currentUser.userId;
+				data.DateCreated = noInfoPath.toDbDate(new Date());
+				data.ModifiedBy = _db.currentUser.userId;
+				data.ModifiedDate = noInfoPath.toDbDate(new Date());
+			}
 
-			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, scrubbed);
+			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data);
 
 			return $q(function(resolve, reject) {
 				_exec(sqlStmt)
@@ -3063,21 +3064,24 @@ var GloboTest = {};
 
 			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
-			data = scrubData(data);
+			if (noTransaction) {
 
-			/*
-			 *	When updating a record in the WebSQL DB all tables are expected to have
-			 *	the `tracking columns`: ModifiedBy, ModifiedDate.
-			 *	The values for these column are automatically set on the object
-			 *	being updated in the DB.
-			 */
-			data.ModifiedBy = _db.currentUser.userId;
-			data.ModifiedDate = noInfoPath.toDbDate(new Date());
+				data = scrubData(data);
+
+				/*
+				 *	When updating a record in the WebSQL DB all tables are expected to have
+				 *	the `tracking columns`: ModifiedBy, ModifiedDate.
+				 *	The values for these column are automatically set on the object
+				 *	being updated in the DB.
+				 */
+				data.ModifiedBy = _db.currentUser.userId;
+				data.ModifiedDate = noInfoPath.toDbDate(new Date());
+			}
 
 			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
 			return $q(function(resolve, reject) {
-                _exec(sqlStmt)
+				_exec(sqlStmt)
 					.then(function(id, result) {
 						return THIS.noOne(id)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "U", noTransaction))
@@ -3334,6 +3338,84 @@ var GloboTest = {};
 			return deferred.promise;
 		};
 
+		SQLOPS.I = this.noCreate;
+		SQLOPS.U = this.noUpdate;
+		SQLOPS.D = this.noDestroy;
+
+		this.noImport = function(noChange) {
+			function checkForExisting() {
+				var id = noChange.values[_entityConfig.primaryKey];
+				return THIS.noOne(id);
+			}
+
+			function isSame(data, changes) {
+				var
+					localDate = new Date(data.ModifiedDate),
+					remoteDate = new Date(changes.ModifiedDate),
+					same = localDate >= remoteDate;
+
+				console.log(localDate, remoteDate, same);
+
+				return same;
+			}
+
+			function save(data, changes, resolve, reject) {
+				//console.log(data, changes);
+				if (isSame(data, changes)) {
+					console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
+					resolve();
+				} else {
+					THIS.noUpdate(changes)
+						.then(resolve)
+						.catch(reject);
+				}
+			}
+
+
+
+			return $q(function(resolve, reject) {
+
+				function ok(data) {
+					console.log(data);
+					resolve(data);
+				}
+
+				function fault(err) {
+					console.error(err);
+					reject(err);
+				}
+
+				checkForExisting()
+					.then(function(data) {
+
+						switch (noChange.operation) {
+							case "D":
+								THIS.noDestroy(noChange.values)
+									.then(ok)
+									.catch(fault);
+								break;
+
+							case "I":
+								if (data) {
+									save(data, noChange.values, resolve, reject);
+								} else {
+									THIS.noCreate(noChange.values)
+										.then(ok)
+										.catch(fault);
+								}
+								break;
+
+							case "U":
+								save(data, noChange.values, ok, fault);
+								break;
+						}
+					});
+
+
+
+			});
+		};
+
 	}
 
 	/*
@@ -3500,7 +3582,7 @@ var GloboTest = {};
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema) {
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage) {
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
@@ -3517,8 +3599,7 @@ var GloboTest = {};
 				});
 
 				this.transactionId = noInfoPath.createUUID();
-				this.timestamp = new Date()
-					.valueOf();
+				this.timestamp = (new Date()).toJSON();
 				this.userId = userId;
 				this.changes = new NoChanges();
 				this.state = "pending";
@@ -3555,7 +3636,7 @@ var GloboTest = {};
 						if (_.isBoolean(transaction)) {
 							noTransactions[t] = [{
 								entityName: en
-								//omit_fields: keysd
+									//omit_fields: keysd
 							}];
 						}
 					}
@@ -3570,7 +3651,7 @@ var GloboTest = {};
 
 					return $q(function(resolve, reject) {
 						var
-                            THIS = SELF,
+							THIS = SELF,
 							dsCfg = config.noDataSource,
 							opType = data[dsCfg.primaryKey] ? "update" : "create",
 							opEntites = dsCfg.noTransaction[opType],
@@ -3717,9 +3798,9 @@ var GloboTest = {};
 							});
 						}
 
-                        /*
-                        * Add each record one at a time to ensure that the transaction is recorded.
-                        */
+						/*
+						 * Add each record one at a time to ensure that the transaction is recorded.
+						 */
 						function addAllRelatedToParentKey(ds, entity, data, scope) {
 							return $q(function(resolve, reject) {
 								var d = 0;
@@ -3749,75 +3830,75 @@ var GloboTest = {};
 
 						}
 
-                        //Perform create or update operation.
-                        function executeDataOperation(dataSource, curEntity, opType, writableData){
-                            return dataSource[opType](writableData, SELF)
-                                .then(function(data) {
-                                    //get row from base data source
-                                    var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
+						//Perform create or update operation.
+						function executeDataOperation(dataSource, curEntity, opType, writableData) {
+							return dataSource[opType](writableData, SELF)
+								.then(function(data) {
+									//get row from base data source
+									var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
-                                    //TODO: see where and when this is used.
-                                    if (curEntity.cacheOnScope) {
-                                        scope[curEntity.entityName] = data;
-                                    }
+									//TODO: see where and when this is used.
+									if (curEntity.cacheOnScope) {
+										scope[curEntity.entityName] = data;
+									}
 
-                                    /*
-                                    *   #### @property scopeKey
-                                    *
-                                    *   Use this property allow NoTransaction to store a reference
-                                    *   to the entity upon which this data operation was performed.
-                                    *   This is useful when you have tables that rely on a one to one
-                                    *   relationship.
-                                    *
-                                    *   It is best practice use this property when ever possible,
-                                    *   but it not a required configuration property.
-                                    *
-                                    */
+									/*
+									 *   #### @property scopeKey
+									 *
+									 *   Use this property allow NoTransaction to store a reference
+									 *   to the entity upon which this data operation was performed.
+									 *   This is useful when you have tables that rely on a one to one
+									 *   relationship.
+									 *
+									 *   It is best practice use this property when ever possible,
+									 *   but it not a required configuration property.
+									 *
+									 */
 
-                                    scope[sk] = data;
+									scope[sk] = data;
 
-                                    results[sk] = data;
+									results[sk] = data;
 
-                                    _recurse();
+									_recurse();
 
-                                })
-                                .catch(reject);
-                        }
+								})
+								.catch(reject);
+						}
 
 						function _recurse() {
 
 							var curEntity = opEntites[curOpEntity],
-                                primaryKey,
-                                opType,
+								primaryKey,
+								opType,
 								preOp, dsConfig, dataSource, writableData, exec;
 
-                            //Check to see if we have run out of entities to recurse.
+							//Check to see if we have run out of entities to recurse.
 							if (!curEntity || curOpEntity >= opEntites.length) {
 								resolve(results);
 								return;
 							}
 
-                            //Increment counter for next recursion.
+							//Increment counter for next recursion.
 							curOpEntity++;
 
-                            //Resolve primary key
-                            primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
+							//Resolve primary key
+							primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
 
-                            //Create or Update the curEntity.
-                            opType = data[primaryKey] ? "update" : "create";
+							//Create or Update the curEntity.
+							opType = data[primaryKey] ? "update" : "create";
 
-                            //check entity type, if none found use `basic`
+							//check entity type, if none found use `basic`
 							preOp = !!curEntity.type ? curEntity.type : "basic";
 
-                            //create the datasource config used to create datasource.
+							//create the datasource config used to create datasource.
 							dsConfig = angular.merge({}, config.noDataSource, {
 								entityName: curEntity.entityName
 							});
 
-                            //create the noDataSource object.
+							//create the noDataSource object.
 							dataSource = noDataSource.create(dsConfig, scope);
 
-                            //resolve writeable data, execution function.
+							//resolve writeable data, execution function.
 							switch (preOp) {
 								case "joiner-many":
 									/*
@@ -3830,11 +3911,11 @@ var GloboTest = {};
 									writableData = preOps[preOp](curEntity, data, scope);
 
 									exec = function() {
-                                        return dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
-    										.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
-    										.then(_recurse)
-    										.catch(reject);
-                                    };
+										return dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
+											.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
+											.then(_recurse)
+											.catch(reject);
+									};
 									break;
 
 								case "one-one":
@@ -3856,17 +3937,17 @@ var GloboTest = {};
 
 									writableData = angular.merge({}, writableData, keyData);
 
-                                    exec = executeDataOperation;
+									exec = executeDataOperation;
 
-                                    break;
+									break;
 
-                                default:
-                                    writableData = preOps[preOp](curEntity, data, scope);
-                                    exec = executeDataOperation;
+								default:
+									writableData = preOps[preOp](curEntity, data, scope);
+									exec = executeDataOperation;
 									break;
 							}
 
-                            exec(dataSource, curEntity, opType, writableData);
+							exec(dataSource, curEntity, opType, writableData);
 						}
 
 						_recurse();
@@ -3929,11 +4010,14 @@ var GloboTest = {};
 				var arr = [];
 				noInfoPath.setPrototypeOf(this, arr);
 				this.add = function(tableName, data, changeType, tableCfg) {
-					this.unshift(new NoChange(tableName, data, changeType, tableCfg));
+					var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
+						change = new NoChange(tableName, data, changeType, tableCfg, syncVer.version);
+
+					this.unshift(change);
 				};
 			}
 
-			function NoChange(tableName, data, changeType, tableCfg) {
+			function NoChange(tableName, data, changeType, tableCfg, version) {
 				var tblSchema = tableCfg.tables[tableName];
 
 				function normalizeValues(data) {
@@ -3982,6 +4066,7 @@ var GloboTest = {};
 				this.tableName = tableName;
 				this.data = normalizeValues(data);
 				this.changeType = changeType;
+				this.version = version;
 			}
 
 			function NoTransactionCache() {
@@ -3994,9 +4079,12 @@ var GloboTest = {};
 				this.endTransaction = function(transaction) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
+
+					console.log(transaction);
+
 					return entity.noCreate(transaction.toObject())
 						.then(function() {
-							$rootScope.$broadcast("noTransactionCache::localDataUpdated");
+							$rootScope.$broadcast("noTransactionCache::localDataUpdated", transaction);
 						});
 				};
 
