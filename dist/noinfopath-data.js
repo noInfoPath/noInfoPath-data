@@ -1,174 +1,174 @@
 //globals.js
 /*
- *	# noinfopath-data
- *	@version 1.1.17
- *
- *	## Overview
- *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
- *
- *	[![Build Status](http://192.168.254.94:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://192.168.254.94:8081/job/noinfopath-data/6/)
- *
- *	## Dependencies
- *
- *	- AngularJS
- *	- jQuery
- *	- ngLodash
- *	- Dexie
- *	- Dexie Observable
- *	- Dexie Syncable
- *
- *	## Development Dependencies
- *
- *	> See `package.json` for exact version requirements.
- *
- *	- indexedDB.polyfill
- *	- angular-mocks
- *	- es5-shim
- *	- grunt
- *	- grunt-bumpup
- *   - grunt-version
- *	- grunt-contrib-concat
- *	- grunt-contrib-copy
- *	- grunt-contrib-watch
- *	- grunt-karma
- *	- jasmine-ajax
- *	- jasmine-core
- *	- jshint-stylish
- *	- karma
- *	- karma-chrome-launcher
- *	- karma-coverage
- *	- karma-firefox-launcher
- *	- karma-html-reporter
- *	- karma-ie-launcher
- *	- karma-jasmine
- *	- karma-phantomjs-launcher
- *	- karma-safari-launcher
- *	- karma-verbose-reporter
- *	- noinfopath-helpers
- *	- phantomjs
- *
- *	## Developers' Remarks
- *
- *	|Who|When|What|
- *	|---|----|----|
- *	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
- *
- * ## @interface noInfoPath
- *
- * ### Overview
- *
- * This interface exposes some useful funtions on the global scope
- * by attaching it to the `window` object as ```window.noInfoPath```
- *
- * ### Methods
- *
- * #### getItem
- *
- * #### setItem
- *
- * #### bindFilters `deprecated`
- *
- * #### noFilter `deprecated`
- *
- * #### noFilterExpression `deprecated`
- *
- * #### noDataReadRequest `deprecated`
- *
- * #### noDataSource `deprecated`
- *
- * #### digest `deprecated`
- *
- * #### digestError `deprecated`
- *
- * #### digestTimeout `deprecated`
- */
+*	# noinfopath-data
+*	@version 1.1.18
+*
+*	## Overview
+*	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
+*
+*	[![Build Status](http://192.168.254.94:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://192.168.254.94:8081/job/noinfopath-data/6/)
+*
+*	## Dependencies
+*
+*	- AngularJS
+*	- jQuery
+*	- ngLodash
+*	- Dexie
+*	- Dexie Observable
+*	- Dexie Syncable
+*
+*	## Development Dependencies
+*
+*	> See `package.json` for exact version requirements.
+*
+*	- indexedDB.polyfill
+*	- angular-mocks
+*	- es5-shim
+*	- grunt
+*	- grunt-bumpup
+*   - grunt-version
+*	- grunt-contrib-concat
+*	- grunt-contrib-copy
+*	- grunt-contrib-watch
+*	- grunt-karma
+*	- jasmine-ajax
+*	- jasmine-core
+*	- jshint-stylish
+*	- karma
+*	- karma-chrome-launcher
+*	- karma-coverage
+*	- karma-firefox-launcher
+*	- karma-html-reporter
+*	- karma-ie-launcher
+*	- karma-jasmine
+*	- karma-phantomjs-launcher
+*	- karma-safari-launcher
+*	- karma-verbose-reporter
+*	- noinfopath-helpers
+*	- phantomjs
+*
+*	## Developers' Remarks
+*
+*	|Who|When|What|
+*	|---|----|----|
+*	|Jeff|2015-06-20T22:25:00Z|Whaaat?|
+*
+* ## @interface noInfoPath
+*
+* ### Overview
+*
+* This interface exposes some useful funtions on the global scope
+* by attaching it to the `window` object as ```window.noInfoPath```
+*
+* ### Methods
+*
+* #### getItem
+*
+* #### setItem
+*
+* #### bindFilters `deprecated`
+*
+* #### noFilter `deprecated`
+*
+* #### noFilterExpression `deprecated`
+*
+* #### noDataReadRequest `deprecated`
+*
+* #### noDataSource `deprecated`
+*
+* #### digest `deprecated`
+*
+* #### digestError `deprecated`
+*
+* #### digestTimeout `deprecated`
+*/
 (noInfoPath.data = {});
-(function(angular, undefined) {
-	"use strict";
+(function(angular, undefined){
+ 	"use strict";
 
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', function($injector, $parse, $timeout, $q, $rootScope, $browser, $filter) {
+		.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter',  function($injector, $parse, $timeout, $q, $rootScope, $browser, $filter){
 
-		function _digestTimeout() {
+			function _digestTimeout(){
 
 
-			if ($timeout.flush && $browser.deferredFns.length) {
-				if ($rootScope.$$phase) {
-					setTimeout(function() {
+				if($timeout.flush && $browser.deferredFns.length){
+					if($rootScope.$$phase){
+						setTimeout(function(){
+							$timeout.flush();
+						},10);
+					}else{
 						$timeout.flush();
-					}, 10);
-				} else {
-					$timeout.flush();
+					}
+					//console.log($timeout.verifyNoPendingTasks());
+
+		        }
+			}
+
+			function _digestError(fn, error){
+				var digestError = error;
+
+				if(angular.isObject(error)){
+					digestError = error.toString();
 				}
-				//console.log($timeout.verifyNoPendingTasks());
 
-			}
-		}
+				//console.error(digestError);
 
-		function _digestError(fn, error) {
-			var digestError = error;
-
-			if (angular.isObject(error)) {
-				digestError = error.toString();
+				_digest(fn, digestError);
 			}
 
-			//console.error(digestError);
+			function _digest(fn, data){
+				var message = [];
 
-			_digest(fn, digestError);
-		}
+				if(angular.isArray(data)){
+					message = data;
+				} else {
+					message = [data];
+				}
 
-		function _digest(fn, data) {
-			var message = [];
+	        	if(window.jasmine){
+        			$timeout(function(){
+						fn.apply(null, message);
+					});
+					$timeout.flush();
+	        	}else{
+	        		fn.apply(null, message);
+	        	}
 
-			if (angular.isArray(data)) {
-				message = data;
-			} else {
-				message = [data];
 			}
 
-			if (window.jasmine) {
-				$timeout(function() {
-					fn.apply(null, message);
-				});
-				$timeout.flush();
-			} else {
-				fn.apply(null, message);
+			function _setItem(store, key, value){
+				 var getter = $parse(key),
+		             setter = getter.assign;
+
+		         setter(store, value);
 			}
 
-		}
+			function _getItem(store, key){
+		 		var getter = $parse(key);
+		 		return getter(store);
+			}
 
-		function _setItem(store, key, value) {
-			var getter = $parse(key),
-				setter = getter.assign;
+            function _toDbDate(date){
+                var dateResult = moment.utc(date).format("YYYY-MM-DDTHH:mm:ss.sss");
 
-			setter(store, value);
-		}
+                return dateResult;
+            }
 
-		function _getItem(store, key) {
-			var getter = $parse(key);
-			return getter(store);
-		}
+			var _data = {
+				getItem: _getItem,
+				setItem: _setItem,
+				digest: _digest,
+				digestError: _digestError,
+				digestTimeout: _digestTimeout,
+                toDbDate: _toDbDate
+			};
 
-		function _toDbDate(date) {
-			var dateResult = moment.utc(date).format("YYYY-MM-DDTHH:mm:ss.sss");
-
-			        
-			return dateResult;
-		}
-
-		var _data = {
-			getItem: _getItem,
-			setItem: _setItem,
-			digest: _digest,
-			digestError: _digestError,
-			digestTimeout: _digestTimeout,
-			toDbDate: _toDbDate
-		};
-
-		angular.extend(noInfoPath, _data);
-	}]);
+			angular.extend(noInfoPath, _data);
+		}])
+	;
 })(angular);
 
 //classes.js
@@ -682,9 +682,10 @@
 			angular.forEach(this.filters, function(exp, key) {
 				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
 
-				if (!stringSearch[exp.operator]) {
-					values.push(exp.value);
-				}
+                if(!stringSearch[exp.operator])
+                {
+                    values.push(exp.value);
+                }
 			}, this);
 
 			filterArrayString = filterArray.join(" ");
@@ -862,127 +863,127 @@
 
 //query-builder.js
 /*
- * ## @interface INoQueryParser
- *
- * > INoQueryParser is a conceptual entity, it does not really exist
- * > the reality. This is because JavaScript does not implement interfaces
- * > like other languages do. This documentation should be considered a
- * > guide for creating query parsers compatible with NoInfoPath.
- *
- * ### Overview
- * INoQueryParser provides a service interface definition for converting a set
- * of NoInfoPath class related to querying data into a given query protocol.
- * An example of this is the ODATA 2.0 specification.
- *
- * ### Methods
- *
- * #### makeQuery(filters, sort, page)
- *
- * ##### Parameters
- *
- * |Name|Type|Descriptions|
- * |----|----|------------|
- * |filters|NoFilters|(Optional) Instance of a NoFilters class|
- * |sort|NoSort|(Optional) Instance of NoSort class|
- * |page|NoPage|(Optional) Instance of NoPage class|
- *
- * ##### Returns
- * Object
- *
- *
- *	## noQueryParser
- *
- *	### Overview
- *	The noQueryParser takes the `data` property of the options
- *	parameter passed to the Kendo DataSources transport.read method. The
- *	data object is inspected and its filter, sort, and paging values are
- *	converted to NoInfoPath compatible versions.
- *
- *	### Methods
- *
- *	#### parse(options)
- *	Parses provided filter, sort and paging options into NoInfoPath compatible
- *   objects. Stores the results internally for future use.
- *
- *   ##### Returns
- *	Any/all filters, sorts or paging data as an array compatible
- *	with a call to `function.prototype.array`.
- *
- *	### Properties
- *   None.
- *
- *
- * ##  noQueryParser : INoQueryParser
- *
- * ### Overview
- *
- * Implements a INoQueryBuilder compatible service that converts NoFilters,
- * NoSort, NoPage into ODATA compatible query object.
- *
- */
-(function(angular, undefined) {
+* ## @interface INoQueryParser
+*
+* > INoQueryParser is a conceptual entity, it does not really exist
+* > the reality. This is because JavaScript does not implement interfaces
+* > like other languages do. This documentation should be considered a
+* > guide for creating query parsers compatible with NoInfoPath.
+*
+* ### Overview
+* INoQueryParser provides a service interface definition for converting a set
+* of NoInfoPath class related to querying data into a given query protocol.
+* An example of this is the ODATA 2.0 specification.
+*
+* ### Methods
+*
+* #### makeQuery(filters, sort, page)
+*
+* ##### Parameters
+*
+* |Name|Type|Descriptions|
+* |----|----|------------|
+* |filters|NoFilters|(Optional) Instance of a NoFilters class|
+* |sort|NoSort|(Optional) Instance of NoSort class|
+* |page|NoPage|(Optional) Instance of NoPage class|
+*
+* ##### Returns
+* Object
+*
+*
+*	## noQueryParser
+*
+*	### Overview
+*	The noQueryParser takes the `data` property of the options
+*	parameter passed to the Kendo DataSources transport.read method. The
+*	data object is inspected and its filter, sort, and paging values are
+*	converted to NoInfoPath compatible versions.
+*
+*	### Methods
+*
+*	#### parse(options)
+*	Parses provided filter, sort and paging options into NoInfoPath compatible
+*   objects. Stores the results internally for future use.
+*
+*   ##### Returns
+*	Any/all filters, sorts or paging data as an array compatible
+*	with a call to `function.prototype.array`.
+*
+*	### Properties
+*   None.
+*
+*
+* ##  noQueryParser : INoQueryParser
+*
+* ### Overview
+*
+* Implements a INoQueryBuilder compatible service that converts NoFilters,
+* NoSort, NoPage into ODATA compatible query object.
+*
+*/
+(function(angular, undefined){
 	angular.module("noinfopath.data")
-		.service("noQueryParser", [function() {
-			var filters, sort, paging;
+        .service("noQueryParser",[function(){
+            var filters, sort, paging;
 
-			this.parse = function(options) {
-				var filters, sort, paging;
+            this.parse = function(options){
+                var filters, sort, paging;
 
-				//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
-				//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
-				if (!!options.take) paging = new noInfoPath.data.NoPage(options.skip, options.take);
-				if (!!options.sort) sort = new noInfoPath.data.NoSort(options.sort);
-				if (!!options.filter) filters = new noInfoPath.data.NoFilters(options.filter);
+                //filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
+                //{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
+                if(!!options.take) paging = new noInfoPath.data.NoPage(options.skip, options.take);
+                if(!!options.sort) sort = new noInfoPath.data.NoSort(options.sort);
+                if(!!options.filter) filters = new noInfoPath.data.NoFilters(options.filter);
 
-				return toArray(filters, sort, paging);
-			};
+                return toArray(filters, sort, paging);
+            };
 
-			function toArray(filters, sort, paging) {
-				var arr = [];
+            function toArray(filters, sort, paging){
+                var arr = [];
 
-				if (!!filters) arr.push(filters);
+                if(!!filters) arr.push(filters);
 
-				if (!!sort) arr.push(sort);
+                if(!!sort) arr.push(sort);
 
-				if (!!paging) arr.push(paging);
+                if(!!paging) arr.push(paging);
 
-				if (arr.length === 0) arr = undefined;
+                if(arr.length === 0) arr = undefined;
 
-				return arr;
-			}
-		}])
+                return arr;
+            }
+        }])
 
-	.service("noOdataQueryBuilder", ['$filter', function($filter) {
-		var odataFilters = {
-				eq: "eq",
-				neq: "ne",
-				gt: "gt",
-				gte: "ge",
-				lt: "lt",
-				lte: "le",
-				contains: "substringof",
-				doesnotcontain: "substringof",
-				endswith: "endswith",
-				startswith: "startswith"
-			},
-			mappers = {
-				pageSize: angular.noop,
-				page: angular.noop,
-				filter: function(params, filter, useVersionFour) {
-					if (filter) {
-						params.$filter = toOdataFilter(filter, useVersionFour);
-					}
+		.service("noOdataQueryBuilder", ['$filter', function($filter){
+			var odataFilters = {
+					eq: "eq",
+					neq: "ne",
+					gt: "gt",
+					gte: "ge",
+					lt: "lt",
+					lte: "le",
+					contains : "substringof",
+					doesnotcontain: "substringof",
+					endswith: "endswith",
+					startswith: "startswith"
 				},
-				data: function(params, filter, useVersionFour) {
-					mappers.filter(params, filter.filter, useVersionFour);
-				},
-				// filter: function(params, filter, useVersionFour) {
-				//     if (filter) {
-				//         params.$filter = SELF.toOdataFilter(filter, useVersionFour);
-				//     }
-				// },
-				sort: function(params, orderby) {
-					var sorts = angular.forEach(orderby, function(value) {
+				mappers = {
+					pageSize: angular.noop,
+					page: angular.noop,
+					filter: function(params, filter, useVersionFour) {
+						if (filter) {
+							params.$filter = toOdataFilter(filter, useVersionFour);
+						}
+					},
+					data: function(params, filter, useVersionFour){
+						mappers.filter(params, filter.filter, useVersionFour);
+					},
+					// filter: function(params, filter, useVersionFour) {
+					//     if (filter) {
+					//         params.$filter = SELF.toOdataFilter(filter, useVersionFour);
+					//     }
+					// },
+					sort: function(params, orderby) {
+						var sorts = angular.forEach(orderby, function(value) {
 							var order = value.field.replace(/\./g, "/");
 
 							if (value.dir === "desc") {
@@ -993,174 +994,172 @@
 						}),
 						expr = sorts ? sorts.join(",") : undefined;
 
-					if (expr) {
-						params.$orderby = expr;
+						if (expr) {
+							params.$orderby = expr;
+						}
+					},
+					skip: function(params, skip) {
+						if (skip) {
+							params.$skip = skip;
+						}
+					},
+					take: function(params, take) {
+						if (take) {
+							params.$top = take;
+						}
 					}
-				},
-				skip: function(params, skip) {
-					if (skip) {
-						params.$skip = skip;
+				};
+
+			function toOdataFilter (filters, useOdataFour) {
+			    var result = [],
+			        idx,
+			        length,
+			        field,
+			        type,
+			        format,
+			        operator,
+			        value,
+			        ignoreCase,
+					filter,
+					origFilter;
+			        //filters = filter.filters;
+
+			    for (idx = 0, length = filters.length; idx < length; idx++) {
+					filter = origFilter = filters[idx];
+			        field = filter.column;
+			        value = filter.value;
+			        operator = filter.operator;
+					logic = filter.logic;
+
+			        if (filter.filters) {
+			            filter = toOdataFilter(filter, useOdataFour);
+			        } else {
+			            ignoreCase = filter.ignoreCase;
+			            field = field.replace(/\./g, "/");
+			            filter = odataFilters[operator];
+
+			            // if (useOdataFour) {
+			            //     filter = odataFiltersVersionFour[operator];
+			            // }
+
+			            if (filter && value !== undefined) {
+
+			                if (angular.isString(value)) {
+			                	if(noInfoPath.isGuid(value)){
+									format = "guid'{1}'";
+			                	}else{
+			                		format = "'{1}'";
+			                	}
+
+			                    value = value.replace(/'/g, "''");
+
+
+			                    // if (ignoreCase === true) {
+			                    //     field = "tolower(" + field + ")";
+			                    // }
+
+			                } else if (angular.isDate(value)) {
+			                    if (useOdataFour) {
+			                        format = "yyyy-MM-ddTHH:mm:ss+00:00";
+			                    } else {
+			                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
+			                        format = "{1}";
+			                    }
+			                } else {
+			                    format = "{1}";
+			                }
+
+			                if (filter.length > 3) {
+			                    if (filter !== "substringof") {
+			                        format = "{0}({2}," + format + ")";
+			                    } else {
+			                        format = "{0}(" + format + ",{2})";
+			                        if (operator === "doesnotcontain") {
+			                            if (useOdataFour) {
+			                                format = "{0}({2},'{1}') eq -1";
+			                                filter = "indexof";
+			                            } else {
+			                                format += " eq false";
+			                            }
+			                        }
+			                    }
+			                } else {
+			                    format = "{2} {0} " + format;
+			                }
+
+			                filter = $filter("format")(format, filter, value, field);
+			            }
+			        }
+
+					origFilter.compiledFilter = filter;
+			        result.push(origFilter);
+			    }
+
+				//loop until there are no more filters or logic.
+				var odataFilter = "", f;
+
+				do{
+					f = result.pop();
+
+					odataFilter = odataFilter + "(" + f.compiledFilter + ")";
+
+					if(f.logic){
+						odataFilter = odataFilter + " " + f.logic + " ";
+					}else{
+						f = null;
 					}
-				},
-				take: function(params, take) {
-					if (take) {
-						params.$top = take;
+
+				}while(f);
+
+				odataFilter = odataFilter.trim();
+
+		        return odataFilter;
+			}
+
+			function toOdataSort(sort){
+				var sorts = [], expr;
+
+				angular.forEach(sort, function(value) {
+					console.log(value);
+					var order = value.column.replace(/\./g, "/");
+
+					if (value.dir === "desc") {
+						order += " desc";
+					}
+
+					sorts.push(order);
+				});
+
+				expr = sorts ? sorts.join(",") : undefined;
+
+				return expr;
+			}
+
+			this.makeQuery = function(){
+				var query = {};
+
+				for(var ai in arguments){
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if(angular.isObject(arg)){
+						switch(arg.__type){
+							case "NoFilters":
+								query.$filter = toOdataFilter(arg);
+								break;
+							case "NoSort":
+								query.$orderby = toOdataSort(arg);
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
 					}
 				}
+
+				return query;
 			};
-
-		function toOdataFilter(filters, useOdataFour) {
-			var result = [],
-				idx,
-				length,
-				field,
-				type,
-				format,
-				operator,
-				value,
-				ignoreCase,
-				filter,
-				origFilter;
-			//filters = filter.filters;
-
-			for (idx = 0, length = filters.length; idx < length; idx++) {
-				filter = origFilter = filters[idx];
-				field = filter.column;
-				value = filter.value;
-				operator = filter.operator;
-				logic = filter.logic;
-
-				if (filter.filters) {
-					filter = toOdataFilter(filter, useOdataFour);
-				} else {
-					ignoreCase = filter.ignoreCase;
-					field = field.replace(/\./g, "/");
-					filter = odataFilters[operator];
-
-					// if (useOdataFour) {
-					//     filter = odataFiltersVersionFour[operator];
-					// }
-
-					if (filter && value !== undefined) {
-
-						if (angular.isString(value)) {
-							if (noInfoPath.isGuid(value)) {
-								format = "guid'{1}'";
-							} else {
-								format = "'{1}'";
-							}
-
-							value = value.replace(/'/g, "''");
-
-
-							// if (ignoreCase === true) {
-							//     field = "tolower(" + field + ")";
-							// }
-
-						} else if (angular.isDate(value)) {
-							if (useOdataFour) {
-								format = "yyyy-MM-ddTHH:mm:ss+00:00";
-							} else {
-								value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
-								format = "{1}";
-							}
-						} else {
-							format = "{1}";
-						}
-
-						if (filter.length > 3) {
-							if (filter !== "substringof") {
-								format = "{0}({2}," + format + ")";
-							} else {
-								format = "{0}(" + format + ",{2})";
-								if (operator === "doesnotcontain") {
-									if (useOdataFour) {
-										format = "{0}({2},'{1}') eq -1";
-										filter = "indexof";
-									} else {
-										format += " eq false";
-									}
-								}
-							}
-						} else {
-							format = "{2} {0} " + format;
-						}
-
-						filter = $filter("format")(format, filter, value, field);
-					}
-				}
-
-				origFilter.compiledFilter = filter;
-				result.push(origFilter);
-			}
-
-			//loop until there are no more filters or logic.
-			var odataFilter = "",
-				f;
-
-			do {
-				f = result.pop();
-
-				odataFilter = odataFilter + "(" + f.compiledFilter + ")";
-
-				if (f.logic) {
-					odataFilter = odataFilter + " " + f.logic + " ";
-				} else {
-					f = null;
-				}
-
-			} while (f);
-
-			odataFilter = odataFilter.trim();
-
-			return odataFilter;
-		}
-
-		function toOdataSort(sort) {
-			var sorts = [],
-				expr;
-
-			angular.forEach(sort, function(value) {
-				console.log(value);
-				var order = value.column.replace(/\./g, "/");
-
-				if (value.dir === "desc") {
-					order += " desc";
-				}
-
-				sorts.push(order);
-			});
-
-			expr = sorts ? sorts.join(",") : undefined;
-
-			return expr;
-		}
-
-		this.makeQuery = function() {
-			var query = {};
-
-			for (var ai in arguments) {
-				var arg = arguments[ai];
-
-				//success and error must always be first, then
-				if (angular.isObject(arg)) {
-					switch (arg.__type) {
-						case "NoFilters":
-							query.$filter = toOdataFilter(arg);
-							break;
-						case "NoSort":
-							query.$orderby = toOdataSort(arg);
-							break;
-						case "NoPage":
-							page = arg;
-							break;
-					}
-				}
-			}
-
-			return query;
-		};
-	}])
+		}])
 
 	;
 })(angular);
@@ -1169,45 +1168,42 @@
 /**
 	### @class MockStorage
 */
-(function() {
+(function(){
 	"use strict";
 
-	function MockStorage() {
-		var _store = {},
-			_len = 0;
+	function MockStorage(){
+		var _store = {},_len=0;
 
-		Object.defineProperties(this, {
-			"length": {
-				"get": function() {
-					var l = 0;
-					for (var x in _store) {
-						l++;
-					}
-					return l;
-				}
-			}
-		});
+		Object.defineProperties(this,{
+	      "length": {
+	        "get": function(){
+	          var l=0;
+	          for(var x in _store){l++;}
+	          return l;
+	        }
+	      }
+	    });
 
-		this.key = function(i) {
-			var l = 0;
-			for (var x in _store) {
-				if (i == l) return x;
+		this.key = function (i){
+			var l=0;
+			for(var x in _store){
+			  if(i==l) return x;
 			}
 		};
 
-		this.setItem = function(k, v) {
+		this.setItem = function (k,v){
 			_store[k] = v;
 		};
 
-		this.getItem = function(k) {
+		this.getItem = function (k){
 			return _store[k];
 		};
 
-		this.removeItem = function(k) {
+		this.removeItem = function (k){
 			delete _store[k];
 		};
 
-		this.clear = function() {
+		this.clear = function (){
 			_store = {};
 		};
 	}
@@ -1215,457 +1211,460 @@
 	/**
 		### @class NoStorage
 	*/
-	function NoStorage(storetype) {
+	function NoStorage(storetype){
 		var _store;
 
 
-		if (typeof window[storetype] === "object") {
+		if(typeof window[storetype]=== "object")
+		{
 			_store = window[storetype];
-		} else {
+		}else{
 
 			_store = new MockStorage();
 		}
 
 
-		Object.defineProperties(this, {
-			"length": {
-				"get": function() {
-					return _store.length;
-				}
-			}
-		});
+		Object.defineProperties(this,{
+	      "length": {
+	        "get": function(){
+	          return _store.length;
+	        }
+	      }
+	    });
 
-		this.key = function(i) {
+		this.key = function (i){
 			return _store.key(i);
 		};
 
-		this.setItem = function(k, v) {
-			if (v) {
-				_store.setItem(k, angular.toJson(v));
-			} else {
-				_store.setItem(k, undefined);
+		this.setItem = function (k,v){
+			if(v){
+				_store.setItem(k,angular.toJson(v));
+			}else{
+				_store.setItem(k,undefined);
 			}
 
 		};
 
-		this.getItem = function(k) {
+		this.getItem = function (k){
 			var x = _store.getItem(k);
 
-			if (x === "undefined") {
+			if(x === "undefined"){
 				return undefined;
-			} else {
+			}else{
 				return angular.fromJson(x);
 			}
 
 		};
 
-		this.removeItem = function(k) {
+		this.removeItem = function (k){
 			_store.removeItem(k);
 		};
 
-		this.clear = function() {
+		this.clear = function (){
 			_store.clear();
 		};
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noSessionStorage", [function() {
+		.factory("noSessionStorage",[function(){
 			return new NoStorage("sessionStorage");
 		}])
 
-	.factory("noLocalStorage", [function() {
-		return new NoStorage("localStorage");
-	}]);
+		.factory("noLocalStorage",[function(){
+			return new NoStorage("localStorage");
+		}])
+		;
 })(angular);
 
 //configuration.js
 /*
- * ## @service noConfig
- *
- * ### Overview
- * The noConfig service downloads the application's `config.json` and
- * exposes its contents via the `noConfig.current` property. If the
- * application's server is offline noConfig will try to load config.json
- * from `LocalStorage`.
- *
- * ### Properties
- *
- * |Name|Type|Description|
- * |----|----|-----------|
- * |current|object|exposes the entire download `config.json`|
- *
- * ### Methods
- *
- * #### fromCache()
- * Loads the configuration from `LocalStorage`.
- *
- * ##### Parameters
- * none
- *
- * ##### Returns
- * String
- *
- * #### load(uri)
- * Loads the conifiguration data from and HTTP endpoint.
- *
- * ##### Parameters
- *
- * |Name|Type|Description|
- * |----|----|-----------|
- * |uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
- *
- * ##### Returns
- * AngularJS::promise
- *
- * #### whenReady(uri)
- * Returns a promise to notify when the configuration has been loaded.
- * If the server is online, whenReady will call load, if not it will try
- * to load it from `LocalStorage`. If there is no cached version
- * available then an error is returned.
- *
- * Once the config.json is resolved is it stored on $rootScope as $rootScope.noConfig
- *
- * ##### Parameters
- *
- * |Name|Type|Description|
- * |----|----|-----------|
- * |uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
- *
- * ##### Returns
- * AngularJS::promise
- *
- */
-(function(angular, undefined) {
+* ## @service noConfig
+*
+* ### Overview
+* The noConfig service downloads the application's `config.json` and
+* exposes its contents via the `noConfig.current` property. If the
+* application's server is offline noConfig will try to load config.json
+* from `LocalStorage`.
+*
+* ### Properties
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |current|object|exposes the entire download `config.json`|
+*
+* ### Methods
+*
+* #### fromCache()
+* Loads the configuration from `LocalStorage`.
+*
+* ##### Parameters
+* none
+*
+* ##### Returns
+* String
+*
+* #### load(uri)
+* Loads the conifiguration data from and HTTP endpoint.
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|(optional) A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+*
+* ##### Returns
+* AngularJS::promise
+*
+* #### whenReady(uri)
+* Returns a promise to notify when the configuration has been loaded.
+* If the server is online, whenReady will call load, if not it will try
+* to load it from `LocalStorage`. If there is no cached version
+* available then an error is returned.
+*
+* Once the config.json is resolved is it stored on $rootScope as $rootScope.noConfig
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|(optional)A relative or fully qualified location of the configuration file. If not provided the default value is ```/config.json```|
+*
+* ##### Returns
+* AngularJS::promise
+*
+*/
+(function(angular, undefined){
 	"use strict";
 
 	var noODATAProv;
 
 	angular.module("noinfopath.data")
-		.config([function() {}])
+		.config([function(){
+		}])
 
-	.provider("noConfig", [function() {
-		var _currentConfig, _status;
+		.provider("noConfig", [function(){
+			var _currentConfig, _status;
 
-		function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage) {
-			var SELF = this;
+			function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+				var SELF = this;
 
-			Object.defineProperties(this, {
-				"current": {
-					"get": function() {
-						return _currentConfig;
-					}
-				},
-				"status": {
-					"get": function() {
-						return _status;
-					}
-				}
-			});
-
-			this.load = function(uri) {
-				var url = uri || "/config.json";
-				return $http.get(url)
-					.then(function(resp) {
-						noLocalStorage.setItem("noConfig", resp.data);
-					})
-					.catch(function(err) {
-						throw err;
-					});
-			};
-
-			this.fromCache = function() {
-				_currentConfig = noLocalStorage.getItem("noConfig");
-			};
-
-			this.whenReady = function(uri) {
-				var deferred = $q.defer();
-
-				$timeout(function() {
-					if ($rootScope.noConfig) {
-						deferred.resolve();
-					} else {
-						$rootScope.$watch("noConfig", function(newval) {
-							if (newval) {
-								deferred.resolve();
-							}
-						});
-
-						SELF.load(uri)
-							.then(function() {
-								_currentConfig = noLocalStorage.getItem("noConfig");
-								$rootScope.noConfig = _currentConfig;
-							})
-							.catch(function(err) {
-								SELF.fromCache();
-
-								if (_currentConfig) {
-									$rootScope.noConfig = _currentConfig;
-								} else {
-									deferred.reject("noConfig");
-								}
-							});
+				Object.defineProperties(this, {
+					"current": {
+						"get": function() { return _currentConfig; }
+					},
+					"status": {
+						"get": function() { return _status; }
 					}
 				});
 
-				return deferred.promise;
-			};
-		}
+				this.load = function (uri){
+					var url = uri || "/config.json";
+					return $http.get(url)
+						.then(function(resp){
+							noLocalStorage.setItem("noConfig", resp.data);
+						})
+						.catch(function(err){
+							throw err;
+						});
+				};
 
-		this.$get = ['$http', '$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage) {
-			return new NoConfig($http, $q, $timeout, $rootScope, noLocalStorage);
-		}];
-	}]);
+				this.fromCache = function(){
+					_currentConfig = noLocalStorage.getItem("noConfig");
+				};
+
+				this.whenReady = function(uri){
+					var deferred = $q.defer();
+
+					$timeout(function(){
+						if($rootScope.noConfig)
+						{
+							deferred.resolve();
+						}else{
+							$rootScope.$watch("noConfig", function(newval){
+								if(newval){
+									deferred.resolve();
+								}
+							});
+
+							SELF.load(uri)
+								.then(function(){
+									_currentConfig = noLocalStorage.getItem("noConfig");
+									$rootScope.noConfig = _currentConfig;
+								})
+								.catch(function(err){
+									SELF.fromCache();
+
+									if(_currentConfig){
+										$rootScope.noConfig = _currentConfig;
+									}else{
+										deferred.reject("noConfig");
+									}
+								});
+						}
+					});
+
+					return deferred.promise;
+				};
+			}
+
+			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
+				return new NoConfig($http, $q, $timeout, $rootScope, noLocalStorage);
+			}];
+		}])
+	;
 })(angular);
 
 //http.js
 /*
- * ## @service noHTTP
- *
- * ### Overview
- * Provides a RESTful compatible HTTP service.
- *
- * ### Methods
- *
- * #### create(uri, data)
- *
- * ##### Parameters
- *
- * |Name|Type|Description|
- * |----|----|-----------|
- * |uri|string|unique identifier of the table to operate against|
- * |data|object|the data to use to create the new obejct in the db|
- *
- * #### read(resourceURI, query)
- *
- * #### update(resourceURI, formdata)
- * TODO: Implementation required.
- *
- * #### destroy(resourceURI, formdata)
- * TODO: Implementation required.
- *
- *
- * ### @class NoDb
- *
- * #### Overview
- *
- * Creates and manages a set of NoTable objects.
- *
- * #### @constructor NoDb(tables, queryBuilder)
- *
- * ##### Parameters
- *
- * |Name|Type|Description|
- * |----|----|-----------|
- * |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
- * |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
- *
- *
- *
- * ### @class NoTable
- *
- * #### Overview
- *
- * Provides an interface that loosely matches that of the NoTable
- * class provided by noDexie.  This to ease the integration with
- * NoInfoPath component that consume data such as noKendo.
- *
- * #### @constructor NoTable(tableName, queryBuilder)
- *
- * ##### Parameters
- *
- * |Name|Type|Description|
- * |----|----|-----------|
- * |tableName|string|name of the table that this instance will interact with.|
- * |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
- */
-(function(angular, undefined) {
+* ## @service noHTTP
+*
+* ### Overview
+* Provides a RESTful compatible HTTP service.
+*
+* ### Methods
+*
+* #### create(uri, data)
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |uri|string|unique identifier of the table to operate against|
+* |data|object|the data to use to create the new obejct in the db|
+*
+* #### read(resourceURI, query)
+*
+* #### update(resourceURI, formdata)
+* TODO: Implementation required.
+*
+* #### destroy(resourceURI, formdata)
+* TODO: Implementation required.
+*
+*
+* ### @class NoDb
+*
+* #### Overview
+*
+* Creates and manages a set of NoTable objects.
+*
+* #### @constructor NoDb(tables, queryBuilder)
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |tables|object|A hash object that contains a collection of table configuration as provided by noDbScema|
+* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+*
+*
+*
+* ### @class NoTable
+*
+* #### Overview
+*
+* Provides an interface that loosely matches that of the NoTable
+* class provided by noDexie.  This to ease the integration with
+* NoInfoPath component that consume data such as noKendo.
+*
+* #### @constructor NoTable(tableName, queryBuilder)
+*
+* ##### Parameters
+*
+* |Name|Type|Description|
+* |----|----|-----------|
+* |tableName|string|name of the table that this instance will interact with.|
+* |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+*/
+(function(angular, undefined){
 	"use strict";
 
 	angular.module('noinfopath.data')
 
-	.provider("noHTTP", [function() {
-		this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig) {
+		.provider("noHTTP",[function(){
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig){
 
-			function NoHTTP(queryBuilder) {
-				var THIS = this;
+				function NoHTTP(queryBuilder){
+					var THIS = this;
 
-				console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
+					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
 
-				this.whenReady = function(tables) {
+					this.whenReady = function(tables){
 
-					return $q(function(resolve, reject) {
-						if ($rootScope.noHTTPInitialized) {
-							noLogService.log("noHTTP Ready.");
+						return $q(function(resolve, reject){
+							if($rootScope.noHTTPInitialized)
+							{
+								noLogService.log("noHTTP Ready.");
+								resolve();
+							}else{
+								//noLogService.log("noDbSchema is not ready yet.")
+								$rootScope.$watch("noHTTPInitialized", function(newval){
+									if(newval){
+										noLogService.log("noHTTP ready.");
+										resolve();
+									}
+								});
+
+							}
+						});
+					};
+
+					this.configure = function(noUser, schema){
+
+						var promise = $q(function(resolve, reject){
+							for(var t in schema.tables){
+								var table = schema.tables[t];
+								THIS[t] = new NoTable(t, table, queryBuilder);
+							}
+							$rootScope.noHTTPInitialized = true;
+							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
 							resolve();
-						} else {
-							//noLogService.log("noDbSchema is not ready yet.")
-							$rootScope.$watch("noHTTPInitialized", function(newval) {
-								if (newval) {
-									noLogService.log("noHTTP ready.");
-									resolve();
-								}
+						});
+
+						return promise;
+					};
+
+				}
+
+				function NoTable(tableName, table, queryBuilder){
+					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
+
+					var url =  noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
+
+					this.noCreate = function(data){
+						var json = angular.toJson(data);
+
+						var deferred = $q.defer(),
+							req = {
+								method: "POST",
+								url: url,
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function(data){
+								//console.log(angular.toJson(data) );
+
+								deferred.resolve(data);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
 							});
 
-						}
-					});
-				};
+						return deferred.promise;
+					};
 
-				this.configure = function(noUser, schema) {
+					this.noRead = function() {
+						//noLogService.debug("noRead say's, 'swag!'");
+						var filters, sort, page;
 
-					var promise = $q(function(resolve, reject) {
-						for (var t in schema.tables) {
-							var table = schema.tables[t];
-							THIS[t] = new NoTable(t, table, queryBuilder);
-						}
-						$rootScope.noHTTPInitialized = true;
-						noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
-						resolve();
-					});
+						for(var ai in arguments){
+							var arg = arguments[ai];
 
-					return promise;
-				};
-
-			}
-
-			function NoTable(tableName, table, queryBuilder) {
-				if (!queryBuilder) throw "TODO: implement default queryBuilder service";
-
-				var url = noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
-
-				this.noCreate = function(data) {
-					var json = angular.toJson(data);
-
-					var deferred = $q.defer(),
-						req = {
-							method: "POST",
-							url: url,
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-
-					$http(req)
-						.success(function(data) {
-							//console.log(angular.toJson(data) );
-
-							deferred.resolve(data);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				};
-
-				this.noRead = function() {
-					//noLogService.debug("noRead say's, 'swag!'");
-					var filters, sort, page;
-
-					for (var ai in arguments) {
-						var arg = arguments[ai];
-
-						//success and error must always be first, then
-						if (angular.isObject(arg)) {
-							switch (arg.constructor.name) {
-								case "NoFilters":
-									filters = arg;
-									break;
-								case "NoSort":
-									sort = arg;
-									break;
-								case "NoPage":
-									page = arg;
-									break;
+							//success and error must always be first, then
+							if(angular.isObject(arg)){
+								switch(arg.constructor.name){
+									case "NoFilters":
+										filters = arg;
+										break;
+									case "NoSort":
+										sort = arg;
+										break;
+									case "NoPage":
+										page = arg;
+										break;
+								}
 							}
 						}
-					}
 
-					var deferred = $q.defer(),
-						req = {
-							method: "GET",
-							params: queryBuilder(filters, sort, page),
-							url: url,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
+						var deferred = $q.defer(),
+							req = {
+								method: "GET",
+								params: queryBuilder(filters,sort,page),
+								url: url,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
 
-					$http(req)
-						.success(function(data) {
-							//console.log( angular.toJson(data));
-							deferred.resolve(data.value);
-						})
-						.error(function(reason) {
-							noLogService.error(arguments);
-							deferred.reject(reason);
-						});
+						$http(req)
+							.success(function(data){
+								//console.log( angular.toJson(data));
+								deferred.resolve(data.value);
+							})
+							.error(function(reason){
+								noLogService.error(arguments);
+								deferred.reject(reason);
+							});
 
-					return deferred.promise;
-				};
+						return deferred.promise;
+					};
 
-				this.noUpdate = function(data) {
-					var json = angular.toJson(data);
+					this.noUpdate = function(data) {
+						var json = angular.toJson(data);
 
-					var deferred = $q.defer(),
-						req = {
-							method: "PUT",
-							url: url + "(guid'" + data[table.primaryKey] + "')",
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
+						var deferred = $q.defer(),
+							req = {
+								method: "PUT",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
 
-					$http(req)
-						.success(function(data, status) {
-							deferred.resolve(status);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
+						$http(req)
+							.success(function(data, status){
+								deferred.resolve(status);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
 
-					return deferred.promise;
+						return deferred.promise;
 
-				};
+					};
 
-				this.noDestroy = function(data) {
-					var deferred = $q.defer(),
-						req = {
-							method: "DELETE",
-							url: url + "(guid'" + data[table.primaryKey] + "')",
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
+					this.noDestroy = function(data) {
+						var deferred = $q.defer(),
+							req = {
+								method: "DELETE",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
 
-					$http(req)
-						.success(function(data, status) {
-							deferred.resolve(status);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
+						$http(req)
+							.success(function(data, status){
+								deferred.resolve(status);
+							})
+							.error(function(reason){
+								console.error(reason);
+								deferred.reject(reason);
+							});
 
-					return deferred.promise;
-				};
-			}
+						return deferred.promise;
+					};
+				}
 
-			//return new noREST($q, $http, $filter, noUrl, noConfig)
-			return new NoHTTP(noOdataQueryBuilder.makeQuery);
-		}];
-	}]);
+				//return new noREST($q, $http, $filter, noUrl, noConfig)
+				return new NoHTTP(noOdataQueryBuilder.makeQuery);
+			}];
+		}])
+	;
 })(angular);
 
 //schema.js
@@ -1984,10 +1983,10 @@ var GloboTest = {};
 			}
 
 			return $q.all(promises)
-				.then(function(resp) {
+				.then(function(resp){
 					console.log(resp);
 				})
-				.catch(function(err) {
+				.catch(function(err){
 					console.error(err);
 				});
 
@@ -2028,47 +2027,47 @@ var GloboTest = {};
 })(angular);
 
 /*
- * ## @interface INoQueryBuilder
- *
- * > INoQueryBuilder is a conceptual entity, it does not really exist
- * > the reality. This is because JavaScript does not implement interfaces
- * > like other languages do. This documentation should be considered as a
- * > guide for creating query providers compatible with NoInfoPath.
- *
- * ### Overview
- * INoQueryBuilder provides a service interface definition for converting a set
- * of NoInfoPath class related to querying data into a given query protocol.
- * An example of this is the ODATA 2.0 specification.
- *
- * ### Methods
- *
- * #### makeQuery(filters, sort, page)
- *
- * ##### Parameters
- *
- * |Name|Type|Descriptions|
- * |----|----|------------|
- * |filters|NoFilters|(Optional) Instance of a NoFilters class|
- * |sort|NoSort|(Optional) Instance of NoSort class|
- * |page|NoPage|(Optional) Instance of NoPage class|
- *
- * ##### Returns
- * Object
- *
- */
+* ## @interface INoQueryBuilder
+*
+* > INoQueryBuilder is a conceptual entity, it does not really exist
+* > the reality. This is because JavaScript does not implement interfaces
+* > like other languages do. This documentation should be considered as a
+* > guide for creating query providers compatible with NoInfoPath.
+*
+* ### Overview
+* INoQueryBuilder provides a service interface definition for converting a set
+* of NoInfoPath class related to querying data into a given query protocol.
+* An example of this is the ODATA 2.0 specification.
+*
+* ### Methods
+*
+* #### makeQuery(filters, sort, page)
+*
+* ##### Parameters
+*
+* |Name|Type|Descriptions|
+* |----|----|------------|
+* |filters|NoFilters|(Optional) Instance of a NoFilters class|
+* |sort|NoSort|(Optional) Instance of NoSort class|
+* |page|NoPage|(Optional) Instance of NoPage class|
+*
+* ##### Returns
+* Object
+*
+*/
 
-(function(angular, undefined) {
+(function(angular, undefined){
 	angular.module("noinfopath.data")
 		/*
-		 * ## @service noSQLQueryBuilder : INoQueryBuilder
-		 *
-		 * ### Overview
-		 *
-		 * Implements a INoQueryBuilder compatible service that converts NoFilters,
-		 * NoSort, NoPage into a WebSQL compatible query string.
-		 *
-		 */
-		.service("noSQLQueryBuilder", ['$filter', function($filter) {
+		* ## @service noSQLQueryBuilder : INoQueryBuilder
+		*
+		* ### Overview
+		*
+		* Implements a INoQueryBuilder compatible service that converts NoFilters,
+		* NoSort, NoPage into a WebSQL compatible query string.
+		*
+		*/
+		.service("noSQLQueryBuilder", ['$filter', function($filter){
 			var sqlFilters = {
 					eq: "==",
 					neq: "!=",
@@ -2076,10 +2075,10 @@ var GloboTest = {};
 					gte: ">=",
 					lt: "<",
 					lte: "<=",
-					contains: "CONTAINS",
+					contains : "CONTAINS",
 					doesnotcontain: "NOT CONTAINS"
-						//endswith: "endswith",
-						//startswith: "startswith"
+					//endswith: "endswith",
+					//startswith: "startswith"
 				},
 				mappers = {
 					pageSize: angular.noop,
@@ -2089,20 +2088,20 @@ var GloboTest = {};
 							params.$filter = toSQLFilter(filter);
 						}
 					},
-					data: function(params, filter) {
+					data: function(params, filter){
 						mappers.filter(params, filter.filter);
 					},
 					sort: function(params, orderby) {
 						var sorts = angular.forEach(orderby, function(value) {
-								var order = value.field.replace(/\./g, "/");
+							var order = value.field.replace(/\./g, "/");
 
-								if (value.dir === "desc") {
-									order += " desc";
-								}
+							if (value.dir === "desc") {
+								order += " desc";
+							}
 
-								return order;
-							}),
-							expr = sorts ? sorts.join(",") : undefined;
+							return order;
+						}),
+						expr = sorts ? sorts.join(",") : undefined;
 
 						if (expr) {
 							params.$orderby = expr;
@@ -2120,105 +2119,106 @@ var GloboTest = {};
 					}
 				};
 
-			function isGuid(val) {
-				return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
-			}
+			function isGuid(val){
+		    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+		    }
 
-			function toSQLFilter(filters) {
-				var result = [],
-					idx,
-					length,
-					field,
-					type,
-					format,
-					operator,
-					value,
-					ignoreCase,
+			function toSQLFilter (filters) {
+			    var result = [],
+			        idx,
+			        length,
+			        field,
+			        type,
+			        format,
+			        operator,
+			        value,
+			        ignoreCase,
 					filter,
 					origFilter;
 
 
 
-				for (idx = 0, length = filters.length; idx < length; idx++) {
-					filter = origFilter = filters[idx];
-					field = filter.column;
-					value = filter.value;
-					operator = filter.operator;
+			    for (idx = 0, length = filters.length; idx < length; idx++) {
+			    	filter = origFilter = filters[idx];
+			    	field = filter.column;
+			        value = filter.value;
+			        operator = filter.operator;
 					logic = filter.logic;
 
-					if (filter.filters) {
-						filter = toSQLFilter(filter);
-					} else {
-						ignoreCase = filter.ignoreCase;
-						field = field.replace(/\./g, "/");
-						filter = sqlFilters[operator];
+			    	if (filter.filters)
+			    	{
+			    		filter = toSQLFilter(filter);
+			    	}
+			    	else
+			    	{
+			    		ignoreCase = filter.ignoreCase;
+			            field = field.replace(/\./g, "/");
+			            filter = sqlFilters[operator];
 
-						if (filter && value !== undefined) {
+			             if (filter && value !== undefined) {
 
-							if (angular.isString(value)) {
-								if (isGuid(value)) {
+			                if (angular.isString(value)) {
+			                	if(isGuid(value)){
 									format = "guid'{1}'";
-								} else {
-									format = "'{1}'";
-								}
+			                	}else{
+			                		format = "'{1}'";
+			                	}
 
-								value = value.replace(/'/g, "''");
+			                    value = value.replace(/'/g, "''");
 
 
-								// if (ignoreCase === true) {
-								//     field = "tolower(" + field + ")";
-								// }
+			                    // if (ignoreCase === true) {
+			                    //     field = "tolower(" + field + ")";
+			                    // }
 
-							} else if (angular.isDate(value)) {
+			                } else if (angular.isDate(value)) {
 
-								value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
-								format = "{1}";
+		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
+		                        format = "{1}";
 
-							} else {
-								format = "{1}";
-							}
+			                } else {
+			                    format = "{1}";
+			                }
 
-							// if (filter.length > 3) {
-							//     if (filter !== "substringof") {
-							//         format = "{0}({2}," + format + ")";
-							//     } else {
-							//         format = "{0}(" + format + ",{2})";
-							//         // if (operator === "doesnotcontain") {
-							//         //     if (useOdataFour) {
-							//         //         format = "{0}({2},'{1}') eq -1";
-							//         //         filter = "indexof";
-							//         //     } else {
-							//         //         format += " eq false";
-							//         //     }
-							//         // }
-							//     }
-							// } else {
-							//     format = "{2} {0} " + format;
-							// }
+			                // if (filter.length > 3) {
+			                //     if (filter !== "substringof") {
+			                //         format = "{0}({2}," + format + ")";
+			                //     } else {
+			                //         format = "{0}(" + format + ",{2})";
+			                //         // if (operator === "doesnotcontain") {
+			                //         //     if (useOdataFour) {
+			                //         //         format = "{0}({2},'{1}') eq -1";
+			                //         //         filter = "indexof";
+			                //         //     } else {
+			                //         //         format += " eq false";
+			                //         //     }
+			                //         // }
+			                //     }
+			                // } else {
+			                //     format = "{2} {0} " + format;
+			                // }
 
-							filter = $filter("format")(format, filter, value, field);
-						}
-					}
+			                filter = $filter("format")(format, filter, value, field);
+			            }
+			    	}
 
-					origFilter.compiledFilter = filter;
-					result.push(origFilter);
-				}
+			    	origFilter.compiledFilter = filter;
+			        result.push(origFilter);
+			    }
 
-				var SQLFilter = "",
-					f;
+ 				var SQLFilter = "", f;
 
-				do {
+ 				do{
 
-				} while (f);
+ 				}while(f);
 
-				SQLFilter = SQLFilter.trim();
+ 				SQLFilter = SQLFilter.trim();
 
-				return SQLFilter;
+		        return SQLFilter;
 			}
 
-			function toSQLSort(sort) {
-				var sorts = [],
-					expr;
+			function toSQLSort(sort){
+				var sorts = [], expr;
 
 				angular.forEach(sort, function(value) {
 					var order = value.column.replace(/\./g, "/");
@@ -2235,15 +2235,15 @@ var GloboTest = {};
 				return expr;
 			}
 
-			this.makeQuery = function() {
+			this.makeQuery = function(){
 				var query = {};
 
-				for (var ai in arguments) {
+				for(var ai in arguments){
 					var arg = arguments[ai];
 
 					//success and error must always be first, then
-					if (angular.isObject(arg)) {
-						switch (arg.__type) {
+					if(angular.isObject(arg)){
+						switch(arg.__type){
 							case "NoFilters":
 								query.$filter = toSQLFilter(arg);
 								break;
@@ -2259,7 +2259,8 @@ var GloboTest = {};
 
 				return query;
 			};
-		}]);
+		}])
+	;
 })(angular);
 
 //websql.js
@@ -4381,7 +4382,7 @@ var GloboTest = {};
 				_dexie.on('error', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.error("Dexie Error: " + err);
-					_reject($rootScope, reject, err);
+ 					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('blocked', function(err) {
