@@ -432,7 +432,8 @@
 	function NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSQLStatementFactory, entityConfig, entityName, database) {
 		var
 			THIS = this,
-			_entityConfig, _entityName, _db;
+			_entityConfig, _entityName, _db,
+			SQLOPS = {};
 
 		if (!entityConfig) throw "entityConfig is a required parameter";
 		if (!entityName) throw "entityName is a required parameter";
@@ -487,8 +488,6 @@
 
 			return scrubbed;
 		}
-
-
 
 		/*-
 		 * ### @method private \_exec(sqlExpressionData)
@@ -677,21 +676,23 @@
 				data[_entityConfig.primaryKey] = noInfoPath.createUUID();
 			}
 
-			scrubbed = scrubData(data);
+			if (noTransaction) {
+				data = scrubData(data);
 
-			/*
-			 *
-			 *	When creating a new record in the WebSQL DB all tables are expected to have
-			 *	the `tracking columns`: CreatedBy, DateCreated, ModifiedBy, ModifiedDate.
-			 *	The values for these column are automatically added to the new data being
-			 *	added to the DB.
-			 */
-			scrubbed.CreatedBy = _db.currentUser.userId;
-			scrubbed.DateCreated = noInfoPath.toDbDate(new Date());
-			scrubbed.ModifiedBy = _db.currentUser.userId;
-			scrubbed.ModifiedDate = noInfoPath.toDbDate(new Date());
+				/*
+				 *
+				 *	When creating a new record in the WebSQL DB all tables are expected to have
+				 *	the `tracking columns`: CreatedBy, DateCreated, ModifiedBy, ModifiedDate.
+				 *	The values for these column are automatically added to the new data being
+				 *	added to the DB.
+				 */
+				data.CreatedBy = _db.currentUser.userId;
+				data.DateCreated = noInfoPath.toDbDate(new Date());
+				data.ModifiedBy = _db.currentUser.userId;
+				data.ModifiedDate = noInfoPath.toDbDate(new Date());
+			}
 
-			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, scrubbed);
+			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data);
 
 			return $q(function(resolve, reject) {
 				_exec(sqlStmt)
@@ -798,21 +799,24 @@
 
 			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
-			data = scrubData(data);
+			if (noTransaction) {
 
-			/*
-			 *	When updating a record in the WebSQL DB all tables are expected to have
-			 *	the `tracking columns`: ModifiedBy, ModifiedDate.
-			 *	The values for these column are automatically set on the object
-			 *	being updated in the DB.
-			 */
-			data.ModifiedBy = _db.currentUser.userId;
-			data.ModifiedDate = noInfoPath.toDbDate(new Date());
+				data = scrubData(data);
+
+				/*
+				 *	When updating a record in the WebSQL DB all tables are expected to have
+				 *	the `tracking columns`: ModifiedBy, ModifiedDate.
+				 *	The values for these column are automatically set on the object
+				 *	being updated in the DB.
+				 */
+				data.ModifiedBy = _db.currentUser.userId;
+				data.ModifiedDate = noInfoPath.toDbDate(new Date());
+			}
 
 			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
 			return $q(function(resolve, reject) {
-                _exec(sqlStmt)
+				_exec(sqlStmt)
 					.then(function(id, result) {
 						return THIS.noOne(id)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "U", noTransaction))
@@ -1067,6 +1071,84 @@
 				}.bind(this));
 
 			return deferred.promise;
+		};
+
+		SQLOPS.I = this.noCreate;
+		SQLOPS.U = this.noUpdate;
+		SQLOPS.D = this.noDestroy;
+
+		this.noImport = function(noChange) {
+			function checkForExisting() {
+				var id = noChange.values[_entityConfig.primaryKey];
+				return THIS.noOne(id);
+			}
+
+			function isSame(data, changes) {
+				var
+					localDate = new Date(data.ModifiedDate),
+					remoteDate = new Date(changes.ModifiedDate),
+					same = localDate >= remoteDate;
+
+				console.log(localDate, remoteDate, same);
+
+				return same;
+			}
+
+			function save(data, changes, resolve, reject) {
+				//console.log(data, changes);
+				if (isSame(data, changes)) {
+					console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
+					resolve();
+				} else {
+					THIS.noUpdate(changes)
+						.then(resolve)
+						.catch(reject);
+				}
+			}
+
+
+
+			return $q(function(resolve, reject) {
+
+				function ok(data) {
+					console.log(data);
+					resolve(data);
+				}
+
+				function fault(err) {
+					console.error(err);
+					reject(err);
+				}
+
+				checkForExisting()
+					.then(function(data) {
+
+						switch (noChange.operation) {
+							case "D":
+								THIS.noDestroy(noChange.values)
+									.then(ok)
+									.catch(fault);
+								break;
+
+							case "I":
+								if (data) {
+									save(data, noChange.values, resolve, reject);
+								} else {
+									THIS.noCreate(noChange.values)
+										.then(ok)
+										.catch(fault);
+								}
+								break;
+
+							case "U":
+								save(data, noChange.values, ok, fault);
+								break;
+						}
+					});
+
+
+
+			});
 		};
 
 	}
