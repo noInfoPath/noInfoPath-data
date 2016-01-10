@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.18
+*	@version 1.1.19
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1517,11 +1517,18 @@
 							}
 							$rootScope.noHTTPInitialized = true;
 							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
-							resolve();
+
+							$rootScope["noHTTP_" + schema.config.dbName] = THIS;
+
+							resolve(THIS);
 						});
 
 						return promise;
 					};
+
+					this.getDatabase = function(databaseName) {
+            			return $rootScope["noHTTP_" + databaseName];
+            		};
 
 				}
 
@@ -1597,7 +1604,8 @@
 						$http(req)
 							.success(function(data){
 								//console.log( angular.toJson(data));
-								deferred.resolve(data.value);
+								var resp = new noInfoPath.data.NoResults(data.value);
+								deferred.resolve(resp);
 							})
 							.error(function(reason){
 								noLogService.error(arguments);
