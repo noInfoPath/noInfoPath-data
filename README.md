@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.1.19
+@version 1.1.20
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -521,6 +521,21 @@ NoInfoPath component that consume data such as noKendo.
 |----|----|-----------|
 |tableName|string|name of the table that this instance will interact with.|
 |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+
+When 'query' is an object then check to see if it is a
+NoFilters object.  If not, add a filter to the intrinsic filters object
+based on the query's key property, and the query's value.
+
+When query a number, a filter is created on the instrinsic
+filters object using the `rowid`  WebSQL column as the column
+to filter on. Query will be the target
+value of query.
+
+When the query is a string it is assumed a table is being queried
+by it's primary key.
+
+> Passing a string when the entity is
+a SQL View is not allowed.
 
 ## noDbSchema
 The noDbSchema service provides access to the database configuration that
