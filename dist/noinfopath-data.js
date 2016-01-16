@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.19
+*	@version 1.1.20
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1533,6 +1533,7 @@
 				}
 
 				function NoTable(tableName, table, queryBuilder){
+					var THIS = this;
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
 					var url =  noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
@@ -1575,7 +1576,7 @@
 
 							//success and error must always be first, then
 							if(angular.isObject(arg)){
-								switch(arg.constructor.name){
+								switch(arg.__type){
 									case "NoFilters":
 										filters = arg;
 										break;
@@ -1665,6 +1666,62 @@
 							});
 
 						return deferred.promise;
+					};
+
+					this.noOne = function(query) {
+						/**
+						 *	When 'query' is an object then check to see if it is a
+						 *	NoFilters object.  If not, add a filter to the intrinsic filters object
+						 *	based on the query's key property, and the query's value.
+						 */
+						var filters = new noInfoPath.data.NoFilters();
+
+						if (angular.isNumber(query)) {
+							//Assume rowid
+							/*
+							 *	When query a number, a filter is created on the instrinsic
+							 *	filters object using the `rowid`  WebSQL column as the column
+							 *	to filter on. Query will be the target
+							 *	value of query.
+							 */
+							filters.quickAdd("rowid", "eq", query);
+
+						} else if (angular.isString(query)) {
+							//Assume guid
+							/*
+							 * When the query is a string it is assumed a table is being queried
+							 * by it's primary key.
+							 *
+							 * > Passing a string when the entity is
+							 * a SQL View is not allowed.
+							 */
+							if (_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+
+							filters.quickAdd(_entityConfig.primaryKey, "eq", query);
+
+						} else if (angular.isObject(query)) {
+							if (query.__type === "NoFilters") {
+								filters = query;
+							} else {
+								//Simple key/value pairs. Assuming all are equal operators and are anded.
+								for (var k in query) {
+									filters.quickAdd(k, "eq", query[k]);
+								}
+							}
+
+						} else {
+							throw "One requires a query parameter. May be a Number, String or Object";
+						}
+
+						//Internal _getOne requires and NoFilters object.
+						return THIS.noRead(filters)
+								.then(function(data){
+									if(data.length){
+										return data[0];
+									} else {
+										throw "Record Not Found";
+									}
+								});
 					};
 				}
 
