@@ -3417,7 +3417,7 @@ var GloboTest = {};
 				var
 					localDate = new Date(data.ModifiedDate),
 					remoteDate = new Date(changes.ModifiedDate),
-					same = localDate >= remoteDate;
+					same = moment(localDate).isSame(remoteDate,'second');
 
 				console.log(localDate, remoteDate, same);
 
