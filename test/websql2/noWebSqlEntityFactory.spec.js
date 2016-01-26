@@ -276,10 +276,8 @@ describe("Tesing noWebSqlEntityFactory", function() {
 
 				it("should delete an existing record and return it.", function(done){
 
-					foo.noDestroy(sampleUpdateData)
+					foo.noDestroy(sampleUpdateData.fooID)
 						.then(function(data){
-							expect(data.fooID).toBe(sampleUpdateData.fooID);
-
 							done();
 						})
 						.catch(function(err){

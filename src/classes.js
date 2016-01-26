@@ -413,9 +413,9 @@
 			this.unshift(new NoFilter(column, logic, beginning, end, filters));
 		};
 
-		this.quickAdd = function(column, logic, value) {
-			this.add(column, null, true, true, [{
-				"operator": logic,
+		this.quickAdd = function(column, operator, value, logic) {
+			this.add(column, logic, true, true, [{
+				"operator": operator,
 				"value": value,
 				"logic": null
 			}]);

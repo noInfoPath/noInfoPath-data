@@ -23,7 +23,7 @@ var
 			}
 		},
 		"createSqlDeleteStmt": {
-			params: ["foo", sampleUpdateData,  testFilter],
+			params: ["foo", testFilter],
 			expected: {
 				queryString: "DELETE FROM foo WHERE (fooID = ?)",
 				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083"]
