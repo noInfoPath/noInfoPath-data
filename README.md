@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.1.20
+@version 1.1.21
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -806,6 +806,17 @@ Deletes a record from the websql database based on the Primary Key of the data p
 |data|Object|Name Value Pairs|
 |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 
+When query a number, a filter is created on the instrinsic
+filters object using the `rowid`  WebSQL column as the column
+to filter on. Query will be the target
+value of query.
+
+When the query is a string it is assumed a table is being queried
+by it's primary key.
+
+> Passing a string when the entity is
+a SQL View is not allowed.
+
 ### @method noOne(data)
 
 Reads exactly one record from the websql database based on the filter derived the data provided.
@@ -838,17 +849,6 @@ as such. When not, then it expected to be a special object.
 When 'query' is an object then check to see if it is a
 NoFilters object.  If not, add a filter to the intrinsic filters object
 based on the query's key property, and the query's value.
-
-When query a number, a filter is created on the instrinsic
-filters object using the `rowid`  WebSQL column as the column
-to filter on. Query will be the target
-value of query.
-
-When the query is a string it is assumed a table is being queried
-by it's primary key.
-
-> Passing a string when the entity is
-a SQL View is not allowed.
 
 ### @method noUpsert(data)
 

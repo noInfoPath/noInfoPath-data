@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.20
+*	@version 1.1.21
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -586,9 +586,9 @@
 			this.unshift(new NoFilter(column, logic, beginning, end, filters));
 		};
 
-		this.quickAdd = function(column, logic, value) {
-			this.add(column, null, true, true, [{
-				"operator": logic,
+		this.quickAdd = function(column, operator, value, logic) {
+			this.add(column, logic, true, true, [{
+				"operator": operator,
 				"value": value,
 				"logic": null
 			}]);
@@ -2727,7 +2727,7 @@ var GloboTest = {};
 			return WEBSQL_STATEMENT_BUILDERS.sqlUpdate(tableName, data, filters);
 		};
 
-		this.createSqlDeleteStmt = function(tableName, data, filters) {
+		this.createSqlDeleteStmt = function(tableName, filters) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlDelete(tableName, filters);
 		};
 
@@ -3170,34 +3170,78 @@ var GloboTest = {};
 		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 		 */
 		this.noDestroy = function(data, noTransaction, filters) {
+
 			if (_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
 			var
-				noFilters = new noInfoPath.data.NoFilters(filters),
+				noFilters = resolveID(filters ? filters : data, _entityConfig),
 				id = data ? data[_entityConfig.primaryKey] : false,
 				sqlStmt, deleted;
 
-			//if(!id) throw "Could not resolve primary key for delete operation.";
-
-			if (!noFilters.length && !!id) {
-				noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
-			}
-
-			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, data, noFilters);
+			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, noFilters);
 
 			return $q(function(resolve, reject) {
+				if(noTransaction){
+					_getOne(noFilters)
+						.then(function(datum) {
+							_exec(sqlStmt)
+								.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
+								.catch(reject);
+						})
+						.catch(reject);
+				} else {
+					_exec(sqlStmt)
+						.then(resolve)
+						.catch(reject);
+				}
 
-				_getOne(noFilters)
-					.then(function(datum) {
-						_exec(sqlStmt)
-							.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
-							.catch(reject);
-					})
-					.catch(reject);
 			});
 
 
 		};
+
+		function resolveID(query, entityConfig){
+			var filters = new noInfoPath.data.NoFilters();
+
+			if (angular.isNumber(query)) {
+				//Assume rowid
+				/*
+				 *	When query a number, a filter is created on the instrinsic
+				 *	filters object using the `rowid`  WebSQL column as the column
+				 *	to filter on. Query will be the target
+				 *	value of query.
+				 */
+				filters.quickAdd("rowid", "eq", query);
+
+			} else if (angular.isString(query)) {
+				//Assume guid
+				/*
+				 * When the query is a string it is assumed a table is being queried
+				 * by it's primary key.
+				 *
+				 * > Passing a string when the entity is
+				 * a SQL View is not allowed.
+				 */
+				if (entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+
+				filters.quickAdd(entityConfig.primaryKey, "eq", query);
+
+			} else if (angular.isObject(query)) {
+				if (query.__type === "NoFilters") {
+					filters = query;
+				} else {
+					//Simple key/value pairs. Assuming all are equal operators and are anded.
+					for (var k in query) {
+						filters.quickAdd(k, "eq", query[k]);
+					}
+				}
+
+			} else {
+				throw "One requires a query parameter. May be a Number, String or Object";
+			}
+
+			return filters;
+		}
 
 		/*
 		 * ### @method noOne(data)
@@ -3235,44 +3279,7 @@ var GloboTest = {};
 			 *	NoFilters object.  If not, add a filter to the intrinsic filters object
 			 *	based on the query's key property, and the query's value.
 			 */
-			var filters = new noInfoPath.data.NoFilters();
-
-			if (angular.isNumber(query)) {
-				//Assume rowid
-				/*
-				 *	When query a number, a filter is created on the instrinsic
-				 *	filters object using the `rowid`  WebSQL column as the column
-				 *	to filter on. Query will be the target
-				 *	value of query.
-				 */
-				filters.quickAdd("rowid", "eq", query);
-
-			} else if (angular.isString(query)) {
-				//Assume guid
-				/*
-				 * When the query is a string it is assumed a table is being queried
-				 * by it's primary key.
-				 *
-				 * > Passing a string when the entity is
-				 * a SQL View is not allowed.
-				 */
-				if (_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
-
-				filters.quickAdd(_entityConfig.primaryKey, "eq", query);
-
-			} else if (angular.isObject(query)) {
-				if (query.__type === "NoFilters") {
-					filters = query;
-				} else {
-					//Simple key/value pairs. Assuming all are equal operators and are anded.
-					for (var k in query) {
-						filters.quickAdd(k, "eq", query[k]);
-					}
-				}
-
-			} else {
-				throw "One requires a query parameter. May be a Number, String or Object";
-			}
+			var filters = resolveID(query, _entityConfig);
 
 			//Internal _getOne requires and NoFilters object.
 			return _getOne(filters);
@@ -3409,7 +3416,8 @@ var GloboTest = {};
 
 		this.noImport = function(noChange) {
 			function checkForExisting() {
-				var id = noChange.values[_entityConfig.primaryKey];
+				var id = noChange.changedPKID;
+
 				return THIS.noOne(id);
 			}
 
@@ -3424,13 +3432,18 @@ var GloboTest = {};
 				return same;
 			}
 
-			function save(data, changes, resolve, reject) {
+			function save(changes, data, resolve, reject) {
+				var ops = {
+					"I": THIS.noCreate,
+					"U": THIS.noUpdate
+				};
 				//console.log(data, changes);
-				if (isSame(data, changes)) {
+				if (isSame(data, changes.values)) {
 					console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
-					resolve();
+					changes.isSame = true;
+					resolve(changes);
 				} else {
-					THIS.noUpdate(changes)
+					ops[changes.operation](data)
 						.then(resolve)
 						.catch(reject);
 				}
@@ -3455,23 +3468,15 @@ var GloboTest = {};
 
 						switch (noChange.operation) {
 							case "D":
-								THIS.noDestroy(noChange.values)
+
+								THIS.noDestroy(noChange.changedPKID)
 									.then(ok)
 									.catch(fault);
 								break;
 
 							case "I":
-								if (data) {
-									save(data, noChange.values, resolve, reject);
-								} else {
-									THIS.noCreate(noChange.values)
-										.then(ok)
-										.catch(fault);
-								}
-								break;
-
 							case "U":
-								save(data, noChange.values, ok, fault);
+								save(noChange, data, ok, fault);
 								break;
 						}
 					});
@@ -3818,6 +3823,24 @@ var GloboTest = {};
 								}
 							};
 
+						function getAllRelatedToParentKey(parentCfg, entity, data){
+							var filter = new noInfoPath.data.NoFilters();
+
+							filter.quickAdd(parentCfg.primaryKey, "eq", data[parentCfg.primaryKey]);
+
+							return entity.noRead(filter)
+								.then(function(data){
+									console.log(data.paged);
+
+									var ra = [];
+									for (var d = 0; d < data.length; d++) {
+										var datum = data[d];
+										ra.push(datum[entity.primaryKey[0]]);
+									}
+
+									return ra;
+								});
+						}
 						/*
 						 * Drop each record one at a time so that the operations
 						 * are recorded in the current transaction.
@@ -3828,21 +3851,11 @@ var GloboTest = {};
 
 								function recurse() {
 									var datum = data[d++],
-										filter = {
-											logic: "and",
-											filters: []
-										};
+										filter = new noInfoPath.data.NoFilters();
 
 									if (datum) {
-										for (var p in datum) {
-											var v = datum[p];
 
-											filter.filters.push({
-												field: p,
-												operator: "eq",
-												value: v
-											});
-										}
+										filter.quickAdd(curEntity.primaryKey, "eq", datum);
 
 										ds.destroy(null, SELF, filter)
 											.then(function(r) {
@@ -3976,7 +3989,8 @@ var GloboTest = {};
 									writableData = preOps[preOp](curEntity, data, scope);
 
 									exec = function() {
-										return dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
+										return getAllRelatedToParentKey(dsCfg, dataSource.entity, data)
+											.then(dropAllRelatedToParentKey.bind(null, dataSource, curEntity))
 											.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
 											.then(_recurse)
 											.catch(reject);

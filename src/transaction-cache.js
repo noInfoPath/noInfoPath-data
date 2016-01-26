@@ -219,6 +219,24 @@
 								}
 							};
 
+						function getAllRelatedToParentKey(parentCfg, entity, data){
+							var filter = new noInfoPath.data.NoFilters();
+
+							filter.quickAdd(parentCfg.primaryKey, "eq", data[parentCfg.primaryKey]);
+
+							return entity.noRead(filter)
+								.then(function(data){
+									console.log(data.paged);
+
+									var ra = [];
+									for (var d = 0; d < data.length; d++) {
+										var datum = data[d];
+										ra.push(datum[entity.primaryKey[0]]);
+									}
+
+									return ra;
+								});
+						}
 						/*
 						 * Drop each record one at a time so that the operations
 						 * are recorded in the current transaction.
@@ -229,21 +247,11 @@
 
 								function recurse() {
 									var datum = data[d++],
-										filter = {
-											logic: "and",
-											filters: []
-										};
+										filter = new noInfoPath.data.NoFilters();
 
 									if (datum) {
-										for (var p in datum) {
-											var v = datum[p];
 
-											filter.filters.push({
-												field: p,
-												operator: "eq",
-												value: v
-											});
-										}
+										filter.quickAdd(curEntity.primaryKey, "eq", datum);
 
 										ds.destroy(null, SELF, filter)
 											.then(function(r) {
@@ -377,7 +385,8 @@
 									writableData = preOps[preOp](curEntity, data, scope);
 
 									exec = function() {
-										return dropAllRelatedToParentKey(dataSource, curEntity, writableData.drop)
+										return getAllRelatedToParentKey(dsCfg, dataSource.entity, data)
+											.then(dropAllRelatedToParentKey.bind(null, dataSource, curEntity))
 											.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
 											.then(_recurse)
 											.catch(reject);
