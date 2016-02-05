@@ -486,7 +486,7 @@
 				noInfoPath.setPrototypeOf(this, arr);
 				this.add = function(tableName, data, changeType, tableCfg) {
 					var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
-						change = new NoChange(tableName, data, changeType, tableCfg, syncVer.version);
+						change = new NoChange(tableName, data, changeType, tableCfg, !!syncVer ? syncVer.version : 0);
 
 					this.unshift(change);
 				};
@@ -497,9 +497,9 @@
 
 				function normalizeValues(data) {
 					var converters = {
-						"bit": function(d) {
-							return !!d;
-						},
+						// "bit": function(d) {
+						// 	return !!d;
+						// },
 						"decimal": function(d) {
 							var r = d;
 							if (r) {
