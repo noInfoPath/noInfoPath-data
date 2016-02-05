@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@noinfopath/noinfopath-logger": "^1.0.1",
-    "angular": "^1.4.8",
-    "angular-mocks": "^1.4.8",
+    "angular": "1.4.8",
+    "angular-mocks": "1.4.8",
     "es5-shim": "^4.4.1",
     "jasmine-core": "^2.4.1",
     "jsdoc": "^3.4.0",
