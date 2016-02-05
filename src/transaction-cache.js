@@ -495,11 +495,12 @@
 			function NoChange(tableName, data, changeType, tableCfg, version) {
 				var tblSchema = tableCfg.tables[tableName];
 
-				function normalizeValues(data) {
-					var converters = {
-						// "bit": function(d) {
-						// 	return !!d;
-						// },
+				function normalizeValues(inData) {
+					var data = angular.copy(inData),
+						converters = {
+						"bit": function(d) {
+							return !!d;
+						},
 						"decimal": function(d) {
 							var r = d;
 							if (r) {
