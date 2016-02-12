@@ -64,10 +64,10 @@
 		.config([function(){
 		}])
 
-		.provider("noConfig", [function(){
+        .provider("noConfig", [function(){
 			var _currentConfig, _status;
 
-			function NoConfig($http, $q, $timeout, $rootScope, noLocalStorage){
+			function NoConfig($http, $q, $rootScope, noLocalStorage){
 				var SELF = this;
 
 				Object.defineProperties(this, {
@@ -95,16 +95,15 @@
 				};
 
 				this.whenReady = function(uri){
-					var deferred = $q.defer();
 
-					$timeout(function(){
+					return $q(function(resolve, reject){
 						if($rootScope.noConfig)
 						{
-							deferred.resolve();
+							resolve();
 						}else{
 							$rootScope.$watch("noConfig", function(newval){
 								if(newval){
-									deferred.resolve();
+									resolve();
 								}
 							});
 
@@ -119,18 +118,18 @@
 									if(_currentConfig){
 										$rootScope.noConfig = _currentConfig;
 									}else{
-										deferred.reject("noConfig");
+										reject("noConfig");
 									}
 								});
 						}
 					});
 
-					return deferred.promise;
+
 				};
 			}
 
-			this.$get = ['$http','$q', '$timeout', '$rootScope', 'noLocalStorage', function($http, $q, $timeout, $rootScope, noLocalStorage){
-				return new NoConfig($http, $q, $timeout, $rootScope, noLocalStorage);
+			this.$get = ['$http','$q', '$rootScope', 'noLocalStorage', function($http, $q, $rootScope, noLocalStorage){
+				return new NoConfig($http, $q, $rootScope, noLocalStorage);
 			}];
 		}])
 	;
