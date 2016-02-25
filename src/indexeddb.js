@@ -700,7 +700,7 @@
 				$timeout(function() {
 					_applyFilters(filters, table)
 						.then(function(data) {
-							_applyPaging(page, data)
+							_applyPaging(page, new noInfoPath.data.NoResults(data))
 								.then(deferred.resolve);
 						})
 						.catch(function(err) {
