@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.1.26
+@version 1.1.27
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -682,7 +682,7 @@ An example of this is the ODATA 2.0 specification.
 Object
 
 
-## @service noSQLQueryBuilder : INoQueryBuilder
+## @service noSQLQueryBuilder : INoQueryBuilder `Deprecated`
 
 ### Overview
 

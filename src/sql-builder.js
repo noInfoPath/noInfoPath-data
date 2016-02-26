@@ -31,7 +31,7 @@
 (function(angular, undefined){
 	angular.module("noinfopath.data")
 		/*
-		* ## @service noSQLQueryBuilder : INoQueryBuilder
+		* ## @service noSQLQueryBuilder : INoQueryBuilder `Deprecated`
 		*
 		* ### Overview
 		*

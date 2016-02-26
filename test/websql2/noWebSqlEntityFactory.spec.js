@@ -1,12 +1,13 @@
-var _, noWebSqlStatementFactory, database, $rootScope, $timeout, entity, foo, vw_foo,
+var _, noWebSqlStatementFactory, database, $rootScope, $timeout, entity, foo, vw_foo, noLoginService,
 	database = openDatabase(noDbConfig.dbName, noDbConfig.version, noDbConfig.description, noDbConfig.size);
 
-database.currentUser = currentUser;
+
 
 describe("Tesing noWebSqlEntityFactory", function() {
 	beforeEach(function() {
 
 		module("noinfopath.data");
+		module("noinfopath.data.mocks");
 		module("ngLodash");
 
 		inject(function($injector) {
@@ -14,6 +15,9 @@ describe("Tesing noWebSqlEntityFactory", function() {
 			$rootScope = $injector.get("$rootScope");
 			_ = $injector.get("lodash");
 			$timeout = $injector.get("$timeout");
+			noLoginService = $injector.get("noLoginService");
+
+			database.currentUser = noLoginService.user;
 		});
 
 

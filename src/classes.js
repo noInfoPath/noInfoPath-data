@@ -363,6 +363,16 @@
 		}
 		//arr.push.apply(arr, arguments);
 
+        this.toKendo = function(){
+            var ra = [];
+            for(var j = 0; j < this.length; j++){
+                var f = this[j];
+
+                ra.push(f.toKendo());
+            }
+            return ra;
+        };
+
 		this.toSQL = function() {
 			var rs = "",
 				rsArray = [];
@@ -481,6 +491,43 @@
 			return ocol;
 		}
 
+		this.toKendo = function() {
+			// filter: {
+			// 	logic: "or",
+			// 	filters: [{
+			// 		field: "category",
+			// 		operator: "eq",
+			// 		value: "Food"
+			// 	}, {
+			// 		field: "name",
+			// 		operator: "eq",
+			// 		value: "Tea"
+			// 	}]
+			// }
+
+			var ro = {},
+				logic;
+
+            ro.filters = [];
+
+			for (var f = 0; f < this.filters.length; f++) {
+                var exp = this.filters[f],
+                    newFilter = {};
+
+                if(exp.logic && !ro.logic){
+                    ro.logic = exp.logic;
+                }
+
+                newFilter.field = this.column;
+                newFilter.column = this.column;
+                newFilter.operator = exp.operator;
+                newFilter.value = exp.value;
+
+                ro.filters.push(newFilter);
+			}
+            return ro;
+		};
+
 		this.toSQL = function() {
 			var rs = "",
 				filterArray = [],
@@ -509,10 +556,9 @@
 			angular.forEach(this.filters, function(exp, key) {
 				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
 
-                if(!stringSearch[exp.operator])
-                {
-                    values.push(exp.value);
-                }
+				if (!stringSearch[exp.operator]) {
+					values.push(exp.value);
+				}
 			}, this);
 
 			filterArrayString = filterArray.join(" ");
