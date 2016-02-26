@@ -1,6 +1,6 @@
 //http.spec.js
 describe("Testing noHTTP service", function(){
-	var noHTTP, noHTTPProvider, noDbSchema, $timeout, $httpBackend, $rootScope, scope, createController, $controller;
+	var noHTTP, noHTTPProvider, noDbSchema, $timeout, $httpBackend, $rootScope, scope, createController, $controller, noLoginService;
 
 	beforeEach(function(){
 		module("noinfopath.helpers");
@@ -13,6 +13,7 @@ describe("Testing noHTTP service", function(){
 			noHTTP = $injector.get("noHTTP");
 			$httpBackend = $injector.get("$httpBackend");
 			$timeout = $injector.get("$timeout");
+			noLoginService = $injector.get("noLoginService");
 
 			// $rootScope = $injector.get("$rootScope");
 			// $controller = $injector.get("$controller");
@@ -27,7 +28,7 @@ describe("Testing noHTTP service", function(){
 		it("should have added tables specified by noDbSchema to the instance NoDb returned.", function(done){
 			var schema = noDbSchema.create(mockConfig, mockConfig.noDbSchema[1], tablesMock);
 
-			noHTTP.configure(currentUser, schema)
+			noHTTP.configure(noLoginService.user, schema)
 				.then(function(){
 					expect(noHTTP.foo).toBeDefined();
 					expect(noHTTP.vw_foo).toBeDefined();

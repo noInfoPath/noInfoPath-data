@@ -1,12 +1,12 @@
 describe("Testing noDbSchema Full Database Configuration functionality", function(){
-	var $httpBackend, $timeout, $rootScope, noConfig, noDbSchema, dbJsonMock, noWebSQL;
+	var $httpBackend, $timeout, $rootScope, noConfig, noDbSchema, dbJsonMock, noWebSQL, noLoginService;
 
 	beforeEach(function(){
 
 		module("noinfopath.logger");
-		module("noinfopath.data.mocks");
 		module("noinfopath.user");
 		module("noinfopath.data");
+		module("noinfopath.data.mocks");
 
 		inject(function($injector){
 			$httpBackend = $injector.get("$httpBackend");
@@ -14,6 +14,7 @@ describe("Testing noDbSchema Full Database Configuration functionality", functio
 			noConfig = $injector.get("noConfig");
 			$timeout = $injector.get("$timeout");
 			$rootScope = $injector.get("$rootScope");
+			noLoginService = $injector.get("noLoginService");
 		});
 	});
 
@@ -52,7 +53,7 @@ describe("Testing noDbSchema Full Database Configuration functionality", functio
 		$rootScope.noDbSchema_NoInfoPath_dtc_v1 = noDbSchema.create(mockConfig, mockConfig.noDbSchema[0], mockConfig.noDbSchema[0].schemaSource.schema);
 		$rootScope.noDbSchema_FCFNv2 =  noDbSchema.create(mockConfig, mockConfig.noDbSchema[1], tablesMock);
 
-		noDbSchema.configureDatabases(currentUser, results)
+		noDbSchema.configureDatabases(noLoginService.user, results)
 			.then(function(resp){
 				console.log(resp);
 				console.info("Async operation completed successfully");
