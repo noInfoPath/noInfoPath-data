@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.27
+*	@version 1.1.28
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -5267,6 +5267,11 @@ var GloboTest = {};
 
 				if (config.sort) {
 					params.sort = config.sort;
+				}
+
+				if (config.take) {
+					params.take = config.take;
+					params.skip = config.skip;
 				}
 
 				return entity.noRead.apply(entity, queryParser.parse(params))

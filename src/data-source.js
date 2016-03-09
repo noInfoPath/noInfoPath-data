@@ -107,6 +107,11 @@
 					params.sort = config.sort;
 				}
 
+				if (config.take) {
+					params.take = config.take;
+					params.skip = config.skip;
+				}
+
 				return entity.noRead.apply(entity, queryParser.parse(params))
 					.then(function(data) {
 						resolve(data);
