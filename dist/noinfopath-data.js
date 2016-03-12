@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.28
+*	@version 1.1.29
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4450,11 +4450,21 @@ var GloboTest = {};
 (function(angular, Dexie, undefined) {
 	"use strict";
 
-	console.log("Hello from IndexedDB");
-
 	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
 
 		var _name;
+
+        function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
+			var transData = result2 && result2.rows.length ? result2 : result1;
+
+			if (trans) trans.addChange(tableName, transData, operation);
+			resolve(transData);
+
+		}
+
+		function _transactionFault(reject, err) {
+			reject(err);
+		}
 
 		Object.defineProperties(this, {
 			"isInitialized": {
@@ -4600,7 +4610,7 @@ var GloboTest = {};
 		function noDexie(db) {
 			var _dexie = db;
 
-			db.WriteableTable.prototype.noCreate = function(data) {
+			db.WriteableTable.prototype.noCreate = function(data, trans) {
 				var deferred = $q.defer(),
 					table = this;
 
@@ -4609,8 +4619,8 @@ var GloboTest = {};
 
 				_dexie.transaction("rw", table, function() {
 						data.CreatedBy = _dexie.currentUser.userId;
-						data.DateCreated = new Date(Date.now());
-						data.ModifiedDate = new Date(Date.now());
+						data.DateCreated = noInfoPath.toDbDate(new Date());
+						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 
 						_dexie.nosync = true;
@@ -4619,24 +4629,18 @@ var GloboTest = {};
 							.then(function(data) {
 								//noLogService.log("addSuccessful", data);
 								table.get(data)
-									.then(function(data) {
-										//deferred.resolve(data);
-										window.noInfoPath.digest(deferred.resolve, data);
-									})
-									.catch(function(err) {
-										//deferred.reject("noCRUD::create::get " + err);
-										window.noInfoPath.digestError(deferred.reject, err);
-									});
+									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+									.catch(_transactionFault.bind(null, deferred.reject));
 
 							})
 							.catch(function(err) {
 								//deferred.reject("noCRUD::create " + err);
-								window.noInfoPath.digestError(deferred.reject, err);
+								deferred.reject(err);
 							});
 					})
 					.catch(function(err) {
 						deferred.reject("noCRUD::createTrans " + err);
-						window.noInfoPath.digestError(deferred.reject, err);
+						deferred.reject(err);
 					});
 
 				return deferred.promise;
@@ -5009,15 +5013,11 @@ var GloboTest = {};
 
 				_dexie.transaction("rw", table, function() {
 						Dexie.currentTransaction.nosync = true;
-						data.ModifiedDate = new Date(Date.now());
+						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							.then(function(data) {
-								window.noInfoPath.digest(deferred.resolve, data);
-							})
-							.catch(function(err) {
-								window.noInfoPath.digestError(deferred.reject, err);
-							});
+                            .then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+                            .catch(_transactionFault.bind(null, deferred.reject));
 
 					})
 					.then(angular.noop())
@@ -5034,21 +5034,17 @@ var GloboTest = {};
 					key = data[table.noInfoPath.primaryKey];
 
 				//noLogService.log("adding: ", _dexie.currentUser);
-				noLogService.log(key);
+				//noLogService.log(key);
 				_dexie.transaction("rw", table, function() {
 						Dexie.currentTransaction.nosync = true;
 						table.delete(key)
-							.then(function(data) {
-								window.noInfoPath.digest(deferred.resolve, data);
-							})
-							.catch(function(err) {
-								window.noInfoPath.digestError(deferred.reject, err);
-							});
+                            .then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+                            .catch(_transactionFault.bind(null, deferred.reject));
 
 					})
 					.then(angular.noop())
 					.catch(function(err) {
-						window.noInfoPath.digestError(deferred.reject, err);
+						deferred.reject(err);
 					});
 
 				return deferred.promise;
@@ -5065,16 +5061,16 @@ var GloboTest = {};
 						Dexie.currentTransaction.nosync = true;
 						table.get(key)
 							.then(function(data) {
-								window.noInfoPath.digest(deferred.resolve, data);
+								deferred.resolve(data);
 							})
 							.catch(function(err) {
-								window.noInfoPath.digestError(deferred.reject, err);
+								deferred.reject(err);
 							});
 
 					})
 					.then(angular.noop())
 					.catch(function(err) {
-						window.noInfoPath.digestError(deferred.reject, err);
+						deferred.reject(err);
 					});
 
 				return deferred.promise;
