@@ -189,7 +189,7 @@
 						$http(req)
 							.success(function(data){
 								//console.log( angular.toJson(data));
-								var resp = new noInfoPath.data.NoResults(data.value);
+								var resp = new noInfoPath.data.NoResults(data);
 								deferred.resolve(resp);
 							})
 							.error(function(reason){

@@ -147,6 +147,8 @@
 				}
 			};
 
+
+
 		function toOdataFilter(filters, useOdataFour) {
 			var result = [],
 				field,
@@ -158,7 +160,7 @@
 				filter,
 				origFilter;
 
-            console.log(filters.__type);
+            console.log(filters);
 
             if(filters.__type === "NoFilters"){
                 filters = filters.toKendo();
@@ -232,7 +234,7 @@
 							format = "{2} {0} " + format;
 						}
 
-						filter = $filter("format")(format, filter, value, field);
+						filter = !!value ? $filter("format")(format, filter, value, field) : $filter("format")(format, filter, undefined, field);
 					}
 				}
 
@@ -296,13 +298,15 @@
 				if (angular.isObject(arg)) {
 					switch (arg.__type) {
 						case "NoFilters":
-							query.$filter = toOdataFilter(arg);
+							query.$filter = arg.toODATA();
 							break;
 						case "NoSort":
 							query.$orderby = toOdataSort(arg);
 							break;
 						case "NoPage":
-							page = arg;
+							query.$skip = arg.skip;
+                            query.$top = arg.take;
+                            query.$inlinecount = "allpages";
 							break;
 					}
 				}

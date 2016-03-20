@@ -148,7 +148,7 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
-	grunt.registerTask('compile', ['karma:noWebSQL2', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
 	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
