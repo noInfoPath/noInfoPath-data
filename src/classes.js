@@ -158,8 +158,10 @@
 			eq: "eq",
 			neq: "ne",
 			gt: "gt",
+            ge: "ge",
 			gte: "ge",
 			lt: "lt",
+            le: "le",
 			lte: "le",
 			contains: "contains",
 			doesnotcontain: "notcontains",
@@ -198,8 +200,40 @@
 			"endswith": function(v) {
 				return "LIKE '%" + String(v) + "'";
 			}
-		};
+		},
 
+        odataOperators = {
+            "eq": function(v) {
+				return "{0} eq " + normalizeValue(v);
+			},
+			"ne": function(v) {
+				return "{0} ne " + normalizeValue(v);
+			},
+			"gt": function(v) {
+				return "{0} gt " + normalizeValue(v);
+			},
+			"ge": function(v) {
+				return "{0} ge " + normalizeValue(v);
+			},
+			"lt": function(v) {
+				return "{0} lt " + normalizeValue(v);
+			},
+			"le": function(v) {
+				return "{0} le " + normalizeValue(v);
+			},
+			"contains": function(v) {
+				return "substringof(" + normalizeValue(v) + ", {0})";
+			},
+			"notcontains": function(v) {
+				return "not substringof(" + normalizeValue(v) + ", {0})";
+			},
+			"startswith": function(v) {
+				return "startswith(" + "{0}, " + normalizeValue(v) + ")";
+			},
+			"endswith": function(v) {
+				return "endswith(" + "{0}, " + normalizeValue(v) + ")";
+			}
+        };
 	/*
 	 * ## @class NoFilterExpression : Object
 	 *
@@ -265,6 +299,12 @@
 		return sqlOperators[op];
 	}
 
+    function normalizeOdataOperator(inop) {
+        var op = filters[inop];
+
+        return odataOperators[op];
+    }
+
 	function NoFilterExpression(operator, value, logic) {
 
 		if (!operator) throw "INoFilterExpression requires a operator to filter by.";
@@ -274,6 +314,14 @@
 		this.operator = operator;
 		this.value = value;
 		this.logic = logic;
+
+        this.toODATA = function(){
+            var opFn = normalizeOdataOperator(this.operator),
+				rs = opFn(this.value) + normalizeLogic(this.logic);
+
+			return rs;
+
+        };
 
 		this.toSQL = function() {
 			var opFn = normalizeOperator(this.operator),
@@ -356,12 +404,26 @@
 			for (var i in kendoFilter.filters) {
 				var filter = kendoFilter.filters[i],
 					fe = new NoFilterExpression(filter.operator, filter.value),
-					f = new NoFilter(filter.field, kendoFilter.logic, true, true, [fe]);
+					f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
 
-				this.unshift(f);
+				this.push(f);
 			}
 		}
 		//arr.push.apply(arr, arguments);
+        this.toODATA = function(){
+            var tmp = [];
+            for(var fi=0; fi < this.length; fi++){
+                var fltr = this[fi],
+                    os = fltr.toODATA();
+
+                if(fltr.logic) os = os + " " + fltr.logic + " ";
+
+                tmp.push(os);
+            }
+
+            tmp = tmp.join("");
+            return tmp;
+        };
 
         this.toKendo = function(){
             var ra = [];
@@ -478,7 +540,7 @@
 		this.filters = [];
 
 		angular.forEach(filters, function(value, key) {
-			this.filters.unshift(new NoFilterExpression(value.operator, value.value, value.logic));
+			this.filters.push(new NoFilterExpression(value.operator, value.value, value.logic));
 		}, this);
 
 		function normalizeColumn(incol, val) {
@@ -490,6 +552,29 @@
 
 			return ocol;
 		}
+
+        this.toODATA = function(){
+            var tmp = [], os = "";
+            for(var ei = 0; ei < this.filters.length; ei++){
+                var expr = this.filters[ei],
+                    od = expr.toODATA().replace("{0}", this.column);
+
+                tmp.push(od);
+            }
+
+            if(this.logic) {
+                os = tmp.join(" " + this.logic + " ");
+            }else{
+                if(tmp.length > 0) {
+                    os = tmp[0];
+                }
+            }
+
+            if(this.beginning) os = "(" + os;
+            if(this.end) os = os + ")";
+
+            return os;
+        };
 
 		this.toKendo = function() {
 			// filter: {
@@ -688,8 +773,8 @@
 
 	function NoResults(arrayOfThings) {
 		//Capture the length of the arrayOfThings before any changes are made to it.
-		var _total = arrayOfThings.length,
-			_page = arrayOfThings,
+		var _total = arrayOfThings["odata.count"] ? Number(arrayOfThings["odata.count"]) :  arrayOfThings.length,
+			_page = arrayOfThings.value ?  arrayOfThings.value : arrayOfThings,
 			arr = arrayOfThings;
 
 		//arr.push.apply(arr, arguments);
