@@ -718,7 +718,7 @@
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noUpdate = function(data) {
+			db.WriteableTable.prototype.noUpdate = function(data, trans) {
 				var deferred = $q.defer(),
 					table = this,
 					key = data[table.noInfoPath.primaryKey];
@@ -742,7 +742,7 @@
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noDestroy = function(data) {
+			db.WriteableTable.prototype.noDestroy = function(data, trans) {
 				var deferred = $q.defer(),
 					table = this,
 					key = data[table.noInfoPath.primaryKey];
