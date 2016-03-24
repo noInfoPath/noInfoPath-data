@@ -302,10 +302,13 @@
 								.then(function(data){
 									if(data.length){
 										return data[0];
+									}else if(data.paged && data.paged.length){
+										return data.paged[0];
 									} else {
-										throw "Record Not Found";
+										throw "noHTTP::noOne: Record Not Found";
 									}
 								});
+
 					};
 				}
 
