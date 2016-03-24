@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.31
+*	@version 1.1.32
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1866,10 +1866,13 @@
 								.then(function(data){
 									if(data.length){
 										return data[0];
+									}else if(data.paged && data.paged.length){
+										return data.paged[0];
 									} else {
-										throw "Record Not Found";
+										throw "noHTTP::noOne: Record Not Found";
 									}
 								});
+
 					};
 				}
 
@@ -5302,7 +5305,21 @@ var GloboTest = {};
 		function resolveFilterValues(filters, scope) {
 			var values = {};
 
-
+			/*
+			*	@property noDataSource.filter
+			*
+			*	An array of NoInfoPath dynamic filters. Each filter defines what
+			*	the provider of the filter data is, and what property to filter on.
+			*
+			*	The filter property has a child property called `value`. When it
+			*	is an object then a dynamic filter is assumed. Otherwise it is treated
+			*	as the filter value.
+			*
+			*	When `value` is an object it is expected to have a `source` and a
+			*	`property` property. Source is always a string that is either the
+			*	string "scope" or the name of an AngularJS injectable service that
+			*	is a JavaScript object. Possible service could be $rootScope or $stateParams.
+			*/
 
 			for (var f in filters) {
 				var filter = filters[f],
