@@ -34,7 +34,8 @@ module.exports = function(grunt) {
 					'src/transaction-cache.js',
 					//'src/noInitDatabases.js',
 					'src/indexeddb.js',
-					'src/data-source.js'
+					'src/data-source.js',
+					'src/template-cache.js'
 				],
 				dest: 'dist/noinfopath-data.js'
 			},
