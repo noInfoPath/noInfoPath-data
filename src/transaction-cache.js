@@ -127,31 +127,62 @@
 							preOps = {
 								"noop": angular.noop,
 								"basic": function(curEntity, data, scope) {
-									var writableData = curEntity.omit_fields ? _.omit(data, curEntity.omit_fields) : data;
+									var writableData = {};
+
+									if (curEntity.omit_fields) {
+										writableData = _.omit(data, curEntity.omit_fields);
+									}
 
 									if (curEntity.fields) {
 										for (var f in curEntity.fields) {
 											var fld = curEntity.fields[f],
-												prov;
+												fldName, prov, val;
 
 											//When field value is get remote values then store on
 											//the writableData object.
-											if (angular.isObject(fld.value)) {
-												if (fld.value.provider === "scope") {
-													prov = scope;
-												} else {
-													prov = $injector.get(fld.value.provider);
+
+											if (angular.isString(fld)) {
+												/*
+												 *	When a field is a string then the value will be the
+												 *	property on the data object provide to the call
+												 *	the `basic` preOp
+												 */
+												fldName = fld;
+												val = data[fld];
+
+											} else if (angular.isObject(fld)) {
+												/*
+												 *	When a field is an object then confgure as if the
+												 *	value will be coming from a trusted provider like
+												 *	scope, or $stateParams.
+												 */
+												fldName = fld.field;
+
+												if (angular.isObject(fld.value)) {
+													/*
+													 *	When `scope` is the provider then the directive scope is used.
+													 *	Otherwise the supplied injecable provider will be used.
+													 */
+													if (fld.value.provider === "scope") {
+														prov = scope;
+													} else {
+														prov = $injector.get(fld.value.provider);
+													}
+
+													val = noInfoPath.getItem(prov, fld.value.property);
 												}
-												writableData[fld.field] = noInfoPath.getItem(prov, fld.value.property);
 											}
+
 
 											//When field has a type convert before saving.
 											//NOTE: This is temporary and should be refactored
 											//      into the actual provider.  And be data
 											//      driven not conditional.
 											if (fld.type === "date") {
-												writableData[fld.field] = noInfoPath.toDbDate(writableData[fld.field]);
+												val = noInfoPath.toDbDate(val);
 											}
+
+											writableData[fldName] = val;
 										}
 									}
 
@@ -219,13 +250,13 @@
 								}
 							};
 
-						function getAllRelatedToParentKey(parentCfg, entity, data){
+						function getAllRelatedToParentKey(parentCfg, entity, data) {
 							var filter = new noInfoPath.data.NoFilters();
 
 							filter.quickAdd(parentCfg.primaryKey, "eq", data[parentCfg.primaryKey]);
 
 							return entity.noRead(filter)
-								.then(function(data){
+								.then(function(data) {
 									console.log(data.paged);
 
 									var ra = [];
