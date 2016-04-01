@@ -268,6 +268,10 @@
 			outval = "'" + inval + "'";
 		}
 
+		if(noInfoPath.isGuid(inval)){
+			outval = "guid" + outval;
+		}
+
 		return outval;
 	}
 

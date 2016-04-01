@@ -885,6 +885,17 @@ supplied Entity Configuration and Datbase.
 ## @class NoWebSqlService
 
 
+When a field is a string then the value will be the
+property on the data object provide to the call
+the `basic` preOp
+
+When a field is an object then confgure as if the
+value will be coming from a trusted provider like
+scope, or $stateParams.
+
+When `scope` is the provider then the directive scope is used.
+Otherwise the supplied injecable provider will be used.
+
 Drop each record one at a time so that the operations
 are recorded in the current transaction.
 
@@ -1142,4 +1153,7 @@ at the given `dsConfigKey` location.
 
 An instance of a NoDataSource object.
 
+
+NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
+inferred in the documentation or perform by ngInclude.
 
