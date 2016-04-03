@@ -20,7 +20,7 @@
  */
 (function(angular, undefined) {
 
-	function NoDataSource($injector, $q, dsConfig, scope) {
+	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			entity = db[dsConfig.entityName],
@@ -36,55 +36,6 @@
 			}
 		});
 
-		/**
-		 *   ### resolveFilterValues(filters)
-		 *   #### This is more information
-		 *
-		 *	> Note of some kind
-		 *
-		 *	|Name|Type|Description|
-		 *	|----|----|-----------|
-		 *	|Foo|Number|Does something fun.|
-		 *
-		 *   > TODO: Implement support for delayed (waitFor) filter values.
-		 *
-		 *   > NOTE: If a filter.value is an object and it has a source
-		 *   > property set to `scope` then use the directives scope variable.
-		 *   > Otherwise assume source is an injectable.
-		 */
-		function resolveFilterValues(filters, scope) {
-			var values = {};
-
-			/*
-			*	@property noDataSource.filter
-			*
-			*	An array of NoInfoPath dynamic filters. Each filter defines what
-			*	the provider of the filter data is, and what property to filter on.
-			*
-			*	The filter property has a child property called `value`. When it
-			*	is an object then a dynamic filter is assumed. Otherwise it is treated
-			*	as the filter value.
-			*
-			*	When `value` is an object it is expected to have a `source` and a
-			*	`property` property. Source is always a string that is either the
-			*	string "scope" or the name of an AngularJS injectable service that
-			*	is a JavaScript object. Possible service could be $rootScope or $stateParams.
-			*/
-
-			for (var f in filters) {
-				var filter = filters[f],
-					source, value;
-
-				if (angular.isObject(filter.value)) {
-					source = filter.value.source === "scope" ? scope : $injector.get(filter.value.source);
-					values[filter.field] = noInfoPath.getItem(source, filter.value.property);
-				} else {
-					values[filter.field] = filter.value;
-				}
-			}
-
-			return values;
-		}
 
 		this.create = function(data, noTrans) {
 			if (isNoView) throw "create operation not supported on entities of type NoView";
@@ -95,27 +46,9 @@
 
 		this.read = function(options) {
 			function requestData(scope, config, entity, queryParser, resolve, reject) {
-				var params = angular.merge({}, options),
-					filterValues = resolveFilterValues(dsConfig.filter, _scope);
+				var params = angular.merge({}, options);
 
-				if (config.filter) {
-					var filters = [];
-					for (var f in config.filter) {
-						var filter = config.filter[f],
-							value = angular.isObject(filter.value) ? filterValues[filter.field] : filter.value;
-
-						filters.push({
-							field: filter.field,
-							operator: filter.operator,
-							value: value
-						});
-
-					}
-
-					params.filter = {
-						filters: filters.length ? filters : undefined
-					};
-				}
+				params.filter = noDynamicFilters.configure(config, scope);
 
 				if (config.sort) {
 					params.sort = config.sort;
@@ -135,6 +68,7 @@
 					});
 
 			}
+
 
 			return $q(function(resolve, reject) {
 				var waitFor, filterValues;
@@ -178,7 +112,7 @@
 					filterValues = $injector.get(dsConfig.lookup.source, _scope);
 
 				} else if (dsConfig.filter) {
-					filterValues = resolveFilterValues(config.filter, _scope);
+					filterValues = new noInfoPath.data.NoFilters(noDynamicFilters.configure(config, _scope));
 				}
 
 				if (entity.constructor.name === "NoView") {
@@ -187,7 +121,6 @@
 				} else {
 					params[0] = filterValues;
 				}
-
 
 				return entity.noOne.apply(null, params)
 					.then(function(data) {
@@ -201,17 +134,20 @@
 
 
 			return $q(function(resolve, reject) {
-				var waitFor, filterValues;
-
-
-
+				var endWaitFor, filterValues;
+				/*
+				*	@property noDataSource.waitFor
+				*
+				*	Use this property when you want the data source wait for some other
+				*	NoInfoPath component to update the `scope`.
+				*/
 				if (dsConfig.waitFor) {
-					waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
+					endWaitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
 						if (newval) {
 
 							requestData(scope, dsConfig, entity, resolve, reject);
 
-							waitFor();
+							endWaitFor();
 						}
 					});
 				} else {
@@ -226,7 +162,7 @@
 
 	angular.module("noinfopath.data")
 
-	.service("noDataSource", ["$injector", "$q", function($injector, $q) {
+	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", function($injector, $q, noDynamicFilters) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -246,7 +182,9 @@
 		 *
 		 */
 		this.create = function(dsConfig, scope) {
-			return new NoDataSource($injector, $q, dsConfig, scope);
+			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope);
 		};
 	}]);
+
+
 })(angular);

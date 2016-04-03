@@ -886,7 +886,7 @@ supplied Entity Configuration and Datbase.
 
 
 When a field is a string then the value will be the
-property on the data object provide to the call
+property on the data object provider to the call
 the `basic` preOp
 
 When a field is an object then confgure as if the
@@ -895,6 +895,9 @@ scope, or $stateParams.
 
 When `scope` is the provider then the directive scope is used.
 Otherwise the supplied injecable provider will be used.
+
+When field value is a primative type meaning not
+an object. or array. Use the value as is.
 
 Drop each record one at a time so that the operations
 are recorded in the current transaction.
@@ -924,6 +927,14 @@ Add each record one at a time to ensure that the transaction is recorded.
 transaction that share a one to one relationship.  When the child
 data/table as defined in the noTransaction configuration and it's
 an update is performed.
+
+
+@property createOnly
+
+Use this property to `create` new related records in a transaction
+member table when a matching item does not exist. So, this also
+means that no `update` operations are performed on the designated
+member table.
 
 
 ## noIndexedDB
@@ -1108,6 +1119,47 @@ underlying CRUD interface.
 
 ```
 
+@property noDataSource.waitFor
+
+Use this property when you want the data source wait for some other
+NoInfoPath component to update the `scope`.
+
+#### create(dsConfigKey)
+
+create a new instance of a NoDataSource object configured
+based on the datasource configuration found in noConfig
+at the given `dsConfigKey` location.
+
+##### Parameters
+
+|Name|Type|Description|
+|----|----|-----------|
+|dsConfigKey|String|The location in noConfig where the data source's configuration can be found.  Can be a complex name like the following.  `noForms.myForm1.noComponents.foo.noDataSource`|
+
+##### Returns
+
+An instance of a NoDataSource object.
+
+
+@method normalizeFilterValue
+
+Evaluates the type parameter looking for know types, and converts
+converts the value parameter to explicitly be of the type provied.
+
+If the type is not a supported type then value is returned unchanged.
+
+@method configureFilterWatch
+
+If the filterCfg parameter's value property, has a watch property, and
+the value's source property is an AngularJS  observable object
+a watch is configured on the source. The cb parameter is used
+for the watch's callback.
+
+When the source is "scope", the scope parameter is used, otherwise
+the source is injected using the $injector service.
+
+> NOTE: Currently $rootScope is the only supported injectable source.
+
   ### resolveFilterValues(filters)
   #### This is more information
 
@@ -1135,24 +1187,7 @@ as the filter value.
 When `value` is an object it is expected to have a `source` and a
 `property` property. Source is always a string that is either the
 string "scope" or the name of an AngularJS injectable service that
-is a JavaScript object. Possible service could be $rootScope or $stateParams.
-
-#### create(dsConfigKey)
-
-create a new instance of a NoDataSource object configured
-based on the datasource configuration found in noConfig
-at the given `dsConfigKey` location.
-
-##### Parameters
-
-|Name|Type|Description|
-|----|----|-----------|
-|dsConfigKey|String|The location in noConfig where the data source's configuration can be found.  Can be a complex name like the following.  `noForms.myForm1.noComponents.foo.noDataSource`|
-
-##### Returns
-
-An instance of a NoDataSource object.
-
+is a JavaScript object. Possible services could be $rootScope or $stateParams.
 
 NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
 inferred in the documentation or perform by ngInclude.

@@ -1,4 +1,4 @@
-//transaction.js
+//transaction-cache.js
 /*  ## noTransactionCache service
  *
  *
@@ -110,6 +110,24 @@
 					console.log(noTransactions);
 				}
 
+				function resolveProvider(provider, scope, data) {
+					var prov;
+
+					switch (provider) {
+						case "data":
+							prov = data;
+							break;
+						case "scope":
+							prov = scope;
+							break;
+						default:
+							prov = $injector.get(provider);
+							break;
+					}
+
+					return prov;
+				}
+				
 				normalizeTransactions(config, schema);
 
 				this.upsert = function upsert(data) {
@@ -144,7 +162,7 @@
 											if (angular.isString(fld)) {
 												/*
 												 *	When a field is a string then the value will be the
-												 *	property on the data object provide to the call
+												 *	property on the data object provider to the call
 												 *	the `basic` preOp
 												 */
 												fldName = fld;
@@ -163,13 +181,30 @@
 													 *	When `scope` is the provider then the directive scope is used.
 													 *	Otherwise the supplied injecable provider will be used.
 													 */
-													if (fld.value.provider === "scope") {
-														prov = scope;
-													} else {
-														prov = $injector.get(fld.value.provider);
+
+													prov = resolveProvider(fld.value.provider, scope, data);
+
+													if (prov && fld.value.method) {
+														var params = [];
+
+														for (var pi = 0; pi < fld.value.method.params.length; pi++) {
+															var cfg = fld.value.method.params[pi],
+																prov2 = resolveProvider(cfg.provider, scope, data);
+
+															params.push(noInfoPath.getItem(prov2, cfg.property));
+														}
+
+														val = prov[fld.value.method.name].apply(null, params);
+													} else if (prov && fld.value.property) {
+														val = noInfoPath.getItem(prov, fld.value.property);
 													}
 
-													val = noInfoPath.getItem(prov, fld.value.property);
+												} else {
+													/*
+													 *	When field value is a primative type meaning not
+													 *	an object. or array. Use the value as is.
+													 */
+													val = fld.value;
 												}
 											}
 
@@ -184,7 +219,15 @@
 
 											writableData[fldName] = val;
 										}
+									} else if (curEntity.dataService) {
+										var service = $injector.get(curEntity.dataService.provider),
+											method = service[curEntity.dataService.method];
+
+										writableData = method(data);
+
 									}
+
+									console.log(writableData);
 
 									return writableData;
 
@@ -192,35 +235,42 @@
 								"joiner": function(curEntity, data, scope) {
 									var writableData = {};
 
-									for (var f in curEntity.fields) {
-										var fld = curEntity.fields[f],
-											prov, value;
+									if (curEntity.fields) {
+										for (var f in curEntity.fields) {
+											var fld = curEntity.fields[f],
+												prov, value;
 
-										switch (fld.value.provider) {
-											case "data":
-												var t = {};
-												t[fld.value.property] = data;
-												prov = t;
-												break;
+											switch (fld.value.provider) {
+												case "data":
+													var t = {};
+													t[fld.value.property] = data;
+													prov = t;
+													break;
 
-											case "results":
-												prov = results;
-												break;
+												case "results":
+													prov = results;
+													break;
 
-											case "scope":
-												prov = scope;
-												break;
+												case "scope":
+													prov = scope;
+													break;
 
-											default:
-												prov = $injector.get(fld.value.provider);
-												break;
+												default:
+													prov = $injector.get(fld.value.provider);
+													break;
+											}
+
+											value = noInfoPath.getItem(prov, fld.value.property);
+
+											writableData[fld.field] = value;
 										}
+									} else if (curEntity.dataService) {
+										var service = $injector.get(curEntity.dataService.provider),
+											method = service[curEntity.dataService.method];
 
-										value = noInfoPath.getItem(prov, fld.value.property);
+										writableData = method(data);
 
-										writableData[fld.field] = value;
 									}
-
 									return writableData;
 								},
 								"joiner-many": function(curEntity, data, scope) {
@@ -453,7 +503,21 @@
 									break;
 							}
 
-							exec(dataSource, curEntity, opType, writableData);
+							/*
+							 *	@property createOnly
+							 *
+							 *	Use this property to `create` new related records in a transaction
+							 *	member table when a matching item does not exist. So, this also
+							 *	means that no `update` operations are performed on the designated
+							 *	member table.
+							 *
+							 */
+							if ((opType === "update" && !curEntity.createOnly) || opType == "create") {
+								exec(dataSource, curEntity, opType, writableData);
+							} else {
+								_recurse();
+							}
+
 						}
 
 						_recurse();
@@ -529,21 +593,21 @@
 				function normalizeValues(inData) {
 					var data = angular.copy(inData),
 						converters = {
-						"bit": function(d) {
-							return !!d;
-						},
-						"decimal": function(d) {
-							var r = d;
-							if (r) {
-								r = String(r);
-							}
+							"bit": function(d) {
+								return !!d;
+							},
+							"decimal": function(d) {
+								var r = d;
+								if (r) {
+									r = String(r);
+								}
 
-							return r;
-						},
-						"undefined": function(d) {
-							return d;
-						}
-					};
+								return r;
+							},
+							"undefined": function(d) {
+								return d;
+							}
+						};
 
 					for (var c in data) {
 						var dt,

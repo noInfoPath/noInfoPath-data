@@ -158,10 +158,10 @@
 			eq: "eq",
 			neq: "ne",
 			gt: "gt",
-            ge: "ge",
+			ge: "ge",
 			gte: "ge",
 			lt: "lt",
-            le: "le",
+			le: "le",
 			lte: "le",
 			contains: "contains",
 			doesnotcontain: "notcontains",
@@ -202,8 +202,8 @@
 			}
 		},
 
-        odataOperators = {
-            "eq": function(v) {
+		odataOperators = {
+			"eq": function(v) {
 				return "{0} eq " + normalizeValue(v);
 			},
 			"ne": function(v) {
@@ -233,7 +233,7 @@
 			"endswith": function(v) {
 				return "endswith(" + "{0}, " + normalizeValue(v) + ")";
 			}
-        };
+		};
 	/*
 	 * ## @class NoFilterExpression : Object
 	 *
@@ -268,7 +268,7 @@
 			outval = "'" + inval + "'";
 		}
 
-		if(noInfoPath.isGuid(inval)){
+		if (noInfoPath.isGuid(inval)) {
 			outval = "guid" + outval;
 		}
 
@@ -303,11 +303,11 @@
 		return sqlOperators[op];
 	}
 
-    function normalizeOdataOperator(inop) {
-        var op = filters[inop];
+	function normalizeOdataOperator(inop) {
+		var op = filters[inop];
 
-        return odataOperators[op];
-    }
+		return odataOperators[op];
+	}
 
 	function NoFilterExpression(operator, value, logic) {
 
@@ -319,13 +319,13 @@
 		this.value = value;
 		this.logic = logic;
 
-        this.toODATA = function(){
-            var opFn = normalizeOdataOperator(this.operator),
+		this.toODATA = function() {
+			var opFn = normalizeOdataOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
 
 			return rs;
 
-        };
+		};
 
 		this.toSQL = function() {
 			var opFn = normalizeOperator(this.operator),
@@ -414,30 +414,30 @@
 			}
 		}
 		//arr.push.apply(arr, arguments);
-        this.toODATA = function(){
-            var tmp = [];
-            for(var fi=0; fi < this.length; fi++){
-                var fltr = this[fi],
-                    os = fltr.toODATA();
+		this.toODATA = function() {
+			var tmp = [];
+			for (var fi = 0; fi < this.length; fi++) {
+				var fltr = this[fi],
+					os = fltr.toODATA();
 
-                if(fltr.logic) os = os + " " + fltr.logic + " ";
+				if (fltr.logic && this.length > 1) os = os + " " + fltr.logic + " ";
 
-                tmp.push(os);
-            }
+				tmp.push(os);
+			}
 
-            tmp = tmp.join("");
-            return tmp;
-        };
+			tmp = tmp.join("");
+			return tmp;
+		};
 
-        this.toKendo = function(){
-            var ra = [];
-            for(var j = 0; j < this.length; j++){
-                var f = this[j];
+		this.toKendo = function() {
+			var ra = [];
+			for (var j = 0; j < this.length; j++) {
+				var f = this[j];
 
-                ra.push(f.toKendo());
-            }
-            return ra;
-        };
+				ra.push(f.toKendo());
+			}
+			return ra;
+		};
 
 		this.toSQL = function() {
 			var rs = "",
@@ -557,28 +557,29 @@
 			return ocol;
 		}
 
-        this.toODATA = function(){
-            var tmp = [], os = "";
-            for(var ei = 0; ei < this.filters.length; ei++){
-                var expr = this.filters[ei],
-                    od = expr.toODATA().replace("{0}", this.column);
+		this.toODATA = function() {
+			var tmp = [],
+				os = "";
+			for (var ei = 0; ei < this.filters.length; ei++) {
+				var expr = this.filters[ei],
+					od = expr.toODATA().replace("{0}", this.column);
 
-                tmp.push(od);
-            }
+				tmp.push(od);
+			}
 
-            if(this.logic) {
-                os = tmp.join(" " + this.logic + " ");
-            }else{
-                if(tmp.length > 0) {
-                    os = tmp[0];
-                }
-            }
+			if (this.logic) {
+				os = tmp.join(" " + this.logic + " ");
+			} else {
+				if (tmp.length > 0) {
+					os = tmp[0];
+				}
+			}
 
-            if(this.beginning) os = "(" + os;
-            if(this.end) os = os + ")";
+			if (this.beginning) os = "(" + os;
+			if (this.end) os = os + ")";
 
-            return os;
-        };
+			return os;
+		};
 
 		this.toKendo = function() {
 			// filter: {
@@ -597,24 +598,24 @@
 			var ro = {},
 				logic;
 
-            ro.filters = [];
+			ro.filters = [];
 
 			for (var f = 0; f < this.filters.length; f++) {
-                var exp = this.filters[f],
-                    newFilter = {};
+				var exp = this.filters[f],
+					newFilter = {};
 
-                if(exp.logic && !ro.logic){
-                    ro.logic = exp.logic;
-                }
+				if (exp.logic && !ro.logic) {
+					ro.logic = exp.logic;
+				}
 
-                newFilter.field = this.column;
-                newFilter.column = this.column;
-                newFilter.operator = exp.operator;
-                newFilter.value = exp.value;
+				newFilter.field = this.column;
+				newFilter.column = this.column;
+				newFilter.operator = exp.operator;
+				newFilter.value = exp.value;
 
-                ro.filters.push(newFilter);
+				ro.filters.push(newFilter);
 			}
-            return ro;
+			return ro;
 		};
 
 		this.toSQL = function() {
@@ -777,8 +778,8 @@
 
 	function NoResults(arrayOfThings) {
 		//Capture the length of the arrayOfThings before any changes are made to it.
-		var _total = arrayOfThings["odata.count"] ? Number(arrayOfThings["odata.count"]) :  arrayOfThings.length,
-			_page = arrayOfThings.value ?  arrayOfThings.value : arrayOfThings,
+		var _total = arrayOfThings["odata.count"] ? Number(arrayOfThings["odata.count"]) : arrayOfThings.length,
+			_page = arrayOfThings.value ? arrayOfThings.value : arrayOfThings,
 			arr = arrayOfThings;
 
 		//arr.push.apply(arr, arguments);
