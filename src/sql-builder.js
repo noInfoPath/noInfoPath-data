@@ -48,7 +48,8 @@
 					lt: "<",
 					lte: "<=",
 					contains : "CONTAINS",
-					doesnotcontain: "NOT CONTAINS"
+					doesnotcontain: "NOT CONTAINS",
+					"in": "in"
 					//endswith: "endswith",
 					//startswith: "startswith"
 				},
@@ -148,7 +149,23 @@
 		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
 		                        format = "{1}";
 
-			                } else {
+			                } else if (angular.isArray(value)){
+                                var tmpValue = "";
+
+                                for(var i = 0; i < value.length; i++){
+                                    var valum = value[i];
+
+                                    tmpValue = tmpValue + "'" + valum + "'";
+
+                                    if(i + 1 != value.length){
+                                        tmpValue = tmpValue + ",";
+                                    }
+                                }
+
+                                value = tmpValue;
+                                format = "{1}";
+
+                            } else {
 			                    format = "{1}";
 			                }
 
