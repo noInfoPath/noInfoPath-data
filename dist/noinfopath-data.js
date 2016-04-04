@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.33
+*	@version 1.1.35
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -328,6 +328,8 @@
 		},
 
 		filters = {
+			"is null": "is null",
+            "is not null": "is not null",
 			eq: "eq",
 			neq: "ne",
 			gt: "gt",
@@ -339,10 +341,17 @@
 			contains: "contains",
 			doesnotcontain: "notcontains",
 			endswith: "endswith",
-			startswith: "startswith"
+			startswith: "startswith",
+			"in": "in"
 		},
 
 		sqlOperators = {
+			"is null": function(){
+                return "is null";
+            },
+            "is not null": function(){
+                return "is not null";
+            },
 			"eq": function(v) {
 				return "= " + normalizeSafeValue(v);
 			},
@@ -372,7 +381,10 @@
 			},
 			"endswith": function(v) {
 				return "LIKE '%" + String(v) + "'";
-			}
+			},
+            "in": function(v) {
+                return "IN (" + String(v) + ")";
+            }
 		},
 
 		odataOperators = {
@@ -577,15 +589,6 @@
 		//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
 		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
 
-		if (kendoFilter) {
-			for (var i in kendoFilter.filters) {
-				var filter = kendoFilter.filters[i],
-					fe = new NoFilterExpression(filter.operator, filter.value),
-					f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
-
-				this.push(f);
-			}
-		}
 		//arr.push.apply(arr, arguments);
 		this.toODATA = function() {
 			var tmp = [];
@@ -644,7 +647,9 @@
 				var tmp = filter.toSafeSQL();
 
 				rsArray.push(tmp.sql);
-				values = values.concat(tmp.values);
+				if(tmp.sql.indexOf("?") > -1){
+                    values = values.concat(tmp.values);
+                }
 			}, this);
 
 			rs = rsArray.join("");
@@ -669,6 +674,45 @@
 				"logic": null
 			}]);
 		};
+
+		if (kendoFilter) {
+
+			var filters = kendoFilter.filters || kendoFilter;
+
+			if(!kendoFilter.logic) kendoFilter.logic = "and";
+
+			for (var i = 0; i < filters.length; i++) {
+				var filter = filters[i], logic1;
+					// fe = new NoFilterExpression(filter.operator, filter.value),
+					//f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
+
+				if(filter.filters) {
+					for(var j = 0; j < filter.filters.length; j++){
+						var filter2 = filter.filters[j],
+							logic2;
+
+						if(j < filter.filters.length)
+						{
+							logic2 = filter2.logic ? filter2.logic : kendoFilter.logic;
+						}
+
+						this.quickAdd(filter2.field, filter2.operator, filter2.value, logic2);
+					}
+				}else{
+					if(i < filters.length)
+					{
+						logic1 = filter.logic ? filter.logic : kendoFilter.logic;
+					}
+
+					this.quickAdd(filter.field, filter.operator, filter.value, logic1);
+				}
+
+				//this.push(f);
+			}
+
+
+		}
+
 	}
 
 	/*
@@ -729,6 +773,19 @@
 
 			return ocol;
 		}
+
+		function normalizeInValue(exp){
+
+            if(exp.operator.toLowerCase() === "in"){
+                for(var i = 0; i < exp.value.length; i++){
+                    var valum = exp.value[i];
+
+                    exp.value[i] = "'" + valum + "'";
+                }
+
+                exp.value = exp.value.join(",");
+            }
+        }
 
 		this.toODATA = function() {
 			var tmp = [],
@@ -817,10 +874,18 @@
 				values = [];
 
 			angular.forEach(this.filters, function(exp, key) {
-				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+				normalizeInValue(exp);
+
+                if(exp.operator.toLowerCase() === "in"){
+                    filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSQL());
+                } else {
+                    filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+                }
 
 				if (!stringSearch[exp.operator]) {
-					values.push(exp.value);
+                    if(exp.operator.toLowerCase() !== "in"){
+                        values.push(exp.value);
+                    }
 				}
 			}, this);
 
@@ -2305,7 +2370,8 @@ var GloboTest = {};
 					lt: "<",
 					lte: "<=",
 					contains : "CONTAINS",
-					doesnotcontain: "NOT CONTAINS"
+					doesnotcontain: "NOT CONTAINS",
+					"in": "in"
 					//endswith: "endswith",
 					//startswith: "startswith"
 				},
@@ -2405,7 +2471,23 @@ var GloboTest = {};
 		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
 		                        format = "{1}";
 
-			                } else {
+			                } else if (angular.isArray(value)){
+                                var tmpValue = "";
+
+                                for(var i = 0; i < value.length; i++){
+                                    var valum = value[i];
+
+                                    tmpValue = tmpValue + "'" + valum + "'";
+
+                                    if(i + 1 != value.length){
+                                        tmpValue = tmpValue + ",";
+                                    }
+                                }
+
+                                value = tmpValue;
+                                format = "{1}";
+
+                            } else {
 			                    format = "{1}";
 			                }
 
@@ -5717,9 +5799,7 @@ var GloboTest = {};
 				}
 			}
 
-			return {
-				filters: filters.length ? filters : undefined
-			};
+			return filters.length ? filters : undefined;
 		}
 
 		//this.resolveFilterValues = resolveFilterValues;
