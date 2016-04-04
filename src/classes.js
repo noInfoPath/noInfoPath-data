@@ -155,6 +155,8 @@
 		},
 
 		filters = {
+			"is null": "is null",
+            "is not null": "is not null",
 			eq: "eq",
 			neq: "ne",
 			gt: "gt",
@@ -166,10 +168,17 @@
 			contains: "contains",
 			doesnotcontain: "notcontains",
 			endswith: "endswith",
-			startswith: "startswith"
+			startswith: "startswith",
+			"in": "in"
 		},
 
 		sqlOperators = {
+			"is null": function(){
+                return "is null";
+            },
+            "is not null": function(){
+                return "is not null";
+            },
 			"eq": function(v) {
 				return "= " + normalizeSafeValue(v);
 			},
@@ -199,7 +208,10 @@
 			},
 			"endswith": function(v) {
 				return "LIKE '%" + String(v) + "'";
-			}
+			},
+            "in": function(v) {
+                return "IN (" + String(v) + ")";
+            }
 		},
 
 		odataOperators = {
@@ -462,7 +474,9 @@
 				var tmp = filter.toSafeSQL();
 
 				rsArray.push(tmp.sql);
-				values = values.concat(tmp.values);
+				if(tmp.sql.indexOf("?") > -1){
+                    values = values.concat(tmp.values);
+                }
 			}, this);
 
 			rs = rsArray.join("");
@@ -587,6 +601,19 @@
 			return ocol;
 		}
 
+		function normalizeInValue(exp){
+
+            if(exp.operator.toLowerCase() === "in"){
+                for(var i = 0; i < exp.value.length; i++){
+                    var valum = exp.value[i];
+
+                    exp.value[i] = "'" + valum + "'";
+                }
+
+                exp.value = exp.value.join(",");
+            }
+        }
+
 		this.toODATA = function() {
 			var tmp = [],
 				os = "";
@@ -674,10 +701,18 @@
 				values = [];
 
 			angular.forEach(this.filters, function(exp, key) {
-				filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+				normalizeInValue(exp);
+
+                if(exp.operator.toLowerCase() === "in"){
+                    filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSQL());
+                } else {
+                    filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+                }
 
 				if (!stringSearch[exp.operator]) {
-					values.push(exp.value);
+                    if(exp.operator.toLowerCase() !== "in"){
+                        values.push(exp.value);
+                    }
 				}
 			}, this);
 
