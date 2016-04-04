@@ -138,9 +138,7 @@
 				}
 			}
 
-			return {
-				filters: filters.length ? filters : undefined
-			};
+			return filters.length ? filters : undefined;
 		}
 
 		//this.resolveFilterValues = resolveFilterValues;

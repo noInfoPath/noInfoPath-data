@@ -1,7 +1,7 @@
 //globals.js
 /*
 *	# noinfopath-data
-*	@version 1.1.33
+*	@version 1.1.34
 *
 *	## Overview
 *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -577,15 +577,6 @@
 		//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
 		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
 
-		if (kendoFilter) {
-			for (var i in kendoFilter.filters) {
-				var filter = kendoFilter.filters[i],
-					fe = new NoFilterExpression(filter.operator, filter.value),
-					f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
-
-				this.push(f);
-			}
-		}
 		//arr.push.apply(arr, arguments);
 		this.toODATA = function() {
 			var tmp = [];
@@ -669,6 +660,45 @@
 				"logic": null
 			}]);
 		};
+
+		if (kendoFilter) {
+
+			var filters = kendoFilter.filters || kendoFilter;
+
+			if(!kendoFilter.logic) kendoFilter.logic = "and";
+
+			for (var i = 0; i < filters.length; i++) {
+				var filter = filters[i], logic1;
+					// fe = new NoFilterExpression(filter.operator, filter.value),
+					//f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
+
+				if(filter.filters) {
+					for(var j = 0; j < filter.filters.length; j++){
+						var filter2 = filter.filters[j],
+							logic2;
+
+						if(j < filter.filters.length)
+						{
+							logic2 = filter2.logic ? filter2.logic : kendoFilter.logic;
+						}
+
+						this.quickAdd(filter2.field, filter2.operator, filter2.value, logic2);
+					}
+				}else{
+					if(i < filters.length)
+					{
+						logic1 = filter.logic ? filter.logic : kendoFilter.logic;
+					}
+
+					this.quickAdd(filter.field, filter.operator, filter.value, logic1);
+				}
+
+				//this.push(f);
+			}
+
+
+		}
+
 	}
 
 	/*
@@ -5717,9 +5747,7 @@ var GloboTest = {};
 				}
 			}
 
-			return {
-				filters: filters.length ? filters : undefined
-			};
+			return filters.length ? filters : undefined;
 		}
 
 		//this.resolveFilterValues = resolveFilterValues;
