@@ -156,7 +156,7 @@
 
 		filters = {
 			"is null": "is null",
-            "is not null": "is not null",
+			"is not null": "is not null",
 			eq: "eq",
 			neq: "ne",
 			gt: "gt",
@@ -173,12 +173,12 @@
 		},
 
 		sqlOperators = {
-			"is null": function(){
-                return "is null";
-            },
-            "is not null": function(){
-                return "is not null";
-            },
+			"is null": function() {
+				return "is null";
+			},
+			"is not null": function() {
+				return "is not null";
+			},
 			"eq": function(v) {
 				return "= " + normalizeSafeValue(v);
 			},
@@ -209,9 +209,9 @@
 			"endswith": function(v) {
 				return "LIKE '%" + String(v) + "'";
 			},
-            "in": function(v) {
-                return "IN (" + String(v) + ")";
-            }
+			"in": function(v) {
+				return "IN (" + String(v) + ")";
+			}
 		},
 
 		odataOperators = {
@@ -474,9 +474,9 @@
 				var tmp = filter.toSafeSQL();
 
 				rsArray.push(tmp.sql);
-				if(tmp.sql.indexOf("?") > -1){
-                    values = values.concat(tmp.values);
-                }
+				if (tmp.sql.indexOf("?") > -1) {
+					values = values.concat(tmp.values);
+				}
 			}, this);
 
 			rs = rsArray.join("");
@@ -506,28 +506,27 @@
 
 			var filters = kendoFilter.filters || kendoFilter;
 
-			if(!kendoFilter.logic) kendoFilter.logic = "and";
+			if (!kendoFilter.logic) kendoFilter.logic = "and";
 
 			for (var i = 0; i < filters.length; i++) {
-				var filter = filters[i], logic1;
-					// fe = new NoFilterExpression(filter.operator, filter.value),
-					//f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
+				var filter = filters[i],
+					logic1;
+				// fe = new NoFilterExpression(filter.operator, filter.value),
+				//f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
 
-				if(filter.filters) {
-					for(var j = 0; j < filter.filters.length; j++){
+				if (filter.filters) {
+					for (var j = 0; j < filter.filters.length; j++) {
 						var filter2 = filter.filters[j],
 							logic2;
 
-						if(j < filter.filters.length)
-						{
+						if (j < filter.filters.length) {
 							logic2 = filter2.logic ? filter2.logic : kendoFilter.logic;
 						}
 
 						this.quickAdd(filter2.field, filter2.operator, filter2.value, logic2);
 					}
-				}else{
-					if(i < filters.length)
-					{
+				} else {
+					if (i < filters.length) {
 						logic1 = filter.logic ? filter.logic : kendoFilter.logic;
 					}
 
@@ -601,18 +600,18 @@
 			return ocol;
 		}
 
-		function normalizeInValue(exp){
+		function normalizeInValue(exp) {
 
-            if(exp.operator.toLowerCase() === "in"){
-                for(var i = 0; i < exp.value.length; i++){
-                    var valum = exp.value[i];
+			if (exp.operator.toLowerCase() === "in") {
+				for (var i = 0; i < exp.value.length; i++) {
+					var valum = exp.value[i];
 
-                    exp.value[i] = "'" + valum + "'";
-                }
+					exp.value[i] = "'" + valum + "'";
+				}
 
-                exp.value = exp.value.join(",");
-            }
-        }
+				exp.value = exp.value.join(",");
+			}
+		}
 
 		this.toODATA = function() {
 			var tmp = [],
@@ -703,16 +702,16 @@
 			angular.forEach(this.filters, function(exp, key) {
 				normalizeInValue(exp);
 
-                if(exp.operator.toLowerCase() === "in"){
-                    filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSQL());
-                } else {
-                    filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
-                }
+				if (exp.operator.toLowerCase() === "in") {
+					filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSQL());
+				} else {
+					filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
+				}
 
 				if (!stringSearch[exp.operator]) {
-                    if(exp.operator.toLowerCase() !== "in"){
-                        values.push(exp.value);
-                    }
+					if (exp.operator.toLowerCase() !== "in") {
+						values.push(exp.value);
+					}
 				}
 			}, this);
 

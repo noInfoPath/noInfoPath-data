@@ -1113,7 +1113,7 @@
 					changes.isSame = true;
 					resolve(changes);
 				} else {
-					ops[changes.operation](data)
+					ops[changes.operation](changes.values)
 						.then(resolve)
 						.catch(reject);
 				}
