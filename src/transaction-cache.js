@@ -127,7 +127,7 @@
 
 					return prov;
 				}
-				
+
 				normalizeTransactions(config, schema);
 
 				this.upsert = function upsert(data) {
@@ -219,12 +219,17 @@
 
 											writableData[fldName] = val;
 										}
+
+										writableData = angular.merge(data, writableData);
+
 									} else if (curEntity.dataService) {
 										var service = $injector.get(curEntity.dataService.provider),
 											method = service[curEntity.dataService.method];
 
 										writableData = method(data);
 
+									} else {
+										writableData = data;
 									}
 
 									console.log(writableData);
