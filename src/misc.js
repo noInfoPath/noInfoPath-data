@@ -63,16 +63,16 @@
 			"timespanDays": timespanDays
 		};
 
-		this.calculate = function(config, data){
+		this.calculate = function(dsConfig, data) {
 
-			var calculatedFields = config.noDataSource.calculatedFields;
+			var calculatedFields = dsConfig.calculatedFields;
 
-			if(calculatedFields) {
+			if (calculatedFields) {
 
-				for(var d = 0; d < data.length; d++){
+				for (var d = 0; d < data.length; d++) {
 					var datum = data[d];
 
-					for (var i = 0; i < calculatedFields.length; i++){
+					for (var i = 0; i < calculatedFields.length; i++) {
 						var cf = calculatedFields[i],
 							provider = cf.parser.provider ? $injector.get(cf.parser.provider) : fns,
 							method = provider[cf.parser.method];
