@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.1
+ *	@version 1.2.2
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -168,7 +168,7 @@
 		};
 
 		angular.extend(noInfoPath, _data);
-		}]);
+	}]);
 })(angular);
 
 //classes.js
@@ -1494,7 +1494,7 @@
 
 	.factory("noLocalStorage", [function() {
 		return new NoStorage("localStorage");
-		}]);
+	}]);
 })(angular);
 
 //configuration.js
@@ -1631,8 +1631,8 @@
 
 		this.$get = ['$http', '$q', '$rootScope', 'noLocalStorage', function($http, $q, $rootScope, noLocalStorage) {
 			return new NoConfig($http, $q, $rootScope, noLocalStorage);
-			}];
-		}]);
+		}];
+	}]);
 })(angular);
 
 //http.js
@@ -1960,8 +1960,8 @@
 
 			//return new noREST($q, $http, $filter, noUrl, noConfig)
 			return new NoHTTP(noOdataQueryBuilder.makeQuery);
-			}];
-		}]);
+		}];
+	}]);
 })(angular);
 
 //schema.js
@@ -5466,7 +5466,7 @@ var GloboTest = {};
  */
 (function(angular, undefined) {
 
-	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope) {
+	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			entity = db[dsConfig.entityName],
@@ -5507,6 +5507,9 @@ var GloboTest = {};
 
 				return entity.noRead.apply(entity, queryParser.parse(params))
 					.then(function(data) {
+
+						data = noCalculatedFields.calculate(config, data);
+
 						resolve(data);
 					})
 					.catch(function(err) {
@@ -5608,7 +5611,7 @@ var GloboTest = {};
 
 	angular.module("noinfopath.data")
 
-	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", function($injector, $q, noDynamicFilters) {
+	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", "noCalculatedFields", function($injector, $q, noDynamicFilters, noCalculatedFields) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -5628,7 +5631,7 @@ var GloboTest = {};
 		 *
 		 */
 		this.create = function(dsConfig, scope) {
-			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope);
+			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields);
 		};
 	}]);
 
@@ -5662,7 +5665,69 @@ var GloboTest = {};
 					return "";
 				}
 			};
-	}]);
+		}])
+
+	/*
+	 *	noDateFunctions Service
+	 *
+	 *	```json
+	 *	"calculatedFields":[{
+	 *		"field": "Days",
+	 *		"parser": {
+	 *			"provider": "noDateFunctions",
+	 *			"method": "dateDiff",
+	 *			"fields": {
+	 *				"date1": "ObservationDate",
+	 *				"date2": "HarvestDate"
+	 *			}
+	 *		}
+	 *	}]
+	 *	```
+	 */
+
+	.service("noCalculatedFields", [function() {
+
+		function timespanDays(parserCfg, data) {
+			var d1 = data[parserCfg.parser.fields.date1] ? new Date(data[parserCfg.parser.fields.date1]) : "",
+				d2 = data[parserCfg.parser.fields.date2] ? new Date(data[parserCfg.parser.fields.date2]) : "",
+				rd;
+
+			if (angular.isDate(d1) && angular.isDate(d2)) {
+				rd = (d1 - d2) / 1000 / 60 / 60 / 24;
+			}
+
+			return rd;
+		}
+
+		var fns = {
+			"timespanDays": timespanDays
+		};
+
+		this.calculate = function(config, data) {
+
+			var calculatedFields = config.noDataSource.calculatedFields;
+
+			if (calculatedFields) {
+
+				for (var d = 0; d < data.length; d++) {
+					var datum = data[d];
+
+					for (var i = 0; i < calculatedFields.length; i++) {
+						var cf = calculatedFields[i],
+							provider = cf.parser.provider ? $injector.get(cf.parser.provider) : fns,
+							method = provider[cf.parser.method];
+
+						datum[cf.field] = method(cf, datum);
+					}
+				}
+			}
+
+			return data;
+
+		};
+	}])
+
+	;
 })(angular);
 
 //dynamic-filter.js
