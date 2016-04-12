@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.1
+@version 1.2.2
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1140,6 +1140,22 @@ at the given `dsConfigKey` location.
 
 An instance of a NoDataSource object.
 
+
+noDateFunctions Service
+
+```json
+"calculatedFields":[{
+	"field": "Days",
+	"parser": {
+		"provider": "noDateFunctions",
+		"method": "dateDiff",
+		"fields": {
+			"date1": "ObservationDate",
+			"date2": "HarvestDate"
+		}
+	}
+}]
+```
 
 @method normalizeFilterValue
 

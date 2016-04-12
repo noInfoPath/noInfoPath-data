@@ -20,7 +20,7 @@
  */
 (function(angular, undefined) {
 
-	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope) {
+	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			entity = db[dsConfig.entityName],
@@ -61,6 +61,9 @@
 
 				return entity.noRead.apply(entity, queryParser.parse(params))
 					.then(function(data) {
+
+						data = noCalculatedFields.calculate(config, data);
+
 						resolve(data);
 					})
 					.catch(function(err) {
@@ -136,11 +139,11 @@
 			return $q(function(resolve, reject) {
 				var endWaitFor, filterValues;
 				/*
-				*	@property noDataSource.waitFor
-				*
-				*	Use this property when you want the data source wait for some other
-				*	NoInfoPath component to update the `scope`.
-				*/
+				 *	@property noDataSource.waitFor
+				 *
+				 *	Use this property when you want the data source wait for some other
+				 *	NoInfoPath component to update the `scope`.
+				 */
 				if (dsConfig.waitFor) {
 					endWaitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
 						if (newval) {
@@ -162,7 +165,7 @@
 
 	angular.module("noinfopath.data")
 
-	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", function($injector, $q, noDynamicFilters) {
+	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", "noCalculatedFields", function($injector, $q, noDynamicFilters, noCalculatedFields) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -182,7 +185,7 @@
 		 *
 		 */
 		this.create = function(dsConfig, scope) {
-			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope);
+			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields);
 		};
 	}]);
 
