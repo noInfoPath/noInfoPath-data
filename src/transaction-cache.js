@@ -147,9 +147,7 @@
 								"basic": function(curEntity, data, scope) {
 									var writableData = {};
 
-									if (curEntity.omit_fields) {
-										writableData = _.omit(data, curEntity.omit_fields);
-									}
+
 
 									if (curEntity.fields) {
 										for (var f in curEntity.fields) {
@@ -232,7 +230,11 @@
 										writableData = data;
 									}
 
-									console.log(writableData);
+									if (curEntity.omit_fields) {
+										writableData = _.omit(writableData, curEntity.omit_fields);
+									}
+
+									//console.log(writableData);
 
 									return writableData;
 
