@@ -1098,6 +1098,12 @@ Maps to the Dexie.Table.get method.
 
 ### \_extendDexieTables
 
+@function secondarySort()
+
+This function is required because Dexie will only sort on one property.
+`secondarySort` will apply the remaining sort columns once Dexie return
+the initial filtered, paged, sort results.
+
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.
 
