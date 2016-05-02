@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.4
+@version 1.2.5
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1097,6 +1097,12 @@ Maps to the Dexie.Table.get method.
 
 
 ### \_extendDexieTables
+
+@function secondarySort()
+
+This function is required because Dexie will only sort on one property.
+`secondarySort` will apply the remaining sort columns once Dexie return
+the initial filtered, paged, sort results.
 
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.

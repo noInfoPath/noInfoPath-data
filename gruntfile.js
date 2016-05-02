@@ -37,7 +37,8 @@ module.exports = function(grunt) {
 					'src/data-source.js',
 					'src/misc.js',
 					'src/dynamic-filters.js',
-					'src/template-cache.js'
+					'src/template-cache.js',
+					'src/mock-http.js'
 				],
 				dest: 'dist/noinfopath-data.js'
 			},

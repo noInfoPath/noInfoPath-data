@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.4
+ *	@version 1.2.5
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4743,7 +4743,7 @@ var GloboTest = {};
 
 		var _name;
 
-        function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
+		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
 			var transData = result2 && result2.rows.length ? result2 : result1;
 
 			if (trans) trans.addChange(tableName, transData, operation);
@@ -4771,26 +4771,26 @@ var GloboTest = {};
 				function _toDexieClass(tsqlTableSchema) {
 					var _table = {};
 
-					angular.forEach(tsqlTableSchema.columns, function(column, tableName) {
+					angular.forEach(tsqlTableSchema.columns, function(column, columnName) {
 						switch (column.type) {
 							case "uniqueidentifier":
 							case "nvarchar":
 							case "varchar":
-								_table[tableName] = "String";
+								_table[columnName] = "String";
 								break;
 
 							case "date":
 							case "datetime":
-								_table[tableName] = "Date";
+								_table[columnName] = "Date";
 								break;
 
 							case "bit":
-								_table[tableName] = "Boolean";
+								_table[columnName] = "Boolean";
 								break;
 
 							case "int":
 							case "decimal":
-								_table[tableName] = "Number";
+								_table[columnName] = "Number";
 								break;
 						}
 					});
@@ -4799,7 +4799,7 @@ var GloboTest = {};
 				}
 
 				angular.forEach(dbSchema, function(table, tableName) {
-					var dexieTable = _dexie[tableName];
+					var dexieTable = _dexie[table.entityName || tableName];
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					dexieTable.noInfoPath = table;
 				});
@@ -4820,7 +4820,7 @@ var GloboTest = {};
 				_dexie.on('error', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.error("Dexie Error: " + err);
- 					_reject($rootScope, reject, err);
+					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('blocked', function(err) {
@@ -4935,7 +4935,7 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-			db.Table.prototype.noRead = function() {
+			function NoRead_old() {
 
 				var deferred = $q.defer(),
 					table = this,
@@ -5036,7 +5036,9 @@ var GloboTest = {};
 							});
 					} else {
 						table.toArray()
-							.then(deferred.resolve)
+							.then(function(data) {
+								deferred.resolve(new noInfoPath.data.NoResults(data));
+							})
 							.catch(deferred.reject);
 					}
 
@@ -5272,14 +5274,14 @@ var GloboTest = {};
 					return $q(function(resolve, reject) {
 						if (page) data.page(page);
 
-						resolve(data);
+						resolve(data.paged);
 					});
 				}
 
 				$timeout(function() {
 					_applyFilters(filters, table)
 						.then(function(data) {
-							_applyPaging(page, new noInfoPath.data.NoResults(data))
+							_applyPaging(page, data)
 								.then(deferred.resolve);
 						})
 						.catch(function(err) {
@@ -5291,7 +5293,128 @@ var GloboTest = {};
 
 
 				return deferred.promise;
-			};
+			}
+
+			var indexedOperators = {
+					"eq": "equals",
+					"gt": "above",
+					"ge": "aboveOrEqual",
+					"lt": "below",
+					"le": "belowOrEqual",
+					"startswith": "startsWith",
+					"bt": "between"
+				};
+
+			/*
+			*	@function secondarySort()
+			*
+			*	This function is required because Dexie will only sort on one property.
+			*	`secondarySort` will apply the remaining sort columns once Dexie return
+			*	the initial filtered, paged, sort results.
+			*/
+			function secondarySort(sort, arrayOfThings){
+				var finalResults = arrayOfThings;
+
+				function _sortCb(a, b) {
+					if(srt.dir && srt.dir === "desc"){
+						if (a[srt.column] > b[srt.column]) {
+							return -1;
+						}
+						if (a[srt.column] < b[srt.column]) {
+							return 1;
+						}
+					}else{
+						if (a[srt.column] > b[srt.column]) {
+							return 1;
+						}
+						if (a[srt.column] < b[srt.column]) {
+							return -1;
+						}
+					}
+
+					return 0;
+				}
+
+				if (sort.length > 1) {
+					for(var si = 1; si < sort.length; si++){
+						srt = sort[si];
+						finalResults.sort(_sortCb);
+					}
+				}
+
+				return finalResults;
+			}
+
+			function NoRead_new() {
+				var table = this,
+					filters, sort, page;
+
+				for (var ai in arguments) {
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if (angular.isObject(arg)) {
+						switch (arg.__type) {
+							case "NoFilters":
+								filters = arg;
+								break;
+							case "NoSort":
+								sort = arg;
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
+
+				return $q(function(resolve, reject) {
+					var collection,
+						data;
+
+					if (!!filters) {
+						//First filter will use where();
+						var filter = filters[0],
+							where = table.where(filter.column),
+							ex = filter.filters[0],
+							method = where[indexedOperators[ex.operator]];
+
+						collection = method.call(where, ex.value);
+
+					}else{
+						collection = table.toCollection();
+					}
+
+					if (page) {
+						collection = collection.offset(page.skip).limit(page.take);
+					}
+
+
+					if (sort) {
+						var s = sort[0];
+
+						if (s.dir && s.dir === "desc") {
+							collection.reverse();
+						}
+
+						collection.sortBy(s.column)
+							.then(secondarySort.bind(this, sort))
+							.then(function(finalResults){
+								resolve(new noInfoPath.data.NoResults(finalResults));
+							})
+							.catch(reject);
+
+					} else{
+						collection.toArray()
+							.then(function(finalResults){
+								resolve(new noInfoPath.data.NoResults(finalResults));
+							})
+							.catch(reject);
+					}
+				});
+			}
+
+			db.Table.prototype.noRead = NoRead_new;
 
 			db.WriteableTable.prototype.noUpdate = function(data, trans) {
 				var deferred = $q.defer(),
@@ -5305,8 +5428,8 @@ var GloboTest = {};
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-                            .then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
-                            .catch(_transactionFault.bind(null, deferred.reject));
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+							.catch(_transactionFault.bind(null, deferred.reject));
 
 					})
 					.then(angular.noop())
@@ -5327,8 +5450,8 @@ var GloboTest = {};
 				_dexie.transaction("rw", table, function() {
 						Dexie.currentTransaction.nosync = true;
 						table.delete(key)
-                            .then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
-                            .catch(_transactionFault.bind(null, deferred.reject));
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+							.catch(_transactionFault.bind(null, deferred.reject));
 
 					})
 					.then(angular.noop())
@@ -5572,7 +5695,7 @@ var GloboTest = {};
 					params[0] = filterValues;
 				}
 
-				return entity.noOne.apply(null, params)
+				return entity.noOne.apply(entity, params)
 					.then(function(data) {
 						resolve(data);
 					})
@@ -5906,5 +6029,101 @@ var GloboTest = {};
 					}
 				});
 			};
+		}]);
+})(angular);
+
+//mock-http.js
+(function(angular, undefined) {
+	"use strict";
+
+	function NoMockHTTPService($injector, $q, $rootScope, noLogService) {
+		var THIS = this;
+
+		this.whenReady = function(tables) {
+
+			return $q(function(resolve, reject) {
+				if ($rootScope.noMockHTTPInitialized) {
+					noLogService.log("noMockHTTP Ready.");
+					resolve();
+				} else {
+					$rootScope.$watch("noMockHTTPServiceInitialized", function(newval) {
+						if (newval) {
+							noLogService.log("noMockHTTP ready.");
+							resolve();
+						}
+					});
+
+				}
+			});
+		};
+
+		this.configure = function(noUser, schema ) {
+			var jsonDataProvider = $injector.get(schema.config.dataProvider);
+			return $q(function(resolve, reject) {
+				for (var t in schema.tables) {
+					var table = schema.tables[t];
+					THIS[t] = new NoTable($q, t, table, jsonDataProvider[t]);
+				}
+				$rootScope.noHTTPInitialized = true;
+				noLogService.log("noMockHTTP_" + schema.config.dbName + " ready.");
+
+				$rootScope["noMockHTTP_" + schema.config.dbName] = THIS;
+
+				resolve(THIS);
+			});
+
+		};
+
+		this.getDatabase = function(databaseName) {
+			return $rootScope["noMockHTTP_" + databaseName];
+		};
+
+	}
+
+	function NoTable($q, tableName, table, data) {
+		var THIS = this,
+			_table = table,
+			_data = data;
+
+		Object.defineProperties(this, {
+			entity: {
+				get: function() {
+					return _table;
+				}
+			}
+		});
+
+		this.noCreate = function(data) {
+
+			return $q.when({});
+		};
+
+		this.noRead = function() {
+			return $q.when(new noInfoPath.data.NoResults(data));
+		};
+
+		this.noUpdate = function(data) {
+
+			return $q.when({});
+
+		};
+
+		this.noDestroy = function(data) {
+			return $q.when("200");
+		};
+
+		this.noOne = function(query) {
+			return $q.when({});
+
+		};
+	}
+
+
+	angular.module('noinfopath.data')
+
+		.provider("noMockHTTP", [function() {
+			this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function($injector, $q, $rootScope, noLogService) {
+				return new NoMockHTTPService($injector, $q, $rootScope, noLogService);
+			}];
 		}]);
 })(angular);

@@ -125,7 +125,7 @@
 					params[0] = filterValues;
 				}
 
-				return entity.noOne.apply(null, params)
+				return entity.noOne.apply(entity, params)
 					.then(function(data) {
 						resolve(data);
 					})
