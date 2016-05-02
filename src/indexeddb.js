@@ -196,26 +196,26 @@
 				function _toDexieClass(tsqlTableSchema) {
 					var _table = {};
 
-					angular.forEach(tsqlTableSchema.columns, function(column, tableName) {
+					angular.forEach(tsqlTableSchema.columns, function(column, columnName) {
 						switch (column.type) {
 							case "uniqueidentifier":
 							case "nvarchar":
 							case "varchar":
-								_table[tableName] = "String";
+								_table[columnName] = "String";
 								break;
 
 							case "date":
 							case "datetime":
-								_table[tableName] = "Date";
+								_table[columnName] = "Date";
 								break;
 
 							case "bit":
-								_table[tableName] = "Boolean";
+								_table[columnName] = "Boolean";
 								break;
 
 							case "int":
 							case "decimal":
-								_table[tableName] = "Number";
+								_table[columnName] = "Number";
 								break;
 						}
 					});
@@ -224,7 +224,7 @@
 				}
 
 				angular.forEach(dbSchema, function(table, tableName) {
-					var dexieTable = _dexie[tableName];
+					var dexieTable = _dexie[table.entityName || tableName];
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					dexieTable.noInfoPath = table;
 				});
@@ -461,7 +461,9 @@
 							});
 					} else {
 						table.toArray()
-							.then(deferred.resolve)
+							.then(function(data){
+								deferred.resolve(new noInfoPath.data.NoResults(data));
+							})
 							.catch(deferred.reject);
 					}
 
@@ -704,7 +706,7 @@
 				$timeout(function() {
 					_applyFilters(filters, table)
 						.then(function(data) {
-							_applyPaging(page, new noInfoPath.data.NoResults(data))
+							_applyPaging(page, data)
 								.then(deferred.resolve);
 						})
 						.catch(function(err) {

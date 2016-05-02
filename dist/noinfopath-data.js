@@ -4771,26 +4771,26 @@ var GloboTest = {};
 				function _toDexieClass(tsqlTableSchema) {
 					var _table = {};
 
-					angular.forEach(tsqlTableSchema.columns, function(column, tableName) {
+					angular.forEach(tsqlTableSchema.columns, function(column, columnName) {
 						switch (column.type) {
 							case "uniqueidentifier":
 							case "nvarchar":
 							case "varchar":
-								_table[tableName] = "String";
+								_table[columnName] = "String";
 								break;
 
 							case "date":
 							case "datetime":
-								_table[tableName] = "Date";
+								_table[columnName] = "Date";
 								break;
 
 							case "bit":
-								_table[tableName] = "Boolean";
+								_table[columnName] = "Boolean";
 								break;
 
 							case "int":
 							case "decimal":
-								_table[tableName] = "Number";
+								_table[columnName] = "Number";
 								break;
 						}
 					});
@@ -4799,7 +4799,7 @@ var GloboTest = {};
 				}
 
 				angular.forEach(dbSchema, function(table, tableName) {
-					var dexieTable = _dexie[tableName];
+					var dexieTable = _dexie[table.entityName || tableName];
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					dexieTable.noInfoPath = table;
 				});
@@ -5036,7 +5036,9 @@ var GloboTest = {};
 							});
 					} else {
 						table.toArray()
-							.then(deferred.resolve)
+							.then(function(data){
+								deferred.resolve(new noInfoPath.data.NoResults(data));
+							})
 							.catch(deferred.reject);
 					}
 
@@ -5279,7 +5281,7 @@ var GloboTest = {};
 				$timeout(function() {
 					_applyFilters(filters, table)
 						.then(function(data) {
-							_applyPaging(page, new noInfoPath.data.NoResults(data))
+							_applyPaging(page, data)
 								.then(deferred.resolve);
 						})
 						.catch(function(err) {
@@ -5572,7 +5574,7 @@ var GloboTest = {};
 					params[0] = filterValues;
 				}
 
-				return entity.noOne.apply(null, params)
+				return entity.noOne.apply(entity, params)
 					.then(function(data) {
 						resolve(data);
 					})
@@ -5906,5 +5908,101 @@ var GloboTest = {};
 					}
 				});
 			};
+		}]);
+})(angular);
+
+//mock-http.js
+(function(angular, undefined) {
+	"use strict";
+
+	function NoMockHTTPService($injector, $q, $rootScope, noLogService) {
+		var THIS = this;
+
+		this.whenReady = function(tables) {
+
+			return $q(function(resolve, reject) {
+				if ($rootScope.noMockHTTPInitialized) {
+					noLogService.log("noMockHTTP Ready.");
+					resolve();
+				} else {
+					$rootScope.$watch("noMockHTTPServiceInitialized", function(newval) {
+						if (newval) {
+							noLogService.log("noMockHTTP ready.");
+							resolve();
+						}
+					});
+
+				}
+			});
+		};
+
+		this.configure = function(noUser, schema ) {
+			var jsonDataProvider = $injector.get(schema.config.dataProvider);
+			return $q(function(resolve, reject) {
+				for (var t in schema.tables) {
+					var table = schema.tables[t];
+					THIS[t] = new NoTable($q, t, table, jsonDataProvider[t]);
+				}
+				$rootScope.noHTTPInitialized = true;
+				noLogService.log("noMockHTTP_" + schema.config.dbName + " ready.");
+
+				$rootScope["noMockHTTP_" + schema.config.dbName] = THIS;
+
+				resolve(THIS);
+			});
+
+		};
+
+		this.getDatabase = function(databaseName) {
+			return $rootScope["noMockHTTP_" + databaseName];
+		};
+
+	}
+
+	function NoTable($q, tableName, table, data) {
+		var THIS = this,
+			_table = table,
+			_data = data;
+
+		Object.defineProperties(this, {
+			entity: {
+				get: function() {
+					return _table;
+				}
+			}
+		});
+
+		this.noCreate = function(data) {
+
+			return $q.when({});
+		};
+
+		this.noRead = function() {
+			return $q.when(new noInfoPath.data.NoResults(data));
+		};
+
+		this.noUpdate = function(data) {
+
+			return $q.when({});
+
+		};
+
+		this.noDestroy = function(data) {
+			return $q.when("200");
+		};
+
+		this.noOne = function(query) {
+			return $q.when({});
+
+		};
+	}
+
+
+	angular.module('noinfopath.data')
+
+		.provider("noMockHTTP", [function() {
+			this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function($injector, $q, $rootScope, noLogService) {
+				return new NoMockHTTPService($injector, $q, $rootScope, noLogService);
+			}];
 		}]);
 })(angular);
