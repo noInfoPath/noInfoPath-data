@@ -168,7 +168,7 @@
 
 		var _name;
 
-        function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
+		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
 			var transData = result2 && result2.rows.length ? result2 : result1;
 
 			if (trans) trans.addChange(tableName, transData, operation);
@@ -196,26 +196,26 @@
 				function _toDexieClass(tsqlTableSchema) {
 					var _table = {};
 
-					angular.forEach(tsqlTableSchema.columns, function(column, tableName) {
+					angular.forEach(tsqlTableSchema.columns, function(column, columnName) {
 						switch (column.type) {
 							case "uniqueidentifier":
 							case "nvarchar":
 							case "varchar":
-								_table[tableName] = "String";
+								_table[columnName] = "String";
 								break;
 
 							case "date":
 							case "datetime":
-								_table[tableName] = "Date";
+								_table[columnName] = "Date";
 								break;
 
 							case "bit":
-								_table[tableName] = "Boolean";
+								_table[columnName] = "Boolean";
 								break;
 
 							case "int":
 							case "decimal":
-								_table[tableName] = "Number";
+								_table[columnName] = "Number";
 								break;
 						}
 					});
@@ -224,7 +224,7 @@
 				}
 
 				angular.forEach(dbSchema, function(table, tableName) {
-					var dexieTable = _dexie[tableName];
+					var dexieTable = _dexie[table.entityName || tableName];
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					dexieTable.noInfoPath = table;
 				});
@@ -245,7 +245,7 @@
 				_dexie.on('error', function(err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.error("Dexie Error: " + err);
- 					_reject($rootScope, reject, err);
+					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('blocked', function(err) {
@@ -360,7 +360,7 @@
 				return deferred.promise;
 			};
 
-			db.Table.prototype.noRead = function() {
+			function NoRead_old() {
 
 				var deferred = $q.defer(),
 					table = this,
@@ -699,14 +699,14 @@
 					return $q(function(resolve, reject) {
 						if (page) data.page(page);
 
-						resolve(data);
+						resolve(data.paged);
 					});
 				}
 
 				$timeout(function() {
 					_applyFilters(filters, table)
 						.then(function(data) {
-							_applyPaging(page, new noInfoPath.data.NoResults(data))
+							_applyPaging(page, data)
 								.then(deferred.resolve);
 						})
 						.catch(function(err) {
@@ -718,7 +718,128 @@
 
 
 				return deferred.promise;
-			};
+			}
+
+			var indexedOperators = {
+					"eq": "equals",
+					"gt": "above",
+					"ge": "aboveOrEqual",
+					"lt": "below",
+					"le": "belowOrEqual",
+					"startswith": "startsWith",
+					"bt": "between"
+				};
+
+			/*
+			*	@function secondarySort()
+			*
+			*	This function is required because Dexie will only sort on one property.
+			*	`secondarySort` will apply the remaining sort columns once Dexie return
+			*	the initial filtered, paged, sort results.
+			*/
+			function secondarySort(sort, arrayOfThings){
+				var finalResults = arrayOfThings;
+
+				function _sortCb(a, b) {
+					if(srt.dir && srt.dir === "desc"){
+						if (a[srt.column] > b[srt.column]) {
+							return -1;
+						}
+						if (a[srt.column] < b[srt.column]) {
+							return 1;
+						}
+					}else{
+						if (a[srt.column] > b[srt.column]) {
+							return 1;
+						}
+						if (a[srt.column] < b[srt.column]) {
+							return -1;
+						}
+					}
+
+					return 0;
+				}
+
+				if (sort.length > 1) {
+					for(var si = 1; si < sort.length; si++){
+						srt = sort[si];
+						finalResults.sort(_sortCb);
+					}
+				}
+
+				return finalResults;
+			}
+
+			function NoRead_new() {
+				var table = this,
+					filters, sort, page;
+
+				for (var ai in arguments) {
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if (angular.isObject(arg)) {
+						switch (arg.__type) {
+							case "NoFilters":
+								filters = arg;
+								break;
+							case "NoSort":
+								sort = arg;
+								break;
+							case "NoPage":
+								page = arg;
+								break;
+						}
+					}
+				}
+
+				return $q(function(resolve, reject) {
+					var collection,
+						data;
+
+					if (!!filters) {
+						//First filter will use where();
+						var filter = filters[0],
+							where = table.where(filter.column),
+							ex = filter.filters[0],
+							method = where[indexedOperators[ex.operator]];
+
+						collection = method.call(where, ex.value);
+
+					}else{
+						collection = table.toCollection();
+					}
+
+					if (page) {
+						collection = collection.offset(page.skip).limit(page.take);
+					}
+
+
+					if (sort) {
+						var s = sort[0];
+
+						if (s.dir && s.dir === "desc") {
+							collection.reverse();
+						}
+
+						collection.sortBy(s.column)
+							.then(secondarySort.bind(this, sort))
+							.then(function(finalResults){
+								resolve(new noInfoPath.data.NoResults(finalResults));
+							})
+							.catch(reject);
+
+					} else{
+						collection.toArray()
+							.then(function(finalResults){
+								resolve(new noInfoPath.data.NoResults(finalResults));
+							})
+							.catch(reject);
+					}
+				});
+			}
+
+			db.Table.prototype.noRead = NoRead_new;
 
 			db.WriteableTable.prototype.noUpdate = function(data, trans) {
 				var deferred = $q.defer(),
@@ -732,8 +853,8 @@
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-                            .then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
-                            .catch(_transactionFault.bind(null, deferred.reject));
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+							.catch(_transactionFault.bind(null, deferred.reject));
 
 					})
 					.then(angular.noop())
@@ -754,8 +875,8 @@
 				_dexie.transaction("rw", table, function() {
 						Dexie.currentTransaction.nosync = true;
 						table.delete(key)
-                            .then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
-                            .catch(_transactionFault.bind(null, deferred.reject));
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+							.catch(_transactionFault.bind(null, deferred.reject));
 
 					})
 					.then(angular.noop())
