@@ -887,34 +887,22 @@
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noOne = function(filter) {
-				var deferred = $q.defer(),
-					table = this,
-					key = filter[0].filters[0].value;
+			db.WriteableTable.prototype.noOne = function(data) {
+				var table = this,
+					key = data[table.noInfoPath.primaryKey];
 
-				//noLogService.log("adding: ", _dexie.currentUser);
+				return $q(function(resolve, reject){
+					table.noRead(data)
+						.then(function(results){
+							resolve(results.length > 0 ? results[0] : {});
+						})
+						.catch(function(err){
 
-				_dexie.transaction("r", table, function() {
-						Dexie.currentTransaction.nosync = true;
-						table.get(key)
-							.then(function(data) {
-								deferred.resolve(data);
-							})
-							.catch(function(err) {
-								deferred.reject(err);
-							});
+						});
 
-					})
-					.then(angular.noop())
-					.catch(function(err) {
-						deferred.reject(err);
-					});
+				});
 
-				return deferred.promise;
 			};
-
-			// db.WriteableTable.prototype.upsert = function(data){
-			// }
 
 			db.WriteableTable.prototype.bulkLoad = function(data, progress) {
 				var deferred = $q.defer(),

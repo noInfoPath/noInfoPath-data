@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.5
+ *	@version 1.2.7
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1695,14 +1695,18 @@
  */
 (function(angular, undefined) {
 	"use strict";
+	var $httpProviderRef;
 
 	angular.module('noinfopath.data')
-
+	.config(["$httpProvider", function($httpProvider){
+		 $httpProviderRef = $httpProvider;
+	}])
 	.provider("noHTTP", [function() {
 		this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig) {
 
 			function NoHTTP(queryBuilder) {
-				var THIS = this;
+				var THIS = this,
+					_currentUser;
 
 				console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
 
@@ -1726,6 +1730,7 @@
 				};
 
 				this.configure = function(noUser, schema) {
+					_currentUser = noUser;
 
 					var promise = $q(function(resolve, reject) {
 						for (var t in schema.tables) {
@@ -1747,6 +1752,58 @@
 					return $rootScope["noHTTP_" + databaseName];
 				};
 
+				this.noRequestJSON = function(url, method, data){
+					var json = angular.toJson(data);
+
+					if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
+					var deferred = $q.defer(),
+						req = {
+							method: method,
+							url: url,
+							data: json,
+							headers: {
+								"Content-Type": "application/json",
+								"Accept": "application/json"
+							},
+							withCredentials: true
+						};
+
+					$http(req)
+						.success(function(data) {
+							deferred.resolve(data);
+						})
+						.error(function(reason) {
+							console.error(reason);
+							deferred.reject(reason);
+						});
+
+					return deferred.promise;
+				};
+
+				this.noRequestForm = function(url, method, data){
+					var deferred = $q.defer(),
+						req = {
+							method: method,
+							url: url,
+							data: $.param(data),
+							headers: {
+								"Content-Type": "application/x-www-form-urlencoded"
+							},
+							withCredentials: true
+						};
+
+					$http(req)
+						.success(function(data) {
+							deferred.resolve(data);
+						})
+						.error(function(reason) {
+							console.error(reason);
+							deferred.reject(reason);
+						});
+
+					return deferred.promise;
+				};
 			}
 
 			function NoTable(tableName, table, queryBuilder) {
@@ -5036,11 +5093,7 @@ var GloboTest = {};
 							});
 					} else {
 						table.toArray()
-<<<<<<< HEAD
 							.then(function(data){
-=======
-							.then(function(data) {
->>>>>>> 8fdc4716a247f7cdd2e0a9837dbd8ceda8b9e8f8
 								deferred.resolve(new noInfoPath.data.NoResults(data));
 							})
 							.catch(deferred.reject);
@@ -5466,34 +5519,22 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noOne = function(filter) {
-				var deferred = $q.defer(),
-					table = this,
-					key = filter[0].filters[0].value;
+			db.WriteableTable.prototype.noOne = function(data) {
+				var table = this,
+					key = data[table.noInfoPath.primaryKey];
 
-				//noLogService.log("adding: ", _dexie.currentUser);
+				return $q(function(resolve, reject){
+					table.noRead(data)
+						.then(function(results){
+							resolve(results.length > 0 ? results[0] : {});
+						})
+						.catch(function(err){
 
-				_dexie.transaction("r", table, function() {
-						Dexie.currentTransaction.nosync = true;
-						table.get(key)
-							.then(function(data) {
-								deferred.resolve(data);
-							})
-							.catch(function(err) {
-								deferred.reject(err);
-							});
+						});
 
-					})
-					.then(angular.noop())
-					.catch(function(err) {
-						deferred.reject(err);
-					});
+				});
 
-				return deferred.promise;
 			};
-
-			// db.WriteableTable.prototype.upsert = function(data){
-			// }
 
 			db.WriteableTable.prototype.bulkLoad = function(data, progress) {
 				var deferred = $q.defer(),
