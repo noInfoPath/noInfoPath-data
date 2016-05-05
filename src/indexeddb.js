@@ -461,7 +461,7 @@
 							});
 					} else {
 						table.toArray()
-							.then(function(data) {
+							.then(function(data){
 								deferred.resolve(new noInfoPath.data.NoResults(data));
 							})
 							.catch(deferred.reject);

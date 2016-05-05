@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.6
+ *	@version 1.2.7
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1695,14 +1695,18 @@
  */
 (function(angular, undefined) {
 	"use strict";
+	var $httpProviderRef;
 
 	angular.module('noinfopath.data')
-
+	.config(["$httpProvider", function($httpProvider){
+		 $httpProviderRef = $httpProvider;
+	}])
 	.provider("noHTTP", [function() {
 		this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig) {
 
 			function NoHTTP(queryBuilder) {
-				var THIS = this;
+				var THIS = this,
+					_currentUser;
 
 				console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
 
@@ -1726,6 +1730,7 @@
 				};
 
 				this.configure = function(noUser, schema) {
+					_currentUser = noUser;
 
 					var promise = $q(function(resolve, reject) {
 						for (var t in schema.tables) {
@@ -1747,6 +1752,58 @@
 					return $rootScope["noHTTP_" + databaseName];
 				};
 
+				this.noRequestJSON = function(url, method, data){
+					var json = angular.toJson(data);
+
+					if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
+					var deferred = $q.defer(),
+						req = {
+							method: method,
+							url: url,
+							data: json,
+							headers: {
+								"Content-Type": "application/json",
+								"Accept": "application/json"
+							},
+							withCredentials: true
+						};
+
+					$http(req)
+						.success(function(data) {
+							deferred.resolve(data);
+						})
+						.error(function(reason) {
+							console.error(reason);
+							deferred.reject(reason);
+						});
+
+					return deferred.promise;
+				};
+
+				this.noRequestForm = function(url, method, data){
+					var deferred = $q.defer(),
+						req = {
+							method: method,
+							url: url,
+							data: $.param(data),
+							headers: {
+								"Content-Type": "application/x-www-form-urlencoded"
+							},
+							withCredentials: true
+						};
+
+					$http(req)
+						.success(function(data) {
+							deferred.resolve(data);
+						})
+						.error(function(reason) {
+							console.error(reason);
+							deferred.reject(reason);
+						});
+
+					return deferred.promise;
+				};
 			}
 
 			function NoTable(tableName, table, queryBuilder) {
@@ -5036,7 +5093,7 @@ var GloboTest = {};
 							});
 					} else {
 						table.toArray()
-							.then(function(data) {
+							.then(function(data){
 								deferred.resolve(new noInfoPath.data.NoResults(data));
 							})
 							.catch(deferred.reject);
