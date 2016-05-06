@@ -226,6 +226,7 @@
 				angular.forEach(dbSchema, function(table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					table.parentSchema = schema;
 					dexieTable.noInfoPath = table;
 				});
 			}
@@ -322,7 +323,16 @@
 		};
 
 		function noDexie(db) {
-			var _dexie = db;
+			var _dexie = db,
+				indexedOperators = {
+					"eq": "equals",
+					"gt": "above",
+					"ge": "aboveOrEqual",
+					"lt": "below",
+					"le": "belowOrEqual",
+					"startswith": "startsWith",
+					"bt": "between"
+				};
 
 			db.WriteableTable.prototype.noCreate = function(data, trans) {
 				var deferred = $q.defer(),
@@ -461,7 +471,7 @@
 							});
 					} else {
 						table.toArray()
-							.then(function(data){
+							.then(function(data) {
 								deferred.resolve(new noInfoPath.data.NoResults(data));
 							})
 							.catch(deferred.reject);
@@ -720,35 +730,25 @@
 				return deferred.promise;
 			}
 
-			var indexedOperators = {
-					"eq": "equals",
-					"gt": "above",
-					"ge": "aboveOrEqual",
-					"lt": "below",
-					"le": "belowOrEqual",
-					"startswith": "startsWith",
-					"bt": "between"
-				};
-
 			/*
-			*	@function secondarySort()
-			*
-			*	This function is required because Dexie will only sort on one property.
-			*	`secondarySort` will apply the remaining sort columns once Dexie return
-			*	the initial filtered, paged, sort results.
-			*/
-			function secondarySort(sort, arrayOfThings){
+			 *	@function secondarySort()
+			 *
+			 *	This function is required because Dexie will only sort on one property.
+			 *	`secondarySort` will apply the remaining sort columns once Dexie return
+			 *	the initial filtered, paged, sort results.
+			 */
+			function secondarySort(sort, arrayOfThings) {
 				var finalResults = arrayOfThings;
 
 				function _sortCb(a, b) {
-					if(srt.dir && srt.dir === "desc"){
+					if (srt.dir && srt.dir === "desc") {
 						if (a[srt.column] > b[srt.column]) {
 							return -1;
 						}
 						if (a[srt.column] < b[srt.column]) {
 							return 1;
 						}
-					}else{
+					} else {
 						if (a[srt.column] > b[srt.column]) {
 							return 1;
 						}
@@ -761,13 +761,68 @@
 				}
 
 				if (sort.length > 1) {
-					for(var si = 1; si < sort.length; si++){
+					for (var si = 1; si < sort.length; si++) {
 						srt = sort[si];
 						finalResults.sort(_sortCb);
 					}
 				}
 
 				return finalResults;
+			}
+
+			function followRelations(table, arrayOfThings) {
+				var promises = [],
+					columns = table.noInfoPath.foreignKeys,
+					aliases = table.noInfoPath.parentSchema.config.tableAliases;
+
+				function expand(col, item) {
+					var filters = new noInfoPath.data.NoFilters(),
+						ft = db[col.refTable];
+
+					if (!ft) {
+						ft = db[aliases[col.refTable]];
+					}
+					//throw "Invalid foreign entity name; " + col.refTable;
+
+					filters.quickAdd(col.refColumn, "eq", item[col.column]);
+
+
+					function finish(col, item, data) {
+						item[col.column] = data;
+						return item;
+					}
+
+
+					function fault(err) {
+						console.error(err);
+						return err;
+					}
+
+					return ft.noOne(filters)
+						.then(finish.bind(null, col, item))
+						.catch(fault);
+
+				}
+
+
+
+				for (var i = 0; i < arrayOfThings.length; i++) {
+					var item = arrayOfThings[i];
+
+
+					for (var c in columns) {
+						var col = columns[c];
+						promises.push(expand(col, item));
+					}
+				}
+
+				return promises.length > 0 ? $q.all(promises)
+					.then(function() {
+						return arrayOfThings;
+					})
+					.catch(function(err) {
+						console.error(err);
+					}) : $q.when(arrayOfThings);
 			}
 
 			function NoRead_new() {
@@ -805,8 +860,7 @@
 							method = where[indexedOperators[ex.operator]];
 
 						collection = method.call(where, ex.value);
-
-					}else{
+					} else {
 						collection = table.toCollection();
 					}
 
@@ -823,15 +877,17 @@
 						}
 
 						collection.sortBy(s.column)
-							.then(secondarySort.bind(this, sort))
-							.then(function(finalResults){
+							.then(secondarySort.bind(table, sort))
+							.then(followRelations.bind(table, table))
+							.then(function(finalResults) {
 								resolve(new noInfoPath.data.NoResults(finalResults));
 							})
 							.catch(reject);
 
-					} else{
+					} else {
 						collection.toArray()
-							.then(function(finalResults){
+							.then(followRelations.bind(table, table))
+							.then(function(finalResults) {
 								resolve(new noInfoPath.data.NoResults(finalResults));
 							})
 							.catch(reject);
@@ -891,13 +947,13 @@
 				var table = this,
 					key = data[table.noInfoPath.primaryKey];
 
-				return $q(function(resolve, reject){
+				return $q(function(resolve, reject) {
 					table.noRead(data)
-						.then(function(results){
+						.then(function(results) {
 							resolve(results.length > 0 ? results[0] : {});
 						})
-						.catch(function(err){
-
+						.catch(function(err) {
+							reject(err);
 						});
 
 				});
@@ -953,7 +1009,10 @@
 				table.clear()
 					.then(function() {
 						_import(data, progress);
-					}.bind(this));
+					}.bind(this))
+					.catch(function(err) {
+						console.error(err);
+					});
 
 				return deferred.promise;
 			};
