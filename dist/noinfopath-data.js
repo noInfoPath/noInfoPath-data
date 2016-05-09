@@ -5516,7 +5516,7 @@ var GloboTest = {};
 					if (sort) {
 						var s = sort[0];
 
-						if (s.dir && s.dir === "desc") {
+						if (s && s.dir && s.dir === "desc") {
 							collection.reverse();
 						}
 
