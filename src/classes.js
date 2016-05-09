@@ -842,11 +842,23 @@
 
 	function NoResults(arrayOfThings) {
 		//Capture the length of the arrayOfThings before any changes are made to it.
-		var _total = arrayOfThings["odata.count"] ? Number(arrayOfThings["odata.count"]) : arrayOfThings.length,
-			_page = arrayOfThings.value ? arrayOfThings.value : arrayOfThings,
-			arr = arrayOfThings;
+		var _raw, _total, _page, arr;
 
-		//arr.push.apply(arr, arguments);
+		if(arrayOfThings) {
+			if(arrayOfThings["odata.count"]){
+				_raw = arrayOfThings.value;
+				_total = Number(_raw["odata.count"]);
+			}else{
+				_raw = angular.copy(arrayOfThings);
+				_total = _raw.length;
+			}
+		}else{
+			_raw = [];
+			_total = 0;
+		}
+
+		arr = _raw;
+		_page = _raw;
 
 		Object.defineProperties(arr, {
 			"total": {
