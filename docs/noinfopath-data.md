@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.8
+@version 1.2.9
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1213,4 +1213,9 @@ is a JavaScript object. Possible services could be $rootScope or $stateParams.
 
 NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
 inferred in the documentation or perform by ngInclude.
+
+@method toBlob(file)
+
+Reads a file from a DOM File object and converts to a binary
+string compatible with the local, and upstream file systems.
 
