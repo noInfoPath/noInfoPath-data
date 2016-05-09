@@ -17,7 +17,7 @@
 
 			switch (type) {
 				case "date":
-					outval = noInfoPath.data.toDbDate(value);
+					outval = noInfoPath.toDbDate(value);
 					break;
 				case "number":
 					outval = Number(value);
