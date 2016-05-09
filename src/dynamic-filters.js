@@ -17,7 +17,7 @@
 
 			switch (type) {
 				case "date":
-					outval = noInfoPath.data.toDbDate(value);
+					outval = noInfoPath.toDbDate(value);
 					break;
 				case "number":
 					outval = Number(value);
@@ -101,9 +101,13 @@
 					source, value;
 
 				if (angular.isObject(filter.value)) {
-					source = resolveValueSource(filter.value, scope);
-					configureValueWatch(filter, source, watchCB);
-					values[filter.field] = normalizeFilterValue(noInfoPath.getItem(source, filter.value.property), filter.value.type);
+					if (angular.isArray(filter.value)) {
+						values[filter.field] = normalizeFilterValue(filter.value); // in statement
+					} else {
+						source = resolveValueSource(filter.value, scope);
+						configureValueWatch(filter, source, watchCB);
+						values[filter.field] = normalizeFilterValue(noInfoPath.getItem(source, filter.value.property), filter.value.type);
+					}
 				} else {
 					values[filter.field] = normalizeFilterValue(filter.value);
 				}
@@ -123,7 +127,11 @@
 						value;
 
 					if (angular.isObject(filter.value)) {
-						value = filterValues[filter.field];
+						if (angular.isArray(filter.value)) {
+							value = filter.value; // in statement
+						} else {
+							value = filterValues[filter.field];
+						}
 					} else {
 						value = filter.value;
 					}

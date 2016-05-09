@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.9
+ *	@version 1.2.10
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -5516,7 +5516,7 @@ var GloboTest = {};
 					if (sort) {
 						var s = sort[0];
 
-						if (s.dir && s.dir === "desc") {
+						if (s && s.dir && s.dir === "desc") {
 							collection.reverse();
 						}
 
@@ -5989,7 +5989,7 @@ var GloboTest = {};
 
 			switch (type) {
 				case "date":
-					outval = noInfoPath.data.toDbDate(value);
+					outval = noInfoPath.toDbDate(value);
 					break;
 				case "number":
 					outval = Number(value);
@@ -6073,9 +6073,13 @@ var GloboTest = {};
 					source, value;
 
 				if (angular.isObject(filter.value)) {
-					source = resolveValueSource(filter.value, scope);
-					configureValueWatch(filter, source, watchCB);
-					values[filter.field] = normalizeFilterValue(noInfoPath.getItem(source, filter.value.property), filter.value.type);
+					if (angular.isArray(filter.value)) {
+						values[filter.field] = normalizeFilterValue(filter.value); // in statement
+					} else {
+						source = resolveValueSource(filter.value, scope);
+						configureValueWatch(filter, source, watchCB);
+						values[filter.field] = normalizeFilterValue(noInfoPath.getItem(source, filter.value.property), filter.value.type);
+					}
 				} else {
 					values[filter.field] = normalizeFilterValue(filter.value);
 				}
@@ -6095,7 +6099,11 @@ var GloboTest = {};
 						value;
 
 					if (angular.isObject(filter.value)) {
-						value = filterValues[filter.field];
+						if (angular.isArray(filter.value)) {
+							value = filter.value; // in statement
+						} else {
+							value = filterValues[filter.field];
+						}
 					} else {
 						value = filter.value;
 					}
