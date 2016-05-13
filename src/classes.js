@@ -845,9 +845,14 @@
 		var _raw, _total, _page, arr;
 
 		if(arrayOfThings) {
-			if(arrayOfThings["odata.count"]){
-				_raw = arrayOfThings.value;
-				_total = Number(_raw["odata.count"]);
+			if(arrayOfThings["odata.metadata"]){
+				_raw = angular.copy(arrayOfThings.value);
+				if(arrayOfThings["odata.count"]){
+					_total = Number(arrayOfThings["odata.count"]);
+				}else{
+					_total = _raw.length;
+				}
+
 			}else{
 				_raw = angular.copy(arrayOfThings);
 				_total = _raw.length;

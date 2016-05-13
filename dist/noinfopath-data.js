@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.10
+ *	@version 1.2.11
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1018,9 +1018,14 @@
 		var _raw, _total, _page, arr;
 
 		if(arrayOfThings) {
-			if(arrayOfThings["odata.count"]){
-				_raw = arrayOfThings.value;
-				_total = Number(_raw["odata.count"]);
+			if(arrayOfThings["odata.metadata"]){
+				_raw = angular.copy(arrayOfThings.value);
+				if(arrayOfThings["odata.count"]){
+					_total = Number(arrayOfThings["odata.count"]);
+				}else{
+					_total = _raw.length;
+				}
+
 			}else{
 				_raw = angular.copy(arrayOfThings);
 				_total = _raw.length;
