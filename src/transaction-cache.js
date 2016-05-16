@@ -107,7 +107,7 @@
 						}
 					}
 
-					console.log(noTransactions);
+					//console.log(noTransactions);
 				}
 
 				function resolveProvider(provider, scope, data) {
@@ -531,7 +531,7 @@
 					});
 				};
 
-				this.destroy = function(data) {
+				this.destroy = function(data, filters) {
 					data = data ? data : {};
 
 					return $q(function(resolve, reject) {
@@ -562,7 +562,7 @@
 
 							writableData = data; //preOps[preOp](curEntity, data, scope);
 
-							dataSource[opType](writableData, SELF)
+							dataSource[opType](writableData, SELF, filters)
 								.then(function(data) {
 									results[config.noDataSource.entityName] = writableData;
 									_recurse();
