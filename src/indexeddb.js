@@ -370,366 +370,6 @@
 				return deferred.promise;
 			};
 
-			function NoRead_old() {
-
-				var deferred = $q.defer(),
-					table = this,
-					store, _resolve, _reject, _store, _trans,
-					filters, sort, page,
-					indexedOperators = {
-						"eq": "equals",
-						"gt": "above",
-						"ge": "aboveOrEqual",
-						"lt": "below",
-						"le": "belowOrEqual",
-						"startswith": "startsWith",
-						"bt": "between"
-					},
-					logic = {
-						"and": function(a, b) {
-							return a && b;
-						},
-						"or": function(a, b) {
-							return a || b;
-						}
-					},
-					operators = {
-						"in": function(a, b) {
-							return _.indexOf(b, a) > -1;
-						},
-						"eq": function(a, b) {
-							return a === b;
-						},
-						"neq": function(a, b) {
-							return a !== b;
-						},
-						"gt": function(a, b) {
-							return a > b;
-						},
-						"ge": function(a, b) {
-							return a >= b;
-						},
-						"lt": function(a, b) {
-							return a < b;
-						},
-						"le": function(a, b) {
-							return a <= b;
-						},
-						"startswith": function(a, b) {
-							var a1 = a ? a.toLowerCase() : "",
-								b1 = b ? b.toLowerCase() : "";
-
-							return a1.indexOf(b1) === 0;
-						},
-						"contains": function(a, b) {
-							var a1 = a ? a.toLowerCase() : "",
-								b1 = b ? b.toLowerCase() : "";
-
-							return a1.indexOf(b1) >= -1;
-						}
-					},
-					buckets = {};
-
-				//sort out the parameters
-				for (var ai in arguments) {
-					var arg = arguments[ai];
-
-					//success and error must always be first, then
-					if (angular.isObject(arg)) {
-						switch (arg.__type) {
-							case "NoFilters":
-								filters = arg;
-								break;
-							case "NoSort":
-								sort = arg;
-								break;
-							case "NoPage":
-								page = arg;
-								break;
-						}
-					}
-				}
-
-				function _applyFilters(iNoFilters, store) {
-					var deferred = $q.defer(),
-						iNoFiltersHash = _sortOutFilters(iNoFilters),
-						resultKeys = [];
-
-					if (iNoFilters) {
-						//Filter on the indexed filters first.  That should reduce the
-						//set to make the non-indexed filters more performant.
-						_recurseIndexedFilters(iNoFiltersHash.indexedFilters, table)
-							.then(function(data) {
-								// _applyNonIndexedFilters()
-								// 	.then(function(data){
-								// 		deferred.resolve(data);
-								// 	});
-								deferred.resolve(new noInfoPath.data.NoResults(data));
-							})
-							.catch(function(err) {
-								deferred.reject(err);
-							});
-					} else {
-						table.toArray()
-							.then(function(data) {
-								deferred.resolve(new noInfoPath.data.NoResults(data));
-							})
-							.catch(deferred.reject);
-					}
-
-
-					return deferred.promise;
-				}
-
-				function _recurseIndexedFilters(filters, table) {
-
-					var deferred = $q.defer(),
-						map = {};
-
-					function _reduce(map) {
-						var keys = [],
-							all = [],
-							results = [];
-						// ors = _.filter( _.pluck(map, "filter"), {logic: "or"}),
-						// ands = _.filter( _.pluck(map, "filter"), {logic: "and"}),
-						// mergedOrs = _merge(map, ors)
-						for (var k in map) {
-							var items = map[k];
-
-							//noLogService.log(items);
-
-							switch (items.filter.logic) {
-								// case "or":
-								// 	keys = _.union(keys, _.pluck(items.data, "pk"));
-								// 	break;
-								// case "and":
-								// 	keys = _.intersection(keys, _.pluck(items.data, "pk"));
-								// 	break;
-								default: keys = keys.concat(_.pluck(items.data, "pk"));
-								break;
-
-							}
-							//noLogService.log( _.pluck(items.data, "pk").length)
-							all = _.union(all, items.data);
-						}
-
-						for (var ka in all) {
-							var item = all[ka].obj,
-								key = item[table.schema.primKey.name];
-
-							if (keys.indexOf(key) > -1) {
-								results.push(item);
-							}
-						}
-
-						return results;
-					}
-
-					function _map() {
-						var filter = filters.pop(),
-							promise;
-
-						if (filter) {
-							if (table.schema.primKey === filter.column) {
-								promise = _filterByPrimaryKey(filter, table);
-							} else {
-								promise = _filterByIndex(filter, table);
-							}
-
-							promise
-								.then(function(data) {
-									map[filter.column] = {
-										pk: table.schema.primKey.name,
-										filter: filter,
-										data: data
-									};
-									_map();
-								})
-								.catch(function(err) {
-									//deferred.reject(err);
-									noLogService.error(err);
-								});
-						} else {
-							deferred.resolve(_reduce(map));
-						}
-					}
-
-					$timeout(_map);
-
-					window.noInfoPath.digestTimeout();
-
-					return deferred.promise;
-				}
-
-
-				function _filterByPrimaryKey(filter, store) {
-					var deferred = $q.defer(),
-						req = store.openKeyCursor(),
-						operator = operators[filter.operator],
-						matchedKeys = [];
-
-					req.onsuccess = function(event) {
-						var cursor = event.target.result;
-						if (cursor) {
-							if (operator(cursor.key, filter.value)) {
-								matchedKeys.push(cursor.primaryKey);
-							}
-							cursor.continue();
-						} else {
-							deferred.resolve(matchedKeys);
-						}
-					};
-
-					req.onerror = function() {
-						deferred.reject(req.error);
-					};
-
-					return deferred.promise;
-				}
-
-
-				function _filterByIndex(filter, table) {
-					var deferred = $q.defer(),
-						matchedKeys = [];
-
-
-					table._idbstore("readonly", function(resolve, reject, store, trans) {
-						var ndx = store.index(filter.column),
-							req = ndx.openCursor();
-
-						req.onsuccess = function(event) {
-							var cursor = event.target.result,
-								//When AND assume success look for failure. When OR assume failure until any match is found.
-								matched = false;
-							if (cursor) {
-
-								for (var f in filter.filters) {
-									var fltr = filter.filters[f],
-										operator = operators[fltr.operator];
-
-									matched = operator(cursor.key, fltr.value);
-
-									if (filter.logic === "and") {
-										if (!matched) {
-											break;
-										}
-									} else { //Assume OR operator
-										if (matched) {
-											break;
-										}
-									}
-
-								}
-
-								if (matched) {
-									matchedKeys.push({
-										pk: cursor.primaryKey,
-										fk: cursor.key,
-										obj: cursor.value
-									});
-								}
-
-								cursor.continue();
-							} else {
-								//noLogService.info(matchedKeys);
-								resolve(matchedKeys);
-							}
-						};
-
-						req.onerror = function(event) {
-							reject(event);
-						};
-
-						trans.on("complete", function(event) {
-							deferred.resolve(matchedKeys);
-						});
-
-						trans.on("error", function(event) {
-							deferred.reject(trans.error());
-						});
-					});
-
-					return deferred.promise;
-				}
-
-				function _filterByProperty(iNoFilterExpression, obj) {
-					return nonIndexedOperators[iNoFilterExpression.operator](obj, iNoFilter.column, iNoFilter.value);
-				}
-
-				function _filterByProperties(iNoFilters, collection) {
-
-					return collection.and(function(obj) {
-						angular.forEach(iNoFilters, function(iNoFilterExpression) {
-							_filterByProperty(iNoFilters, obj);
-						});
-					});
-				}
-
-				function _filterHasIndex(iNoFilterExpression) {
-					return _.findIndex(table.schema.indexes, {
-						keyPath: iNoFilterExpression.column
-					}) > -1;
-				}
-
-
-				function _sortOutFilters(iNoFilters) {
-					//noLogService.log("Start of sort",table.schema.indexes);
-
-					var iNoFilterHash = {
-						indexedFilters: [],
-						nonIndexedFilters: []
-					};
-
-					angular.forEach(iNoFilters, function(iNoFilterExpression) {
-
-						if (table.schema.primKey.keyPath === iNoFilterExpression.column) {
-							iNoFilterHash.indexedFilters.push(iNoFilterExpression);
-						} else {
-							if (_filterHasIndex(iNoFilterExpression)) {
-								iNoFilterHash.indexedFilters.push(iNoFilterExpression);
-							} else {
-								iNoFilterHash.nonIndexedFilters.push(iNoFilterExpression);
-							}
-						}
-
-					});
-
-					//noLogService.log("Before the return",table.schema.indexes);
-
-					return iNoFilterHash;
-				}
-
-
-				function _applySort(iNoSort, data) {
-					noLogService.warn("TODO: Fully implement _applySort");
-				}
-
-
-				function _applyPaging(page, data) {
-					return $q(function(resolve, reject) {
-						if (page) data.page(page);
-
-						resolve(data.paged);
-					});
-				}
-
-				$timeout(function() {
-					_applyFilters(filters, table)
-						.then(function(data) {
-							_applyPaging(page, data)
-								.then(deferred.resolve);
-						})
-						.catch(function(err) {
-							deferred.reject(err);
-						});
-				});
-
-				window.noInfoPath.digestTimeout();
-
-
-				return deferred.promise;
-			}
-
 			/*
 			 *	@function secondarySort()
 			 *
@@ -777,14 +417,19 @@
 
 				function expand(col, item) {
 					var filters = new noInfoPath.data.NoFilters(),
-						ft = db[col.refTable];
+						ft = db[col.refTable],
+						keyVal = item[col.column];
 
 					if (!ft) {
 						ft = db[aliases[col.refTable]];
 					}
 					//throw "Invalid foreign entity name; " + col.refTable;
 
-					filters.quickAdd(col.refColumn, "eq", item[col.column]);
+					if(!keyVal){
+						return $q.resolve({"exception": "KeyValueRequired", "message": "Can't follow foreign key when `keyValue` is null.", "data":{ col: col, item: item}});
+					}
+
+					filters.quickAdd(col.refColumn, "eq", keyVal);
 
 
 					function finish(col, item, data) {
@@ -794,7 +439,7 @@
 
 
 					function fault(err) {
-						console.error(err);
+						console.error({err: err, col: col, item: item, table: ft, filters: filters});
 						return err;
 					}
 
@@ -803,8 +448,6 @@
 						.catch(fault);
 
 				}
-
-
 
 				for (var i = 0; i < arrayOfThings.length; i++) {
 					var item = arrayOfThings[i];
@@ -880,7 +523,11 @@
 							.then(secondarySort.bind(table, sort))
 							.then(followRelations.bind(table, table))
 							.then(function(finalResults) {
-								resolve(new noInfoPath.data.NoResults(finalResults));
+								if(finalResults.exception){
+									resolve(new noInfoPath.data.NoResults([]));
+								}else{
+									resolve(new noInfoPath.data.NoResults(finalResults));
+								}
 							})
 							.catch(reject);
 
@@ -888,7 +535,12 @@
 						collection.toArray()
 							.then(followRelations.bind(table, table))
 							.then(function(finalResults) {
-								resolve(new noInfoPath.data.NoResults(finalResults));
+								if(finalResults.exception){
+									console.warn(finalResults.exception);
+									resolve(new noInfoPath.data.NoResults([]));
+								}else{
+									resolve(new noInfoPath.data.NoResults(finalResults));
+								}
 							})
 							.catch(reject);
 					}
@@ -921,24 +573,41 @@
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noDestroy = function(data, trans) {
+			db.WriteableTable.prototype.noDestroy = function(data, trans, filters) {
 				var deferred = $q.defer(),
 					table = this,
-					key = data[table.noInfoPath.primaryKey];
+					key = data[table.noInfoPath.primaryKey],
+					collection;
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 				//noLogService.log(key);
+
 				_dexie.transaction("rw", table, function() {
-						Dexie.currentTransaction.nosync = true;
-						table.delete(key)
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+					Dexie.currentTransaction.nosync = true;
+
+					if (!!filters) {
+						//First filter will use where();
+						var filter = filters[0],
+							where = table.where(filter.column),
+							ex = filter.filters[0],
+							method = where[indexedOperators[ex.operator]];
+
+						collection = method.call(where, ex.value);
+
+						collection.delete()
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
 							.catch(_transactionFault.bind(null, deferred.reject));
 
-					})
-					.then(angular.noop())
-					.catch(function(err) {
-						deferred.reject(err);
-					});
+					} else {
+						table.delete(key)
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+							.catch(_transactionFault.bind(null, deferred.reject));
+					}
+				})
+				.then(angular.noop())
+				.catch(function(err) {
+					deferred.reject(err);
+				});
 
 				return deferred.promise;
 			};

@@ -491,11 +491,15 @@
 			if (!column) throw "NoFilters::add requires a column to filter on.";
 			if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
 
-			this.unshift(new NoFilter(column, logic, beginning, end, filters));
+			var tmp = new NoFilter(column, logic, beginning, end, filters);
+
+			this.unshift(tmp);
+
+			return tmp;
 		};
 
 		this.quickAdd = function(column, operator, value, logic) {
-			this.add(column, logic, true, true, [{
+			return this.add(column, logic, true, true, [{
 				"operator": operator,
 				"value": value,
 				"logic": null
