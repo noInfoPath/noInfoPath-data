@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.12
+ *	@version 1.2.13
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -5125,6 +5125,20 @@ var GloboTest = {};
 				var table = this,
 					filters, sort, page;
 
+				function _finish(collection, table, resolve, reject){
+					collection.toArray()
+						.then(followRelations.bind(table, table))
+						.then(function(finalResults) {
+							if (finalResults.exception) {
+								console.warn(finalResults.exception);
+								resolve(new noInfoPath.data.NoResults([]));
+							} else {
+								resolve(new noInfoPath.data.NoResults(finalResults));
+							}
+						})
+						.catch(reject);
+
+				}
 				for (var ai in arguments) {
 					var arg = arguments[ai];
 
@@ -5168,34 +5182,28 @@ var GloboTest = {};
 					if (sort) {
 						var s = sort[0];
 
-						if (s && s.dir && s.dir === "desc") {
-							collection.reverse();
+						if (s) {
+							if (s.dir && s.dir === "desc") {
+								collection.reverse();
+							}
+
+							collection.sortBy(s.column)
+								.then(secondarySort.bind(table, sort))
+								.then(followRelations.bind(table, table))
+								.then(function(finalResults) {
+									if (finalResults.exception) {
+										resolve(new noInfoPath.data.NoResults([]));
+									} else {
+										resolve(new noInfoPath.data.NoResults(finalResults));
+									}
+								})
+								.catch(reject);
+						} else{
+							_finish(collection, table, resolve, reject);
 						}
 
-						collection.sortBy(s.column)
-							.then(secondarySort.bind(table, sort))
-							.then(followRelations.bind(table, table))
-							.then(function(finalResults) {
-								if(finalResults.exception){
-									resolve(new noInfoPath.data.NoResults([]));
-								}else{
-									resolve(new noInfoPath.data.NoResults(finalResults));
-								}
-							})
-							.catch(reject);
-
 					} else {
-						collection.toArray()
-							.then(followRelations.bind(table, table))
-							.then(function(finalResults) {
-								if(finalResults.exception){
-									console.warn(finalResults.exception);
-									resolve(new noInfoPath.data.NoResults([]));
-								}else{
-									resolve(new noInfoPath.data.NoResults(finalResults));
-								}
-							})
-							.catch(reject);
+						_finish(collection, table, resolve, reject);
 					}
 				});
 			}
