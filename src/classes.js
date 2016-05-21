@@ -848,25 +848,25 @@
 		//Capture the length of the arrayOfThings before any changes are made to it.
 		var _raw, _total, _page, arr;
 
-		if(arrayOfThings) {
-			if(arrayOfThings["odata.metadata"]){
-				_raw = angular.copy(arrayOfThings.value);
-				if(arrayOfThings["odata.count"]){
+		if (arrayOfThings) {
+			if (arrayOfThings["odata.metadata"]) {
+				_raw = arrayOfThings.value;
+				if (arrayOfThings["odata.count"]) {
 					_total = Number(arrayOfThings["odata.count"]);
-				}else{
+				} else {
 					_total = _raw.length;
 				}
 
-			}else{
-				_raw = angular.copy(arrayOfThings);
+			} else {
+				_raw = arrayOfThings;
 				_total = _raw.length;
 			}
-		}else{
+		} else {
 			_raw = [];
 			_total = 0;
 		}
 
-		arr = _raw;
+		arr = angular.copy(_raw);
 		_page = _raw;
 
 		Object.defineProperties(arr, {
@@ -887,7 +887,7 @@
 
 		arr.page = function(nopage) {
 			if (!nopage) throw "nopage is a required parameter for NoResults::page";
-			// _page = this.slice(nopage.skip, nopage.skip + nopage.take);
+			_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);
 		};
 
 		noInfoPath.setPrototypeOf(this, arr);

@@ -331,7 +331,8 @@
 					"lt": "below",
 					"le": "belowOrEqual",
 					"startswith": "startsWith",
-					"bt": "between"
+					"bt": "between",
+					"in": "anyOfIgnoreCase"
 				};
 
 			db.WriteableTable.prototype.noCreate = function(data, trans) {
@@ -346,6 +347,10 @@
 						data.DateCreated = noInfoPath.toDbDate(new Date());
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
+
+						if (!data[table.schema.primKey.name]) {
+							data[table.schema.primKey.name] = noInfoPath.createUUID();
+						}
 
 						_dexie.nosync = true;
 
@@ -370,122 +375,223 @@
 				return deferred.promise;
 			};
 
-			/*
-			 *	@function secondarySort()
-			 *
-			 *	This function is required because Dexie will only sort on one property.
-			 *	`secondarySort` will apply the remaining sort columns once Dexie return
-			 *	the initial filtered, paged, sort results.
-			 */
-			function secondarySort(sort, arrayOfThings) {
-				var finalResults = arrayOfThings;
-
-				function _sortCb(a, b) {
-					if (srt.dir && srt.dir === "desc") {
-						if (a[srt.column] > b[srt.column]) {
-							return -1;
-						}
-						if (a[srt.column] < b[srt.column]) {
-							return 1;
-						}
-					} else {
-						if (a[srt.column] > b[srt.column]) {
-							return 1;
-						}
-						if (a[srt.column] < b[srt.column]) {
-							return -1;
-						}
-					}
-
-					return 0;
-				}
-
-				if (sort.length > 1) {
-					for (var si = 1; si < sort.length; si++) {
-						srt = sort[si];
-						finalResults.sort(_sortCb);
-					}
-				}
-
-				return finalResults;
-			}
-
-			function followRelations(table, arrayOfThings) {
-				var promises = [],
-					columns = table.noInfoPath.foreignKeys,
-					aliases = table.noInfoPath.parentSchema.config.tableAliases;
-
-				function expand(col, item) {
-					var filters = new noInfoPath.data.NoFilters(),
-						ft = db[col.refTable],
-						keyVal = item[col.column];
-
-					if (!ft) {
-						ft = db[aliases[col.refTable]];
-					}
-					//throw "Invalid foreign entity name; " + col.refTable;
-
-					if(!keyVal){
-						return $q.resolve({"exception": "KeyValueRequired", "message": "Can't follow foreign key when `keyValue` is null.", "data":{ col: col, item: item}});
-					}
-
-					filters.quickAdd(col.refColumn, "eq", keyVal);
-
-
-					function finish(col, item, data) {
-						item[col.column] = data;
-						return item;
-					}
-
-
-					function fault(err) {
-						console.error({err: err, col: col, item: item, table: ft, filters: filters});
-						return err;
-					}
-
-					return ft.noOne(filters)
-						.then(finish.bind(null, col, item))
-						.catch(fault);
-
-				}
-
-				for (var i = 0; i < arrayOfThings.length; i++) {
-					var item = arrayOfThings[i];
-
-
-					for (var c in columns) {
-						var col = columns[c];
-						promises.push(expand(col, item));
-					}
-				}
-
-				return promises.length > 0 ? $q.all(promises)
-					.then(function() {
-						return arrayOfThings;
-					})
-					.catch(function(err) {
-						console.error(err);
-					}) : $q.when(arrayOfThings);
-			}
 
 			function NoRead_new() {
 				var table = this,
 					filters, sort, page;
 
-				function _finish(collection, table, resolve, reject){
-					collection.toArray()
-						.then(followRelations.bind(table, table))
-						.then(function(finalResults) {
-							if (finalResults.exception) {
-								console.warn(finalResults.exception);
-								resolve(new noInfoPath.data.NoResults([]));
+				function _filter(filters, table) {
+					var collection;
+
+					if (!!filters) {
+						for (var fi = 0; fi < filters.length; fi++) {
+							var filter = filters[fi],
+								ex = filter.filters[fi],
+								where, evaluator, logic;
+
+							if (fi === 0) {
+								//When `fi` is 0 create the WhereClause, extract the evaluator
+								//that will be used to create a collection based on the filter.
+								where = table.where(filter.column);
+
+								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
+								if (table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
+									evaluator = where[indexedOperators[ex.operator]];
+									collection = evaluator.call(where, ex.value);
+								} else {
+									collection = table.toCollection();
+								}
 							} else {
-								resolve(new noInfoPath.data.NoResults(finalResults));
+								evaluator = collection[ex.operator];
+								console.warn("TODO: Implement advanced filtering.");
+								console.log(ex, evaluator);
 							}
-						})
-						.catch(reject);
+
+
+						}
+						//More indexed filters
+					} else {
+						collection = table.toCollection();
+					}
+
+					return collection;
+				}
+
+				function _sort(sorts, arrayOfThings) {
+					function _compare(s, a, b) {
+						var aval = a[s.column],
+							bval = b[s.column];
+
+						if (s.dir === "desc") {
+							if (aval < bval) {
+								return 1;
+							}
+							if (aval > bval) {
+								return -1;
+							}
+						} else {
+							if (aval > bval) {
+								return 1;
+							}
+							if (aval < bval) {
+								return -1;
+							}
+						}
+
+						// a must be equal to b
+						return 0;
+
+					}
+
+					if (sorts) {
+						for (var s = 0; s < sorts.length; s++) {
+							var sort = sorts[s];
+
+							arrayOfThings.sort(_compare.bind(null, sort));
+						}
+					}
+				}
+
+				function _page(page, arrayOfThings) {
+					if (page) {
+						arrayOfThings.page(page);
+					}
+				}
+
+				function _expand_fault(col, keys, fitlers, err) {
+					console.error({
+						error: err,
+						column: col,
+						keys: keys,
+						filters: filters
+					});
+					return err;
+				}
+
+				function _expand(col, keys) {
+					var filters = new noInfoPath.data.NoFilters(),
+						ft = db[col.refTable];
+
+					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
+					if (!ft) {
+						ft = db[aliases[col.refTable]];
+					}
+
+					if (!ft) throw "Invalid refTable " + aliases[col.refTable];
+
+					// if(tableCache[col.refTable]) {
+					// 	tbl = tableCache[col.refTable];
+					// } else {
+					// 	tableCache[col.refTable] = tbl;
+					// }
+
+					if (!keys) {
+						throw {
+							error: "Invalid key value",
+							col: col,
+							item: item
+						};
+					}
+
+					//Configure foreign key filter
+					filters.quickAdd(col.refColumn, "in", keys);
+
+					//follow the foreign key and get is data.
+					if (keys.length > 0) {
+						return ft.noRead(filters)
+							.catch(_expand_fault.bind(table, col, keys, filters));
+					} else {
+						return $q.when(new noInfoPath.data.NoResults());
+					}
 
 				}
+
+				function _finalResults(finalResults) {
+					if (finalResults.exception) {
+						console.warn(finalResults.exception);
+						resolve(new noInfoPath.data.NoResults([]));
+					} else {
+						resolve(new noInfoPath.data.NoResults(finalResults));
+					}
+				}
+
+				function _fault(ctx, reject, err) {
+					ctx.error = err;
+					console.error(ctx);
+					reject(ctx);
+				}
+
+				function _finished_following(columns, arrayOfThings, refData) {
+
+					for (var i = 0; i < arrayOfThings.length; i++) {
+						var item = arrayOfThings[i];
+
+						for (var c in columns) {
+							var col = columns[c],
+								key = item[col.column],
+								refTable = refData[col.refTable].paged,
+								filter = {},
+								refItem;
+
+							filter[col.refColumn] = key;
+
+							refItem = _.find(refTable, filter);
+
+							item[col.column] = refItem || key;
+						}
+					}
+
+					return arrayOfThings;
+
+					// function(arrayOfThings, results) {
+					// 	console.log(table, tableCache, arrayOfThings);
+					// 	return arrayOfThings;
+					// }.bind(null, arrayOfThings)
+					// item[col.column] = data;
+					// tableCache[col.refTable][data[col.refColumn]]  = data;
+					// return item;
+				}
+
+				function _followRelations(arrayOfThings) {
+					var promises = {},
+						columns = table.noInfoPath.foreignKeys,
+						aliases = table.noInfoPath.parentSchema.config.tableAliases;
+
+
+					for (var c in columns) {
+						var col = columns[c],
+							keys = _.pluck(arrayOfThings, col.column);
+
+						promises[col.refTable] = _expand(col, keys);
+
+					}
+
+					return _.size(promises) > 0 ?
+						$q.all(promises)
+						.then(_finished_following.bind(table, columns, arrayOfThings))
+						.catch(_fault) :
+						$q.when(arrayOfThings);
+				}
+
+				function _finish(resolve, reject, arrayOfThings) {
+
+					_sort(sort, arrayOfThings);
+
+					var results = new noInfoPath.data.NoResults(arrayOfThings);
+
+					_page(page, results);
+
+					//console.log(this, results.paged);
+
+					resolve(results);
+					// collection.toArray()
+					// 	.then(_followRelations.bind(table, table))
+					// 	.then(_finish_expand.bind(null, columns, arrayOfThings, refData))
+					// 	.then(resolve)
+					// 	.catch(reject);
+
+				}
+
 				for (var ai in arguments) {
 					var arg = arguments[ai];
 
@@ -505,53 +611,36 @@
 					}
 				}
 
+				var ctx = {
+					table: table,
+					filters: filters,
+					page: page,
+					sort: sort
+				};
 				return $q(function(resolve, reject) {
 					var collection,
-						data;
+						data,
+						promise;
 
-					if (!!filters) {
-						//First filter will use where();
-						var filter = filters[0],
-							where = table.where(filter.column),
-							ex = filter.filters[0],
-							method = where[indexedOperators[ex.operator]];
+					try {
+						collection = _filter(filters, table);
 
-						collection = method.call(where, ex.value);
-					} else {
-						collection = table.toCollection();
+						collection.toArray()
+							.then(_followRelations.bind(ctx))
+							.then(_finish.bind(ctx, resolve, reject))
+							.catch(_fault.bind(ctx, ctx, reject));
+						//.then(_finish(collection, table, resolve, reject));
+
+					} catch (err) {
+						reject(err);
 					}
 
-					if (page) {
-						collection = collection.offset(page.skip).limit(page.take);
-					}
+					//_sort(table, sort, collection);
 
+					//_page(page, collection);
 
-					if (sort) {
-						var s = sort[0];
+					//_finish(collection, table, resolve, reject);
 
-						if (s) {
-							if (s.dir && s.dir === "desc") {
-								collection.reverse();
-							}
-
-							collection.sortBy(s.column)
-								.then(secondarySort.bind(table, sort))
-								.then(followRelations.bind(table, table))
-								.then(function(finalResults) {
-									if (finalResults.exception) {
-										resolve(new noInfoPath.data.NoResults([]));
-									} else {
-										resolve(new noInfoPath.data.NoResults(finalResults));
-									}
-								})
-								.catch(reject);
-						} else{
-							_finish(collection, table, resolve, reject);
-						}
-
-					} else {
-						_finish(collection, table, resolve, reject);
-					}
 				});
 			}
 
@@ -591,31 +680,31 @@
 				//noLogService.log(key);
 
 				_dexie.transaction("rw", table, function() {
-					Dexie.currentTransaction.nosync = true;
+						Dexie.currentTransaction.nosync = true;
 
-					if (!!filters) {
-						//First filter will use where();
-						var filter = filters[0],
-							where = table.where(filter.column),
-							ex = filter.filters[0],
-							method = where[indexedOperators[ex.operator]];
+						if (!!filters) {
+							//First filter will use where();
+							var filter = filters[0],
+								where = table.where(filter.column),
+								ex = filter.filters[0],
+								method = where[indexedOperators[ex.operator]];
 
-						collection = method.call(where, ex.value);
+							collection = method.call(where, ex.value);
 
-						collection.delete()
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
-							.catch(_transactionFault.bind(null, deferred.reject));
+							collection.delete()
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.catch(_transactionFault.bind(null, deferred.reject));
 
-					} else {
-						table.delete(key)
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
-							.catch(_transactionFault.bind(null, deferred.reject));
-					}
-				})
-				.then(angular.noop())
-				.catch(function(err) {
-					deferred.reject(err);
-				});
+						} else {
+							table.delete(key)
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.catch(_transactionFault.bind(null, deferred.reject));
+						}
+					})
+					.then(angular.noop())
+					.catch(function(err) {
+						deferred.reject(err);
+					});
 
 				return deferred.promise;
 			};
@@ -704,8 +793,6 @@
 			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
 		}
 
-
-
 		Dexie.addons.push(noDexie);
 
 	}
@@ -713,6 +800,10 @@
 	angular.module("noinfopath.data")
 		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
+		}])
+
+	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 
 })(angular, Dexie);

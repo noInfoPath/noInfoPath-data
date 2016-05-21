@@ -43,7 +43,7 @@ describe("Testing noDbSchema", function(){
 
 		it("should have a `store` property", function(){
 			expect(noDbSchemaObj.store);
-			expect(noDbSchemaObj.store).toEqual({"foo":"$$fooID,barID","vw_foo":"$$"});
+			expect(noDbSchemaObj.store).toEqual({"foo":"fooID,barID","vw_foo":""});
 		});
 
 		it("should have a `tables` property", function(){
