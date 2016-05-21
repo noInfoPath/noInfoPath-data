@@ -45,9 +45,7 @@ module.exports = function(grunt) {
 			},
 			dexie: {
 				src: [
-					'lib/dexie.js',
-					'lib/dexie.observable.js',
-					'lib/dexie.syncable.js'
+					'node_modules/dexie/dist/dexie.min.js'
 				],
 				dest: 'dist/noinfopath-dexie.js'
 			},

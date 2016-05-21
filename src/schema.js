@@ -116,6 +116,8 @@ var GloboTest = {};
 			_sql = {},
 			_schemaConfig = noDbConfig;
 
+
+
 		Object.defineProperties(this, {
 			"store": {
 				"get": function() {
@@ -167,14 +169,18 @@ var GloboTest = {};
 		});
 
 
+
+
 		angular.forEach(_tables, function(table, tableName) {
-			var primKey = "$$" + table.primaryKey,
-				foreignKeys = _.uniq(_.pluck(table.foreignKeys, "column"))
-				.join(",");
+			var keys = [table.primaryKey];
+
+			keys = keys.concat(_.uniq(_.pluck(table.foreignKeys, "column")), table.indexes || []);
+
 
 			//Prep as a Dexie Store config
-			_config[tableName] = primKey + (!!foreignKeys ? "," + foreignKeys : "");
+			_config[tableName] = keys.join(",");
 		});
+
 
 	}
 
@@ -314,10 +320,10 @@ var GloboTest = {};
 			}
 
 			return $q.all(promises)
-				.then(function(resp){
+				.then(function(resp) {
 					console.log(resp);
 				})
-				.catch(function(err){
+				.catch(function(err) {
 					console.error(err);
 				});
 
