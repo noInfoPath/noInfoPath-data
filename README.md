@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.14
+@version 1.2.15
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -24,7 +24,7 @@ NoInfoPath data provides several services to access data from local storage or r
 - es5-shim
 - grunt
 - grunt-bumpup
-  - grunt-version
+- grunt-version
 - grunt-contrib-concat
 - grunt-contrib-copy
 - grunt-contrib-watch
@@ -1212,4 +1212,3 @@ inferred in the documentation or perform by ngInclude.
 
 Reads a file from a DOM File object and converts to a binary
 string compatible with the local, and upstream file systems.
-
