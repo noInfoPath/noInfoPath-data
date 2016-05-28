@@ -531,6 +531,35 @@
 					});
 				};
 
+				/**
+				*	### @method bulkUpsert
+				*
+				*	Inserts or updates and array of data items. Uses a provided
+				*	constructor to create the object that will be added to the
+				*	entity. This allows for custom data conversion and business
+				*	logic to be implement at the record level, before saving.
+				*
+				*/
+				this.bulkUpsert = function(data, constructor) {
+					//console.log(data);
+					return $q(function(resolve, reject) {
+						var promises = [];
+
+						for (var i = 0; i < data.length; i++) {
+							var model = data[i];
+
+							if (model.dirty) {
+								promises.push(this.upsert(new constructor(model)));
+							}
+						}
+
+						$q.all(promises)
+							.then(resolve)
+							.catch(reject);
+
+					}.bind(this));
+				};
+
 				this.destroy = function(data, filters) {
 					data = data ? data : {};
 
