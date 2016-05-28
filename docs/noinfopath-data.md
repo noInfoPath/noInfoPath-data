@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.15
+@version 1.2.16
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -937,6 +937,14 @@ means that no `update` operations are performed on the designated
 member table.
 
 
+### @method bulkUpsert
+
+Inserts or updates and array of data items. Uses a provided
+constructor to create the object that will be added to the
+entity. This allows for custom data conversion and business
+logic to be implement at the record level, before saving.
+
+
 ## noIndexedDB
 The noIndexedDB factory creates and configures a new instance of Dexie.
 Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that
@@ -1097,6 +1105,33 @@ Maps to the Dexie.Table.get method.
 
 
 ### \_extendDexieTables
+
+### followMetaDataKeys
+
+This feature of NoInfoPath allows for a special type of
+data column that can contain heterogenuous data. Meaning on
+any given row of data the value of the meta column could be
+a string, a number, date or a foreign key reference to a
+lookup table.
+
+#### Sample MetaDataDefinition record
+
+```json
+{
+	"ID": "67c373ac-a003-402a-9689-45c37fc2afa8",
+	"MetaDataSchemaID": "16187a97-31d7-40e3-b33f-64b55471ee3f",
+	"Title": "Unit",
+	"DataType": "string",
+	"InputType": "combobox",
+	"ListSource": "lu_UOM",
+	"TextField": "Description",
+	"ValueField": "ID",
+	"DateCreated": "2016-05-04T16:43:00.001",
+	"CreatedBy": "79689b1e-6627-47c1-baa5-34be228cf06d",
+	"ModifiedDate": "2016-05-04T16:43:00.001",
+	"ModifiedBy": "79689b1e-6627-47c1-baa5-34be228cf06d"
+}
+```
 
 ### Class noDatum
 This is a contructor function used by Dexie when creating and returning data objects.

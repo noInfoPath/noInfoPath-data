@@ -522,7 +522,7 @@
 					reject(ctx);
 				}
 
-				function _finished_following(columns, arrayOfThings, refData) {
+				function _finished_following_fk(columns, arrayOfThings, refData) {
 
 					for (var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
@@ -544,6 +544,25 @@
 
 					return arrayOfThings;
 
+				}
+
+
+				function _finished_following_meta(columns, arrayOfThings, refData) {
+					console.log(columns, arrayOfThings, refData);
+					for (var i = 0; i < arrayOfThings.length; i++) {
+						var item = arrayOfThings[i];
+
+						for (var c in columns) {
+							var col = columns[c],
+								key = item[col.columnName],
+								data = refData[key];
+
+							item[col.columnName] = data || key;
+						}
+					}
+
+					return arrayOfThings;
+
 					// function(arrayOfThings, results) {
 					// 	console.log(table, tableCache, arrayOfThings);
 					// 	return arrayOfThings;
@@ -554,10 +573,10 @@
 				}
 
 				function _followRelations(arrayOfThings) {
+					//console.log(table.noInfoPath);
 					var promises = {},
 						columns = table.noInfoPath.foreignKeys,
 						aliases = table.noInfoPath.parentSchema.config.tableAliases;
-
 
 					for (var c in columns) {
 						var col = columns[c],
@@ -567,11 +586,84 @@
 
 					}
 
+
+
+
 					return _.size(promises) > 0 ?
 						$q.all(promises)
-						.then(_finished_following.bind(table, columns, arrayOfThings))
+						.then(_finished_following_fk.bind(table, columns, arrayOfThings))
 						.catch(_fault) :
 						$q.when(arrayOfThings);
+				}
+
+				/**
+				 *	### followMetaDataKeys
+				 *
+				 *	This feature of NoInfoPath allows for a special type of
+				 *	data column that can contain heterogenuous data. Meaning on
+				 *	any given row of data the value of the meta column could be
+				 *	a string, a number, date or a foreign key reference to a
+				 *	lookup table.
+				 *
+				 *	#### Sample MetaDataDefinition record
+				 *
+				 *	```json
+				 *	{
+				 * 	"ID": "67c373ac-a003-402a-9689-45c37fc2afa8",
+				 * 	"MetaDataSchemaID": "16187a97-31d7-40e3-b33f-64b55471ee3f",
+				 * 	"Title": "Unit",
+				 * 	"DataType": "string",
+				 * 	"InputType": "combobox",
+				 * 	"ListSource": "lu_UOM",
+				 * 	"TextField": "Description",
+				 * 	"ValueField": "ID",
+				 * 	"DateCreated": "2016-05-04T16:43:00.001",
+				 * 	"CreatedBy": "79689b1e-6627-47c1-baa5-34be228cf06d",
+				 * 	"ModifiedDate": "2016-05-04T16:43:00.001",
+				 * 	"ModifiedBy": "79689b1e-6627-47c1-baa5-34be228cf06d"
+				 * }
+				 * ```
+				 */
+				function _followMetaData(ctx, arrayOfThings) {
+
+					var promises = {},
+						keys = {},
+						noEntity = ctx.table.noInfoPath,
+						columns = noEntity.columns;
+
+					for (var colName in columns) {
+						var col = columns[colName];
+
+						if (col.followMetaDataKeys) {
+							for (var i = 0; i < arrayOfThings.length; i++) {
+								var thing = arrayOfThings[i],
+									meta = thing.MetaDataDefinitionID,
+									fiters;
+
+								//Only folow lookup columns.
+								if (meta.InputType === "combobox") {
+									if (!!thing[colName]) {
+										filters = new noInfoPath.data.NoFilters();
+										filters.quickAdd(meta.ValueField, "eq", thing[colName]);
+
+										//use the current `db` for looking up the meta data.
+										promises[thing[colName]] = db[meta.ListSource].noOne(filters);
+									}
+
+								}
+
+							}
+						}
+					}
+
+					//console.log(keys);
+
+					return _.size(promises) > 0 ?
+						$q.all(promises)
+						.then(_finished_following_meta.bind(table, columns, arrayOfThings))
+						.catch(_fault) :
+						$q.when(arrayOfThings);
+
 				}
 
 				function _finish(resolve, reject, arrayOfThings) {
@@ -618,6 +710,7 @@
 					page: page,
 					sort: sort
 				};
+
 				return $q(function(resolve, reject) {
 					var collection,
 						data,
@@ -628,6 +721,7 @@
 
 						collection.toArray()
 							.then(_followRelations.bind(ctx))
+							.then(_followMetaData.bind(ctx, ctx))
 							.then(_finish.bind(ctx, resolve, reject))
 							.catch(_fault.bind(ctx, ctx, reject));
 						//.then(_finish(collection, table, resolve, reject));
