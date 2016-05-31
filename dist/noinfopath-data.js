@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.16
+ *	@version 1.2.17
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -66,21 +66,6 @@
  *
  * #### setItem
  *
- * #### bindFilters `deprecated`
- *
- * #### noFilter `deprecated`
- *
- * #### noFilterExpression `deprecated`
- *
- * #### noDataReadRequest `deprecated`
- *
- * #### noDataSource `deprecated`
- *
- * #### digest `deprecated`
- *
- * #### digestError `deprecated`
- *
- * #### digestTimeout `deprecated`
  */
 (noInfoPath.data = {});
 (function(angular, undefined) {
@@ -6163,15 +6148,65 @@ var GloboTest = {};
 (function(){
 	"use strict";
 
-	function NoLocalFileStorageService($q) {
+
+	function NoLocalFileStorageService($q, noDataSource) {
 
 		/**
-		*	@method toBlob(file)
+		*	@method cache(file)
+		*
+		*	Saves a file to the noDataSource defined in the config object.
+		*
+		*	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
+		*
+		*/
+		this.cache = function saveToCache(fileObj){
+			var dsCfg = {
+				"dataProvider": "noIndexedDb",
+				"databaseName": "NoInfoPath_dtc_v1",
+				"entityName": "NoInfoPath_FileUploadCache",
+				"primaryKey": "FileID",
+				"noTransaction": {
+					"create": true,
+					"update": true,
+					"destroy": true
+				}
+			};
+
+			var ds = noDataSource.create(dsCfg, {});
+
+			return ds.create(fileObj);
+		};
+
+		/**
+		*	@method removeFromCache(file)
+		*
+		*	Deletes a file by FileID from the NoInfoPath_FileUploadCache.
+		*/
+		this.removeFromCache = function (fileID) {
+			var dsCfg = {
+				"dataProvider": "noIndexedDb",
+				"databaseName": "NoInfoPath_dtc_v1",
+				"entityName": "NoInfoPath_FileUploadCache",
+				"primaryKey": "FileID",
+				"noTransaction": {
+					"create": true,
+					"update": true,
+					"destroy": true
+				}
+			};
+
+			var ds = noDataSource.create(dsCfg, {});
+
+			return ds.destory(dsCfg);
+		};
+
+		/**
+		*	@method read(file)
 		*
 		*	Reads a file from a DOM File object and converts to a binary
 		*	string compatible with the local, and upstream file systems.
 		*/
-		this.toBlob = function (file) {
+		this.read = function (file, comp) {
 			return $q(function(resolve, reject){
 				var fileObj = {},
 					reader = new FileReader();
@@ -6190,7 +6225,7 @@ var GloboTest = {};
 					reject(err);
 				};
 
-				reader.readAsBinaryString(file);
+				reader[comp.readMethod || "readAsBinaryString"](file);
 			});
 
 		};
@@ -6198,6 +6233,6 @@ var GloboTest = {};
 	}
 
 	angular.module("noinfopath.data")
-		.service("noLocalFileStorage", ["$q", NoLocalFileStorageService])
+		.service("noLocalFileStorage", ["$q", "noDataSource", NoLocalFileStorageService])
 		;
 })();
