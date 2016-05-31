@@ -137,7 +137,8 @@
 		}
 
 		function _toDbDate(date) {
-			var dateResult = moment.utc(date).format("YYYY-MM-DDTHH:mm:ss.sss");
+			var dateResult = moment.utc(date)
+				.format("YYYY-MM-DDTHH:mm:ss.sss");
 
 			        
 			return dateResult;
@@ -153,5 +154,5 @@
 		};
 
 		angular.extend(noInfoPath, _data);
-		}]);
+	}]);
 })(angular);
