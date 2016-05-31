@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.17
+@version 1.2.18
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1243,3 +1243,4 @@ Deletes a file by FileID from the NoInfoPath_FileUploadCache.
 
 Reads a file from a DOM File object and converts to a binary
 string compatible with the local, and upstream file systems.
+

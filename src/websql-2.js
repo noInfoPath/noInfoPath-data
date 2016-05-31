@@ -851,7 +851,7 @@
 			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, noFilters);
 
 			return $q(function(resolve, reject) {
-				if(noTransaction){
+				if (noTransaction) {
 					_getOne(noFilters)
 						.then(function(datum) {
 							_exec(sqlStmt)
@@ -870,7 +870,7 @@
 
 		};
 
-		function resolveID(query, entityConfig){
+		function resolveID(query, entityConfig) {
 			var filters = new noInfoPath.data.NoFilters();
 
 			if (angular.isNumber(query)) {
@@ -958,13 +958,13 @@
 		/*
 		 *	### @method noUpsert(data)
 		 */
-		this.noUpsert = function(data) {
+		this.noUpsert = function(data, noTransaction) {
 			if (_entityConfig.entityType === "V") throw "Upsert operation not supported by SQL Views.";
 
 			if (data[this.primaryKey]) {
-				return this.noUpdate(data);
+				return this.noUpdate(data, noTransaction);
 			} else {
-				return this.noCreate(data);
+				return this.noCreate(data, noTransaction);
 			}
 		};
 
@@ -1095,7 +1095,7 @@
 				var
 					localDate = new Date(data.ModifiedDate),
 					remoteDate = new Date(changes.ModifiedDate),
-					same = moment(localDate).isSame(remoteDate,'second');
+					same = moment(localDate).isSame(remoteDate, 'second');
 
 				console.log(localDate, remoteDate, same);
 
