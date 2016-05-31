@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.19
+@version 1.2.17
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -63,5 +63,3 @@ by attaching it to the `window` object as ```window.noInfoPath```
 #### getItem
 
 #### setItem
-
-
