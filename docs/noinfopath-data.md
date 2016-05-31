@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.16
+@version 1.2.19
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -64,21 +64,6 @@ by attaching it to the `window` object as ```window.noInfoPath```
 
 #### setItem
 
-#### bindFilters `deprecated`
-
-#### noFilter `deprecated`
-
-#### noFilterExpression `deprecated`
-
-#### noDataReadRequest `deprecated`
-
-#### noDataSource `deprecated`
-
-#### digest `deprecated`
-
-#### digestError `deprecated`
-
-#### digestTimeout `deprecated`
 
 ## @class NoFilterExpression : Object
 
@@ -1243,7 +1228,18 @@ is a JavaScript object. Possible services could be $rootScope or $stateParams.
 NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
 inferred in the documentation or perform by ngInclude.
 
-@method toBlob(file)
+@method cache(file)
+
+Saves a file to the noDataSource defined in the config object.
+
+> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
+
+
+@method removeFromCache(file)
+
+Deletes a file by FileID from the NoInfoPath_FileUploadCache.
+
+@method read(file)
 
 Reads a file from a DOM File object and converts to a binary
 string compatible with the local, and upstream file systems.
