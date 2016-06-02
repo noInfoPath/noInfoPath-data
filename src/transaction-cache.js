@@ -394,7 +394,7 @@
 
 						//Perform create or update operation.
 						function executeDataOperation(dataSource, curEntity, opType, writableData) {
-							return dataSource[opType](writableData, SELF)
+							return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
 								.then(function(data) {
 									//get row from base data source
 									var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
@@ -453,9 +453,12 @@
 							preOp = !!curEntity.type ? curEntity.type : "basic";
 
 							//create the datasource config used to create datasource.
-							dsConfig = angular.merge({}, config.noDataSource, {
-								entityName: curEntity.entityName
-							});
+							// dsConfig = angular.merge({}, config.noDataSource, {
+							// 	entityName: curEntity.entityName
+							// });
+
+							dsConfig = angular.merge({}, config.noDataSource, curEntity);
+							console.log(dsConfig);
 
 							//create the noDataSource object.
 							dataSource = noDataSource.create(dsConfig, scope);
@@ -532,14 +535,14 @@
 				};
 
 				/**
-				*	### @method bulkUpsert
-				*
-				*	Inserts or updates and array of data items. Uses a provided
-				*	constructor to create the object that will be added to the
-				*	entity. This allows for custom data conversion and business
-				*	logic to be implement at the record level, before saving.
-				*
-				*/
+				 *	### @method bulkUpsert
+				 *
+				 *	Inserts or updates and array of data items. Uses a provided
+				 *	constructor to create the object that will be added to the
+				 *	entity. This allows for custom data conversion and business
+				 *	logic to be implement at the record level, before saving.
+				 *
+				 */
 				this.bulkUpsert = function(data, constructor) {
 					//console.log(data);
 					return $q(function(resolve, reject) {
