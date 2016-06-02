@@ -493,7 +493,7 @@
 
 			var tmp = new NoFilter(column, logic, beginning, end, filters);
 
-			this.unshift(tmp);
+			this.push(tmp);
 
 			return tmp;
 		};
