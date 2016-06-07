@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.18
+ *	@version 1.2.19
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1046,7 +1046,12 @@
 
 		arr.page = function(nopage) {
 			if (!nopage) throw "nopage is a required parameter for NoResults::page";
-			_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);
+
+			if (nopage.take === _raw.length){
+				_page = _raw;
+			} else {
+				_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);
+			}
 		};
 
 		noInfoPath.setPrototypeOf(this, arr);
