@@ -166,7 +166,7 @@
 
 	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
 
-		var _name;
+		var _name, _noIndexedDb = this;
 
 		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
 			var transData = result2 && result2.rows.length ? result2 : result1;
@@ -228,6 +228,7 @@
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					table.parentSchema = schema;
 					dexieTable.noInfoPath = table;
+					dexieTable.provider = _dexie;
 				});
 			}
 
@@ -357,6 +358,7 @@
 						table.add(data)
 							.then(function(data) {
 								//noLogService.log("addSuccessful", data);
+
 								table.get(data)
 									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
 									.catch(_transactionFault.bind(null, deferred.reject));
@@ -378,15 +380,89 @@
 
 			function NoRead_new() {
 				var table = this,
+					filterOps = {
+						"is null": "is null",
+						"is not null": "is not null",
+						eq: "eq",
+						neq: "ne",
+						gt: "gt",
+						ge: "ge",
+						gte: "ge",
+						lt: "lt",
+						le: "le",
+						lte: "le",
+						contains: "contains",
+						doesnotcontain: "notcontains",
+						endswith: "endswith",
+						startswith: "startswith",
+						"in": "in"
+					},
+					compareOps = {
+						"is null": function(a) {
+							return a === null;
+						},
+						"is not null": function(a) {
+							return a !== null;
+						},
+						"eq": function(a, b) {
+							return a === b;
+						},
+						"ne": function(a, b) {
+							return a !== b;
+						},
+						"gt": function(a, b) {
+							return a > b;
+						},
+						"ge": function(a, b) {
+							return a >= b;
+						},
+						"lt": function(a, b) {
+							return a < b;
+						},
+						"le": function(a, b) {
+							return a <= b;
+						},
+						"contains": function(a, b) {
+							var areStrings = angular.isString(a) && angular.isString(b);
+							return areString ? a.indexOf(b) > -1 : false;
+						},
+						"notcontains": function(a, b) {
+							var areStrings = angular.isString(a) && angular.isString(b);
+							return areString ? a.indexOf(b) === -1 : false;
+						},
+						"startswith": function(a, b) {
+							var areStrings = angular.isString(a) && angular.isString(b);
+							return areString ? a.indexOf(b) === 0 : false;
+						},
+						"endswith": function(a, b) {
+							var areStrings = angular.isString(a) && angular.isString(b);
+							return areString ? a.lastIndexOf(b) > -1 : false;
+						},
+						"in": function(a, b) {
+							return  a.indexof(b) > -1;
+						}
+					},
+					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
 					filters, sort, page;
 
 				function _filter(filters, table) {
 					var collection;
 
+					function _logicCB(filter, ex, value) {
+
+						var val = noInfoPath.getItem(value, filter.column),
+							op = compareOps[filterOps[ex.operator]],
+							ok = op ? op(val, ex.value) : false;
+
+						console.log(val, ex.operator, ex.value, ok);
+
+						return ok;
+					}
+
 					if (!!filters) {
 						for (var fi = 0; fi < filters.length; fi++) {
 							var filter = filters[fi],
-								ex = filter.filters[fi],
+								ex = filter.filters[0],
 								where, evaluator, logic;
 
 							if (fi === 0) {
@@ -401,10 +477,12 @@
 								} else {
 									collection = table.toCollection();
 								}
+
+								logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
 							} else {
-								evaluator = collection[ex.operator];
-								console.warn("TODO: Implement advanced filtering.");
-								console.log(ex, evaluator);
+								if (logic) {
+									collection = logic(_logicCB.bind(null, filter, ex));
+								}
 							}
 
 
@@ -470,12 +548,13 @@
 				}
 
 				function _expand(col, keys) {
-					var filters = new noInfoPath.data.NoFilters(),
-						ft = db[col.refTable];
+					var theDb = col.refDatabaseName ? _noIndexedDb.getDatabase(col.refDatabaseName) : db,
+						filters = new noInfoPath.data.NoFilters(),
+						ft = theDb[col.refTable];
 
 					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
 					if (!ft) {
-						ft = db[aliases[col.refTable]];
+						ft = theDb[aliases[col.refTable]];
 					}
 
 					if (!ft) throw "Invalid refTable " + aliases[col.refTable];
@@ -575,8 +654,7 @@
 				function _followRelations(arrayOfThings) {
 					//console.log(table.noInfoPath);
 					var promises = {},
-						columns = table.noInfoPath.foreignKeys,
-						aliases = table.noInfoPath.parentSchema.config.tableAliases;
+						columns = table.noInfoPath.foreignKeys;
 
 					for (var c in columns) {
 						var col = columns[c],
@@ -727,6 +805,7 @@
 						//.then(_finish(collection, table, resolve, reject));
 
 					} catch (err) {
+						console.error(err);
 						reject(err);
 					}
 
