@@ -1,5 +1,5 @@
 # noinfopath-data
-@version 1.2.19
+@version 1.2.21
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -864,7 +864,7 @@ configuration object, name of the entity, and a reference to the database.
 ### @method create(entityConfig, entityName, database)
 
 Returns a new instance of the NoWebSqlEntity object configured with the
-supplied Entity Configuration and Datbase.
+supplied Entity Configuration and Database.
 
 
 ## @class NoWebSqlService
