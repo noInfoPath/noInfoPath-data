@@ -73,7 +73,7 @@ module.exports = function(grunt) {
 			},
 			noWebSQL2_ci: {
 				configFile: "karma.conf.websql2.js",
-				singleRun: false,
+				singleRun: true,
 				logLevel: "error"
 			},
 			/*noInitDatabases: {
