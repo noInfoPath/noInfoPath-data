@@ -781,41 +781,43 @@
 
 			var table = this,
 				filters, sort, page, readObject,
+				follow = true,
 				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
 				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
-			function _followRelations(arrayOfThings) {
-				var promises = {},
-					columns = table.noInfoPath.foreignKeys,
-					promiseKeys = {};
+				function _followRelations(follow, arrayOfThings){
+					var promises = {},
+						columns = table.noInfoPath.foreignKeys,
+						promiseKeys = {};
 
-				for (var c in columns) {
-					var col = columns[c],
-						keys = _.pluck(arrayOfThings.rows, col.column),
-						o = {
-							col: col,
-							keys: keys
-						};
+					if(follow){
+						for (var c in columns){
+							var col = columns[c],
+							keys = _.pluck(arrayOfThings.rows, col.column),
+							o = {col : col, keys: keys};
 
-					if (promiseKeys[col.refTable]) {
-						promiseKeys[col.refTable].keys = promiseKeys[col.refTable].keys.concat(o.keys);
+							if (promiseKeys[col.refTable]) {
+								promiseKeys[col.refTable].keys = promiseKeys[col.refTable].keys.concat(o.keys);
+							} else {
+								promiseKeys[col.refTable] = o;
+							}
+						}
+
+						for (var pk in promiseKeys){
+							var obj = promiseKeys[pk];
+
+							promises[pk] = _expand(obj.col, obj.keys);
+						}
+
+						return _.size(promises) > 0 ?
+							$q.all(promises)
+								.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+								.catch(_fault) :
+								$q.when(arrayOfThings);
 					} else {
-						promiseKeys[col.refTable] = o;
+						return $q.when(arrayOfThings);
 					}
 				}
-
-				for (var pk in promiseKeys) {
-					var obj = promiseKeys[pk];
-
-					promises[pk] = _expand(obj.col, obj.keys);
-				}
-
-				return _.size(promises) > 0 ?
-					$q.all(promises)
-					.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-					.catch(_fault) :
-					$q.when(arrayOfThings);
-			}
 
 			function _expand(col, keys) {
 				var theDb = col.refDatabaseName ? THIS.getDatabase(col.refDatabaseName) : _db,
@@ -911,7 +913,7 @@
 				var arg = arguments[ai];
 
 				//success and error must always be first, then
-				if (angular.isObject(arg)) {
+				if (angular.isObject(arg) || typeof(arg) === "boolean") {
 					switch (arg.__type) {
 						case "NoFilters":
 							filters = arg;
@@ -922,6 +924,10 @@
 						case "NoPage":
 							page = arg;
 							break;
+						default:
+							if (typeof(arg) === "boolean"){
+								follow = arg;
+							}
 					}
 				}
 			}
@@ -946,7 +952,7 @@
 				var resp;
 
 				_filter(readObject)
-					.then(_followRelations.bind(ctx))
+					.then(_followRelations.bind(ctx, follow))
 					.then(_page.bind(ctx, page))
 					.then(resolve)
 					.catch(reject);
