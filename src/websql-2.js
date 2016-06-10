@@ -429,9 +429,8 @@
 	 *	of WebSQL. It abstracts the fundimental differences between SQL Views and Tables.
 	 *	Exceptions will be thrown when a method is called that a SQL View connot supported.
 	 */
-	function NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSQLStatementFactory, entityConfig, entityName, database) {
-		var
-			THIS = this,
+	function NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSQLStatementFactory, entityConfig, entityName, database, noDbSchema) {
+		var THIS = this,
 			_entityConfig, _entityName, _db,
 			SQLOPS = {};
 
@@ -442,6 +441,9 @@
 		_entityConfig = entityConfig;
 		_entityName = _entityConfig.entityName;
 		_db = database;
+
+		var _schema = noDbSchema.getSchema(database);
+		_entityConfig.parentSchema = _schema ? _schema : {};
 
 		Object.defineProperties(this, {
 			"__type": {
@@ -457,6 +459,11 @@
 			"entityName": {
 				"get": function() {
 					return _entityName;
+				}
+			},
+			"noInfoPath": {
+				"get": function() {
+					return _entityConfig;
 				}
 			}
 		});
@@ -723,7 +730,7 @@
 		 * |NoSort|Object|(Optional) A noInfoPath NoSort Object|
 		 * |NoPage|Object|(Optional) A noInfoPath NoPage Object|
 		 */
-		this.noRead = function() {
+		function noRead_old() {
 
 			var filters, sort, page, readObject;
 
@@ -768,7 +775,186 @@
 					})
 					.catch(reject);
 			});
-		};
+		}
+
+		function NoRead_new() {
+
+			var table = this,
+				filters, sort, page, readObject,
+				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
+				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
+
+			function _followRelations(arrayOfThings) {
+				var promises = {},
+					columns = table.noInfoPath.foreignKeys,
+					promiseKeys = {};
+
+				for (var c in columns) {
+					var col = columns[c],
+						keys = _.pluck(arrayOfThings.rows, col.column),
+						o = {
+							col: col,
+							keys: keys
+						};
+
+					if (promiseKeys[col.refTable]) {
+						promiseKeys[col.refTable].keys = promiseKeys[col.refTable].keys.concat(o.keys);
+					} else {
+						promiseKeys[col.refTable] = o;
+					}
+				}
+
+				for (var pk in promiseKeys) {
+					var obj = promiseKeys[pk];
+
+					promises[pk] = _expand(obj.col, obj.keys);
+				}
+
+				return _.size(promises) > 0 ?
+					$q.all(promises)
+					.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+					.catch(_fault) :
+					$q.when(arrayOfThings);
+			}
+
+			function _expand(col, keys) {
+				var theDb = col.refDatabaseName ? THIS.getDatabase(col.refDatabaseName) : _db,
+					filters = new noInfoPath.data.NoFilters(),
+					ft = theDb[col.refTable];
+
+				if (!ft) {
+					ft = theDb[aliases[col.refTable]];
+				}
+
+				if (!ft) throw "Invalid refTable " + aliases[col.refTable];
+
+				if (exclusions.indexOf(col.column) > -1) {
+					return $q.when(new noInfoPath.data.NoResults());
+				}
+
+				if (!keys) {
+					throw {
+						error: "Invalid key value",
+						col: col,
+						item: item
+					};
+				}
+
+				filters.quickAdd(col.refColumn, "in", keys);
+
+				if (keys.length > 0) {
+					return ft.noRead(filters)
+						.catch(_expand_fault.bind(table, col, keys, filters));
+				} else {
+					return $q.when(new noInfoPath.data.NoResults());
+				}
+			}
+
+			function _expand_fault(col, keys, filters, err) {
+				console.err({
+					error: err,
+					column: col,
+					keys: keys,
+					filters: filters
+				});
+				return err;
+			}
+
+			function _finished_following_fk(columns, arrayOfThings, refData) {
+				var returnArray = _.toArray(arrayOfThings.rows);
+				for (var i = 0; i < returnArray.length; i++) {
+					var item = returnArray[i];
+
+					for (var c in columns) {
+						var col = columns[c],
+							key = item[col.column],
+							refTable = refData[col.refTable].paged,
+							filter = {},
+							refItem;
+
+						filter[col.refColumn] = key;
+
+						refItem = _.find(refTable, filter);
+
+						item[col.refTable + col.column] = refItem || key;
+					}
+				}
+
+				return returnArray;
+			}
+
+			function _fault(ctx, reject, err) {
+				console.error(err);
+			}
+
+			function _page(page, arrayOfThings) {
+				var ctx = this;
+
+				return $q(function(resolve, reject) {
+					var resp = new noInfoPath.data.NoResults(arrayOfThings.rows ? _.toArray(arrayOfThings.rows) : arrayOfThings);
+
+					if (page) {
+						_getTotal(ctx.filters)
+							.then(function(total) {
+								resp.total = total;
+								resp.page(page);
+								resolve(resp);
+							})
+							.catch(reject);
+					} else {
+						resolve(resp);
+					}
+				});
+			}
+
+			for (var ai in arguments) {
+				var arg = arguments[ai];
+
+				//success and error must always be first, then
+				if (angular.isObject(arg)) {
+					switch (arg.__type) {
+						case "NoFilters":
+							filters = arg;
+							break;
+						case "NoSort":
+							sort = arg;
+							break;
+						case "NoPage":
+							page = arg;
+							break;
+					}
+				}
+			}
+
+
+
+			readObject = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters, sort, page);
+
+
+
+			var _filter = _exec;
+
+			var ctx = {
+				table: table,
+				filters: filters,
+				page: page,
+				sort: sort,
+				readObject: readObject
+			};
+
+			return $q(function(resolve, reject) {
+				var resp;
+
+				_filter(readObject)
+					.then(_followRelations.bind(ctx))
+					.then(_page.bind(ctx, page))
+					.then(resolve)
+					.catch(reject);
+			});
+		}
+
+
+		this.noRead = NoRead_new;
 
 		/*
 		 * ### noUpdate(data, noTransaction)
@@ -952,7 +1138,19 @@
 			var filters = resolveID(query, _entityConfig);
 
 			//Internal _getOne requires and NoFilters object.
-			return _getOne(filters);
+			//return _getOne(filters);
+			return this.noRead(filters)
+				.then(function(resultset) {
+					var data;
+
+					if (resultset.length === 0) {
+						data = {};
+					} else {
+						data = resultset[0];
+					}
+
+					return data;
+				});
 		};
 
 		/*
@@ -1166,16 +1364,16 @@
 	 *
 	 *
 	 */
-	function NoWebSqlEntityFactory($rootScope, $q, $timeout, _, noWebSqlStatementFactory) {
+	function NoWebSqlEntityFactory($rootScope, $q, $timeout, _, noWebSqlStatementFactory, noDbSchema) {
 		/*
 		 *	### @method create(entityConfig, entityName, database)
 		 *
 		 *	Returns a new instance of the NoWebSqlEntity object configured with the
-		 *	supplied Entity Configuration and Datbase.
+		 *	supplied Entity Configuration and Database.
 		 *
 		 */
 		this.create = function(entityConfig, entityName, database) {
-			var entity = new NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSqlStatementFactory, entityConfig, entityName, database);
+			var entity = new NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSqlStatementFactory, entityConfig, entityName, database, noDbSchema);
 			return entity;
 		};
 	}
@@ -1214,6 +1412,9 @@
 					db = this,
 					t = noWebSqlEntityFactory.create(table, name, db);
 
+				table.parentSchema = schema;
+				//t.noInfoPath = table;
+				t.provider = _webSQL;
 				db[name] = t;
 				promises.push(t.configure());
 			}, _webSQL);
@@ -1259,15 +1460,15 @@
 		return new NoWebSqlStatementFactory(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS);
 	}])
 
-	.factory("noWebSqlEntityFactory", ["$rootScope", "$q", "$timeout", "lodash", "noWebSqlStatementFactory", function($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory) {
-		return new NoWebSqlEntityFactory($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory);
+	.factory("noWebSqlEntityFactory", ["$rootScope", "$q", "$timeout", "lodash", "noWebSqlStatementFactory", "noDbSchema", function($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory, noDbSchema) {
+		return new NoWebSqlEntityFactory($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory, noDbSchema);
 	}])
 
-	.factory("noWebSql", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory) {
-		return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory);
+	.factory("noWebSql", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", "noDbSchema", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema) {
+		return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema);
 	}])
 
-	.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory) {
-		return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory);
+	.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", "noDbSchema", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema) {
+		return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema);
 	}]);
 })(angular);

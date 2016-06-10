@@ -66,10 +66,10 @@ var
 				}
 			},
 			"foreignKeys": {
-				"barID": {
-					"table": "bar",
-					"column": "barID"
-				}
+				// "barID": {
+				// 	"table": "bar",
+				// 	"column": "barID"
+				// }
 			},
 			"primaryKey": ["fooID"],
 			"entityType": "T",
@@ -209,7 +209,8 @@ var
 	WEBSQL_STATEMENT_BUILDERS_MOCKS = {
 		"createTable": {
 			params: ["foo", noDbSchemaMock.foo],
-			expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
+		//	expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
+			expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
 		},
 		"createView": {
 			params: ["vw_foo", noDbSchemaMock.vw_foo],
