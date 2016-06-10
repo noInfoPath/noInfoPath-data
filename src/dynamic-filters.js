@@ -3,7 +3,6 @@
 	"use strict";
 
 	function NoDynamicFilterService($injector) {
-
 		/*
 		 *	@method normalizeFilterValue
 		 *
@@ -14,7 +13,6 @@
 		 */
 		function normalizeFilterValue(value, type) {
 			var outval = value;
-
 			switch (type) {
 				case "date":
 					outval = noInfoPath.toDbDate(value);
@@ -25,19 +23,16 @@
 				default:
 					break;
 			}
-
 			return outval;
 		}
 
 		function resolveValueSource(valueCfg, scope) {
 			var source;
-
 			if (["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
 				source = $injector.get(valueCfg.source);
 			} else {
 				source = scope;
 			}
-
 			return source;
 		}
 		/*
@@ -53,14 +48,12 @@
 		 *
 		 *	> NOTE: Currently $rootScope is the only supported injectable source.
 		 */
-		function configureValueWatch(filterCfg, source, cb) {
+		function configureValueWatch(dsConfig, filterCfg, source, cb) {
 			if (source.$watch && filterCfg.value.watch && cb) {
 				var filter = angular.copy(filterCfg);
-				source.$watch(filterCfg.value.property, cb.bind(filter, filterCfg));
+				source.$watch(filterCfg.value.property, cb.bind(filter, dsConfig, filterCfg));
 			}
 		}
-
-
 		/**
 		 *   ### resolveFilterValues(filters)
 		 *   #### This is more information
@@ -77,9 +70,8 @@
 		 *   > property set to `scope` then use the directives scope variable.
 		 *   > Otherwise assume source is an injectable.
 		 */
-		function resolveFilterValues(filters, scope, watchCB) {
+		function resolveFilterValues(dsConfig, filters, scope, watchCB) {
 			var values = {};
-
 			/*
 			 *	@property noDataSource.filter
 			 *
@@ -95,37 +87,32 @@
 			 *	string "scope" or the name of an AngularJS injectable service that
 			 *	is a JavaScript object. Possible services could be $rootScope or $stateParams.
 			 */
-
 			for (var f in filters) {
 				var filter = filters[f],
 					source, value;
-
 				if (angular.isObject(filter.value)) {
 					if (angular.isArray(filter.value)) {
 						values[filter.field] = normalizeFilterValue(filter.value); // in statement
 					} else {
 						source = resolveValueSource(filter.value, scope);
-						configureValueWatch(filter, source, watchCB);
+						configureValueWatch(dsConfig, filter, source, watchCB);
 						values[filter.field] = normalizeFilterValue(noInfoPath.getItem(source, filter.value.property), filter.value.type);
 					}
 				} else {
 					values[filter.field] = normalizeFilterValue(filter.value);
 				}
 			}
-
 			return values;
 		}
 
 		function makeFilters(dsConfig, scope, watchCB) {
 			var filters = [],
 				filterValues;
-
 			if (dsConfig.filter) {
-				filterValues = resolveFilterValues(dsConfig.filter, scope, watchCB);
+				filterValues = resolveFilterValues(dsConfig, dsConfig.filter, scope, watchCB);
 				for (var f in dsConfig.filter) {
 					var filter = dsConfig.filter[f],
 						value;
-
 					if (angular.isObject(filter.value)) {
 						if (angular.isArray(filter.value)) {
 							value = filter.value; // in statement
@@ -135,22 +122,16 @@
 					} else {
 						value = filter.value;
 					}
-
 					filters.push({
 						field: filter.field,
 						operator: filter.operator,
 						value: value
 					});
-
-
 				}
 			}
-
 			return filters.length ? filters : undefined;
 		}
-
 		//this.resolveFilterValues = resolveFilterValues;
-
 		this.configure = makeFilters;
 	}
 

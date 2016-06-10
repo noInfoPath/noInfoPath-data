@@ -462,7 +462,7 @@
 				}
 			},
 			"noInfoPath": {
-				"get": function(){
+				"get": function() {
 					return _entityConfig;
 				}
 			}
@@ -781,7 +781,8 @@
 
 			var table = this,
 				filters, sort, page, readObject,
-				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {};
+				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
+				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
 			function _followRelations(arrayOfThings) {
 				var promises = {},
@@ -827,6 +828,10 @@
 
 				if (!ft) throw "Invalid refTable " + aliases[col.refTable];
 
+				if (exclusions.indexOf(col.column) > -1) {
+					return $q.when(new noInfoPath.data.NoResults());
+				}
+
 				if (!keys) {
 					throw {
 						error: "Invalid key value",
@@ -871,7 +876,7 @@
 
 						refItem = _.find(refTable, filter);
 
-						item[col.column] = refItem || key;
+						item[col.refTable + col.column] = refItem || key;
 					}
 				}
 
