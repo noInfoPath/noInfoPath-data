@@ -144,7 +144,7 @@
  * ##### Returns
  * void
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 	var
 		stringSearch = {
@@ -173,76 +173,76 @@
 		},
 
 		sqlOperators = {
-			"is null": function() {
+			"is null": function () {
 				return "is null";
 			},
-			"is not null": function() {
+			"is not null": function () {
 				return "is not null";
 			},
-			"eq": function(v) {
+			"eq": function (v) {
 				return "= " + normalizeSafeValue(v);
 			},
-			"ne": function(v) {
+			"ne": function (v) {
 				return "!= " + normalizeSafeValue(v);
 			},
-			"gt": function(v) {
+			"gt": function (v) {
 				return "> " + normalizeSafeValue(v);
 			},
-			"ge": function(v) {
+			"ge": function (v) {
 				return ">= " + normalizeSafeValue(v);
 			},
-			"lt": function(v) {
+			"lt": function (v) {
 				return "< " + normalizeSafeValue(v);
 			},
-			"le": function(v) {
+			"le": function (v) {
 				return "<= " + normalizeSafeValue(v);
 			},
-			"contains": function(v) {
+			"contains": function (v) {
 				return "LIKE '%" + String(v) + "%'";
 			},
-			"notcontains": function(v) {
+			"notcontains": function (v) {
 				return "NOT LIKE '%" + String(v) + "%'";
 			},
-			"startswith": function(v) {
+			"startswith": function (v) {
 				return "LIKE '" + String(v) + "%'";
 			},
-			"endswith": function(v) {
+			"endswith": function (v) {
 				return "LIKE '%" + String(v) + "'";
 			},
-			"in": function(v) {
+			"in": function (v) {
 				return "IN (" + String(v) + ")";
 			}
 		},
 
 		odataOperators = {
-			"eq": function(v) {
+			"eq": function (v) {
 				return "{0} eq " + normalizeValue(v);
 			},
-			"ne": function(v) {
+			"ne": function (v) {
 				return "{0} ne " + normalizeValue(v);
 			},
-			"gt": function(v) {
+			"gt": function (v) {
 				return "{0} gt " + normalizeValue(v);
 			},
-			"ge": function(v) {
+			"ge": function (v) {
 				return "{0} ge " + normalizeValue(v);
 			},
-			"lt": function(v) {
+			"lt": function (v) {
 				return "{0} lt " + normalizeValue(v);
 			},
-			"le": function(v) {
+			"le": function (v) {
 				return "{0} le " + normalizeValue(v);
 			},
-			"contains": function(v) {
+			"contains": function (v) {
 				return "substringof(" + normalizeValue(v) + ", {0})";
 			},
-			"notcontains": function(v) {
+			"notcontains": function (v) {
 				return "not substringof(" + normalizeValue(v) + ", {0})";
 			},
-			"startswith": function(v) {
+			"startswith": function (v) {
 				return "startswith(" + "{0}, " + normalizeValue(v) + ")";
 			},
-			"endswith": function(v) {
+			"endswith": function (v) {
 				return "endswith(" + "{0}, " + normalizeValue(v) + ")";
 			}
 		};
@@ -274,13 +274,13 @@
 	function normalizeValue(inval) {
 		var outval = inval;
 
-		if (angular.isDate(inval)) {
+		if(angular.isDate(inval)) {
 			outval = "datetime('" + noInfoPath.toDbDate(inval) + "', 'utc')";
-		} else if (angular.isString(inval)) {
+		} else if(angular.isString(inval)) {
 			outval = "'" + inval + "'";
 		}
 
-		if (noInfoPath.isGuid(inval)) {
+		if(noInfoPath.isGuid(inval)) {
 			outval = "guid" + outval;
 		}
 
@@ -290,9 +290,9 @@
 	function normalizeSafeValue(inval) {
 		var outval = inval;
 
-		if (angular.isDate(inval)) {
+		if(angular.isDate(inval)) {
 			outval = "datetime( ?, 'utc')";
-		} else if (angular.isString(inval)) {
+		} else if(angular.isString(inval)) {
 			outval = "?";
 		}
 
@@ -323,7 +323,7 @@
 
 	function NoFilterExpression(operator, value, logic) {
 
-		if (!operator) throw "INoFilterExpression requires a operator to filter by.";
+		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
 		//if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
 
@@ -331,7 +331,7 @@
 		this.value = value;
 		this.logic = logic;
 
-		this.toODATA = function() {
+		this.toODATA = function () {
 			var opFn = normalizeOdataOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
 
@@ -339,14 +339,14 @@
 
 		};
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			var opFn = normalizeOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
 
 			return rs;
 		};
 
-		this.toSafeSQL = function() {
+		this.toSafeSQL = function () {
 			var opFn = normalizeOperator(this.operator),
 				v = stringSearch[this.operator] ? this.value : "?",
 				rs = opFn(v) + normalizeLogic(this.logic);
@@ -405,7 +405,7 @@
 
 		Object.defineProperties(this, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoFilters";
 				}
 			}
@@ -417,13 +417,13 @@
 		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
 
 		//arr.push.apply(arr, arguments);
-		this.toODATA = function() {
+		this.toODATA = function () {
 			var tmp = [];
-			for (var fi = 0; fi < this.length; fi++) {
+			for(var fi = 0; fi < this.length; fi++) {
 				var fltr = this[fi],
 					os = fltr.toODATA();
 
-				if (fltr.logic && this.length > 1) os = os + " " + fltr.logic + " ";
+				if(fltr.logic && this.length > 1) os = os + " " + fltr.logic + " ";
 
 				tmp.push(os);
 			}
@@ -432,9 +432,9 @@
 			return tmp;
 		};
 
-		this.toKendo = function() {
+		this.toKendo = function () {
 			var ra = [];
-			for (var j = 0; j < this.length; j++) {
+			for(var j = 0; j < this.length; j++) {
 				var f = this[j];
 
 				ra.push(f.toKendo());
@@ -442,13 +442,13 @@
 			return ra;
 		};
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			var rs = "",
 				rsArray = [];
 
-			angular.forEach(this, function(value, key) {
+			angular.forEach(this, function (value, key) {
 
-				if (this.length == key + 1) {
+				if(this.length == key + 1) {
 					value.logic = null;
 				}
 
@@ -460,21 +460,21 @@
 			return rs;
 		};
 
-		this.toSafeSQL = function() {
+		this.toSafeSQL = function () {
 			var rs = "",
 				rsArray = [],
 				values = [];
 
-			angular.forEach(this, function(filter, key) {
+			angular.forEach(this, function (filter, key) {
 
-				if (this.length == key + 1) {
+				if(this.length == key + 1) {
 					filter.logic = null;
 				}
 
 				var tmp = filter.toSafeSQL();
 
 				rsArray.push(tmp.sql);
-				if (tmp.sql.indexOf("?") > -1) {
+				if(tmp.sql.indexOf("?") > -1) {
 					values = values.concat(tmp.values);
 				}
 			}, this);
@@ -487,9 +487,9 @@
 			};
 		};
 
-		this.add = function(column, logic, beginning, end, filters) {
-			if (!column) throw "NoFilters::add requires a column to filter on.";
-			if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
+		this.add = function (column, logic, beginning, end, filters) {
+			if(!column) throw "NoFilters::add requires a column to filter on.";
+			if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
 
 			var tmp = new NoFilter(column, logic, beginning, end, filters);
 
@@ -498,7 +498,7 @@
 			return tmp;
 		};
 
-		this.quickAdd = function(column, operator, value, logic) {
+		this.quickAdd = function (column, operator, value, logic) {
 			return this.add(column, logic, true, true, [{
 				"operator": operator,
 				"value": value,
@@ -506,31 +506,31 @@
 			}]);
 		};
 
-		if (kendoFilter) {
+		if(kendoFilter) {
 
 			var filters = kendoFilter.filters || kendoFilter;
 
-			if (!kendoFilter.logic) kendoFilter.logic = "and";
+			if(!kendoFilter.logic) kendoFilter.logic = "and";
 
-			for (var i = 0; i < filters.length; i++) {
+			for(var i = 0; i < filters.length; i++) {
 				var filter = filters[i],
 					logic1;
 				// fe = new NoFilterExpression(filter.operator, filter.value),
 				//f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
 
-				if (filter.filters) {
-					for (var j = 0; j < filter.filters.length; j++) {
+				if(filter.filters) {
+					for(var j = 0; j < filter.filters.length; j++) {
 						var filter2 = filter.filters[j],
 							logic2;
 
-						if (j < filter.filters.length) {
+						if(j < filter.filters.length) {
 							logic2 = filter2.logic ? filter2.logic : kendoFilter.logic;
 						}
 
 						this.quickAdd(filter2.field, filter2.operator, filter2.value, logic2);
 					}
 				} else {
-					if (i < filters.length) {
+					if(i < filters.length) {
 						logic1 = filter.logic ? filter.logic : kendoFilter.logic;
 					}
 
@@ -578,7 +578,7 @@
 	function NoFilter(column, logic, beginning, end, filters) {
 		Object.defineProperties(this, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoFilter";
 				}
 			}
@@ -590,14 +590,14 @@
 		this.end = end;
 		this.filters = [];
 
-		angular.forEach(filters, function(value, key) {
+		angular.forEach(filters, function (value, key) {
 			this.filters.push(new NoFilterExpression(value.operator, value.value, value.logic));
 		}, this);
 
 		function normalizeColumn(incol, val) {
 			var ocol = incol;
 
-			if (angular.isDate(val)) {
+			if(angular.isDate(val)) {
 				ocol = "datetime(" + incol + ",'utc')";
 			}
 
@@ -606,8 +606,8 @@
 
 		function normalizeInValue(exp) {
 
-			if (exp.operator.toLowerCase() === "in") {
-				for (var i = 0; i < exp.value.length; i++) {
+			if(exp.operator.toLowerCase() === "in") {
+				for(var i = 0; i < exp.value.length; i++) {
 					var valum = exp.value[i];
 
 					exp.value[i] = "'" + valum + "'";
@@ -617,31 +617,32 @@
 			}
 		}
 
-		this.toODATA = function() {
+		this.toODATA = function () {
 			var tmp = [],
 				os = "";
-			for (var ei = 0; ei < this.filters.length; ei++) {
+			for(var ei = 0; ei < this.filters.length; ei++) {
 				var expr = this.filters[ei],
-					od = expr.toODATA().replace("{0}", this.column);
+					od = expr.toODATA()
+					.replace("{0}", this.column);
 
 				tmp.push(od);
 			}
 
-			if (this.logic) {
+			if(this.logic) {
 				os = tmp.join(" " + this.logic + " ");
 			} else {
-				if (tmp.length > 0) {
+				if(tmp.length > 0) {
 					os = tmp[0];
 				}
 			}
 
-			if (this.beginning) os = "(" + os;
-			if (this.end) os = os + ")";
+			if(this.beginning) os = "(" + os;
+			if(this.end) os = os + ")";
 
 			return os;
 		};
 
-		this.toKendo = function() {
+		this.toKendo = function () {
 			// filter: {
 			// 	logic: "or",
 			// 	filters: [{
@@ -660,11 +661,11 @@
 
 			ro.filters = [];
 
-			for (var f = 0; f < this.filters.length; f++) {
+			for(var f = 0; f < this.filters.length; f++) {
 				var exp = this.filters[f],
 					newFilter = {};
 
-				if (exp.logic && !ro.logic) {
+				if(exp.logic && !ro.logic) {
 					ro.logic = exp.logic;
 				}
 
@@ -678,42 +679,42 @@
 			return ro;
 		};
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			var rs = "",
 				filterArray = [],
 				filterArrayString = "";
 
-			angular.forEach(this.filters, function(value, key) {
+			angular.forEach(this.filters, function (value, key) {
 				filterArray.push(normalizeColumn(this.column, value.value) + " " + value.toSQL());
 			}, this);
 
 			filterArrayString = filterArray.join(" ");
 
-			if (!!this.beginning) rs = "(";
+			if(!!this.beginning) rs = "(";
 			rs += filterArrayString;
-			if (!!this.end) rs += ")";
-			if (!!this.logic) rs += " " + logic + " ";
+			if(!!this.end) rs += ")";
+			if(!!this.logic) rs += " " + logic + " ";
 
 			return rs;
 		};
 
-		this.toSafeSQL = function() {
+		this.toSafeSQL = function () {
 			var rs = "",
 				filterArray = [],
 				filterArrayString = "",
 				values = [];
 
-			angular.forEach(this.filters, function(exp, key) {
+			angular.forEach(this.filters, function (exp, key) {
 				normalizeInValue(exp);
 
-				if (exp.operator.toLowerCase() === "in") {
+				if(exp.operator.toLowerCase() === "in") {
 					filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSQL());
 				} else {
 					filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
 				}
 
-				if (!stringSearch[exp.operator]) {
-					if (exp.operator.toLowerCase() !== "in") {
+				if(!stringSearch[exp.operator]) {
+					if(exp.operator.toLowerCase() !== "in") {
 						values.push(exp.value);
 					}
 				}
@@ -721,10 +722,10 @@
 
 			filterArrayString = filterArray.join(" ");
 
-			if (!!this.beginning) rs = "(";
+			if(!!this.beginning) rs = "(";
 			rs += filterArrayString;
-			if (!!this.end) rs += ")";
-			if (!!this.logic) rs += " " + logic + " ";
+			if(!!this.end) rs += ")";
+			if(!!this.logic) rs += " " + logic + " ";
 
 			return {
 				sql: rs,
@@ -773,12 +774,12 @@
 	 */
 	function NoSortExpression(column, dir) {
 
-		if (!column) throw "NoFilters::add requires a column to sort on.";
+		if(!column) throw "NoFilters::add requires a column to sort on.";
 
 		this.column = column;
 		this.dir = dir;
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			return this.column + (this.dir ? " " + this.dir : "");
 		};
 	}
@@ -788,16 +789,16 @@
 
 		Object.defineProperties(arr, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoSort";
 				}
 			}
 		});
 
-		if (arguments.length) {
+		if(arguments.length) {
 			var raw = arguments[0];
 
-			for (var s in raw) {
+			for(var s in raw) {
 				var sort = raw[s];
 				arr.push(new NoSortExpression(sort.field, sort.dir));
 			}
@@ -805,18 +806,18 @@
 		}
 
 		//arr.push.apply(arr, arguments.length ? arguments[0] : []);
-		arr.add = function(column, dir) {
-			if (!column) throw "NoSort::add requires a column to filter on.";
+		arr.add = function (column, dir) {
+			if(!column) throw "NoSort::add requires a column to filter on.";
 
 			this.push(new NoSortExpression(column, dir));
 		};
 
-		arr.toSQL = function() {
+		arr.toSQL = function () {
 
 			var sqlOrder = "ORDER BY ",
 				sortExpressions = [];
 
-			angular.forEach(this, function(sort) {
+			angular.forEach(this, function (sort) {
 				sortExpressions.push(sort.toSQL());
 			});
 
@@ -830,7 +831,7 @@
 	function NoPage(skip, take) {
 		Object.defineProperties(this, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoPage";
 				}
 			}
@@ -839,7 +840,7 @@
 		this.skip = skip;
 		this.take = take;
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			return "LIMIT " + this.take + " OFFSET " + this.skip;
 		};
 	}
@@ -848,10 +849,10 @@
 		//Capture the length of the arrayOfThings before any changes are made to it.
 		var _raw, _total, _page, arr;
 
-		if (arrayOfThings) {
-			if (arrayOfThings["odata.metadata"]) {
+		if(arrayOfThings) {
+			if(arrayOfThings["odata.metadata"]) {
 				_raw = arrayOfThings.value;
-				if (arrayOfThings["odata.count"]) {
+				if(arrayOfThings["odata.count"]) {
 					_total = Number(arrayOfThings["odata.count"]);
 				} else {
 					_total = _raw.length;
@@ -871,24 +872,24 @@
 
 		Object.defineProperties(arr, {
 			"total": {
-				"get": function() {
+				"get": function () {
 					return _total;
 				},
-				"set": function(value) {
+				"set": function (value) {
 					_total = value;
 				}
 			},
 			"paged": {
-				"get": function() {
+				"get": function () {
 					return _page;
 				}
 			}
 		});
 
-		arr.page = function(nopage) {
-			if (!nopage) throw "nopage is a required parameter for NoResults::page";
+		arr.page = function (nopage) {
+			if(!nopage) throw "nopage is a required parameter for NoResults::page";
 
-			if (nopage.take === _raw.length){
+			if(nopage.take === _raw.length) {
 				_page = _raw;
 			} else {
 				_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);

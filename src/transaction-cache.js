@@ -44,11 +44,11 @@
  *   involved, how to carry out the transaction, and in what order.
  *
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage) {
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage) {
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
@@ -58,24 +58,25 @@
 
 				Object.defineProperties(this, {
 					"__type": {
-						"get": function() {
+						"get": function () {
 							return "NoTransaction";
 						}
 					}
 				});
 
 				this.transactionId = noInfoPath.createUUID();
-				this.timestamp = (new Date()).toJSON();
+				this.timestamp = (new Date())
+					.toJSON();
 				this.userId = userId;
 				this.changes = new NoChanges();
 				this.state = "pending";
 
-				this.addChange = function(tableName, data, changeType) {
+				this.addChange = function (tableName, data, changeType) {
 					var tableCfg = scope["noDbSchema_" + config.noDataSource.databaseName];
 					this.changes.add(tableName, data, changeType, tableCfg);
 				};
 
-				this.toObject = function() {
+				this.toObject = function () {
 					var json = angular.fromJson(angular.toJson(this));
 					json.changes = _.toArray(json.changes);
 
@@ -95,11 +96,11 @@
 					keysd.push("DateCreated");
 					keysd.push("CreatedBy");
 
-					for (var t in noTransactions) {
+					for(var t in noTransactions) {
 						var transaction = noTransactions[t],
 							en = config.noDataSource.crudEntity ? config.noDataSource.crudEntity : config.noDataSource.entityName;
 
-						if (_.isBoolean(transaction)) {
+						if(_.isBoolean(transaction)) {
 							noTransactions[t] = [{
 								entityName: en
 									//omit_fields: keysd
@@ -113,7 +114,7 @@
 				function resolveProvider(provider, scope, data) {
 					var prov;
 
-					switch (provider) {
+					switch(provider) {
 						case "data":
 							prov = data;
 							break;
@@ -133,7 +134,7 @@
 				this.upsert = function upsert(data) {
 					data = data ? data : {};
 
-					return $q(function(resolve, reject) {
+					return $q(function (resolve, reject) {
 						var
 							THIS = SELF,
 							dsCfg = config.noDataSource,
@@ -144,20 +145,20 @@
 							results = {},
 							preOps = {
 								"noop": angular.noop,
-								"basic": function(curEntity, data, scope) {
+								"basic": function (curEntity, data, scope) {
 									var writableData = {};
 
 
 
-									if (curEntity.fields) {
-										for (var f in curEntity.fields) {
+									if(curEntity.fields) {
+										for(var f in curEntity.fields) {
 											var fld = curEntity.fields[f],
 												fldName, prov, val;
 
 											//When field value is get remote values then store on
 											//the writableData object.
 
-											if (angular.isString(fld)) {
+											if(angular.isString(fld)) {
 												/*
 												 *	When a field is a string then the value will be the
 												 *	property on the data object provider to the call
@@ -166,7 +167,7 @@
 												fldName = fld;
 												val = data[fld];
 
-											} else if (angular.isObject(fld)) {
+											} else if(angular.isObject(fld)) {
 												/*
 												 *	When a field is an object then confgure as if the
 												 *	value will be coming from a trusted provider like
@@ -174,7 +175,7 @@
 												 */
 												fldName = fld.field;
 
-												if (angular.isObject(fld.value)) {
+												if(angular.isObject(fld.value)) {
 													/*
 													 *	When `scope` is the provider then the directive scope is used.
 													 *	Otherwise the supplied injecable provider will be used.
@@ -182,10 +183,10 @@
 
 													prov = resolveProvider(fld.value.provider, scope, data);
 
-													if (prov && fld.value.method) {
+													if(prov && fld.value.method) {
 														var params = [];
 
-														for (var pi = 0; pi < fld.value.method.params.length; pi++) {
+														for(var pi = 0; pi < fld.value.method.params.length; pi++) {
 															var cfg = fld.value.method.params[pi],
 																prov2 = resolveProvider(cfg.provider, scope, data);
 
@@ -193,7 +194,7 @@
 														}
 
 														val = prov[fld.value.method.name].apply(null, params);
-													} else if (prov && fld.value.property) {
+													} else if(prov && fld.value.property) {
 														val = noInfoPath.getItem(prov, fld.value.property);
 													}
 
@@ -211,7 +212,7 @@
 											//NOTE: This is temporary and should be refactored
 											//      into the actual provider.  And be data
 											//      driven not conditional.
-											if (fld.type === "date") {
+											if(fld.type === "date") {
 												val = noInfoPath.toDbDate(val);
 											}
 
@@ -220,7 +221,7 @@
 
 										writableData = angular.merge(data, writableData);
 
-									} else if (curEntity.dataService) {
+									} else if(curEntity.dataService) {
 										var service = $injector.get(curEntity.dataService.provider),
 											method = service[curEntity.dataService.method];
 
@@ -230,7 +231,7 @@
 										writableData = data;
 									}
 
-									if (curEntity.omit_fields) {
+									if(curEntity.omit_fields) {
 										writableData = _.omit(writableData, curEntity.omit_fields);
 									}
 
@@ -239,15 +240,15 @@
 									return writableData;
 
 								},
-								"joiner": function(curEntity, data, scope) {
+								"joiner": function (curEntity, data, scope) {
 									var writableData = {};
 
-									if (curEntity.fields) {
-										for (var f in curEntity.fields) {
+									if(curEntity.fields) {
+										for(var f in curEntity.fields) {
 											var fld = curEntity.fields[f],
 												prov, value;
 
-											switch (fld.value.provider) {
+											switch(fld.value.provider) {
 												case "data":
 													var t = {};
 													t[fld.value.property] = data;
@@ -271,7 +272,7 @@
 
 											writableData[fld.field] = value;
 										}
-									} else if (curEntity.dataService) {
+									} else if(curEntity.dataService) {
 										var service = $injector.get(curEntity.dataService.provider),
 											method = service[curEntity.dataService.method];
 
@@ -280,7 +281,7 @@
 									}
 									return writableData;
 								},
-								"joiner-many": function(curEntity, data, scope) {
+								"joiner-many": function (curEntity, data, scope) {
 									var writableData = {
 											drop: [],
 											add: []
@@ -289,15 +290,15 @@
 										sourceDataAdd = scope[curEntity.source.add.property],
 										createJoin = preOps.joiner;
 
-									if (sourceDataDrop) {
-										for (var dd = 0; dd < sourceDataDrop.length; dd++) {
+									if(sourceDataDrop) {
+										for(var dd = 0; dd < sourceDataDrop.length; dd++) {
 											var sdd = sourceDataDrop[dd];
 											writableData.drop.push(createJoin(curEntity, sdd, scope));
 										}
 									}
 
-									if (sourceDataAdd) {
-										for (var da = 0; da < sourceDataAdd.length; da++) {
+									if(sourceDataAdd) {
+										for(var da = 0; da < sourceDataAdd.length; da++) {
 											var sda = sourceDataAdd[da];
 											writableData.add.push(createJoin(curEntity, sda, scope));
 										}
@@ -313,11 +314,11 @@
 							filter.quickAdd(parentCfg.primaryKey, "eq", data[parentCfg.primaryKey]);
 
 							return entity.noRead(filter)
-								.then(function(data) {
+								.then(function (data) {
 									console.log(data.paged);
 
 									var ra = [];
-									for (var d = 0; d < data.length; d++) {
+									for(var d = 0; d < data.length; d++) {
 										var datum = data[d];
 										ra.push(datum[entity.primaryKey[0]]);
 									}
@@ -330,23 +331,23 @@
 						 * are recorded in the current transaction.
 						 */
 						function dropAllRelatedToParentKey(ds, curEntity, data) {
-							return $q(function(resolve, reject) {
+							return $q(function (resolve, reject) {
 								var d = 0;
 
 								function recurse() {
 									var datum = data[d++],
 										filter = new noInfoPath.data.NoFilters();
 
-									if (datum) {
+									if(datum) {
 
 										filter.quickAdd(curEntity.primaryKey, "eq", datum);
 
 										ds.destroy(null, SELF, filter)
-											.then(function(r) {
+											.then(function (r) {
 												console.log(r);
 												recurse();
 											})
-											.catch(function(err) {
+											.catch(function (err) {
 												console.error(err);
 												reject(err);
 											});
@@ -364,19 +365,19 @@
 						 * Add each record one at a time to ensure that the transaction is recorded.
 						 */
 						function addAllRelatedToParentKey(ds, entity, data, scope) {
-							return $q(function(resolve, reject) {
+							return $q(function (resolve, reject) {
 								var d = 0;
 
 								function recurse() {
 									var datum = data[d++];
 
-									if (datum) {
+									if(datum) {
 										ds.create(datum, SELF)
-											.then(function(r) {
+											.then(function (r) {
 												console.log(r);
 												recurse();
 											})
-											.catch(function(err) {
+											.catch(function (err) {
 												console.error(err);
 												reject(err);
 											});
@@ -395,12 +396,12 @@
 						//Perform create or update operation.
 						function executeDataOperation(dataSource, curEntity, opType, writableData) {
 							return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
-								.then(function(data) {
+								.then(function (data) {
 									//get row from base data source
 									var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
 									//TODO: see where and when this is used.
-									if (curEntity.cacheOnScope) {
+									if(curEntity.cacheOnScope) {
 										scope[curEntity.entityName] = data;
 									}
 
@@ -435,7 +436,7 @@
 								preOp, dsConfig, dataSource, writableData, exec;
 
 							//Check to see if we have run out of entities to recurse.
-							if (!curEntity || curOpEntity >= opEntites.length) {
+							if(!curEntity || curOpEntity >= opEntites.length) {
 								resolve(results);
 								return;
 							}
@@ -464,7 +465,7 @@
 							dataSource = noDataSource.create(dsConfig, scope);
 
 							//resolve writeable data, execution function.
-							switch (preOp) {
+							switch(preOp) {
 								case "joiner-many":
 									/*
 									 *  ### joiner-many
@@ -475,7 +476,7 @@
 									 */
 									writableData = preOps[preOp](curEntity, data, scope);
 
-									exec = function() {
+									exec = function () {
 										return getAllRelatedToParentKey(dsCfg, dataSource.entity, data)
 											.then(dropAllRelatedToParentKey.bind(null, dataSource, curEntity))
 											.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
@@ -522,7 +523,7 @@
 							 *	member table.
 							 *
 							 */
-							if ((opType === "update" && !curEntity.createOnly) || opType == "create") {
+							if((opType === "update" && !curEntity.createOnly) || opType == "create") {
 								exec(dataSource, curEntity, opType, writableData);
 							} else {
 								_recurse();
@@ -543,15 +544,15 @@
 				 *	logic to be implement at the record level, before saving.
 				 *
 				 */
-				this.bulkUpsert = function(data, constructor) {
+				this.bulkUpsert = function (data, constructor) {
 					//console.log(data);
-					return $q(function(resolve, reject) {
+					return $q(function (resolve, reject) {
 						var promises = [];
 
-						for (var i = 0; i < data.length; i++) {
+						for(var i = 0; i < data.length; i++) {
 							var model = data[i];
 
-							if (model.dirty) {
+							if(model.dirty) {
 								promises.push(this.upsert(new constructor(model)));
 							}
 						}
@@ -563,10 +564,10 @@
 					}.bind(this));
 				};
 
-				this.destroy = function(data, filters) {
+				this.destroy = function (data, filters) {
 					data = data ? data : {};
 
-					return $q(function(resolve, reject) {
+					return $q(function (resolve, reject) {
 						var THIS = SELF,
 							dsCfg = config.noDataSource,
 							opType = "destroy",
@@ -579,7 +580,7 @@
 							var curEntity = opEntites[curOpEntity],
 								preOp, dsConfig, dataSource, writableData;
 
-							if (!curEntity || curOpEntity >= opEntites.length) {
+							if(!curEntity || curOpEntity >= opEntites.length) {
 								resolve(results);
 								return;
 							}
@@ -595,7 +596,7 @@
 							writableData = data; //preOps[preOp](curEntity, data, scope);
 
 							dataSource[opType](writableData, SELF, filters)
-								.then(function(data) {
+								.then(function (data) {
 									results[config.noDataSource.entityName] = writableData;
 									_recurse();
 
@@ -611,14 +612,14 @@
 			function NoChanges() {
 				Object.defineProperties(this, {
 					"__type": {
-						"get": function() {
+						"get": function () {
 							return "NoChanges";
 						}
 					}
 				});
 				var arr = [];
 				noInfoPath.setPrototypeOf(this, arr);
-				this.add = function(tableName, data, changeType, tableCfg) {
+				this.add = function (tableName, data, changeType, tableCfg) {
 					var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
 						change = new NoChange(tableName, data, changeType, tableCfg, !!syncVer ? syncVer.version : 0);
 
@@ -632,30 +633,30 @@
 				function normalizeValues(inData) {
 					var data = angular.copy(inData),
 						converters = {
-							"bit": function(d) {
+							"bit": function (d) {
 								return !!d;
 							},
-							"decimal": function(d) {
+							"decimal": function (d) {
 								var r = d;
-								if (r) {
+								if(r) {
 									r = String(r);
 								}
 
 								return r;
 							},
-							"undefined": function(d) {
+							"undefined": function (d) {
 								return d;
 							}
 						};
 
-					for (var c in data) {
+					for(var c in data) {
 						var dt,
 							col = tblSchema.columns[c];
 
-						if (col) {
+						if(col) {
 							dt = converters[col.type];
 
-							if (!dt) {
+							if(!dt) {
 								dt = converters["undefined"];
 							}
 
@@ -667,7 +668,7 @@
 
 				Object.defineProperties(this, {
 					"__type": {
-						"get": function() {
+						"get": function () {
 							return "NoChange";
 						}
 					}
@@ -682,24 +683,24 @@
 			function NoTransactionCache() {
 
 
-				this.beginTransaction = function(userId, noTransConfig, scope) {
+				this.beginTransaction = function (userId, noTransConfig, scope) {
 					return new NoTransaction(userId, noTransConfig, scope);
 				};
 
-				this.endTransaction = function(transaction) {
+				this.endTransaction = function (transaction) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
 					console.log(transaction);
 
 					return entity.noCreate(transaction.toObject())
-						.then(function() {
+						.then(function () {
 							$rootScope.$broadcast("noTransactionCache::localDataUpdated", transaction);
 						});
 				};
 
-				this.getAllPending = function() {
-					return $q(function(resolve, reject) {
+				this.getAllPending = function () {
+					return $q(function (resolve, reject) {
 						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 							entity = db.NoInfoPath_Changes;
 
@@ -713,7 +714,7 @@
 					});
 				};
 
-				this.markTransactionSynced = function(t) {
+				this.markTransactionSynced = function (t) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
@@ -723,7 +724,7 @@
 
 				};
 
-				this.dropAllSynced = function() {
+				this.dropAllSynced = function () {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
@@ -731,14 +732,14 @@
 						.where("state")
 						.equals("synced")
 						.toArray()
-						.then(function(data) {
-							for (var d in data) {
+						.then(function (data) {
+							for(var d in data) {
 								var datum = data[d];
 
 								entity.noDestroy(datum);
 							}
 						})
-						.catch(function(err) {
+						.catch(function (err) {
 							console.error(err);
 						});
 				};

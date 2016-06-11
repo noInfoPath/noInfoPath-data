@@ -1,5 +1,5 @@
 var
-    kendofilter = {
+	kendofilter = {
 		"take": 20,
 		"skip": 0,
 		"page": 1,

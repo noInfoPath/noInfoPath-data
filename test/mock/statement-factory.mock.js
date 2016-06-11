@@ -13,14 +13,14 @@ var
 			params: ["foo", sampleCreateData],
 			expected: {
 				queryString: "INSERT INTO foo (fooID,Description,barID,number,price) VALUES (?,?,?,?,?);",
-				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083","Test",null,12,4.87]
+				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083", "Test", null, 12, 4.87]
 			}
 		},
 		"createSqlUpdateStmt": {
 			params: ["foo", sampleUpdateData, testFilter],
 			expected: {
 				queryString: "UPDATE foo SET fooID = ?, Description = ?, barID = ?, number = ?, price = ? WHERE (fooID = ?)",
-				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083","noTest","128f28ca-e926-4259-d202-b754fe5b11c7",42,19.95, "0eec54c3-1c7e-48af-a9da-d7da62820083"]
+				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083", "noTest", "128f28ca-e926-4259-d202-b754fe5b11c7", 42, 19.95, "0eec54c3-1c7e-48af-a9da-d7da62820083"]
 			}
 		},
 		"createSqlDeleteStmt": {

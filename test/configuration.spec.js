@@ -1,11 +1,11 @@
 //configuration.spec.js
-describe("Testing noConfig", function(){
+describe("Testing noConfig", function () {
 	var noConfig, $timeout, $httpBackend, $rootScope;
 
-	beforeEach(function(){
+	beforeEach(function () {
 		module("noinfopath.data");
 
-		inject(function($injector){
+		inject(function ($injector) {
 			noConfig = $injector.get("noConfig");
 			$timeout = $injector.get("$timeout");
 			$httpBackend = $injector.get("$httpBackend");
@@ -13,30 +13,36 @@ describe("Testing noConfig", function(){
 		});
 	});
 
-	it("should exist and be initialized.", function(){
-		expect(noConfig).toBeDefined();
+	it("should exist and be initialized.", function () {
+		expect(noConfig)
+			.toBeDefined();
 	});
 
-	it("should expose all expected methods", function(){
-		expect(noConfig.whenReady).toBeDefined();
+	it("should expose all expected methods", function () {
+		expect(noConfig.whenReady)
+			.toBeDefined();
 	});
 
-	it("should place noConfig on $rootScope when ready", function(done){
+	it("should place noConfig on $rootScope when ready", function (done) {
 		$httpBackend
 			.when("GET", "/config.json")
 			.respond(200, mockConfig);
 
 		noConfig.whenReady()
-			.then(function(){
-				expect($rootScope.noConfig).toBeDefined();
-				expect($rootScope.noConfig.RESTURI).toBe("http://fcfn-rest.img.local/odata");
-				expect($rootScope.noConfig.AUTHURI).toBe("http://fcfn-rest.img.local");
-				expect($rootScope.noConfig.NODBSCHEMAURI).toBe("http://noinfopath-rest.img.local/api/NoDbSchema");
+			.then(function () {
+				expect($rootScope.noConfig)
+					.toBeDefined();
+				expect($rootScope.noConfig.RESTURI)
+					.toBe("http://fcfn-rest.img.local/odata");
+				expect($rootScope.noConfig.AUTHURI)
+					.toBe("http://fcfn-rest.img.local");
+				expect($rootScope.noConfig.NODBSCHEMAURI)
+					.toBe("http://noinfopath-rest.img.local/api/NoDbSchema");
 			})
-			.catch(function(err){
+			.catch(function (err) {
 				console.error(err);
 			})
-			.finally(function(){
+			.finally(function () {
 				done();
 			});
 

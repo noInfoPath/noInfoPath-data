@@ -1,14 +1,14 @@
-describe("Testing noDbSchema Full Database Configuration functionality", function(){
+describe("Testing noDbSchema Full Database Configuration functionality", function () {
 	var $httpBackend, $timeout, $rootScope, noConfig, noDbSchema, dbJsonMock, noWebSQL, noLoginService;
 
-	beforeEach(function(){
+	beforeEach(function () {
 
 		module("noinfopath.logger");
 		module("noinfopath.user");
 		module("noinfopath.data");
 		module("noinfopath.data.mocks");
 
-		inject(function($injector){
+		inject(function ($injector) {
 			$httpBackend = $injector.get("$httpBackend");
 			noDbSchema = $injector.get("noDbSchema");
 			noConfig = $injector.get("noConfig");
@@ -20,25 +20,27 @@ describe("Testing noDbSchema Full Database Configuration functionality", functio
 
 
 	var results;
-	it("noDbSchema.whenReady should yeild two NoDbSchema instances on $rootScope.", function(done){
+	it("noDbSchema.whenReady should yeild two NoDbSchema instances on $rootScope.", function (done) {
 		$httpBackend
 			.when("GET", "http://noinfopath-rest.img.local/api/NoDbSchema")
 			.respond(200, noDbSchemaMock);
 
 		noConfig.whenReady()
-			.then(function(config){
+			.then(function (config) {
 				noDbSchema.whenReady(noConfig)
-					.then(function(resp){
+					.then(function (resp) {
 						results = resp;
 						//console.warn(results);
-						expect(results).toEqual(['noDbSchema_NoInfoPath_dtc_v1', 'noDbSchema_FCFNv2']);
-						expect($rootScope.noDbSchema_names).toEqual(results);
+						expect(results)
+							.toEqual(['noDbSchema_NoInfoPath_dtc_v1', 'noDbSchema_FCFNv2']);
+						expect($rootScope.noDbSchema_names)
+							.toEqual(results);
 						expect($rootScope.noDbSchema_NoInfoPath_dtc_v1);
 						expect($rootScope.noDbSchema_FCFNv2);
 						console.info("Async operation completed successfully");
 						done();
 					})
-					.catch(function(err){
+					.catch(function (err) {
 						console.error(err);
 						done();
 					});
@@ -49,17 +51,17 @@ describe("Testing noDbSchema Full Database Configuration functionality", functio
 		$httpBackend.flush();
 	});
 
-	it("Testing noDbSchema::configureDatabases", function(done){
+	it("Testing noDbSchema::configureDatabases", function (done) {
 		$rootScope.noDbSchema_NoInfoPath_dtc_v1 = noDbSchema.create(mockConfig, mockConfig.noDbSchema[0], mockConfig.noDbSchema[0].schemaSource.schema);
-		$rootScope.noDbSchema_FCFNv2 =  noDbSchema.create(mockConfig, mockConfig.noDbSchema[1], tablesMock);
+		$rootScope.noDbSchema_FCFNv2 = noDbSchema.create(mockConfig, mockConfig.noDbSchema[1], tablesMock);
 
 		noDbSchema.configureDatabases(noLoginService.user, results)
-			.then(function(resp){
+			.then(function (resp) {
 				console.log(resp);
 				console.info("Async operation completed successfully");
 				done();
 			})
-			.catch(function(err){
+			.catch(function (err) {
 				console.error(err);
 				done();
 			});

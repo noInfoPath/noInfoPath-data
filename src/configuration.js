@@ -55,15 +55,15 @@
  * AngularJS::promise
  *
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	var noODATAProv;
 
 	angular.module("noinfopath.data")
-		.config([function() {}])
+		.config([function () {}])
 
-	.provider("noConfig", [function() {
+	.provider("noConfig", [function () {
 		var _currentConfig, _status;
 
 		function NoConfig($http, $q, $rootScope, noLocalStorage) {
@@ -71,53 +71,53 @@
 
 			Object.defineProperties(this, {
 				"current": {
-					"get": function() {
+					"get": function () {
 						return _currentConfig;
 					}
 				},
 				"status": {
-					"get": function() {
+					"get": function () {
 						return _status;
 					}
 				}
 			});
 
-			this.load = function(uri) {
+			this.load = function (uri) {
 				var url = uri || "/config.json";
 				return $http.get(url)
-					.then(function(resp) {
+					.then(function (resp) {
 						noLocalStorage.setItem("noConfig", resp.data);
 					})
-					.catch(function(err) {
+					.catch(function (err) {
 						throw err;
 					});
 			};
 
-			this.fromCache = function() {
+			this.fromCache = function () {
 				_currentConfig = noLocalStorage.getItem("noConfig");
 			};
 
-			this.whenReady = function(uri) {
+			this.whenReady = function (uri) {
 
-				return $q(function(resolve, reject) {
-					if ($rootScope.noConfig) {
+				return $q(function (resolve, reject) {
+					if($rootScope.noConfig) {
 						resolve();
 					} else {
-						$rootScope.$watch("noConfig", function(newval) {
-							if (newval) {
+						$rootScope.$watch("noConfig", function (newval) {
+							if(newval) {
 								resolve();
 							}
 						});
 
 						SELF.load(uri)
-							.then(function() {
+							.then(function () {
 								_currentConfig = noLocalStorage.getItem("noConfig");
 								$rootScope.noConfig = _currentConfig;
 							})
-							.catch(function(err) {
+							.catch(function (err) {
 								SELF.fromCache();
 
-								if (_currentConfig) {
+								if(_currentConfig) {
 									$rootScope.noConfig = _currentConfig;
 								} else {
 									reject("noConfig");
@@ -130,8 +130,8 @@
 			};
 		}
 
-		this.$get = ['$http', '$q', '$rootScope', 'noLocalStorage', function($http, $q, $rootScope, noLocalStorage) {
+		this.$get = ['$http', '$q', '$rootScope', 'noLocalStorage', function ($http, $q, $rootScope, noLocalStorage) {
 			return new NoConfig($http, $q, $rootScope, noLocalStorage);
-			}];
-		}]);
+		}];
+	}]);
 })(angular);

@@ -1,25 +1,25 @@
 //create.spec.js
 
-describe("Testing noinfopath-data", function(){
+describe("Testing noinfopath-data", function () {
 	var $timeout, $httpBackend, $rootScope, noDbSchema, dbJsonMock, noIndexedDB;
 
-	beforeEach(function(){
+	beforeEach(function () {
 
 		// angular.module('dummyModule', [])
-	 //  		.config(['noHTTPProvider', function(_noHTTPProvider_) {
-	 //    		noHTTPProvider = _noHTTPProvider_;
-	 //  		}]);
+		//  		.config(['noHTTPProvider', function(_noHTTPProvider_) {
+		//    		noHTTPProvider = _noHTTPProvider_;
+		//  		}]);
 
 		// module('dummyModule');
 		module("noinfopath.data", "noinfopath.data.mocks");
-		inject(function($injector){
+		inject(function ($injector) {
 			$timeout = $injector.get("$timeout");
 			$httpBackend = $injector.get("$httpBackend");
 			$rootScope = $injector.get("$rootScope");
 			noDbSchema = $injector.get("noDbSchema");
-	       	dbJsonMock = $injector.get("dbJsonMock");
-	       	noUserMock = $injector.get("noUserMock");
-	       	noDexie = $injector.get("noDexie");
+			dbJsonMock = $injector.get("dbJsonMock");
+			noUserMock = $injector.get("noUserMock");
+			noDexie = $injector.get("noDexie");
 		});
 	});
 
@@ -27,34 +27,42 @@ describe("Testing noinfopath-data", function(){
 	// 	if(!$rootScope.$$phase) $rootScope.$digest();
 	// });
 
-	it("noDbSchema should exist and be initialized.", function(){
-		expect(noDbSchema).toBeDefined();
-		expect(noDbSchema.whenReady).toBeDefined();
-		expect(noDbSchema.load).toBeDefined();
+	it("noDbSchema should exist and be initialized.", function () {
+		expect(noDbSchema)
+			.toBeDefined();
+		expect(noDbSchema.whenReady)
+			.toBeDefined();
+		expect(noDbSchema.load)
+			.toBeDefined();
 		//expect(noDbSchema.store).toBeDefined();
 	});
 
-	it("dbJsonMock should exist and be initialized", function(){
-		expect(dbJsonMock).toBeDefined();
-		expect(dbJsonMock.request).toBeDefined();
-		expect(dbJsonMock.response).toBeDefined();
+	it("dbJsonMock should exist and be initialized", function () {
+		expect(dbJsonMock)
+			.toBeDefined();
+		expect(dbJsonMock.request)
+			.toBeDefined();
+		expect(dbJsonMock.response)
+			.toBeDefined();
 	});
 
-	it("noDbSchema.whenReady should load the db.json (/nodbschema) and return when done", function(done){
+	it("noDbSchema.whenReady should load the db.json (/nodbschema) and return when done", function (done) {
 		$httpBackend
 			.when(dbJsonMock.request.method, dbJsonMock.request.url)
 			.respond(dbJsonMock.response.status, dbJsonMock.response.body, dbJsonMock.response.headers);
 
 		noDbSchema.whenReady()
-			.then(function(){
-				expect(noDbSchema.store).toBeDefined();
+			.then(function () {
+				expect(noDbSchema.store)
+					.toBeDefined();
 				expect(dbJsonMock.config, angular.toJson(noDbSchema.store));
 			})
-			.catch(function(err){
+			.catch(function (err) {
 				console.error(err);
-				expect(err).not.toBeDefined();
+				expect(err)
+					.not.toBeDefined();
 			})
-			.finally(function(){
+			.finally(function () {
 				done();
 			});
 
@@ -63,21 +71,28 @@ describe("Testing noinfopath-data", function(){
 	});
 
 
-	
 
-	describe("Testing noDexie", function(){
-		it("Configure noDexie", function(done){
-			expect(noDexie).toBeDefined();
-			expect(noDexie.configure).toBeDefined();
 
-			noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
-				.then(function(){
-					expect(noDexie.isOpen()).toBeTruthy();
+	describe("Testing noDexie", function () {
+		it("Configure noDexie", function (done) {
+			expect(noDexie)
+				.toBeDefined();
+			expect(noDexie.configure)
+				.toBeDefined();
+
+			noDexie.configure(noUserMock, {
+					"name": "NoInfoPath-v4",
+					"version": 1
+				}, dbJsonMock.store, dbJsonMock.response.body)
+				.then(function () {
+					expect(noDexie.isOpen())
+						.toBeTruthy();
 					done();
 				})
-				.catch(function(err){
+				.catch(function (err) {
 					console.error(err);
-					expect(err).not.toBeDefined();
+					expect(err)
+						.not.toBeDefined();
 					done();
 				});
 
@@ -85,19 +100,28 @@ describe("Testing noinfopath-data", function(){
 
 		});
 
-		it("noDexie.noTable.create should return a new id", function(done){
-			noDexie.configure(noUserMock, {"name":"NoInfoPath-v4","version":1}, dbJsonMock.store, dbJsonMock.response.body)
-				.then(function(){
-					expect(noDexie.LU_Firmness).toBeDefined();
-					expect(noDexie.LU_Firmness.create).toBeDefined();
+		it("noDexie.noTable.create should return a new id", function (done) {
+			noDexie.configure(noUserMock, {
+					"name": "NoInfoPath-v4",
+					"version": 1
+				}, dbJsonMock.store, dbJsonMock.response.body)
+				.then(function () {
+					expect(noDexie.LU_Firmness)
+						.toBeDefined();
+					expect(noDexie.LU_Firmness.create)
+						.toBeDefined();
 
-					noDexie.LU_Firmness.create({Description: "Hello", FirmnessID: "ddf5993e-0c72-417c-83fb-62f5612e191c"})
-						.then(function(data){
-							expect(data).toBeDefined();
+					noDexie.LU_Firmness.create({
+							Description: "Hello",
+							FirmnessID: "ddf5993e-0c72-417c-83fb-62f5612e191c"
+						})
+						.then(function (data) {
+							expect(data)
+								.toBeDefined();
 							done();
 
 						})
-						.catch(function(err){
+						.catch(function (err) {
 							console.error(err);
 							done();
 						});
@@ -106,9 +130,10 @@ describe("Testing noinfopath-data", function(){
 					$timeout.flush();
 
 				})
-				.catch(function(err){
+				.catch(function (err) {
 					console.error("XXX" + err);
-					expect("Failed to create indexedDB object. See Dexie Error above.").toBe(null);
+					expect("Failed to create indexedDB object. See Dexie Error above.")
+						.toBe(null);
 
 					done();
 				});
