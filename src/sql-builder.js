@@ -1,45 +1,45 @@
 /*
-* ## @interface INoQueryBuilder
-*
-* > INoQueryBuilder is a conceptual entity, it does not really exist
-* > the reality. This is because JavaScript does not implement interfaces
-* > like other languages do. This documentation should be considered as a
-* > guide for creating query providers compatible with NoInfoPath.
-*
-* ### Overview
-* INoQueryBuilder provides a service interface definition for converting a set
-* of NoInfoPath class related to querying data into a given query protocol.
-* An example of this is the ODATA 2.0 specification.
-*
-* ### Methods
-*
-* #### makeQuery(filters, sort, page)
-*
-* ##### Parameters
-*
-* |Name|Type|Descriptions|
-* |----|----|------------|
-* |filters|NoFilters|(Optional) Instance of a NoFilters class|
-* |sort|NoSort|(Optional) Instance of NoSort class|
-* |page|NoPage|(Optional) Instance of NoPage class|
-*
-* ##### Returns
-* Object
-*
-*/
+ * ## @interface INoQueryBuilder
+ *
+ * > INoQueryBuilder is a conceptual entity, it does not really exist
+ * > the reality. This is because JavaScript does not implement interfaces
+ * > like other languages do. This documentation should be considered as a
+ * > guide for creating query providers compatible with NoInfoPath.
+ *
+ * ### Overview
+ * INoQueryBuilder provides a service interface definition for converting a set
+ * of NoInfoPath class related to querying data into a given query protocol.
+ * An example of this is the ODATA 2.0 specification.
+ *
+ * ### Methods
+ *
+ * #### makeQuery(filters, sort, page)
+ *
+ * ##### Parameters
+ *
+ * |Name|Type|Descriptions|
+ * |----|----|------------|
+ * |filters|NoFilters|(Optional) Instance of a NoFilters class|
+ * |sort|NoSort|(Optional) Instance of NoSort class|
+ * |page|NoPage|(Optional) Instance of NoPage class|
+ *
+ * ##### Returns
+ * Object
+ *
+ */
 
-(function(angular, undefined){
+(function (angular, undefined) {
 	angular.module("noinfopath.data")
 		/*
-		* ## @service noSQLQueryBuilder : INoQueryBuilder `Deprecated`
-		*
-		* ### Overview
-		*
-		* Implements a INoQueryBuilder compatible service that converts NoFilters,
-		* NoSort, NoPage into a WebSQL compatible query string.
-		*
-		*/
-		.service("noSQLQueryBuilder", ['$filter', function($filter){
+		 * ## @service noSQLQueryBuilder : INoQueryBuilder `Deprecated`
+		 *
+		 * ### Overview
+		 *
+		 * Implements a INoQueryBuilder compatible service that converts NoFilters,
+		 * NoSort, NoPage into a WebSQL compatible query string.
+		 *
+		 */
+		.service("noSQLQueryBuilder", ['$filter', function ($filter) {
 			var sqlFilters = {
 					eq: "==",
 					neq: "!=",
@@ -47,172 +47,171 @@
 					gte: ">=",
 					lt: "<",
 					lte: "<=",
-					contains : "CONTAINS",
+					contains: "CONTAINS",
 					doesnotcontain: "NOT CONTAINS",
 					"in": "in"
-					//endswith: "endswith",
-					//startswith: "startswith"
+						//endswith: "endswith",
+						//startswith: "startswith"
 				},
 				mappers = {
 					pageSize: angular.noop,
 					page: angular.noop,
-					filter: function(params, filter) {
-						if (filter) {
+					filter: function (params, filter) {
+						if(filter) {
 							params.$filter = toSQLFilter(filter);
 						}
 					},
-					data: function(params, filter){
+					data: function (params, filter) {
 						mappers.filter(params, filter.filter);
 					},
-					sort: function(params, orderby) {
-						var sorts = angular.forEach(orderby, function(value) {
-							var order = value.field.replace(/\./g, "/");
+					sort: function (params, orderby) {
+						var sorts = angular.forEach(orderby, function (value) {
+								var order = value.field.replace(/\./g, "/");
 
-							if (value.dir === "desc") {
-								order += " desc";
-							}
+								if(value.dir === "desc") {
+									order += " desc";
+								}
 
-							return order;
-						}),
-						expr = sorts ? sorts.join(",") : undefined;
+								return order;
+							}),
+							expr = sorts ? sorts.join(",") : undefined;
 
-						if (expr) {
+						if(expr) {
 							params.$orderby = expr;
 						}
 					},
-					skip: function(params, skip) {
-						if (skip) {
+					skip: function (params, skip) {
+						if(skip) {
 							params.$skip = skip;
 						}
 					},
-					take: function(params, take) {
-						if (take) {
+					take: function (params, take) {
+						if(take) {
 							params.$top = take;
 						}
 					}
 				};
 
-			function isGuid(val){
-		    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
-		    }
+			function isGuid(val) {
+				return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+			}
 
-			function toSQLFilter (filters) {
-			    var result = [],
-			        idx,
-			        length,
-			        field,
-			        type,
-			        format,
-			        operator,
-			        value,
-			        ignoreCase,
+			function toSQLFilter(filters) {
+				var result = [],
+					idx,
+					length,
+					field,
+					type,
+					format,
+					operator,
+					value,
+					ignoreCase,
 					filter,
 					origFilter;
 
 
 
-			    for (idx = 0, length = filters.length; idx < length; idx++) {
-			    	filter = origFilter = filters[idx];
-			    	field = filter.column;
-			        value = filter.value;
-			        operator = filter.operator;
+				for(idx = 0, length = filters.length; idx < length; idx++) {
+					filter = origFilter = filters[idx];
+					field = filter.column;
+					value = filter.value;
+					operator = filter.operator;
 					logic = filter.logic;
 
-			    	if (filter.filters)
-			    	{
-			    		filter = toSQLFilter(filter);
-			    	}
-			    	else
-			    	{
-			    		ignoreCase = filter.ignoreCase;
-			            field = field.replace(/\./g, "/");
-			            filter = sqlFilters[operator];
+					if(filter.filters) {
+						filter = toSQLFilter(filter);
+					} else {
+						ignoreCase = filter.ignoreCase;
+						field = field.replace(/\./g, "/");
+						filter = sqlFilters[operator];
 
-			             if (filter && value !== undefined) {
+						if(filter && value !== undefined) {
 
-			                if (angular.isString(value)) {
-			                	if(isGuid(value)){
+							if(angular.isString(value)) {
+								if(isGuid(value)) {
 									format = "guid'{1}'";
-			                	}else{
-			                		format = "'{1}'";
-			                	}
+								} else {
+									format = "'{1}'";
+								}
 
-			                    value = value.replace(/'/g, "''");
+								value = value.replace(/'/g, "''");
 
 
-			                    // if (ignoreCase === true) {
-			                    //     field = "tolower(" + field + ")";
-			                    // }
+								// if (ignoreCase === true) {
+								//     field = "tolower(" + field + ")";
+								// }
 
-			                } else if (angular.isDate(value)) {
+							} else if(angular.isDate(value)) {
 
-		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
-		                        format = "{1}";
+								value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
+								format = "{1}";
 
-			                } else if (angular.isArray(value)){
-                                var tmpValue = "";
+							} else if(angular.isArray(value)) {
+								var tmpValue = "";
 
-                                for(var i = 0; i < value.length; i++){
-                                    var valum = value[i];
+								for(var i = 0; i < value.length; i++) {
+									var valum = value[i];
 
-                                    tmpValue = tmpValue + "'" + valum + "'";
+									tmpValue = tmpValue + "'" + valum + "'";
 
-                                    if(i + 1 != value.length){
-                                        tmpValue = tmpValue + ",";
-                                    }
-                                }
+									if(i + 1 != value.length) {
+										tmpValue = tmpValue + ",";
+									}
+								}
 
-                                value = tmpValue;
-                                format = "{1}";
+								value = tmpValue;
+								format = "{1}";
 
-                            } else {
-			                    format = "{1}";
-			                }
+							} else {
+								format = "{1}";
+							}
 
-			                // if (filter.length > 3) {
-			                //     if (filter !== "substringof") {
-			                //         format = "{0}({2}," + format + ")";
-			                //     } else {
-			                //         format = "{0}(" + format + ",{2})";
-			                //         // if (operator === "doesnotcontain") {
-			                //         //     if (useOdataFour) {
-			                //         //         format = "{0}({2},'{1}') eq -1";
-			                //         //         filter = "indexof";
-			                //         //     } else {
-			                //         //         format += " eq false";
-			                //         //     }
-			                //         // }
-			                //     }
-			                // } else {
-			                //     format = "{2} {0} " + format;
-			                // }
+							// if (filter.length > 3) {
+							//     if (filter !== "substringof") {
+							//         format = "{0}({2}," + format + ")";
+							//     } else {
+							//         format = "{0}(" + format + ",{2})";
+							//         // if (operator === "doesnotcontain") {
+							//         //     if (useOdataFour) {
+							//         //         format = "{0}({2},'{1}') eq -1";
+							//         //         filter = "indexof";
+							//         //     } else {
+							//         //         format += " eq false";
+							//         //     }
+							//         // }
+							//     }
+							// } else {
+							//     format = "{2} {0} " + format;
+							// }
 
-			                filter = $filter("format")(format, filter, value, field);
-			            }
-			    	}
+							filter = $filter("format")(format, filter, value, field);
+						}
+					}
 
-			    	origFilter.compiledFilter = filter;
-			        result.push(origFilter);
-			    }
+					origFilter.compiledFilter = filter;
+					result.push(origFilter);
+				}
 
- 				var SQLFilter = "", f;
+				var SQLFilter = "",
+					f;
 
- 				do{
+				do {
 
- 				}while(f);
+				} while (f);
 
- 				SQLFilter = SQLFilter.trim();
+				SQLFilter = SQLFilter.trim();
 
-		        return SQLFilter;
+				return SQLFilter;
 			}
 
-			function toSQLSort(sort){
-				var sorts = [], expr;
+			function toSQLSort(sort) {
+				var sorts = [],
+					expr;
 
-				angular.forEach(sort, function(value) {
+				angular.forEach(sort, function (value) {
 					var order = value.column.replace(/\./g, "/");
 
-					if (value.dir === "desc") {
+					if(value.dir === "desc") {
 						order += " desc";
 					}
 
@@ -224,15 +223,15 @@
 				return expr;
 			}
 
-			this.makeQuery = function(){
+			this.makeQuery = function () {
 				var query = {};
 
-				for(var ai in arguments){
+				for(var ai in arguments) {
 					var arg = arguments[ai];
 
 					//success and error must always be first, then
-					if(angular.isObject(arg)){
-						switch(arg.__type){
+					if(angular.isObject(arg)) {
+						switch(arg.__type) {
 							case "NoFilters":
 								query.$filter = toSQLFilter(arg);
 								break;
@@ -248,6 +247,5 @@
 
 				return query;
 			};
-		}])
-	;
+		}]);
 })(angular);

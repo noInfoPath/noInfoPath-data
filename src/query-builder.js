@@ -58,19 +58,19 @@
  * NoSort, NoPage into ODATA compatible query object.
  *
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	angular.module("noinfopath.data")
-		.service("noQueryParser", [function() {
+		.service("noQueryParser", [function () {
 			var filters, sort, paging;
 
-			this.parse = function(options) {
+			this.parse = function (options) {
 				var filters, sort, paging;
 
 				//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
 				//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
-				if (!!options.take) paging = new noInfoPath.data.NoPage(options.skip, options.take);
-				if (!!options.sort) sort = new noInfoPath.data.NoSort(options.sort);
-				if (!!options.filter) filters = new noInfoPath.data.NoFilters(options.filter);
+				if(!!options.take) paging = new noInfoPath.data.NoPage(options.skip, options.take);
+				if(!!options.sort) sort = new noInfoPath.data.NoSort(options.sort);
+				if(!!options.filter) filters = new noInfoPath.data.NoFilters(options.filter);
 
 				return toArray(filters, sort, paging);
 			};
@@ -78,19 +78,19 @@
 			function toArray(filters, sort, paging) {
 				var arr = [];
 
-				if (!!filters) arr.push(filters);
+				if(!!filters) arr.push(filters);
 
-				if (!!sort) arr.push(sort);
+				if(!!sort) arr.push(sort);
 
-				if (!!paging) arr.push(paging);
+				if(!!paging) arr.push(paging);
 
-				if (arr.length === 0) arr = undefined;
+				if(arr.length === 0) arr = undefined;
 
 				return arr;
 			}
 		}])
 
-	.service("noOdataQueryBuilder", ['$filter', function($filter) {
+	.service("noOdataQueryBuilder", ['$filter', function ($filter) {
 		var odataFilters = {
 				eq: "eq",
 				neq: "ne",
@@ -106,12 +106,12 @@
 			mappers = {
 				pageSize: angular.noop,
 				page: angular.noop,
-				filter: function(params, filter, useVersionFour) {
-					if (filter) {
+				filter: function (params, filter, useVersionFour) {
+					if(filter) {
 						params.$filter = toOdataFilter(filter, useVersionFour);
 					}
 				},
-				data: function(params, filter, useVersionFour) {
+				data: function (params, filter, useVersionFour) {
 					mappers.filter(params, filter.filter, useVersionFour);
 				},
 				// filter: function(params, filter, useVersionFour) {
@@ -119,11 +119,11 @@
 				//         params.$filter = SELF.toOdataFilter(filter, useVersionFour);
 				//     }
 				// },
-				sort: function(params, orderby) {
-					var sorts = angular.forEach(orderby, function(value) {
+				sort: function (params, orderby) {
+					var sorts = angular.forEach(orderby, function (value) {
 							var order = value.field.replace(/\./g, "/");
 
-							if (value.dir === "desc") {
+							if(value.dir === "desc") {
 								order += " desc";
 							}
 
@@ -131,17 +131,17 @@
 						}),
 						expr = sorts ? sorts.join(",") : undefined;
 
-					if (expr) {
+					if(expr) {
 						params.$orderby = expr;
 					}
 				},
-				skip: function(params, skip) {
-					if (skip) {
+				skip: function (params, skip) {
+					if(skip) {
 						params.$skip = skip;
 					}
 				},
-				take: function(params, take) {
-					if (take) {
+				take: function (params, take) {
+					if(take) {
 						params.$top = take;
 					}
 				}
@@ -160,25 +160,27 @@
 				filter,
 				origFilter;
 
-            console.log(filters);
+			console.log(filters);
 
-            if(filters.__type === "NoFilters"){
-                filters = filters.toKendo();
-                filters = filters.length > 0 ? filters[0] : {filters:[]};
-            }
+			if(filters.__type === "NoFilters") {
+				filters = filters.toKendo();
+				filters = filters.length > 0 ? filters[0] : {
+					filters: []
+				};
+			}
 
-            if(filters.__type === "NoFilter"){
-                filters = filters.toKendo();
-            }
+			if(filters.__type === "NoFilter") {
+				filters = filters.toKendo();
+			}
 
-			for (var idx = 0; idx < filters.filters.length; idx++) {
+			for(var idx = 0; idx < filters.filters.length; idx++) {
 				filter = origFilter = filters.filters[idx];
 				field = filter.column;
 				value = filter.value;
 				operator = filter.operator;
 				logic = filter.logic;
 
-				if (filter.filters) {
+				if(filter.filters) {
 					filter = toOdataFilter(filter, useOdataFour);
 				} else {
 					ignoreCase = filter.ignoreCase;
@@ -189,10 +191,10 @@
 					//     filter = odataFiltersVersionFour[operator];
 					// }
 
-					if (filter && value !== undefined) {
+					if(filter && value !== undefined) {
 
-						if (angular.isString(value)) {
-							if (noInfoPath.isGuid(value)) {
+						if(angular.isString(value)) {
+							if(noInfoPath.isGuid(value)) {
 								format = "guid'{1}'";
 							} else {
 								format = "'{1}'";
@@ -205,8 +207,8 @@
 							//     field = "tolower(" + field + ")";
 							// }
 
-						} else if (angular.isDate(value)) {
-							if (useOdataFour) {
+						} else if(angular.isDate(value)) {
+							if(useOdataFour) {
 								format = "yyyy-MM-ddTHH:mm:ss+00:00";
 							} else {
 								value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
@@ -216,13 +218,13 @@
 							format = "{1}";
 						}
 
-						if (filter.length > 3) {
-							if (filter !== "substringof") {
+						if(filter.length > 3) {
+							if(filter !== "substringof") {
 								format = "{0}({2}," + format + ")";
 							} else {
 								format = "{0}(" + format + ",{2})";
-								if (operator === "doesnotcontain") {
-									if (useOdataFour) {
+								if(operator === "doesnotcontain") {
+									if(useOdataFour) {
 										format = "{0}({2},'{1}') eq -1";
 										filter = "indexof";
 									} else {
@@ -249,11 +251,11 @@
 			do {
 				f = result.pop();
 
-				if (f) {
+				if(f) {
 
 					odataFilter = odataFilter + "(" + f.compiledFilter + ")";
 
-					if (f.logic) {
+					if(f.logic) {
 						odataFilter = odataFilter + " " + f.logic + " ";
 					} else {
 						f = null;
@@ -272,11 +274,11 @@
 			var sorts = [],
 				expr;
 
-			angular.forEach(sort, function(value) {
+			angular.forEach(sort, function (value) {
 				console.log(value);
 				var order = value.column.replace(/\./g, "/");
 
-				if (value.dir === "desc") {
+				if(value.dir === "desc") {
 					order += " desc";
 				}
 
@@ -288,15 +290,15 @@
 			return expr;
 		}
 
-		this.makeQuery = function() {
+		this.makeQuery = function () {
 			var query = {};
 
-			for (var ai in arguments) {
+			for(var ai in arguments) {
 				var arg = arguments[ai];
 
 				//success and error must always be first, then
-				if (angular.isObject(arg)) {
-					switch (arg.__type) {
+				if(angular.isObject(arg)) {
+					switch(arg.__type) {
 						case "NoFilters":
 							query.$filter = arg.toODATA();
 							break;
@@ -305,8 +307,8 @@
 							break;
 						case "NoPage":
 							query.$skip = arg.skip;
-                            query.$top = arg.take;
-                            query.$inlinecount = "allpages";
+							query.$top = arg.take;
+							query.$inlinecount = "allpages";
 							break;
 					}
 				}

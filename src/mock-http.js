@@ -1,19 +1,19 @@
 //mock-http.js
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	function NoMockHTTPService($injector, $q, $rootScope, noLogService) {
 		var THIS = this;
 
-		this.whenReady = function(tables) {
+		this.whenReady = function (tables) {
 
-			return $q(function(resolve, reject) {
-				if ($rootScope.noMockHTTPInitialized) {
+			return $q(function (resolve, reject) {
+				if($rootScope.noMockHTTPInitialized) {
 					noLogService.log("noMockHTTP Ready.");
 					resolve();
 				} else {
-					$rootScope.$watch("noMockHTTPServiceInitialized", function(newval) {
-						if (newval) {
+					$rootScope.$watch("noMockHTTPServiceInitialized", function (newval) {
+						if(newval) {
 							noLogService.log("noMockHTTP ready.");
 							resolve();
 						}
@@ -23,10 +23,10 @@
 			});
 		};
 
-		this.configure = function(noUser, schema ) {
+		this.configure = function (noUser, schema) {
 			var jsonDataProvider = $injector.get(schema.config.dataProvider);
-			return $q(function(resolve, reject) {
-				for (var t in schema.tables) {
+			return $q(function (resolve, reject) {
+				for(var t in schema.tables) {
 					var table = schema.tables[t];
 					THIS[t] = new NoTable($q, t, table, jsonDataProvider[t]);
 				}
@@ -40,7 +40,7 @@
 
 		};
 
-		this.getDatabase = function(databaseName) {
+		this.getDatabase = function (databaseName) {
 			return $rootScope["noMockHTTP_" + databaseName];
 		};
 
@@ -53,32 +53,32 @@
 
 		Object.defineProperties(this, {
 			entity: {
-				get: function() {
+				get: function () {
 					return _table;
 				}
 			}
 		});
 
-		this.noCreate = function(data) {
+		this.noCreate = function (data) {
 
 			return $q.when({});
 		};
 
-		this.noRead = function() {
+		this.noRead = function () {
 			return $q.when(new noInfoPath.data.NoResults(data));
 		};
 
-		this.noUpdate = function(data) {
+		this.noUpdate = function (data) {
 
 			return $q.when({});
 
 		};
 
-		this.noDestroy = function(data) {
+		this.noDestroy = function (data) {
 			return $q.when("200");
 		};
 
-		this.noOne = function(query) {
+		this.noOne = function (query) {
 			return $q.when({});
 
 		};
@@ -87,9 +87,9 @@
 
 	angular.module('noinfopath.data')
 
-		.provider("noMockHTTP", [function() {
-			this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function($injector, $q, $rootScope, noLogService) {
-				return new NoMockHTTPService($injector, $q, $rootScope, noLogService);
+	.provider("noMockHTTP", [function () {
+		this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function ($injector, $q, $rootScope, noLogService) {
+			return new NoMockHTTPService($injector, $q, $rootScope, noLogService);
 			}];
 		}]);
 })(angular);

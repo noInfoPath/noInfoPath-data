@@ -1,25 +1,25 @@
 //misc.js
-(function(angular, undefined) {
+(function (angular, undefined) {
 	angular.module("noinfopath.data")
-		.service("noFullName", [function() {
+		.service("noFullName", [function () {
 			var temp;
 
 			function parse(inval) {
 				temp = inval.split(" ");
 			}
 
-			this.firstName = function(fullName) {
+			this.firstName = function (fullName) {
 				parse(fullName);
-				if (temp && temp.length > 0) {
+				if(temp && temp.length > 0) {
 					return temp[0];
 				} else {
 					return "";
 				}
 			};
 
-			this.lastName = function(fullName) {
+			this.lastName = function (fullName) {
 				parse(fullName);
-				if (temp && temp.length > 1) {
+				if(temp && temp.length > 1) {
 					return temp[1];
 				} else {
 					return "";
@@ -45,14 +45,14 @@
 	 *	```
 	 */
 
-	.service("noCalculatedFields", [function(){
+	.service("noCalculatedFields", [function () {
 
-		function timespanDays(parserCfg, data){
+		function timespanDays(parserCfg, data) {
 			var d1 = data[parserCfg.parser.fields.date1] ? new Date(data[parserCfg.parser.fields.date1]) : "",
 				d2 = data[parserCfg.parser.fields.date2] ? new Date(data[parserCfg.parser.fields.date2]) : "",
 				rd;
 
-			if (angular.isDate(d1) && angular.isDate(d2)){
+			if(angular.isDate(d1) && angular.isDate(d2)) {
 				rd = (d1 - d2) / 1000 / 60 / 60 / 24;
 			}
 
@@ -63,16 +63,16 @@
 			"timespanDays": timespanDays
 		};
 
-		this.calculate = function(dsConfig, data) {
+		this.calculate = function (dsConfig, data) {
 
 			var calculatedFields = dsConfig.calculatedFields;
 
-			if (calculatedFields) {
+			if(calculatedFields) {
 
-				for (var d = 0; d < data.length; d++) {
+				for(var d = 0; d < data.length; d++) {
 					var datum = data[d];
 
-					for (var i = 0; i < calculatedFields.length; i++) {
+					for(var i = 0; i < calculatedFields.length; i++) {
 						var cf = calculatedFields[i],
 							provider = cf.parser.provider ? $injector.get(cf.parser.provider) : fns,
 							method = provider[cf.parser.method];

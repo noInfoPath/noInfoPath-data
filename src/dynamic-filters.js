@@ -1,5 +1,5 @@
 //dynamic-filter.js
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	function NoDynamicFilterService($injector) {
@@ -13,7 +13,7 @@
 		 */
 		function normalizeFilterValue(value, type) {
 			var outval = value;
-			switch (type) {
+			switch(type) {
 				case "date":
 					outval = noInfoPath.toDbDate(value);
 					break;
@@ -28,7 +28,7 @@
 
 		function resolveValueSource(valueCfg, scope) {
 			var source;
-			if (["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
+			if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
 				source = $injector.get(valueCfg.source);
 			} else {
 				source = scope;
@@ -49,7 +49,7 @@
 		 *	> NOTE: Currently $rootScope is the only supported injectable source.
 		 */
 		function configureValueWatch(dsConfig, filterCfg, source, cb) {
-			if (source.$watch && filterCfg.value.watch && cb) {
+			if(source.$watch && filterCfg.value.watch && cb) {
 				var filter = angular.copy(filterCfg);
 				source.$watch(filterCfg.value.property, cb.bind(filter, dsConfig, filterCfg));
 			}
@@ -87,11 +87,11 @@
 			 *	string "scope" or the name of an AngularJS injectable service that
 			 *	is a JavaScript object. Possible services could be $rootScope or $stateParams.
 			 */
-			for (var f in filters) {
+			for(var f in filters) {
 				var filter = filters[f],
 					source, value;
-				if (angular.isObject(filter.value)) {
-					if (angular.isArray(filter.value)) {
+				if(angular.isObject(filter.value)) {
+					if(angular.isArray(filter.value)) {
 						values[filter.field] = normalizeFilterValue(filter.value); // in statement
 					} else {
 						source = resolveValueSource(filter.value, scope);
@@ -108,13 +108,13 @@
 		function makeFilters(dsConfig, scope, watchCB) {
 			var filters = [],
 				filterValues;
-			if (dsConfig.filter) {
+			if(dsConfig.filter) {
 				filterValues = resolveFilterValues(dsConfig, dsConfig.filter, scope, watchCB);
-				for (var f in dsConfig.filter) {
+				for(var f in dsConfig.filter) {
 					var filter = dsConfig.filter[f],
 						value;
-					if (angular.isObject(filter.value)) {
-						if (angular.isArray(filter.value)) {
+					if(angular.isObject(filter.value)) {
+						if(angular.isArray(filter.value)) {
 							value = filter.value; // in statement
 						} else {
 							value = filterValues[filter.field];

@@ -1,27 +1,27 @@
 var noWebSqlStatementFactory;
 
-describe("Tesing noWebSqlStatementFactory", function() {
-	beforeEach(function() {
+describe("Tesing noWebSqlStatementFactory", function () {
+	beforeEach(function () {
 		module("noinfopath.data");
 
-		inject(function($injector) {
+		inject(function ($injector) {
 			noWebSqlStatementFactory = $injector.get("noWebSqlStatementFactory");
 		});
 	});
 
 
-	it("should have been injected.", function() {
+	it("should have been injected.", function () {
 		expect(noWebSqlStatementFactory);
 	});
 
-	describe("each public method should exist and work as expected.", function(){
-		function createTest(method, data){
-			describe("testing " + method, function(){
-				it("should exist", function(){
+	describe("each public method should exist and work as expected.", function () {
+		function createTest(method, data) {
+			describe("testing " + method, function () {
+				it("should exist", function () {
 					expect(noWebSqlStatementFactory[method]);
 				});
 
-				it("should return expected results", function(){
+				it("should return expected results", function () {
 					//console.log(data);
 
 					var fn = noWebSqlStatementFactory[method],
@@ -29,12 +29,13 @@ describe("Tesing noWebSqlStatementFactory", function() {
 
 					expect(r);
 
-					expect(r).toEqual(data.expected);
+					expect(r)
+						.toEqual(data.expected);
 				});
 			});
 		}
 
-		for(var m in noWebSqlStatmentFactoryMocks){
+		for(var m in noWebSqlStatmentFactoryMocks) {
 			var data = noWebSqlStatmentFactoryMocks[m];
 
 			createTest(m, data);

@@ -38,7 +38,7 @@
  *	AngularJS::Promise
  */
 var GloboTest = {};
-(function(angular, Dexie, undefined) {
+(function (angular, Dexie, undefined) {
 	"use strict";
 	// TODO: Finish documentation
 	/*
@@ -120,58 +120,58 @@ var GloboTest = {};
 
 		Object.defineProperties(this, {
 			"store": {
-				"get": function() {
+				"get": function () {
 					return _config;
 				}
 			},
 			"tables": {
-				"get": function() {
+				"get": function () {
 					return _tables;
 				}
 			},
 			"lookups": {
-				"get": function() {
-					return _.filter(_tables, function(o) {
+				"get": function () {
+					return _.filter(_tables, function (o) {
 						return o.entityName.indexOf("LU") === 0;
 					});
 				}
 			},
 			"isReady": {
-				"get": function() {
+				"get": function () {
 					return _.size(_tables) > 0;
 				}
 			},
 			"sql": {
-				"get": function() {
+				"get": function () {
 					return _sql;
 				}
 			},
 			"views": {
-				"get": function() {
+				"get": function () {
 					return _views;
 				}
 			},
 			"config": {
-				"get": function() {
+				"get": function () {
 					return _schemaConfig;
 				}
 			}
 		});
 
-		this.entity = function(name) {
-			return _.find(_tables, function(v) {
+		this.entity = function (name) {
+			return _.find(_tables, function (v) {
 				return v.entityName === name;
 			});
 		};
 
-		_views = _.filter(_tables, function(o) {
+		_views = _.filter(_tables, function (o) {
 			return o.entityType == "V";
 		});
 
 
 
 
-		angular.forEach(_tables, function(table, tableName) {
+		angular.forEach(_tables, function (table, tableName) {
 			var keys = [table.primaryKey];
 
 			keys = keys.concat(_.uniq(_.pluck(table.foreignKeys, "column")), table.indexes || []);
@@ -194,26 +194,26 @@ var GloboTest = {};
 		var noConfig,
 			promises = [],
 			schemaSourceProviders = {
-				"inline": function(key, schemaConfig) {
-					return $timeout(function() {
+				"inline": function (key, schemaConfig) {
+					return $timeout(function () {
 						return schemaConfig.schemaSource.schema;
 					});
 				},
-				"noDBSchema": function(key, schemaConfig) {
+				"noDBSchema": function (key, schemaConfig) {
 					return getRemoteSchema(noConfig)
-						.then(function(resp) {
+						.then(function (resp) {
 							return resp.data;
 						})
-						.catch(function(err) {
+						.catch(function (err) {
 							throw err;
 						});
 				},
-				"cached": function(key, schemaConfig) {
+				"cached": function (key, schemaConfig) {
 					var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
 
-					return $q(function(resolve, reject) {
-						$rootScope.$watch(schemaKey, function(newval) {
-							if (newval) {
+					return $q(function (resolve, reject) {
+						$rootScope.$watch(schemaKey, function (newval) {
+							if(newval) {
 								resolve(newval.tables);
 							}
 						});
@@ -234,10 +234,10 @@ var GloboTest = {};
 			};
 
 			return $http(req)
-				.then(function(resp) {
+				.then(function (resp) {
 					return resp;
 				})
-				.catch(function(resp) {
+				.catch(function (resp) {
 					throw resp;
 				});
 		}
@@ -250,23 +250,23 @@ var GloboTest = {};
 			var deferred = $q.defer(),
 				schemaProvider = schemaConfig.schemaSource.provider;
 
-			if ($rootScope[schemaKey]) {
+			if($rootScope[schemaKey]) {
 				deferred.resolve(schemaKey);
 			} else {
-				$rootScope.$watch(schemaKey, function(newval, oldval) {
-					if (newval) {
+				$rootScope.$watch(schemaKey, function (newval, oldval) {
+					if(newval) {
 						noLocalStorage.setItem(schemaKey, newval.tables);
 						deferred.resolve(schemaKey);
 					}
 				});
 
 				schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
-					.then(function(schema) {
+					.then(function (schema) {
 						$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
 					})
-					.catch(function() {
+					.catch(function () {
 						var schema = checkCache(schemaKey);
-						if (schema) {
+						if(schema) {
 							$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
 						} else {
 							deferred.reject("noDbSchemaServiceOffline");
@@ -283,13 +283,13 @@ var GloboTest = {};
 		/**
 		 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
 		 */
-		this.whenReady = function(config) {
+		this.whenReady = function (config) {
 			noConfig = config.current;
 
 			var noDbSchemaConfig = noConfig.noDbSchema,
 				promises = [];
 
-			for (var c in noDbSchemaConfig) {
+			for(var c in noDbSchemaConfig) {
 				var schemaConfig = noDbSchemaConfig[c],
 					schemaKey = "noDbSchema_" + schemaConfig.dbName;
 
@@ -297,20 +297,20 @@ var GloboTest = {};
 			}
 
 			return $q.all(promises)
-				.then(function(results) {
+				.then(function (results) {
 					$rootScope.noDbSchema_names = results;
 					return results;
 				})
-				.catch(function(err) {
+				.catch(function (err) {
 					throw err;
 				});
 
 		};
 
-		this.configureDatabases = function(noUser, noDbSchemaConfigs) {
+		this.configureDatabases = function (noUser, noDbSchemaConfigs) {
 			var promises = [];
 
-			for (var s in noDbSchemaConfigs) {
+			for(var s in noDbSchemaConfigs) {
 				var schemaName = noDbSchemaConfigs[s],
 					schema = $rootScope[schemaName],
 					provider = $injector.get(schema.config.provider);
@@ -320,21 +320,21 @@ var GloboTest = {};
 			}
 
 			return $q.all(promises)
-				.then(function(resp) {
+				.then(function (resp) {
 					console.log(resp);
 				})
-				.catch(function(err) {
+				.catch(function (err) {
 					console.error(err);
 				});
 
 		};
 
-		this.getSchema = function(dbName) {
+		this.getSchema = function (dbName) {
 			var schema = $rootScope["noDbSchema_" + dbName];
 			return schema;
 		};
 
-		this.create = function(noConfig, noDbConfig, rawDbSchema) {
+		this.create = function (noConfig, noDbConfig, rawDbSchema) {
 			return new NoDbSchema(_, noConfig, noDbConfig, rawDbSchema);
 		};
 	}
@@ -356,7 +356,7 @@ var GloboTest = {};
 		|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 	*/
 
-	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
+	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function ($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
 
 		return new NoDbSchemaFactory($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector);
 	}]);

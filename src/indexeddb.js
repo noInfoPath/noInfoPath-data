@@ -161,7 +161,7 @@
  *
  *	### \_extendDexieTables
  */
-(function(angular, Dexie, undefined) {
+(function (angular, Dexie, undefined) {
 	"use strict";
 
 	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
@@ -171,7 +171,7 @@
 		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
 			var transData = result2 && result2.rows.length ? result2 : result1;
 
-			if (trans) trans.addChange(tableName, transData, operation);
+			if(trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
 
 		}
@@ -182,13 +182,13 @@
 
 		Object.defineProperties(this, {
 			"isInitialized": {
-				"get": function() {
+				"get": function () {
 					return !!noLocalStorage.getItem(_name);
 				}
 			}
 		});
 
-		this.configure = function(noUser, schema) {
+		this.configure = function (noUser, schema) {
 			var _dexie = new Dexie(schema.config.dbName),
 				noIndexedDbInitialized = "noIndexedDb_" + schema.config.dbName;
 
@@ -196,8 +196,8 @@
 				function _toDexieClass(tsqlTableSchema) {
 					var _table = {};
 
-					angular.forEach(tsqlTableSchema.columns, function(column, columnName) {
-						switch (column.type) {
+					angular.forEach(tsqlTableSchema.columns, function (column, columnName) {
+						switch(column.type) {
 							case "uniqueidentifier":
 							case "nvarchar":
 							case "varchar":
@@ -223,7 +223,7 @@
 					return _table;
 				}
 
-				angular.forEach(dbSchema, function(table, tableName) {
+				angular.forEach(dbSchema, function (table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					table.parentSchema = schema;
@@ -242,32 +242,32 @@
 				$rootScope.$digest();
 			}
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				_dexie.currentUser = noUser;
-				_dexie.on('error', function(err) {
+				_dexie.on('error', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.error("Dexie Error: " + err);
 					_reject($rootScope, reject, err);
 				});
 
-				_dexie.on('blocked', function(err) {
+				_dexie.on('blocked', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.warn("IndexedDB is currently execting a blocking operation.");
 					_reject($rootScope, reject, err);
 				});
 
-				_dexie.on('versionchange', function(err) {
+				_dexie.on('versionchange', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					//noLogService.error("IndexedDB as detected a version change");
 					_reject($rootScope, reject, "IndexedDB as detected a version change");
 				});
 
-				_dexie.on('populate', function(err) {
+				_dexie.on('populate', function (err) {
 					//Log to console or show en error indicator somewhere in your GUI...
 					//noLogService.warn("IndedexDB populate...  not implemented.");
 				});
 
-				_dexie.on('ready', function(data) {
+				_dexie.on('ready', function (data) {
 					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
 					// Log to console or show en error indicator somewhere in your GUI...
 					$rootScope[noIndexedDbInitialized] = _dexie;
@@ -276,7 +276,7 @@
 
 				});
 
-				if (_dexie.isOpen()) {
+				if(_dexie.isOpen()) {
 					//Do nothing, `ready` event should bubble up.
 
 					// $timeout(function() {
@@ -284,7 +284,7 @@
 					// 	window.noInfoPath.digest(deferred.resolve);
 					// });
 				} else {
-					if (_.size(schema.store)) {
+					if(_.size(schema.store)) {
 						_dexie.version(schema.config.version)
 							.stores(schema.store);
 						_extendDexieTables.call(_dexie, schema.tables);
@@ -299,17 +299,17 @@
 
 		};
 
-		this.whenReady = function(config) {
+		this.whenReady = function (config) {
 			var deferred = $q.defer();
 
-			$timeout(function() {
+			$timeout(function () {
 				var noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
 
-				if ($rootScope[noIndexedDbInitialized]) {
+				if($rootScope[noIndexedDbInitialized]) {
 					deferred.resolve();
 				} else {
-					$rootScope.$watch(noIndexedDbInitialized, function(newval, oldval, scope) {
-						if (newval) {
+					$rootScope.$watch(noIndexedDbInitialized, function (newval, oldval, scope) {
+						if(newval) {
 							deferred.resolve();
 						}
 					});
@@ -319,7 +319,7 @@
 			return deferred.promise;
 		};
 
-		this.getDatabase = function(databaseName) {
+		this.getDatabase = function (databaseName) {
 			return $rootScope["noIndexedDb_" + databaseName];
 		};
 
@@ -336,27 +336,27 @@
 					"in": "anyOfIgnoreCase"
 				};
 
-			db.WriteableTable.prototype.noCreate = function(data, trans) {
+			db.WriteableTable.prototype.noCreate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this;
 
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
-				_dexie.transaction("rw", table, function() {
+				_dexie.transaction("rw", table, function () {
 						data.CreatedBy = _dexie.currentUser.userId;
 						data.DateCreated = noInfoPath.toDbDate(new Date());
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 
-						if (!data[table.schema.primKey.name]) {
+						if(!data[table.schema.primKey.name]) {
 							data[table.schema.primKey.name] = noInfoPath.createUUID();
 						}
 
 						_dexie.nosync = true;
 
 						table.add(data)
-							.then(function(data) {
+							.then(function (data) {
 								//noLogService.log("addSuccessful", data);
 
 								table.get(data)
@@ -364,12 +364,12 @@
 									.catch(_transactionFault.bind(null, deferred.reject));
 
 							})
-							.catch(function(err) {
+							.catch(function (err) {
 								//deferred.reject("noCRUD::create " + err);
 								deferred.reject(err);
 							});
 					})
-					.catch(function(err) {
+					.catch(function (err) {
 						deferred.reject("noCRUD::createTrans " + err);
 						deferred.reject(err);
 					});
@@ -398,48 +398,48 @@
 						"in": "in"
 					},
 					compareOps = {
-						"is null": function(a) {
+						"is null": function (a) {
 							return a === null;
 						},
-						"is not null": function(a) {
+						"is not null": function (a) {
 							return a !== null;
 						},
-						"eq": function(a, b) {
+						"eq": function (a, b) {
 							return a === b;
 						},
-						"ne": function(a, b) {
+						"ne": function (a, b) {
 							return a !== b;
 						},
-						"gt": function(a, b) {
+						"gt": function (a, b) {
 							return a > b;
 						},
-						"ge": function(a, b) {
+						"ge": function (a, b) {
 							return a >= b;
 						},
-						"lt": function(a, b) {
+						"lt": function (a, b) {
 							return a < b;
 						},
-						"le": function(a, b) {
+						"le": function (a, b) {
 							return a <= b;
 						},
-						"contains": function(a, b) {
+						"contains": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.indexOf(b) > -1 : false;
 						},
-						"notcontains": function(a, b) {
+						"notcontains": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.indexOf(b) === -1 : false;
 						},
-						"startswith": function(a, b) {
+						"startswith": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.indexOf(b) === 0 : false;
 						},
-						"endswith": function(a, b) {
+						"endswith": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.lastIndexOf(b) > -1 : false;
 						},
-						"in": function(a, b) {
-							return  a.indexof(b) > -1;
+						"in": function (a, b) {
+							return a.indexof(b) > -1;
 						}
 					},
 					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
@@ -459,19 +459,19 @@
 						return ok;
 					}
 
-					if (!!filters) {
-						for (var fi = 0; fi < filters.length; fi++) {
+					if(!!filters) {
+						for(var fi = 0; fi < filters.length; fi++) {
 							var filter = filters[fi],
 								ex = filter.filters[0],
 								where, evaluator, logic;
 
-							if (fi === 0) {
+							if(fi === 0) {
 								//When `fi` is 0 create the WhereClause, extract the evaluator
 								//that will be used to create a collection based on the filter.
 								where = table.where(filter.column);
 
 								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
-								if (table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
+								if(table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
 									evaluator = where[indexedOperators[ex.operator]];
 									collection = evaluator.call(where, ex.value);
 								} else {
@@ -480,7 +480,7 @@
 
 								logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
 							} else {
-								if (logic) {
+								if(logic) {
 									collection = logic(_logicCB.bind(null, filter, ex));
 								}
 							}
@@ -501,18 +501,18 @@
 							bval = noInfoPath.getItem(b, s.column);
 
 
-						if (s.dir === "desc") {
-							if (aval < bval) {
+						if(s.dir === "desc") {
+							if(aval < bval) {
 								return 1;
 							}
-							if (aval > bval) {
+							if(aval > bval) {
 								return -1;
 							}
 						} else {
-							if (aval > bval) {
+							if(aval > bval) {
 								return 1;
 							}
-							if (aval < bval) {
+							if(aval < bval) {
 								return -1;
 							}
 						}
@@ -522,8 +522,8 @@
 
 					}
 
-					if (sorts) {
-						for (var s = 0; s < sorts.length; s++) {
+					if(sorts) {
+						for(var s = 0; s < sorts.length; s++) {
 							var sort = sorts[s];
 
 							arrayOfThings.sort(_compare.bind(null, sort));
@@ -532,7 +532,7 @@
 				}
 
 				function _page(page, arrayOfThings) {
-					if (page) {
+					if(page) {
 						arrayOfThings.page(page);
 					}
 				}
@@ -553,11 +553,11 @@
 						ft = theDb[col.refTable];
 
 					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
-					if (!ft) {
+					if(!ft) {
 						ft = theDb[aliases[col.refTable]];
 					}
 
-					if (!ft) throw "Invalid refTable " + aliases[col.refTable];
+					if(!ft) throw "Invalid refTable " + aliases[col.refTable];
 
 					// if(tableCache[col.refTable]) {
 					// 	tbl = tableCache[col.refTable];
@@ -565,7 +565,7 @@
 					// 	tableCache[col.refTable] = tbl;
 					// }
 
-					if (!keys) {
+					if(!keys) {
 						throw {
 							error: "Invalid key value",
 							col: col,
@@ -577,7 +577,7 @@
 					filters.quickAdd(col.refColumn, "in", keys);
 
 					//follow the foreign key and get is data.
-					if (keys.length > 0) {
+					if(keys.length > 0) {
 						return ft.noRead(filters)
 							.catch(_expand_fault.bind(table, col, keys, filters));
 					} else {
@@ -587,7 +587,7 @@
 				}
 
 				function _finalResults(finalResults) {
-					if (finalResults.exception) {
+					if(finalResults.exception) {
 						console.warn(finalResults.exception);
 						resolve(new noInfoPath.data.NoResults([]));
 					} else {
@@ -603,10 +603,10 @@
 
 				function _finished_following_fk(columns, arrayOfThings, refData) {
 
-					for (var i = 0; i < arrayOfThings.length; i++) {
+					for(var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
 
-						for (var c in columns) {
+						for(var c in columns) {
 							var col = columns[c],
 								key = item[col.column],
 								refTable = refData[col.refTable].paged,
@@ -628,10 +628,10 @@
 
 				function _finished_following_meta(columns, arrayOfThings, refData) {
 					console.log(columns, arrayOfThings, refData);
-					for (var i = 0; i < arrayOfThings.length; i++) {
+					for(var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
 
-						for (var c in columns) {
+						for(var c in columns) {
 							var col = columns[c],
 								key = item[col.columnName],
 								data = refData[key];
@@ -656,7 +656,7 @@
 					var promises = {},
 						columns = table.noInfoPath.foreignKeys;
 
-					for (var c in columns) {
+					for(var c in columns) {
 						var col = columns[c],
 							keys = _.pluck(arrayOfThings, col.column);
 
@@ -709,18 +709,18 @@
 						noEntity = ctx.table.noInfoPath,
 						columns = noEntity.columns;
 
-					for (var colName in columns) {
+					for(var colName in columns) {
 						var col = columns[colName];
 
-						if (col.followMetaDataKeys) {
-							for (var i = 0; i < arrayOfThings.length; i++) {
+						if(col.followMetaDataKeys) {
+							for(var i = 0; i < arrayOfThings.length; i++) {
 								var thing = arrayOfThings[i],
 									meta = thing.MetaDataDefinitionID,
 									fiters;
 
 								//Only folow lookup columns.
-								if (meta.InputType === "combobox") {
-									if (!!thing[colName]) {
+								if(meta.InputType === "combobox") {
+									if(!!thing[colName]) {
 										filters = new noInfoPath.data.NoFilters();
 										filters.quickAdd(meta.ValueField, "eq", thing[colName]);
 
@@ -763,12 +763,12 @@
 
 				}
 
-				for (var ai in arguments) {
+				for(var ai in arguments) {
 					var arg = arguments[ai];
 
 					//success and error must always be first, then
-					if (angular.isObject(arg)) {
-						switch (arg.__type) {
+					if(angular.isObject(arg)) {
+						switch(arg.__type) {
 							case "NoFilters":
 								filters = arg;
 								break;
@@ -789,7 +789,7 @@
 					sort: sort
 				};
 
-				return $q(function(resolve, reject) {
+				return $q(function (resolve, reject) {
 					var collection,
 						data,
 						promise;
@@ -804,7 +804,7 @@
 							.catch(_fault.bind(ctx, ctx, reject));
 						//.then(_finish(collection, table, resolve, reject));
 
-					} catch (err) {
+					} catch(err) {
 						console.error(err);
 						reject(err);
 					}
@@ -820,14 +820,14 @@
 
 			db.Table.prototype.noRead = NoRead_new;
 
-			db.WriteableTable.prototype.noUpdate = function(data, trans) {
+			db.WriteableTable.prototype.noUpdate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this,
 					key = data[table.noInfoPath.primaryKey];
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
-				_dexie.transaction("rw", table, function() {
+				_dexie.transaction("rw", table, function () {
 						Dexie.currentTransaction.nosync = true;
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
@@ -837,14 +837,14 @@
 
 					})
 					.then(angular.noop())
-					.catch(function(err) {
+					.catch(function (err) {
 						window.noInfoPath.digestError(deferred.reject, err);
 					});
 
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noDestroy = function(data, trans, filters) {
+			db.WriteableTable.prototype.noDestroy = function (data, trans, filters) {
 				var deferred = $q.defer(),
 					table = this,
 					key = data[table.noInfoPath.primaryKey],
@@ -853,10 +853,10 @@
 				//noLogService.log("adding: ", _dexie.currentUser);
 				//noLogService.log(key);
 
-				_dexie.transaction("rw", table, function() {
+				_dexie.transaction("rw", table, function () {
 						Dexie.currentTransaction.nosync = true;
 
-						if (!!filters) {
+						if(!!filters) {
 							//First filter will use where();
 							var filter = filters[0],
 								where = table.where(filter.column),
@@ -876,23 +876,23 @@
 						}
 					})
 					.then(angular.noop())
-					.catch(function(err) {
+					.catch(function (err) {
 						deferred.reject(err);
 					});
 
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noOne = function(data) {
+			db.WriteableTable.prototype.noOne = function (data) {
 				var table = this,
 					key = data[table.noInfoPath.primaryKey];
 
-				return $q(function(resolve, reject) {
+				return $q(function (resolve, reject) {
 					table.noRead(data)
-						.then(function(results) {
+						.then(function (results) {
 							resolve(results.length > 0 ? results[0] : {});
 						})
-						.catch(function(err) {
+						.catch(function (err) {
 							reject(err);
 						});
 
@@ -900,39 +900,39 @@
 
 			};
 
-			db.WriteableTable.prototype.bulkLoad = function(data, progress) {
+			db.WriteableTable.prototype.bulkLoad = function (data, progress) {
 				var deferred = $q.defer(),
 					table = this;
 				//var table = this;
 				function _import(data, progress) {
 					var total = data ? data.length : 0;
 
-					$timeout(function() {
+					$timeout(function () {
 						//progress.rows.start({max: total});
 						deferred.notify(progress);
 					});
 
 					var currentItem = 0;
 
-					_dexie.transaction('rw', table, function() {
+					_dexie.transaction('rw', table, function () {
 						Dexie.currentTransaction.nosync = true;
 						_next();
 					});
 
 
 					function _next() {
-						if (currentItem < data.length) {
+						if(currentItem < data.length) {
 							var datum = data[currentItem];
 
 							table.add(datum)
-								.then(function(data) {
+								.then(function (data) {
 									//progress.updateRow(progress.rows);
 									deferred.notify(data);
 								})
-								.catch(function(err) {
+								.catch(function (err) {
 									deferred.reject(err);
 								})
-								.finally(function() {
+								.finally(function () {
 									currentItem++;
 									_next();
 								});
@@ -947,10 +947,10 @@
 				//console.info("bulkLoad: ", table.TableName)
 
 				table.clear()
-					.then(function() {
+					.then(function () {
 						_import(data, progress);
 					}.bind(this))
-					.catch(function(err) {
+					.catch(function (err) {
 						console.error(err);
 					});
 
@@ -972,11 +972,11 @@
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 
-	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 

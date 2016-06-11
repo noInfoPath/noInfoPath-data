@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.21
+ *	@version 1.2.22
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -68,20 +68,20 @@
  *
  */
 (noInfoPath.data = {});
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', function($injector, $parse, $timeout, $q, $rootScope, $browser, $filter) {
+	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter) {
 
 		function _digestTimeout() {
 
 
-			if ($timeout.flush && $browser.deferredFns.length) {
-				if ($rootScope.$$phase) {
-					setTimeout(function() {
+			if($timeout.flush && $browser.deferredFns.length) {
+				if($rootScope.$$phase) {
+					setTimeout(function () {
 						$timeout.flush();
 					}, 10);
 				} else {
@@ -95,7 +95,7 @@
 		function _digestError(fn, error) {
 			var digestError = error;
 
-			if (angular.isObject(error)) {
+			if(angular.isObject(error)) {
 				digestError = error.toString();
 			}
 
@@ -107,14 +107,14 @@
 		function _digest(fn, data) {
 			var message = [];
 
-			if (angular.isArray(data)) {
+			if(angular.isArray(data)) {
 				message = data;
 			} else {
 				message = [data];
 			}
 
-			if (window.jasmine) {
-				$timeout(function() {
+			if(window.jasmine) {
+				$timeout(function () {
 					fn.apply(null, message);
 				});
 				$timeout.flush();
@@ -303,7 +303,7 @@
  * ##### Returns
  * void
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 	var
 		stringSearch = {
@@ -332,76 +332,76 @@
 		},
 
 		sqlOperators = {
-			"is null": function() {
+			"is null": function () {
 				return "is null";
 			},
-			"is not null": function() {
+			"is not null": function () {
 				return "is not null";
 			},
-			"eq": function(v) {
+			"eq": function (v) {
 				return "= " + normalizeSafeValue(v);
 			},
-			"ne": function(v) {
+			"ne": function (v) {
 				return "!= " + normalizeSafeValue(v);
 			},
-			"gt": function(v) {
+			"gt": function (v) {
 				return "> " + normalizeSafeValue(v);
 			},
-			"ge": function(v) {
+			"ge": function (v) {
 				return ">= " + normalizeSafeValue(v);
 			},
-			"lt": function(v) {
+			"lt": function (v) {
 				return "< " + normalizeSafeValue(v);
 			},
-			"le": function(v) {
+			"le": function (v) {
 				return "<= " + normalizeSafeValue(v);
 			},
-			"contains": function(v) {
+			"contains": function (v) {
 				return "LIKE '%" + String(v) + "%'";
 			},
-			"notcontains": function(v) {
+			"notcontains": function (v) {
 				return "NOT LIKE '%" + String(v) + "%'";
 			},
-			"startswith": function(v) {
+			"startswith": function (v) {
 				return "LIKE '" + String(v) + "%'";
 			},
-			"endswith": function(v) {
+			"endswith": function (v) {
 				return "LIKE '%" + String(v) + "'";
 			},
-			"in": function(v) {
+			"in": function (v) {
 				return "IN (" + String(v) + ")";
 			}
 		},
 
 		odataOperators = {
-			"eq": function(v) {
+			"eq": function (v) {
 				return "{0} eq " + normalizeValue(v);
 			},
-			"ne": function(v) {
+			"ne": function (v) {
 				return "{0} ne " + normalizeValue(v);
 			},
-			"gt": function(v) {
+			"gt": function (v) {
 				return "{0} gt " + normalizeValue(v);
 			},
-			"ge": function(v) {
+			"ge": function (v) {
 				return "{0} ge " + normalizeValue(v);
 			},
-			"lt": function(v) {
+			"lt": function (v) {
 				return "{0} lt " + normalizeValue(v);
 			},
-			"le": function(v) {
+			"le": function (v) {
 				return "{0} le " + normalizeValue(v);
 			},
-			"contains": function(v) {
+			"contains": function (v) {
 				return "substringof(" + normalizeValue(v) + ", {0})";
 			},
-			"notcontains": function(v) {
+			"notcontains": function (v) {
 				return "not substringof(" + normalizeValue(v) + ", {0})";
 			},
-			"startswith": function(v) {
+			"startswith": function (v) {
 				return "startswith(" + "{0}, " + normalizeValue(v) + ")";
 			},
-			"endswith": function(v) {
+			"endswith": function (v) {
 				return "endswith(" + "{0}, " + normalizeValue(v) + ")";
 			}
 		};
@@ -433,13 +433,13 @@
 	function normalizeValue(inval) {
 		var outval = inval;
 
-		if (angular.isDate(inval)) {
+		if(angular.isDate(inval)) {
 			outval = "datetime('" + noInfoPath.toDbDate(inval) + "', 'utc')";
-		} else if (angular.isString(inval)) {
+		} else if(angular.isString(inval)) {
 			outval = "'" + inval + "'";
 		}
 
-		if (noInfoPath.isGuid(inval)) {
+		if(noInfoPath.isGuid(inval)) {
 			outval = "guid" + outval;
 		}
 
@@ -449,9 +449,9 @@
 	function normalizeSafeValue(inval) {
 		var outval = inval;
 
-		if (angular.isDate(inval)) {
+		if(angular.isDate(inval)) {
 			outval = "datetime( ?, 'utc')";
-		} else if (angular.isString(inval)) {
+		} else if(angular.isString(inval)) {
 			outval = "?";
 		}
 
@@ -482,7 +482,7 @@
 
 	function NoFilterExpression(operator, value, logic) {
 
-		if (!operator) throw "INoFilterExpression requires a operator to filter by.";
+		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
 		//if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
 
 
@@ -490,7 +490,7 @@
 		this.value = value;
 		this.logic = logic;
 
-		this.toODATA = function() {
+		this.toODATA = function () {
 			var opFn = normalizeOdataOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
 
@@ -498,14 +498,14 @@
 
 		};
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			var opFn = normalizeOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
 
 			return rs;
 		};
 
-		this.toSafeSQL = function() {
+		this.toSafeSQL = function () {
 			var opFn = normalizeOperator(this.operator),
 				v = stringSearch[this.operator] ? this.value : "?",
 				rs = opFn(v) + normalizeLogic(this.logic);
@@ -564,7 +564,7 @@
 
 		Object.defineProperties(this, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoFilters";
 				}
 			}
@@ -576,13 +576,13 @@
 		//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
 
 		//arr.push.apply(arr, arguments);
-		this.toODATA = function() {
+		this.toODATA = function () {
 			var tmp = [];
-			for (var fi = 0; fi < this.length; fi++) {
+			for(var fi = 0; fi < this.length; fi++) {
 				var fltr = this[fi],
 					os = fltr.toODATA();
 
-				if (fltr.logic && this.length > 1) os = os + " " + fltr.logic + " ";
+				if(fltr.logic && this.length > 1) os = os + " " + fltr.logic + " ";
 
 				tmp.push(os);
 			}
@@ -591,9 +591,9 @@
 			return tmp;
 		};
 
-		this.toKendo = function() {
+		this.toKendo = function () {
 			var ra = [];
-			for (var j = 0; j < this.length; j++) {
+			for(var j = 0; j < this.length; j++) {
 				var f = this[j];
 
 				ra.push(f.toKendo());
@@ -601,13 +601,13 @@
 			return ra;
 		};
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			var rs = "",
 				rsArray = [];
 
-			angular.forEach(this, function(value, key) {
+			angular.forEach(this, function (value, key) {
 
-				if (this.length == key + 1) {
+				if(this.length == key + 1) {
 					value.logic = null;
 				}
 
@@ -619,21 +619,21 @@
 			return rs;
 		};
 
-		this.toSafeSQL = function() {
+		this.toSafeSQL = function () {
 			var rs = "",
 				rsArray = [],
 				values = [];
 
-			angular.forEach(this, function(filter, key) {
+			angular.forEach(this, function (filter, key) {
 
-				if (this.length == key + 1) {
+				if(this.length == key + 1) {
 					filter.logic = null;
 				}
 
 				var tmp = filter.toSafeSQL();
 
 				rsArray.push(tmp.sql);
-				if (tmp.sql.indexOf("?") > -1) {
+				if(tmp.sql.indexOf("?") > -1) {
 					values = values.concat(tmp.values);
 				}
 			}, this);
@@ -646,9 +646,9 @@
 			};
 		};
 
-		this.add = function(column, logic, beginning, end, filters) {
-			if (!column) throw "NoFilters::add requires a column to filter on.";
-			if (!filters) throw "NoFilters::add requires a value(s) to filter for.";
+		this.add = function (column, logic, beginning, end, filters) {
+			if(!column) throw "NoFilters::add requires a column to filter on.";
+			if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
 
 			var tmp = new NoFilter(column, logic, beginning, end, filters);
 
@@ -657,7 +657,7 @@
 			return tmp;
 		};
 
-		this.quickAdd = function(column, operator, value, logic) {
+		this.quickAdd = function (column, operator, value, logic) {
 			return this.add(column, logic, true, true, [{
 				"operator": operator,
 				"value": value,
@@ -665,31 +665,31 @@
 			}]);
 		};
 
-		if (kendoFilter) {
+		if(kendoFilter) {
 
 			var filters = kendoFilter.filters || kendoFilter;
 
-			if (!kendoFilter.logic) kendoFilter.logic = "and";
+			if(!kendoFilter.logic) kendoFilter.logic = "and";
 
-			for (var i = 0; i < filters.length; i++) {
+			for(var i = 0; i < filters.length; i++) {
 				var filter = filters[i],
 					logic1;
 				// fe = new NoFilterExpression(filter.operator, filter.value),
 				//f = new NoFilter(filter.field, filter.logic ? filter.logic : kendoFilter.logic, true, true, [fe]);
 
-				if (filter.filters) {
-					for (var j = 0; j < filter.filters.length; j++) {
+				if(filter.filters) {
+					for(var j = 0; j < filter.filters.length; j++) {
 						var filter2 = filter.filters[j],
 							logic2;
 
-						if (j < filter.filters.length) {
+						if(j < filter.filters.length) {
 							logic2 = filter2.logic ? filter2.logic : kendoFilter.logic;
 						}
 
 						this.quickAdd(filter2.field, filter2.operator, filter2.value, logic2);
 					}
 				} else {
-					if (i < filters.length) {
+					if(i < filters.length) {
 						logic1 = filter.logic ? filter.logic : kendoFilter.logic;
 					}
 
@@ -737,7 +737,7 @@
 	function NoFilter(column, logic, beginning, end, filters) {
 		Object.defineProperties(this, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoFilter";
 				}
 			}
@@ -749,14 +749,14 @@
 		this.end = end;
 		this.filters = [];
 
-		angular.forEach(filters, function(value, key) {
+		angular.forEach(filters, function (value, key) {
 			this.filters.push(new NoFilterExpression(value.operator, value.value, value.logic));
 		}, this);
 
 		function normalizeColumn(incol, val) {
 			var ocol = incol;
 
-			if (angular.isDate(val)) {
+			if(angular.isDate(val)) {
 				ocol = "datetime(" + incol + ",'utc')";
 			}
 
@@ -765,8 +765,8 @@
 
 		function normalizeInValue(exp) {
 
-			if (exp.operator.toLowerCase() === "in") {
-				for (var i = 0; i < exp.value.length; i++) {
+			if(exp.operator.toLowerCase() === "in") {
+				for(var i = 0; i < exp.value.length; i++) {
 					var valum = exp.value[i];
 
 					exp.value[i] = "'" + valum + "'";
@@ -776,31 +776,32 @@
 			}
 		}
 
-		this.toODATA = function() {
+		this.toODATA = function () {
 			var tmp = [],
 				os = "";
-			for (var ei = 0; ei < this.filters.length; ei++) {
+			for(var ei = 0; ei < this.filters.length; ei++) {
 				var expr = this.filters[ei],
-					od = expr.toODATA().replace("{0}", this.column);
+					od = expr.toODATA()
+					.replace("{0}", this.column);
 
 				tmp.push(od);
 			}
 
-			if (this.logic) {
+			if(this.logic) {
 				os = tmp.join(" " + this.logic + " ");
 			} else {
-				if (tmp.length > 0) {
+				if(tmp.length > 0) {
 					os = tmp[0];
 				}
 			}
 
-			if (this.beginning) os = "(" + os;
-			if (this.end) os = os + ")";
+			if(this.beginning) os = "(" + os;
+			if(this.end) os = os + ")";
 
 			return os;
 		};
 
-		this.toKendo = function() {
+		this.toKendo = function () {
 			// filter: {
 			// 	logic: "or",
 			// 	filters: [{
@@ -819,11 +820,11 @@
 
 			ro.filters = [];
 
-			for (var f = 0; f < this.filters.length; f++) {
+			for(var f = 0; f < this.filters.length; f++) {
 				var exp = this.filters[f],
 					newFilter = {};
 
-				if (exp.logic && !ro.logic) {
+				if(exp.logic && !ro.logic) {
 					ro.logic = exp.logic;
 				}
 
@@ -837,42 +838,42 @@
 			return ro;
 		};
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			var rs = "",
 				filterArray = [],
 				filterArrayString = "";
 
-			angular.forEach(this.filters, function(value, key) {
+			angular.forEach(this.filters, function (value, key) {
 				filterArray.push(normalizeColumn(this.column, value.value) + " " + value.toSQL());
 			}, this);
 
 			filterArrayString = filterArray.join(" ");
 
-			if (!!this.beginning) rs = "(";
+			if(!!this.beginning) rs = "(";
 			rs += filterArrayString;
-			if (!!this.end) rs += ")";
-			if (!!this.logic) rs += " " + logic + " ";
+			if(!!this.end) rs += ")";
+			if(!!this.logic) rs += " " + logic + " ";
 
 			return rs;
 		};
 
-		this.toSafeSQL = function() {
+		this.toSafeSQL = function () {
 			var rs = "",
 				filterArray = [],
 				filterArrayString = "",
 				values = [];
 
-			angular.forEach(this.filters, function(exp, key) {
+			angular.forEach(this.filters, function (exp, key) {
 				normalizeInValue(exp);
 
-				if (exp.operator.toLowerCase() === "in") {
+				if(exp.operator.toLowerCase() === "in") {
 					filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSQL());
 				} else {
 					filterArray.push(normalizeColumn(this.column, exp.value) + " " + exp.toSafeSQL());
 				}
 
-				if (!stringSearch[exp.operator]) {
-					if (exp.operator.toLowerCase() !== "in") {
+				if(!stringSearch[exp.operator]) {
+					if(exp.operator.toLowerCase() !== "in") {
 						values.push(exp.value);
 					}
 				}
@@ -880,10 +881,10 @@
 
 			filterArrayString = filterArray.join(" ");
 
-			if (!!this.beginning) rs = "(";
+			if(!!this.beginning) rs = "(";
 			rs += filterArrayString;
-			if (!!this.end) rs += ")";
-			if (!!this.logic) rs += " " + logic + " ";
+			if(!!this.end) rs += ")";
+			if(!!this.logic) rs += " " + logic + " ";
 
 			return {
 				sql: rs,
@@ -932,12 +933,12 @@
 	 */
 	function NoSortExpression(column, dir) {
 
-		if (!column) throw "NoFilters::add requires a column to sort on.";
+		if(!column) throw "NoFilters::add requires a column to sort on.";
 
 		this.column = column;
 		this.dir = dir;
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			return this.column + (this.dir ? " " + this.dir : "");
 		};
 	}
@@ -947,16 +948,16 @@
 
 		Object.defineProperties(arr, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoSort";
 				}
 			}
 		});
 
-		if (arguments.length) {
+		if(arguments.length) {
 			var raw = arguments[0];
 
-			for (var s in raw) {
+			for(var s in raw) {
 				var sort = raw[s];
 				arr.push(new NoSortExpression(sort.field, sort.dir));
 			}
@@ -964,18 +965,18 @@
 		}
 
 		//arr.push.apply(arr, arguments.length ? arguments[0] : []);
-		arr.add = function(column, dir) {
-			if (!column) throw "NoSort::add requires a column to filter on.";
+		arr.add = function (column, dir) {
+			if(!column) throw "NoSort::add requires a column to filter on.";
 
 			this.push(new NoSortExpression(column, dir));
 		};
 
-		arr.toSQL = function() {
+		arr.toSQL = function () {
 
 			var sqlOrder = "ORDER BY ",
 				sortExpressions = [];
 
-			angular.forEach(this, function(sort) {
+			angular.forEach(this, function (sort) {
 				sortExpressions.push(sort.toSQL());
 			});
 
@@ -989,7 +990,7 @@
 	function NoPage(skip, take) {
 		Object.defineProperties(this, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "NoPage";
 				}
 			}
@@ -998,7 +999,7 @@
 		this.skip = skip;
 		this.take = take;
 
-		this.toSQL = function() {
+		this.toSQL = function () {
 			return "LIMIT " + this.take + " OFFSET " + this.skip;
 		};
 	}
@@ -1007,10 +1008,10 @@
 		//Capture the length of the arrayOfThings before any changes are made to it.
 		var _raw, _total, _page, arr;
 
-		if (arrayOfThings) {
-			if (arrayOfThings["odata.metadata"]) {
+		if(arrayOfThings) {
+			if(arrayOfThings["odata.metadata"]) {
 				_raw = arrayOfThings.value;
-				if (arrayOfThings["odata.count"]) {
+				if(arrayOfThings["odata.count"]) {
 					_total = Number(arrayOfThings["odata.count"]);
 				} else {
 					_total = _raw.length;
@@ -1030,24 +1031,24 @@
 
 		Object.defineProperties(arr, {
 			"total": {
-				"get": function() {
+				"get": function () {
 					return _total;
 				},
-				"set": function(value) {
+				"set": function (value) {
 					_total = value;
 				}
 			},
 			"paged": {
-				"get": function() {
+				"get": function () {
 					return _page;
 				}
 			}
 		});
 
-		arr.page = function(nopage) {
-			if (!nopage) throw "nopage is a required parameter for NoResults::page";
+		arr.page = function (nopage) {
+			if(!nopage) throw "nopage is a required parameter for NoResults::page";
 
-			if (nopage.take === _raw.length){
+			if(nopage.take === _raw.length) {
 				_page = _raw;
 			} else {
 				_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);
@@ -1133,19 +1134,19 @@
  * NoSort, NoPage into ODATA compatible query object.
  *
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	angular.module("noinfopath.data")
-		.service("noQueryParser", [function() {
+		.service("noQueryParser", [function () {
 			var filters, sort, paging;
 
-			this.parse = function(options) {
+			this.parse = function (options) {
 				var filters, sort, paging;
 
 				//filter { logic: "and", filters: [ { field: "name", operator: "startswith", value: "Jane" } ] }
 				//{"take":10,"skip":0,"page":1,"pageSize":10,"filter":{"logic":"and","filters":[{"value":"apple","operator":"startswith","ignoreCase":true}]}}
-				if (!!options.take) paging = new noInfoPath.data.NoPage(options.skip, options.take);
-				if (!!options.sort) sort = new noInfoPath.data.NoSort(options.sort);
-				if (!!options.filter) filters = new noInfoPath.data.NoFilters(options.filter);
+				if(!!options.take) paging = new noInfoPath.data.NoPage(options.skip, options.take);
+				if(!!options.sort) sort = new noInfoPath.data.NoSort(options.sort);
+				if(!!options.filter) filters = new noInfoPath.data.NoFilters(options.filter);
 
 				return toArray(filters, sort, paging);
 			};
@@ -1153,19 +1154,19 @@
 			function toArray(filters, sort, paging) {
 				var arr = [];
 
-				if (!!filters) arr.push(filters);
+				if(!!filters) arr.push(filters);
 
-				if (!!sort) arr.push(sort);
+				if(!!sort) arr.push(sort);
 
-				if (!!paging) arr.push(paging);
+				if(!!paging) arr.push(paging);
 
-				if (arr.length === 0) arr = undefined;
+				if(arr.length === 0) arr = undefined;
 
 				return arr;
 			}
 		}])
 
-	.service("noOdataQueryBuilder", ['$filter', function($filter) {
+	.service("noOdataQueryBuilder", ['$filter', function ($filter) {
 		var odataFilters = {
 				eq: "eq",
 				neq: "ne",
@@ -1181,12 +1182,12 @@
 			mappers = {
 				pageSize: angular.noop,
 				page: angular.noop,
-				filter: function(params, filter, useVersionFour) {
-					if (filter) {
+				filter: function (params, filter, useVersionFour) {
+					if(filter) {
 						params.$filter = toOdataFilter(filter, useVersionFour);
 					}
 				},
-				data: function(params, filter, useVersionFour) {
+				data: function (params, filter, useVersionFour) {
 					mappers.filter(params, filter.filter, useVersionFour);
 				},
 				// filter: function(params, filter, useVersionFour) {
@@ -1194,11 +1195,11 @@
 				//         params.$filter = SELF.toOdataFilter(filter, useVersionFour);
 				//     }
 				// },
-				sort: function(params, orderby) {
-					var sorts = angular.forEach(orderby, function(value) {
+				sort: function (params, orderby) {
+					var sorts = angular.forEach(orderby, function (value) {
 							var order = value.field.replace(/\./g, "/");
 
-							if (value.dir === "desc") {
+							if(value.dir === "desc") {
 								order += " desc";
 							}
 
@@ -1206,17 +1207,17 @@
 						}),
 						expr = sorts ? sorts.join(",") : undefined;
 
-					if (expr) {
+					if(expr) {
 						params.$orderby = expr;
 					}
 				},
-				skip: function(params, skip) {
-					if (skip) {
+				skip: function (params, skip) {
+					if(skip) {
 						params.$skip = skip;
 					}
 				},
-				take: function(params, take) {
-					if (take) {
+				take: function (params, take) {
+					if(take) {
 						params.$top = take;
 					}
 				}
@@ -1235,25 +1236,27 @@
 				filter,
 				origFilter;
 
-            console.log(filters);
+			console.log(filters);
 
-            if(filters.__type === "NoFilters"){
-                filters = filters.toKendo();
-                filters = filters.length > 0 ? filters[0] : {filters:[]};
-            }
+			if(filters.__type === "NoFilters") {
+				filters = filters.toKendo();
+				filters = filters.length > 0 ? filters[0] : {
+					filters: []
+				};
+			}
 
-            if(filters.__type === "NoFilter"){
-                filters = filters.toKendo();
-            }
+			if(filters.__type === "NoFilter") {
+				filters = filters.toKendo();
+			}
 
-			for (var idx = 0; idx < filters.filters.length; idx++) {
+			for(var idx = 0; idx < filters.filters.length; idx++) {
 				filter = origFilter = filters.filters[idx];
 				field = filter.column;
 				value = filter.value;
 				operator = filter.operator;
 				logic = filter.logic;
 
-				if (filter.filters) {
+				if(filter.filters) {
 					filter = toOdataFilter(filter, useOdataFour);
 				} else {
 					ignoreCase = filter.ignoreCase;
@@ -1264,10 +1267,10 @@
 					//     filter = odataFiltersVersionFour[operator];
 					// }
 
-					if (filter && value !== undefined) {
+					if(filter && value !== undefined) {
 
-						if (angular.isString(value)) {
-							if (noInfoPath.isGuid(value)) {
+						if(angular.isString(value)) {
+							if(noInfoPath.isGuid(value)) {
 								format = "guid'{1}'";
 							} else {
 								format = "'{1}'";
@@ -1280,8 +1283,8 @@
 							//     field = "tolower(" + field + ")";
 							// }
 
-						} else if (angular.isDate(value)) {
-							if (useOdataFour) {
+						} else if(angular.isDate(value)) {
+							if(useOdataFour) {
 								format = "yyyy-MM-ddTHH:mm:ss+00:00";
 							} else {
 								value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
@@ -1291,13 +1294,13 @@
 							format = "{1}";
 						}
 
-						if (filter.length > 3) {
-							if (filter !== "substringof") {
+						if(filter.length > 3) {
+							if(filter !== "substringof") {
 								format = "{0}({2}," + format + ")";
 							} else {
 								format = "{0}(" + format + ",{2})";
-								if (operator === "doesnotcontain") {
-									if (useOdataFour) {
+								if(operator === "doesnotcontain") {
+									if(useOdataFour) {
 										format = "{0}({2},'{1}') eq -1";
 										filter = "indexof";
 									} else {
@@ -1324,11 +1327,11 @@
 			do {
 				f = result.pop();
 
-				if (f) {
+				if(f) {
 
 					odataFilter = odataFilter + "(" + f.compiledFilter + ")";
 
-					if (f.logic) {
+					if(f.logic) {
 						odataFilter = odataFilter + " " + f.logic + " ";
 					} else {
 						f = null;
@@ -1347,11 +1350,11 @@
 			var sorts = [],
 				expr;
 
-			angular.forEach(sort, function(value) {
+			angular.forEach(sort, function (value) {
 				console.log(value);
 				var order = value.column.replace(/\./g, "/");
 
-				if (value.dir === "desc") {
+				if(value.dir === "desc") {
 					order += " desc";
 				}
 
@@ -1363,15 +1366,15 @@
 			return expr;
 		}
 
-		this.makeQuery = function() {
+		this.makeQuery = function () {
 			var query = {};
 
-			for (var ai in arguments) {
+			for(var ai in arguments) {
 				var arg = arguments[ai];
 
 				//success and error must always be first, then
-				if (angular.isObject(arg)) {
-					switch (arg.__type) {
+				if(angular.isObject(arg)) {
+					switch(arg.__type) {
 						case "NoFilters":
 							query.$filter = arg.toODATA();
 							break;
@@ -1380,8 +1383,8 @@
 							break;
 						case "NoPage":
 							query.$skip = arg.skip;
-                            query.$top = arg.take;
-                            query.$inlinecount = "allpages";
+							query.$top = arg.take;
+							query.$inlinecount = "allpages";
 							break;
 					}
 				}
@@ -1398,42 +1401,45 @@
 /**
 	### @class MockStorage
 */
-(function(){
+(function () {
 	"use strict";
 
-	function MockStorage(){
-		var _store = {},_len=0;
+	function MockStorage() {
+		var _store = {},
+			_len = 0;
 
-		Object.defineProperties(this,{
-	      "length": {
-	        "get": function(){
-	          var l=0;
-	          for(var x in _store){l++;}
-	          return l;
-	        }
-	      }
-	    });
+		Object.defineProperties(this, {
+			"length": {
+				"get": function () {
+					var l = 0;
+					for(var x in _store) {
+						l++;
+					}
+					return l;
+				}
+			}
+		});
 
-		this.key = function (i){
-			var l=0;
-			for(var x in _store){
-			  if(i==l) return x;
+		this.key = function (i) {
+			var l = 0;
+			for(var x in _store) {
+				if(i == l) return x;
 			}
 		};
 
-		this.setItem = function (k,v){
+		this.setItem = function (k, v) {
 			_store[k] = v;
 		};
 
-		this.getItem = function (k){
+		this.getItem = function (k) {
 			return _store[k];
 		};
 
-		this.removeItem = function (k){
+		this.removeItem = function (k) {
 			delete _store[k];
 		};
 
-		this.clear = function (){
+		this.clear = function () {
 			_store = {};
 		};
 	}
@@ -1441,69 +1447,67 @@
 	/**
 		### @class NoStorage
 	*/
-	function NoStorage(storetype){
+	function NoStorage(storetype) {
 		var _store;
 
 
-		if(typeof window[storetype]=== "object")
-		{
+		if(typeof window[storetype] === "object") {
 			_store = window[storetype];
-		}else{
+		} else {
 
 			_store = new MockStorage();
 		}
 
 
-		Object.defineProperties(this,{
-	      "length": {
-	        "get": function(){
-	          return _store.length;
-	        }
-	      }
-	    });
+		Object.defineProperties(this, {
+			"length": {
+				"get": function () {
+					return _store.length;
+				}
+			}
+		});
 
-		this.key = function (i){
+		this.key = function (i) {
 			return _store.key(i);
 		};
 
-		this.setItem = function (k,v){
-			if(v){
-				_store.setItem(k,angular.toJson(v));
-			}else{
-				_store.setItem(k,undefined);
+		this.setItem = function (k, v) {
+			if(v) {
+				_store.setItem(k, angular.toJson(v));
+			} else {
+				_store.setItem(k, undefined);
 			}
 
 		};
 
-		this.getItem = function (k){
+		this.getItem = function (k) {
 			var x = _store.getItem(k);
 
-			if(x === "undefined"){
+			if(x === "undefined") {
 				return undefined;
-			}else{
+			} else {
 				return angular.fromJson(x);
 			}
 
 		};
 
-		this.removeItem = function (k){
+		this.removeItem = function (k) {
 			_store.removeItem(k);
 		};
 
-		this.clear = function (){
+		this.clear = function () {
 			_store.clear();
 		};
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noSessionStorage",[function(){
+		.factory("noSessionStorage", [function () {
 			return new NoStorage("sessionStorage");
 		}])
 
-		.factory("noLocalStorage",[function(){
-			return new NoStorage("localStorage");
-		}])
-		;
+	.factory("noLocalStorage", [function () {
+		return new NoStorage("localStorage");
+		}]);
 })(angular);
 
 //configuration.js
@@ -1563,15 +1567,15 @@
  * AngularJS::promise
  *
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	var noODATAProv;
 
 	angular.module("noinfopath.data")
-		.config([function() {}])
+		.config([function () {}])
 
-	.provider("noConfig", [function() {
+	.provider("noConfig", [function () {
 		var _currentConfig, _status;
 
 		function NoConfig($http, $q, $rootScope, noLocalStorage) {
@@ -1579,53 +1583,53 @@
 
 			Object.defineProperties(this, {
 				"current": {
-					"get": function() {
+					"get": function () {
 						return _currentConfig;
 					}
 				},
 				"status": {
-					"get": function() {
+					"get": function () {
 						return _status;
 					}
 				}
 			});
 
-			this.load = function(uri) {
+			this.load = function (uri) {
 				var url = uri || "/config.json";
 				return $http.get(url)
-					.then(function(resp) {
+					.then(function (resp) {
 						noLocalStorage.setItem("noConfig", resp.data);
 					})
-					.catch(function(err) {
+					.catch(function (err) {
 						throw err;
 					});
 			};
 
-			this.fromCache = function() {
+			this.fromCache = function () {
 				_currentConfig = noLocalStorage.getItem("noConfig");
 			};
 
-			this.whenReady = function(uri) {
+			this.whenReady = function (uri) {
 
-				return $q(function(resolve, reject) {
-					if ($rootScope.noConfig) {
+				return $q(function (resolve, reject) {
+					if($rootScope.noConfig) {
 						resolve();
 					} else {
-						$rootScope.$watch("noConfig", function(newval) {
-							if (newval) {
+						$rootScope.$watch("noConfig", function (newval) {
+							if(newval) {
 								resolve();
 							}
 						});
 
 						SELF.load(uri)
-							.then(function() {
+							.then(function () {
 								_currentConfig = noLocalStorage.getItem("noConfig");
 								$rootScope.noConfig = _currentConfig;
 							})
-							.catch(function(err) {
+							.catch(function (err) {
 								SELF.fromCache();
 
-								if (_currentConfig) {
+								if(_currentConfig) {
 									$rootScope.noConfig = _currentConfig;
 								} else {
 									reject("noConfig");
@@ -1638,10 +1642,10 @@
 			};
 		}
 
-		this.$get = ['$http', '$q', '$rootScope', 'noLocalStorage', function($http, $q, $rootScope, noLocalStorage) {
+		this.$get = ['$http', '$q', '$rootScope', 'noLocalStorage', function ($http, $q, $rootScope, noLocalStorage) {
 			return new NoConfig($http, $q, $rootScope, noLocalStorage);
-			}];
-		}]);
+		}];
+	}]);
 })(angular);
 
 //http.js
@@ -1705,327 +1709,327 @@
  * |tableName|string|name of the table that this instance will interact with.|
  * |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 	var $httpProviderRef;
 
 	angular.module('noinfopath.data')
-	.config(["$httpProvider", function($httpProvider){
-		 $httpProviderRef = $httpProvider;
+		.config(["$httpProvider", function ($httpProvider) {
+			$httpProviderRef = $httpProvider;
 	}])
-	.provider("noHTTP", [function() {
-		this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig) {
+		.provider("noHTTP", [function () {
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig) {
 
-			function NoHTTP(queryBuilder) {
-				var THIS = this,
-					_currentUser;
+				function NoHTTP(queryBuilder) {
+					var THIS = this,
+						_currentUser;
 
-				console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
+					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
 
-				this.whenReady = function(tables) {
+					this.whenReady = function (tables) {
 
-					return $q(function(resolve, reject) {
-						if ($rootScope.noHTTPInitialized) {
-							noLogService.log("noHTTP Ready.");
-							resolve();
+						return $q(function (resolve, reject) {
+							if($rootScope.noHTTPInitialized) {
+								noLogService.log("noHTTP Ready.");
+								resolve();
+							} else {
+								//noLogService.log("noDbSchema is not ready yet.")
+								$rootScope.$watch("noHTTPInitialized", function (newval) {
+									if(newval) {
+										noLogService.log("noHTTP ready.");
+										resolve();
+									}
+								});
+
+							}
+						});
+					};
+
+					this.configure = function (noUser, schema) {
+						_currentUser = noUser;
+
+						var promise = $q(function (resolve, reject) {
+							for(var t in schema.tables) {
+								var table = schema.tables[t];
+								THIS[t] = new NoTable(t, table, queryBuilder);
+							}
+							$rootScope.noHTTPInitialized = true;
+							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
+
+							$rootScope["noHTTP_" + schema.config.dbName] = THIS;
+
+							resolve(THIS);
+						});
+
+						return promise;
+					};
+
+					this.getDatabase = function (databaseName) {
+						return $rootScope["noHTTP_" + databaseName];
+					};
+
+					this.noRequestJSON = function (url, method, data) {
+						var json = angular.toJson(data);
+
+						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
+						var deferred = $q.defer(),
+							req = {
+								method: method,
+								url: url,
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function (data) {
+								deferred.resolve(data);
+							})
+							.error(function (reason) {
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noRequestForm = function (url, method, data) {
+						var deferred = $q.defer(),
+							req = {
+								method: method,
+								url: url,
+								data: $.param(data),
+								headers: {
+									"Content-Type": "application/x-www-form-urlencoded"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function (data) {
+								deferred.resolve(data);
+							})
+							.error(function (reason) {
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+				}
+
+				function NoTable(tableName, table, queryBuilder) {
+					var THIS = this,
+						_table = table;
+
+					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
+
+					var url = noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
+
+					Object.defineProperties(this, {
+						entity: {
+							get: function () {
+								return _table;
+							}
+						}
+					});
+
+					this.noCreate = function (data) {
+						var json = angular.toJson(data);
+
+						var deferred = $q.defer(),
+							req = {
+								method: "POST",
+								url: url,
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function (data) {
+								//console.log(angular.toJson(data) );
+
+								deferred.resolve(data);
+							})
+							.error(function (reason) {
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noRead = function () {
+						//noLogService.debug("noRead say's, 'swag!'");
+						var filters, sort, page;
+
+						for(var ai in arguments) {
+							var arg = arguments[ai];
+
+							//success and error must always be first, then
+							if(angular.isObject(arg)) {
+								switch(arg.__type) {
+									case "NoFilters":
+										filters = arg;
+										break;
+									case "NoSort":
+										sort = arg;
+										break;
+									case "NoPage":
+										page = arg;
+										break;
+								}
+							}
+						}
+
+						var deferred = $q.defer(),
+							req = {
+								method: "GET",
+								params: queryBuilder(filters, sort, page),
+								url: url,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function (data) {
+								//console.log( angular.toJson(data));
+								var resp = new noInfoPath.data.NoResults(data);
+								deferred.resolve(resp);
+							})
+							.error(function (reason) {
+								noLogService.error(arguments);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noUpdate = function (data) {
+						var json = angular.toJson(data);
+
+						var deferred = $q.defer(),
+							req = {
+								method: "PUT",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								data: json,
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function (data, status) {
+								deferred.resolve(status);
+							})
+							.error(function (reason) {
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+
+					};
+
+					this.noDestroy = function (data) {
+						var deferred = $q.defer(),
+							req = {
+								method: "DELETE",
+								url: url + "(guid'" + data[table.primaryKey] + "')",
+								headers: {
+									"Content-Type": "application/json",
+									"Accept": "application/json"
+								},
+								withCredentials: true
+							};
+
+						$http(req)
+							.success(function (data, status) {
+								deferred.resolve(status);
+							})
+							.error(function (reason) {
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noOne = function (query) {
+						/**
+						 *	When 'query' is an object then check to see if it is a
+						 *	NoFilters object.  If not, add a filter to the intrinsic filters object
+						 *	based on the query's key property, and the query's value.
+						 */
+						var filters = new noInfoPath.data.NoFilters();
+
+						if(angular.isNumber(query)) {
+							//Assume rowid
+							/*
+							 *	When query a number, a filter is created on the instrinsic
+							 *	filters object using the `rowid`  WebSQL column as the column
+							 *	to filter on. Query will be the target
+							 *	value of query.
+							 */
+							filters.quickAdd("rowid", "eq", query);
+
+						} else if(angular.isString(query)) {
+							//Assume guid
+							/*
+							 * When the query is a string it is assumed a table is being queried
+							 * by it's primary key.
+							 *
+							 * > Passing a string when the entity is
+							 * a SQL View is not allowed.
+							 */
+							if(_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+
+							filters.quickAdd(_entityConfig.primaryKey, "eq", query);
+
+						} else if(angular.isObject(query)) {
+							if(query.__type === "NoFilters") {
+								filters = query;
+							} else {
+								//Simple key/value pairs. Assuming all are equal operators and are anded.
+								for(var k in query) {
+									filters.quickAdd(k, "eq", query[k]);
+								}
+							}
+
 						} else {
-							//noLogService.log("noDbSchema is not ready yet.")
-							$rootScope.$watch("noHTTPInitialized", function(newval) {
-								if (newval) {
-									noLogService.log("noHTTP ready.");
-									resolve();
+							throw "One requires a query parameter. May be a Number, String or Object";
+						}
+
+						//Internal _getOne requires and NoFilters object.
+						return THIS.noRead(filters)
+							.then(function (data) {
+								if(data.length) {
+									return data[0];
+								} else if(data.paged && data.paged.length) {
+									return data.paged[0];
+								} else {
+									throw "noHTTP::noOne: Record Not Found";
 								}
 							});
 
-						}
-					});
-				};
+					};
+				}
 
-				this.configure = function(noUser, schema) {
-					_currentUser = noUser;
-
-					var promise = $q(function(resolve, reject) {
-						for (var t in schema.tables) {
-							var table = schema.tables[t];
-							THIS[t] = new NoTable(t, table, queryBuilder);
-						}
-						$rootScope.noHTTPInitialized = true;
-						noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
-
-						$rootScope["noHTTP_" + schema.config.dbName] = THIS;
-
-						resolve(THIS);
-					});
-
-					return promise;
-				};
-
-				this.getDatabase = function(databaseName) {
-					return $rootScope["noHTTP_" + databaseName];
-				};
-
-				this.noRequestJSON = function(url, method, data){
-					var json = angular.toJson(data);
-
-					if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
-
-					var deferred = $q.defer(),
-						req = {
-							method: method,
-							url: url,
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-
-					$http(req)
-						.success(function(data) {
-							deferred.resolve(data);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				};
-
-				this.noRequestForm = function(url, method, data){
-					var deferred = $q.defer(),
-						req = {
-							method: method,
-							url: url,
-							data: $.param(data),
-							headers: {
-								"Content-Type": "application/x-www-form-urlencoded"
-							},
-							withCredentials: true
-						};
-
-					$http(req)
-						.success(function(data) {
-							deferred.resolve(data);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				};
-			}
-
-			function NoTable(tableName, table, queryBuilder) {
-				var THIS = this,
-					_table = table;
-
-				if (!queryBuilder) throw "TODO: implement default queryBuilder service";
-
-				var url = noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
-
-				Object.defineProperties(this, {
-					entity: {
-						get: function() {
-							return _table;
-						}
-					}
-				});
-
-				this.noCreate = function(data) {
-					var json = angular.toJson(data);
-
-					var deferred = $q.defer(),
-						req = {
-							method: "POST",
-							url: url,
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-
-					$http(req)
-						.success(function(data) {
-							//console.log(angular.toJson(data) );
-
-							deferred.resolve(data);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				};
-
-				this.noRead = function() {
-					//noLogService.debug("noRead say's, 'swag!'");
-					var filters, sort, page;
-
-					for (var ai in arguments) {
-						var arg = arguments[ai];
-
-						//success and error must always be first, then
-						if (angular.isObject(arg)) {
-							switch (arg.__type) {
-								case "NoFilters":
-									filters = arg;
-									break;
-								case "NoSort":
-									sort = arg;
-									break;
-								case "NoPage":
-									page = arg;
-									break;
-							}
-						}
-					}
-
-					var deferred = $q.defer(),
-						req = {
-							method: "GET",
-							params: queryBuilder(filters, sort, page),
-							url: url,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-
-					$http(req)
-						.success(function(data) {
-							//console.log( angular.toJson(data));
-							var resp = new noInfoPath.data.NoResults(data);
-							deferred.resolve(resp);
-						})
-						.error(function(reason) {
-							noLogService.error(arguments);
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				};
-
-				this.noUpdate = function(data) {
-					var json = angular.toJson(data);
-
-					var deferred = $q.defer(),
-						req = {
-							method: "PUT",
-							url: url + "(guid'" + data[table.primaryKey] + "')",
-							data: json,
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-
-					$http(req)
-						.success(function(data, status) {
-							deferred.resolve(status);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-
-				};
-
-				this.noDestroy = function(data) {
-					var deferred = $q.defer(),
-						req = {
-							method: "DELETE",
-							url: url + "(guid'" + data[table.primaryKey] + "')",
-							headers: {
-								"Content-Type": "application/json",
-								"Accept": "application/json"
-							},
-							withCredentials: true
-						};
-
-					$http(req)
-						.success(function(data, status) {
-							deferred.resolve(status);
-						})
-						.error(function(reason) {
-							console.error(reason);
-							deferred.reject(reason);
-						});
-
-					return deferred.promise;
-				};
-
-				this.noOne = function(query) {
-					/**
-					 *	When 'query' is an object then check to see if it is a
-					 *	NoFilters object.  If not, add a filter to the intrinsic filters object
-					 *	based on the query's key property, and the query's value.
-					 */
-					var filters = new noInfoPath.data.NoFilters();
-
-					if (angular.isNumber(query)) {
-						//Assume rowid
-						/*
-						 *	When query a number, a filter is created on the instrinsic
-						 *	filters object using the `rowid`  WebSQL column as the column
-						 *	to filter on. Query will be the target
-						 *	value of query.
-						 */
-						filters.quickAdd("rowid", "eq", query);
-
-					} else if (angular.isString(query)) {
-						//Assume guid
-						/*
-						 * When the query is a string it is assumed a table is being queried
-						 * by it's primary key.
-						 *
-						 * > Passing a string when the entity is
-						 * a SQL View is not allowed.
-						 */
-						if (_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
-
-						filters.quickAdd(_entityConfig.primaryKey, "eq", query);
-
-					} else if (angular.isObject(query)) {
-						if (query.__type === "NoFilters") {
-							filters = query;
-						} else {
-							//Simple key/value pairs. Assuming all are equal operators and are anded.
-							for (var k in query) {
-								filters.quickAdd(k, "eq", query[k]);
-							}
-						}
-
-					} else {
-						throw "One requires a query parameter. May be a Number, String or Object";
-					}
-
-					//Internal _getOne requires and NoFilters object.
-					return THIS.noRead(filters)
-						.then(function(data) {
-							if (data.length) {
-								return data[0];
-							} else if (data.paged && data.paged.length) {
-								return data.paged[0];
-							} else {
-								throw "noHTTP::noOne: Record Not Found";
-							}
-						});
-
-				};
-			}
-
-			//return new noREST($q, $http, $filter, noUrl, noConfig)
-			return new NoHTTP(noOdataQueryBuilder.makeQuery);
+				//return new noREST($q, $http, $filter, noUrl, noConfig)
+				return new NoHTTP(noOdataQueryBuilder.makeQuery);
 			}];
 		}]);
 })(angular);
@@ -2070,7 +2074,7 @@
  *	AngularJS::Promise
  */
 var GloboTest = {};
-(function(angular, Dexie, undefined) {
+(function (angular, Dexie, undefined) {
 	"use strict";
 	// TODO: Finish documentation
 	/*
@@ -2152,58 +2156,58 @@ var GloboTest = {};
 
 		Object.defineProperties(this, {
 			"store": {
-				"get": function() {
+				"get": function () {
 					return _config;
 				}
 			},
 			"tables": {
-				"get": function() {
+				"get": function () {
 					return _tables;
 				}
 			},
 			"lookups": {
-				"get": function() {
-					return _.filter(_tables, function(o) {
+				"get": function () {
+					return _.filter(_tables, function (o) {
 						return o.entityName.indexOf("LU") === 0;
 					});
 				}
 			},
 			"isReady": {
-				"get": function() {
+				"get": function () {
 					return _.size(_tables) > 0;
 				}
 			},
 			"sql": {
-				"get": function() {
+				"get": function () {
 					return _sql;
 				}
 			},
 			"views": {
-				"get": function() {
+				"get": function () {
 					return _views;
 				}
 			},
 			"config": {
-				"get": function() {
+				"get": function () {
 					return _schemaConfig;
 				}
 			}
 		});
 
-		this.entity = function(name) {
-			return _.find(_tables, function(v) {
+		this.entity = function (name) {
+			return _.find(_tables, function (v) {
 				return v.entityName === name;
 			});
 		};
 
-		_views = _.filter(_tables, function(o) {
+		_views = _.filter(_tables, function (o) {
 			return o.entityType == "V";
 		});
 
 
 
 
-		angular.forEach(_tables, function(table, tableName) {
+		angular.forEach(_tables, function (table, tableName) {
 			var keys = [table.primaryKey];
 
 			keys = keys.concat(_.uniq(_.pluck(table.foreignKeys, "column")), table.indexes || []);
@@ -2226,26 +2230,26 @@ var GloboTest = {};
 		var noConfig,
 			promises = [],
 			schemaSourceProviders = {
-				"inline": function(key, schemaConfig) {
-					return $timeout(function() {
+				"inline": function (key, schemaConfig) {
+					return $timeout(function () {
 						return schemaConfig.schemaSource.schema;
 					});
 				},
-				"noDBSchema": function(key, schemaConfig) {
+				"noDBSchema": function (key, schemaConfig) {
 					return getRemoteSchema(noConfig)
-						.then(function(resp) {
+						.then(function (resp) {
 							return resp.data;
 						})
-						.catch(function(err) {
+						.catch(function (err) {
 							throw err;
 						});
 				},
-				"cached": function(key, schemaConfig) {
+				"cached": function (key, schemaConfig) {
 					var schemaKey = "noDbSchema_" + schemaConfig.schemaSource.sourceDB;
 
-					return $q(function(resolve, reject) {
-						$rootScope.$watch(schemaKey, function(newval) {
-							if (newval) {
+					return $q(function (resolve, reject) {
+						$rootScope.$watch(schemaKey, function (newval) {
+							if(newval) {
 								resolve(newval.tables);
 							}
 						});
@@ -2266,10 +2270,10 @@ var GloboTest = {};
 			};
 
 			return $http(req)
-				.then(function(resp) {
+				.then(function (resp) {
 					return resp;
 				})
-				.catch(function(resp) {
+				.catch(function (resp) {
 					throw resp;
 				});
 		}
@@ -2282,23 +2286,23 @@ var GloboTest = {};
 			var deferred = $q.defer(),
 				schemaProvider = schemaConfig.schemaSource.provider;
 
-			if ($rootScope[schemaKey]) {
+			if($rootScope[schemaKey]) {
 				deferred.resolve(schemaKey);
 			} else {
-				$rootScope.$watch(schemaKey, function(newval, oldval) {
-					if (newval) {
+				$rootScope.$watch(schemaKey, function (newval, oldval) {
+					if(newval) {
 						noLocalStorage.setItem(schemaKey, newval.tables);
 						deferred.resolve(schemaKey);
 					}
 				});
 
 				schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
-					.then(function(schema) {
+					.then(function (schema) {
 						$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
 					})
-					.catch(function() {
+					.catch(function () {
 						var schema = checkCache(schemaKey);
-						if (schema) {
+						if(schema) {
 							$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
 						} else {
 							deferred.reject("noDbSchemaServiceOffline");
@@ -2315,13 +2319,13 @@ var GloboTest = {};
 		/**
 		 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
 		 */
-		this.whenReady = function(config) {
+		this.whenReady = function (config) {
 			noConfig = config.current;
 
 			var noDbSchemaConfig = noConfig.noDbSchema,
 				promises = [];
 
-			for (var c in noDbSchemaConfig) {
+			for(var c in noDbSchemaConfig) {
 				var schemaConfig = noDbSchemaConfig[c],
 					schemaKey = "noDbSchema_" + schemaConfig.dbName;
 
@@ -2329,20 +2333,20 @@ var GloboTest = {};
 			}
 
 			return $q.all(promises)
-				.then(function(results) {
+				.then(function (results) {
 					$rootScope.noDbSchema_names = results;
 					return results;
 				})
-				.catch(function(err) {
+				.catch(function (err) {
 					throw err;
 				});
 
 		};
 
-		this.configureDatabases = function(noUser, noDbSchemaConfigs) {
+		this.configureDatabases = function (noUser, noDbSchemaConfigs) {
 			var promises = [];
 
-			for (var s in noDbSchemaConfigs) {
+			for(var s in noDbSchemaConfigs) {
 				var schemaName = noDbSchemaConfigs[s],
 					schema = $rootScope[schemaName],
 					provider = $injector.get(schema.config.provider);
@@ -2352,21 +2356,21 @@ var GloboTest = {};
 			}
 
 			return $q.all(promises)
-				.then(function(resp) {
+				.then(function (resp) {
 					console.log(resp);
 				})
-				.catch(function(err) {
+				.catch(function (err) {
 					console.error(err);
 				});
 
 		};
 
-		this.getSchema = function(dbName) {
+		this.getSchema = function (dbName) {
 			var schema = $rootScope["noDbSchema_" + dbName];
 			return schema;
 		};
 
-		this.create = function(noConfig, noDbConfig, rawDbSchema) {
+		this.create = function (noConfig, noDbConfig, rawDbSchema) {
 			return new NoDbSchema(_, noConfig, noDbConfig, rawDbSchema);
 		};
 	}
@@ -2388,7 +2392,7 @@ var GloboTest = {};
 		|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 	*/
 
-	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
+	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function ($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
 
 		return new NoDbSchemaFactory($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector);
 	}]);
@@ -2396,47 +2400,47 @@ var GloboTest = {};
 })(angular);
 
 /*
-* ## @interface INoQueryBuilder
-*
-* > INoQueryBuilder is a conceptual entity, it does not really exist
-* > the reality. This is because JavaScript does not implement interfaces
-* > like other languages do. This documentation should be considered as a
-* > guide for creating query providers compatible with NoInfoPath.
-*
-* ### Overview
-* INoQueryBuilder provides a service interface definition for converting a set
-* of NoInfoPath class related to querying data into a given query protocol.
-* An example of this is the ODATA 2.0 specification.
-*
-* ### Methods
-*
-* #### makeQuery(filters, sort, page)
-*
-* ##### Parameters
-*
-* |Name|Type|Descriptions|
-* |----|----|------------|
-* |filters|NoFilters|(Optional) Instance of a NoFilters class|
-* |sort|NoSort|(Optional) Instance of NoSort class|
-* |page|NoPage|(Optional) Instance of NoPage class|
-*
-* ##### Returns
-* Object
-*
-*/
+ * ## @interface INoQueryBuilder
+ *
+ * > INoQueryBuilder is a conceptual entity, it does not really exist
+ * > the reality. This is because JavaScript does not implement interfaces
+ * > like other languages do. This documentation should be considered as a
+ * > guide for creating query providers compatible with NoInfoPath.
+ *
+ * ### Overview
+ * INoQueryBuilder provides a service interface definition for converting a set
+ * of NoInfoPath class related to querying data into a given query protocol.
+ * An example of this is the ODATA 2.0 specification.
+ *
+ * ### Methods
+ *
+ * #### makeQuery(filters, sort, page)
+ *
+ * ##### Parameters
+ *
+ * |Name|Type|Descriptions|
+ * |----|----|------------|
+ * |filters|NoFilters|(Optional) Instance of a NoFilters class|
+ * |sort|NoSort|(Optional) Instance of NoSort class|
+ * |page|NoPage|(Optional) Instance of NoPage class|
+ *
+ * ##### Returns
+ * Object
+ *
+ */
 
-(function(angular, undefined){
+(function (angular, undefined) {
 	angular.module("noinfopath.data")
 		/*
-		* ## @service noSQLQueryBuilder : INoQueryBuilder `Deprecated`
-		*
-		* ### Overview
-		*
-		* Implements a INoQueryBuilder compatible service that converts NoFilters,
-		* NoSort, NoPage into a WebSQL compatible query string.
-		*
-		*/
-		.service("noSQLQueryBuilder", ['$filter', function($filter){
+		 * ## @service noSQLQueryBuilder : INoQueryBuilder `Deprecated`
+		 *
+		 * ### Overview
+		 *
+		 * Implements a INoQueryBuilder compatible service that converts NoFilters,
+		 * NoSort, NoPage into a WebSQL compatible query string.
+		 *
+		 */
+		.service("noSQLQueryBuilder", ['$filter', function ($filter) {
 			var sqlFilters = {
 					eq: "==",
 					neq: "!=",
@@ -2444,172 +2448,171 @@ var GloboTest = {};
 					gte: ">=",
 					lt: "<",
 					lte: "<=",
-					contains : "CONTAINS",
+					contains: "CONTAINS",
 					doesnotcontain: "NOT CONTAINS",
 					"in": "in"
-					//endswith: "endswith",
-					//startswith: "startswith"
+						//endswith: "endswith",
+						//startswith: "startswith"
 				},
 				mappers = {
 					pageSize: angular.noop,
 					page: angular.noop,
-					filter: function(params, filter) {
-						if (filter) {
+					filter: function (params, filter) {
+						if(filter) {
 							params.$filter = toSQLFilter(filter);
 						}
 					},
-					data: function(params, filter){
+					data: function (params, filter) {
 						mappers.filter(params, filter.filter);
 					},
-					sort: function(params, orderby) {
-						var sorts = angular.forEach(orderby, function(value) {
-							var order = value.field.replace(/\./g, "/");
+					sort: function (params, orderby) {
+						var sorts = angular.forEach(orderby, function (value) {
+								var order = value.field.replace(/\./g, "/");
 
-							if (value.dir === "desc") {
-								order += " desc";
-							}
+								if(value.dir === "desc") {
+									order += " desc";
+								}
 
-							return order;
-						}),
-						expr = sorts ? sorts.join(",") : undefined;
+								return order;
+							}),
+							expr = sorts ? sorts.join(",") : undefined;
 
-						if (expr) {
+						if(expr) {
 							params.$orderby = expr;
 						}
 					},
-					skip: function(params, skip) {
-						if (skip) {
+					skip: function (params, skip) {
+						if(skip) {
 							params.$skip = skip;
 						}
 					},
-					take: function(params, take) {
-						if (take) {
+					take: function (params, take) {
+						if(take) {
 							params.$top = take;
 						}
 					}
 				};
 
-			function isGuid(val){
-		    	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
-		    }
+			function isGuid(val) {
+				return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(val);
+			}
 
-			function toSQLFilter (filters) {
-			    var result = [],
-			        idx,
-			        length,
-			        field,
-			        type,
-			        format,
-			        operator,
-			        value,
-			        ignoreCase,
+			function toSQLFilter(filters) {
+				var result = [],
+					idx,
+					length,
+					field,
+					type,
+					format,
+					operator,
+					value,
+					ignoreCase,
 					filter,
 					origFilter;
 
 
 
-			    for (idx = 0, length = filters.length; idx < length; idx++) {
-			    	filter = origFilter = filters[idx];
-			    	field = filter.column;
-			        value = filter.value;
-			        operator = filter.operator;
+				for(idx = 0, length = filters.length; idx < length; idx++) {
+					filter = origFilter = filters[idx];
+					field = filter.column;
+					value = filter.value;
+					operator = filter.operator;
 					logic = filter.logic;
 
-			    	if (filter.filters)
-			    	{
-			    		filter = toSQLFilter(filter);
-			    	}
-			    	else
-			    	{
-			    		ignoreCase = filter.ignoreCase;
-			            field = field.replace(/\./g, "/");
-			            filter = sqlFilters[operator];
+					if(filter.filters) {
+						filter = toSQLFilter(filter);
+					} else {
+						ignoreCase = filter.ignoreCase;
+						field = field.replace(/\./g, "/");
+						filter = sqlFilters[operator];
 
-			             if (filter && value !== undefined) {
+						if(filter && value !== undefined) {
 
-			                if (angular.isString(value)) {
-			                	if(isGuid(value)){
+							if(angular.isString(value)) {
+								if(isGuid(value)) {
 									format = "guid'{1}'";
-			                	}else{
-			                		format = "'{1}'";
-			                	}
+								} else {
+									format = "'{1}'";
+								}
 
-			                    value = value.replace(/'/g, "''");
+								value = value.replace(/'/g, "''");
 
 
-			                    // if (ignoreCase === true) {
-			                    //     field = "tolower(" + field + ")";
-			                    // }
+								// if (ignoreCase === true) {
+								//     field = "tolower(" + field + ")";
+								// }
 
-			                } else if (angular.isDate(value)) {
+							} else if(angular.isDate(value)) {
 
-		                    	value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
-		                        format = "{1}";
+								value = $filter("date")(value, "DateTime'yyyy-MM-ddT0hh:mm:ss'");
+								format = "{1}";
 
-			                } else if (angular.isArray(value)){
-                                var tmpValue = "";
+							} else if(angular.isArray(value)) {
+								var tmpValue = "";
 
-                                for(var i = 0; i < value.length; i++){
-                                    var valum = value[i];
+								for(var i = 0; i < value.length; i++) {
+									var valum = value[i];
 
-                                    tmpValue = tmpValue + "'" + valum + "'";
+									tmpValue = tmpValue + "'" + valum + "'";
 
-                                    if(i + 1 != value.length){
-                                        tmpValue = tmpValue + ",";
-                                    }
-                                }
+									if(i + 1 != value.length) {
+										tmpValue = tmpValue + ",";
+									}
+								}
 
-                                value = tmpValue;
-                                format = "{1}";
+								value = tmpValue;
+								format = "{1}";
 
-                            } else {
-			                    format = "{1}";
-			                }
+							} else {
+								format = "{1}";
+							}
 
-			                // if (filter.length > 3) {
-			                //     if (filter !== "substringof") {
-			                //         format = "{0}({2}," + format + ")";
-			                //     } else {
-			                //         format = "{0}(" + format + ",{2})";
-			                //         // if (operator === "doesnotcontain") {
-			                //         //     if (useOdataFour) {
-			                //         //         format = "{0}({2},'{1}') eq -1";
-			                //         //         filter = "indexof";
-			                //         //     } else {
-			                //         //         format += " eq false";
-			                //         //     }
-			                //         // }
-			                //     }
-			                // } else {
-			                //     format = "{2} {0} " + format;
-			                // }
+							// if (filter.length > 3) {
+							//     if (filter !== "substringof") {
+							//         format = "{0}({2}," + format + ")";
+							//     } else {
+							//         format = "{0}(" + format + ",{2})";
+							//         // if (operator === "doesnotcontain") {
+							//         //     if (useOdataFour) {
+							//         //         format = "{0}({2},'{1}') eq -1";
+							//         //         filter = "indexof";
+							//         //     } else {
+							//         //         format += " eq false";
+							//         //     }
+							//         // }
+							//     }
+							// } else {
+							//     format = "{2} {0} " + format;
+							// }
 
-			                filter = $filter("format")(format, filter, value, field);
-			            }
-			    	}
+							filter = $filter("format")(format, filter, value, field);
+						}
+					}
 
-			    	origFilter.compiledFilter = filter;
-			        result.push(origFilter);
-			    }
+					origFilter.compiledFilter = filter;
+					result.push(origFilter);
+				}
 
- 				var SQLFilter = "", f;
+				var SQLFilter = "",
+					f;
 
- 				do{
+				do {
 
- 				}while(f);
+				} while (f);
 
- 				SQLFilter = SQLFilter.trim();
+				SQLFilter = SQLFilter.trim();
 
-		        return SQLFilter;
+				return SQLFilter;
 			}
 
-			function toSQLSort(sort){
-				var sorts = [], expr;
+			function toSQLSort(sort) {
+				var sorts = [],
+					expr;
 
-				angular.forEach(sort, function(value) {
+				angular.forEach(sort, function (value) {
 					var order = value.column.replace(/\./g, "/");
 
-					if (value.dir === "desc") {
+					if(value.dir === "desc") {
 						order += " desc";
 					}
 
@@ -2621,15 +2624,15 @@ var GloboTest = {};
 				return expr;
 			}
 
-			this.makeQuery = function(){
+			this.makeQuery = function () {
 				var query = {};
 
-				for(var ai in arguments){
+				for(var ai in arguments) {
 					var arg = arguments[ai];
 
 					//success and error must always be first, then
-					if(angular.isObject(arg)){
-						switch(arg.__type){
+					if(angular.isObject(arg)) {
+						switch(arg.__type) {
 							case "NoFilters":
 								query.$filter = toSQLFilter(arg);
 								break;
@@ -2645,8 +2648,7 @@ var GloboTest = {};
 
 				return query;
 			};
-		}])
-	;
+		}]);
 })(angular);
 
 //websql.js
@@ -2659,7 +2661,7 @@ var GloboTest = {};
  *	bulkload data into the WebSql database, and to perform a lookup for a single item,
  *	and the abilty to perform upserts.
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	var
@@ -2724,28 +2726,28 @@ var GloboTest = {};
 				"uniqueidentifier": WEBSQL_IDENTIFIERS.TEXT
 			},
 			toSqlLiteConversionFunctions: {
-				"TEXT": function(s) {
+				"TEXT": function (s) {
 					return angular.isString(s) ? s : null;
 				},
-				"BLOB": function(b) {
+				"BLOB": function (b) {
 					return b;
 				},
-				"INTEGER": function(i) {
-					if (typeof i === "boolean") // typeof null is object, thanks javascript!
+				"INTEGER": function (i) {
+					if(typeof i === "boolean") // typeof null is object, thanks javascript!
 						return i ? 1 : 0; // converts true to 1 and false to 0
 					else
 						return angular.isNumber(i) ? i : null;
 				},
-				"NUMERIC": function(n) {
+				"NUMERIC": function (n) {
 					var c = n === null ? null : Number(n);
 					return c;
 				},
-				"REAL": function(r) {
+				"REAL": function (r) {
 					return r;
 				},
-				"DATE": function(d) {
+				"DATE": function (d) {
 					var r = null;
-					if (!!d) {
+					if(!!d) {
 						r = noInfoPath.toDbDate(new Date(d));
 					}
 
@@ -2753,104 +2755,104 @@ var GloboTest = {};
 				}
 			},
 			fromSqlLiteConversionFunctions: {
-				"bigint": function(i) {
+				"bigint": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"bit": function(i) {
+				"bit": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"decimal": function(n) {
+				"decimal": function (n) {
 					return angular.isNumber(n) ? n : null;
 				},
-				"int": function(i) {
+				"int": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"money": function(n) {
+				"money": function (n) {
 					return angular.isNumber(n) ? n : null;
 				},
-				"numeric": function(n) {
+				"numeric": function (n) {
 					return angular.isNumber(n) ? n : null;
 				},
-				"smallint": function(i) {
+				"smallint": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"smallmoney": function(n) {
+				"smallmoney": function (n) {
 					return angular.isNumber(n) ? n : null;
 				},
-				"tinyint": function(i) {
+				"tinyint": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"float": function(i) {
+				"float": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"real": function(i) {
+				"real": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
-				"date": function(n) {
+				"date": function (n) {
 					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
-				"datetime": function(n) {
+				"datetime": function (n) {
 					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
-				"datetime2": function(n) {
+				"datetime2": function (n) {
 					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
-				"datetimeoffset": function(n) {
+				"datetimeoffset": function (n) {
 					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
-				"smalldatetime": function(n) {
+				"smalldatetime": function (n) {
 					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
-				"time": function(n) {
+				"time": function (n) {
 					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
 				},
-				"char": function(t) {
+				"char": function (t) {
 					return angular.isString(t) ? t : null;
 				},
-				"nchar": function(t) {
+				"nchar": function (t) {
 					return angular.isString(t) ? t : null;
 				},
-				"varchar": function(t) {
+				"varchar": function (t) {
 					return angular.isString(t) ? t : null;
 				},
-				"nvarchar": function(t) {
+				"nvarchar": function (t) {
 					return angular.isString(t) ? t : null;
 				},
-				"text": function(t) {
+				"text": function (t) {
 					return angular.isString(t) ? t : null;
 				},
-				"ntext": function(t) {
+				"ntext": function (t) {
 					return angular.isString(t) ? t : null;
 				},
-				"binary": function(i) {
+				"binary": function (i) {
 					return !angular.isNumber(i) ? i : null;
 				},
-				"varbinary": function(i) {
+				"varbinary": function (i) {
 					return !angular.isNumber(i) ? i : null;
 				},
-				"image": function(i) {
+				"image": function (i) {
 					return !angular.isNumber(i) ? i : null;
 				},
-				"uniqueidentifier": function(t) {
+				"uniqueidentifier": function (t) {
 					return angular.isString(t) ? t : null;
 				}
 			},
-			"createTable": function(tableName, tableConfig) {
+			"createTable": function (tableName, tableConfig) {
 				var rs = WEBSQL_IDENTIFIERS.CREATETABLE;
 
 				rs += tableName + " (" + WEBSQL_STATEMENT_BUILDERS.columnConstraints(tableConfig) + ")";
 
 				return rs;
 			},
-			"createView": function(viewName, viewConfig) {
+			"createView": function (viewName, viewConfig) {
 				var rs = viewConfig.entitySQL.replace("CREATE VIEW ", WEBSQL_IDENTIFIERS.CREATEVIEW);
 
 				return rs;
 			},
-			"columnDef": function(columnName, columnConfig, tableConfig) {
+			"columnDef": function (columnName, columnConfig, tableConfig) {
 				return columnName + " " + WEBSQL_STATEMENT_BUILDERS.typeName(columnConfig) + WEBSQL_STATEMENT_BUILDERS.columnConstraint(columnName, columnConfig, tableConfig);
 			},
-			"columnConstraint": function(columnName, columnConfig, tableConfig) {
+			"columnConstraint": function (columnName, columnConfig, tableConfig) {
 				var isPrimaryKey = WEBSQL_STATEMENT_BUILDERS.isPrimaryKey(columnName, tableConfig),
 					isForeignKey = WEBSQL_STATEMENT_BUILDERS.isForeignKey(columnName, tableConfig),
 					isNullable = WEBSQL_STATEMENT_BUILDERS.isNullable(columnConfig),
@@ -2862,59 +2864,59 @@ var GloboTest = {};
 
 				return returnString;
 			},
-			"typeName": function(columnConfig) {
+			"typeName": function (columnConfig) {
 				return WEBSQL_STATEMENT_BUILDERS.sqlConversion[columnConfig.type.toLowerCase()];
 			},
-			"expr": function(Expr) {
+			"expr": function (Expr) {
 				console.warn("TODO: Determine why this function exists.");
 				return "";
 			},
-			"foreignKeyClause": function(isForeignKey, columnName, foreignKeys) {
+			"foreignKeyClause": function (isForeignKey, columnName, foreignKeys) {
 				var rs = "";
-				if (isForeignKey) {
+				if(isForeignKey) {
 					rs = " " + WEBSQL_IDENTIFIERS.FOREIGNKEY + foreignKeys[columnName].table + " (" + foreignKeys[columnName].column + ")";
 				}
 				return rs;
 			},
-			"primaryKeyClause": function(isPrimaryKey) {
+			"primaryKeyClause": function (isPrimaryKey) {
 				var rs = "";
-				if (isPrimaryKey) {
+				if(isPrimaryKey) {
 					rs = " " + WEBSQL_IDENTIFIERS.PRIMARYKEY;
 				}
 				return rs;
 			},
-			"nullableClause": function(isNullable) {
+			"nullableClause": function (isNullable) {
 				var rs = "";
-				if (isNullable) {
+				if(isNullable) {
 					rs = " " + WEBSQL_IDENTIFIERS.NULL;
 				}
 				return rs;
 			},
-			"columnConstraints": function(tableConfig) {
+			"columnConstraints": function (tableConfig) {
 				var colConst = [];
-				angular.forEach(tableConfig.columns, function(value, key) {
+				angular.forEach(tableConfig.columns, function (value, key) {
 					colConst.push(WEBSQL_STATEMENT_BUILDERS.columnDef(key, value, tableConfig));
 				}, this);
 				return colConst.join(",");
 			},
-			"isPrimaryKey": function(columnName, tableConfig) {
+			"isPrimaryKey": function (columnName, tableConfig) {
 				var temp = false;
 
-				for (var x in tableConfig.primaryKey) {
-					if (columnName === tableConfig.primaryKey[x]) {
+				for(var x in tableConfig.primaryKey) {
+					if(columnName === tableConfig.primaryKey[x]) {
 						temp = true;
 						break;
 					}
 				}
 				return temp;
 			},
-			"isForeignKey": function(columnName, tableConfig) {
+			"isForeignKey": function (columnName, tableConfig) {
 				return !!tableConfig.foreignKeys[columnName];
 			},
-			"isNullable": function(columnConfig) {
+			"isNullable": function (columnConfig) {
 				return columnConfig.nullable;
 			},
-			"sqlInsert": function(tableName, data) {
+			"sqlInsert": function (tableName, data) {
 				var columnString = "",
 					placeholdersString = "",
 					returnObject = {},
@@ -2930,7 +2932,7 @@ var GloboTest = {};
 
 				return returnObject;
 			},
-			"sqlUpdate": function(tableName, data, filters) {
+			"sqlUpdate": function (tableName, data, filters) {
 				var val = {},
 					nvps = [],
 					nvpsString = "",
@@ -2951,21 +2953,22 @@ var GloboTest = {};
 
 				return returnObject;
 			},
-			"sqlUpdateNameValuePair": function(values) {
+			"sqlUpdateNameValuePair": function (values) {
 				var nvps = [];
 
-				angular.forEach(values.columns, function(col, key) {
+				angular.forEach(values.columns, function (col, key) {
 					nvps.push(col + " = ?");
 				});
 
 				return nvps;
 			},
-			"sqlDelete": function(tableName, filters) {
+			"sqlDelete": function (tableName, filters) {
 				var val = {},
 					nvps = [],
 					nvpsString = "",
 					returnObject = {},
-					safeFilter = filters ? filters.toSafeSQL() : (new noInfoPath.data.NoFilters()).toSafeSQL(),
+					safeFilter = filters ? filters.toSafeSQL() : (new noInfoPath.data.NoFilters())
+					.toSafeSQL(),
 					where;
 
 				nvps = WEBSQL_STATEMENT_BUILDERS.sqlUpdateNameValuePair(safeFilter.valueArray);
@@ -2982,7 +2985,7 @@ var GloboTest = {};
 				returnObject.valueArray = safeFilter.valueArray;
 				return returnObject;
 			},
-			"sqlRead": function(tableName, filters, sort, page) {
+			"sqlRead": function (tableName, filters, sort, page) {
 				var fs, ss, ps, returnObject = {},
 					safeFilter = filters ? filters.toSafeSQL() : undefined;
 				fs = !!filters ? " WHERE " + safeFilter.queryString : "";
@@ -2992,21 +2995,21 @@ var GloboTest = {};
 				returnObject.valueArray = safeFilter ? safeFilter.valueArray : [];
 				return returnObject;
 			},
-			"sqlOne": function(tableName, primKey, value) {
+			"sqlOne": function (tableName, primKey, value) {
 				var returnObject = {};
 				console.warn("TODO: Need to detect if the value is a string or number");
 
 				returnObject.queryString = WEBSQL_IDENTIFIERS.READ + tableName + " WHERE " + primKey + " = '" + value + "'";
 				return returnObject;
 			},
-			"parseData": function(data) {
+			"parseData": function (data) {
 
 				var values = [],
 					placeholders = [],
 					columns = [],
 					r = {};
 
-				angular.forEach(data, function(value, key) {
+				angular.forEach(data, function (value, key) {
 					//var datum = value === "undefined" || value === undefined ? "" : value;
 
 					columns.push(key);
@@ -3032,40 +3035,40 @@ var GloboTest = {};
 	 */
 	function NoWebSqlStatementFactory(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS) {
 
-		this.createSqlTableStmt = function(tableName, tableConfig) {
+		this.createSqlTableStmt = function (tableName, tableConfig) {
 			return WEBSQL_STATEMENT_BUILDERS.createTable(tableName, tableConfig);
 		};
 
-		this.createSqlViewStmt = function(tableName, viewSql) {
+		this.createSqlViewStmt = function (tableName, viewSql) {
 			return WEBSQL_STATEMENT_BUILDERS.createView(tableName, viewSql);
 		};
 
-		this.createSqlInsertStmt = function(tableName, data) {
+		this.createSqlInsertStmt = function (tableName, data) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlInsert(tableName, data);
 		};
 
-		this.createSqlUpdateStmt = function(tableName, data, filters) {
+		this.createSqlUpdateStmt = function (tableName, data, filters) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlUpdate(tableName, data, filters);
 		};
 
-		this.createSqlDeleteStmt = function(tableName, filters) {
+		this.createSqlDeleteStmt = function (tableName, filters) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlDelete(tableName, filters);
 		};
 
-		this.createSqlReadStmt = function(tableName, filters, sort, page) {
+		this.createSqlReadStmt = function (tableName, filters, sort, page) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlRead(tableName, filters, sort, page);
 		};
 
 		//console.warn("This method does not ever get used.");
-		this.createSqlOneStmt = function(tableName, primKey, value) {
+		this.createSqlOneStmt = function (tableName, primKey, value) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlOne(tableName, primKey, value);
 		};
 
-		this.createSqlClearStmt = function(tableName) {
+		this.createSqlClearStmt = function (tableName) {
 			return WEBSQL_STATEMENT_BUILDERS.sqlDelete(tableName);
 		};
 
-		this.convertToWebSQL = function(sqlColumn, sqlData) {
+		this.convertToWebSQL = function (sqlColumn, sqlData) {
 			var sqliteColumn = WEBSQL_STATEMENT_BUILDERS.sqlConversion[sqlColumn.toLowerCase()];
 
 			return WEBSQL_STATEMENT_BUILDERS.toSqlLiteConversionFunctions[sqliteColumn](sqlData);
@@ -3085,9 +3088,9 @@ var GloboTest = {};
 			_entityConfig, _entityName, _db,
 			SQLOPS = {};
 
-		if (!entityConfig) throw "entityConfig is a required parameter";
-		if (!entityName) throw "entityName is a required parameter";
-		if (!database) throw "database is a required parameter";
+		if(!entityConfig) throw "entityConfig is a required parameter";
+		if(!entityName) throw "entityName is a required parameter";
+		if(!database) throw "database is a required parameter";
 
 		_entityConfig = entityConfig;
 		_entityName = _entityConfig.entityName;
@@ -3098,22 +3101,22 @@ var GloboTest = {};
 
 		Object.defineProperties(this, {
 			"__type": {
-				"get": function() {
+				"get": function () {
 					return "INoCRUD";
 				},
 			},
 			"primaryKey": {
-				"get": function() {
+				"get": function () {
 					return _entityConfig.primaryKey;
 				}
 			},
 			"entityName": {
-				"get": function() {
+				"get": function () {
 					return _entityName;
 				}
 			},
 			"noInfoPath": {
-				"get": function() {
+				"get": function () {
 					return _entityConfig;
 				}
 			}
@@ -3126,11 +3129,11 @@ var GloboTest = {};
 			var scrubbed = {},
 				ignore = ["ModifiedBy", "ModifiedDate", "CreatedBy", "DateCreated"];
 
-			for (var ck in _entityConfig.columns) {
+			for(var ck in _entityConfig.columns) {
 				var col = _entityConfig.columns[ck],
 					val = data[ck];
 
-				if (_.indexOf(ignore, ck) === -1) {
+				if(_.indexOf(ignore, ck) === -1) {
 					//scrub undefined.
 					val = val === "undefined" || val === undefined ? null : val;
 
@@ -3161,15 +3164,15 @@ var GloboTest = {};
 				deferred = $q.defer(),
 				valueArray = sqlExpressionData.valueArray ? sqlExpressionData.valueArray : [];
 
-			_db.transaction(function(tx) {
+			_db.transaction(function (tx) {
 				tx.executeSql(
 					sqlExpressionData.queryString,
 					valueArray,
-					function(t, resultset) {
+					function (t, resultset) {
 						deferred.resolve(resultset);
 						$rootScope.$digest();
 					},
-					function(t, r, x) {
+					function (t, r, x) {
 						deferred.reject({
 							entity: _entityConfig,
 							error: r.message,
@@ -3196,7 +3199,7 @@ var GloboTest = {};
 		 *
 		 */
 		function _getTotal(noFilter) {
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				var
 					safeFilter = noFilter ? noFilter.toSafeSQL() : false,
 					filterExpression = safeFilter ? " WHERE " + safeFilter.queryString : "",
@@ -3206,14 +3209,14 @@ var GloboTest = {};
 					};
 
 				_exec(sqlExpressionData)
-					.then(function(resultset) {
-						if (resultset.rows.length === 0) {
+					.then(function (resultset) {
+						if(resultset.rows.length === 0) {
 							resolve(0);
 						} else {
 							resolve(resultset.rows[0].total);
 						}
 					})
-					.catch(function(err) {
+					.catch(function (err) {
 						console.error(err);
 					});
 			});
@@ -3223,10 +3226,10 @@ var GloboTest = {};
 			var sqlExpressionData = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters);
 
 			return _exec(sqlExpressionData)
-				.then(function(resultset) {
+				.then(function (resultset) {
 					var data;
 
-					if (resultset.rows.length === 0) {
+					if(resultset.rows.length === 0) {
 						data = {};
 					} else {
 						data = resultset.rows[0];
@@ -3239,7 +3242,7 @@ var GloboTest = {};
 		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
 			var transData = result2 && result2.rows.length ? result2 : result1;
 
-			if (trans) trans.addChange(tableName, transData, operation);
+			if(trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
 
 		}
@@ -3264,7 +3267,7 @@ var GloboTest = {};
 		 *
 		 *	This method returns an Angular Promise.
 		 */
-		this.configure = function() {
+		this.configure = function () {
 
 			var
 				stmts = {
@@ -3273,13 +3276,13 @@ var GloboTest = {};
 				},
 				deferred = $q.defer();
 
-			_db.transaction(function(tx) {
+			_db.transaction(function (tx) {
 				tx.executeSql(stmts[_entityConfig.entityType](_entityConfig.entityName, _entityConfig), [],
-					function(t, r) {
+					function (t, r) {
 						deferred.resolve();
 						$rootScope.$digest();
 					},
-					function(t, e) {
+					function (t, e) {
 						deferred.reject({
 							entity: _entityConfig,
 							error: e
@@ -3306,9 +3309,9 @@ var GloboTest = {};
 		 *
 		 *	#### Remarks
 		 */
-		this.noCreate = function(data, noTransaction) {
+		this.noCreate = function (data, noTransaction) {
 
-			if (_entityConfig.entityType === "V") throw "Create operation not supported by SQL Views.";
+			if(_entityConfig.entityType === "V") throw "Create operation not supported by SQL Views.";
 
 			/*
 			 *	When resolving the primary key for the purpose of createing a new record, it is
@@ -3330,11 +3333,11 @@ var GloboTest = {};
 				_entityConfig.primaryKey[0] : _entityConfig.primaryKey,
 				sqlStmt, scrubbed;
 
-			if (pk && !data[pk]) {
+			if(pk && !data[pk]) {
 				data[_entityConfig.primaryKey] = noInfoPath.createUUID();
 			}
 
-			if (noTransaction) {
+			if(noTransaction) {
 				data = scrubData(data);
 
 				/*
@@ -3352,9 +3355,9 @@ var GloboTest = {};
 
 			sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data);
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
-					.then(function(result) {
+					.then(function (result) {
 						return THIS.noOne(result.insertId)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "C", noTransaction))
 							.catch(_transactionFault.bind(null, reject));
@@ -3385,12 +3388,12 @@ var GloboTest = {};
 
 			var filters, sort, page, readObject;
 
-			for (var ai in arguments) {
+			for(var ai in arguments) {
 				var arg = arguments[ai];
 
 				//success and error must always be first, then
-				if (angular.isObject(arg)) {
-					switch (arg.__type) {
+				if(angular.isObject(arg)) {
+					switch(arg.__type) {
 						case "NoFilters":
 							filters = arg;
 							break;
@@ -3406,15 +3409,15 @@ var GloboTest = {};
 
 			readObject = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters, sort, page);
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				var resp;
 
 				_exec(readObject)
-					.then(function(resultset) {
+					.then(function (resultset) {
 						resp = new noInfoPath.data.NoResults(_.toArray(resultset.rows));
-						if (page) {
+						if(page) {
 							_getTotal(filters)
-								.then(function(total) {
+								.then(function (total) {
 									resp.total = total;
 									resp.page(page);
 									resolve(resp);
@@ -3432,40 +3435,45 @@ var GloboTest = {};
 
 			var table = this,
 				filters, sort, page, readObject,
+				follow = true,
 				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
 				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
-			function _followRelations(arrayOfThings) {
+			function _followRelations(follow, arrayOfThings) {
 				var promises = {},
 					columns = table.noInfoPath.foreignKeys,
 					promiseKeys = {};
 
-				for (var c in columns) {
-					var col = columns[c],
-						keys = _.pluck(arrayOfThings.rows, col.column),
-						o = {
-							col: col,
-							keys: keys
-						};
+				if(follow) {
+					for(var c in columns) {
+						var col = columns[c],
+							keys = _.pluck(arrayOfThings.rows, col.column),
+							o = {
+								col: col,
+								keys: keys
+							};
 
-					if (promiseKeys[col.refTable]) {
-						promiseKeys[col.refTable].keys = promiseKeys[col.refTable].keys.concat(o.keys);
-					} else {
-						promiseKeys[col.refTable] = o;
+						if(promiseKeys[col.refTable]) {
+							promiseKeys[col.refTable].keys = promiseKeys[col.refTable].keys.concat(o.keys);
+						} else {
+							promiseKeys[col.refTable] = o;
+						}
 					}
+
+					for(var pk in promiseKeys) {
+						var obj = promiseKeys[pk];
+
+						promises[pk] = _expand(obj.col, obj.keys);
+					}
+
+					return _.size(promises) > 0 ?
+						$q.all(promises)
+						.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+						.catch(_fault) :
+						$q.when(arrayOfThings);
+				} else {
+					return $q.when(arrayOfThings);
 				}
-
-				for (var pk in promiseKeys) {
-					var obj = promiseKeys[pk];
-
-					promises[pk] = _expand(obj.col, obj.keys);
-				}
-
-				return _.size(promises) > 0 ?
-					$q.all(promises)
-					.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-					.catch(_fault) :
-					$q.when(arrayOfThings);
 			}
 
 			function _expand(col, keys) {
@@ -3473,17 +3481,17 @@ var GloboTest = {};
 					filters = new noInfoPath.data.NoFilters(),
 					ft = theDb[col.refTable];
 
-				if (!ft) {
+				if(!ft) {
 					ft = theDb[aliases[col.refTable]];
 				}
 
-				if (!ft) throw "Invalid refTable " + aliases[col.refTable];
+				if(!ft) throw "Invalid refTable " + aliases[col.refTable];
 
-				if (exclusions.indexOf(col.column) > -1) {
+				if(exclusions.indexOf(col.column) > -1) {
 					return $q.when(new noInfoPath.data.NoResults());
 				}
 
-				if (!keys) {
+				if(!keys) {
 					throw {
 						error: "Invalid key value",
 						col: col,
@@ -3493,7 +3501,7 @@ var GloboTest = {};
 
 				filters.quickAdd(col.refColumn, "in", keys);
 
-				if (keys.length > 0) {
+				if(keys.length > 0) {
 					return ft.noRead(filters)
 						.catch(_expand_fault.bind(table, col, keys, filters));
 				} else {
@@ -3513,10 +3521,10 @@ var GloboTest = {};
 
 			function _finished_following_fk(columns, arrayOfThings, refData) {
 				var returnArray = _.toArray(arrayOfThings.rows);
-				for (var i = 0; i < returnArray.length; i++) {
+				for(var i = 0; i < returnArray.length; i++) {
 					var item = returnArray[i];
 
-					for (var c in columns) {
+					for(var c in columns) {
 						var col = columns[c],
 							key = item[col.column],
 							refTable = refData[col.refTable].paged,
@@ -3541,12 +3549,12 @@ var GloboTest = {};
 			function _page(page, arrayOfThings) {
 				var ctx = this;
 
-				return $q(function(resolve, reject) {
+				return $q(function (resolve, reject) {
 					var resp = new noInfoPath.data.NoResults(arrayOfThings.rows ? _.toArray(arrayOfThings.rows) : arrayOfThings);
 
-					if (page) {
+					if(page) {
 						_getTotal(ctx.filters)
-							.then(function(total) {
+							.then(function (total) {
 								resp.total = total;
 								resp.page(page);
 								resolve(resp);
@@ -3558,12 +3566,12 @@ var GloboTest = {};
 				});
 			}
 
-			for (var ai in arguments) {
+			for(var ai in arguments) {
 				var arg = arguments[ai];
 
 				//success and error must always be first, then
-				if (angular.isObject(arg)) {
-					switch (arg.__type) {
+				if(angular.isObject(arg) || typeof (arg) === "boolean") {
+					switch(arg.__type) {
 						case "NoFilters":
 							filters = arg;
 							break;
@@ -3573,15 +3581,15 @@ var GloboTest = {};
 						case "NoPage":
 							page = arg;
 							break;
+						default:
+							if(typeof (arg) === "boolean") {
+								follow = arg;
+							}
 					}
 				}
 			}
 
-
-
 			readObject = noWebSQLStatementFactory.createSqlReadStmt(_entityName, filters, sort, page);
-
-
 
 			var _filter = _exec;
 
@@ -3593,11 +3601,11 @@ var GloboTest = {};
 				readObject: readObject
 			};
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				var resp;
 
 				_filter(readObject)
-					.then(_followRelations.bind(ctx))
+					.then(_followRelations.bind(ctx, follow))
 					.then(_page.bind(ctx, page))
 					.then(resolve)
 					.catch(reject);
@@ -3621,8 +3629,8 @@ var GloboTest = {};
 		 *
 		 *	Returns an AngularJS Promise.
 		 */
-		this.noUpdate = function(data, noTransaction) {
-			if (_entityConfig.entityType === "V") throw "Update operation not supported by SQL Views.";
+		this.noUpdate = function (data, noTransaction) {
+			if(_entityConfig.entityType === "V") throw "Update operation not supported by SQL Views.";
 
 			/*
 			 *	When resolving the primary key of the object to update
@@ -3632,11 +3640,11 @@ var GloboTest = {};
 				id = data[_entityConfig.primaryKey],
 				sqlStmt, scrubbed;
 
-			if (!id) throw "Primary key value must exist an object being updated.";
+			if(!id) throw "Primary key value must exist an object being updated.";
 
 			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
-			if (noTransaction) {
+			if(noTransaction) {
 
 				data = scrubData(data);
 
@@ -3652,9 +3660,9 @@ var GloboTest = {};
 
 			sqlStmt = noWebSQLStatementFactory.createSqlUpdateStmt(_entityName, data, noFilters);
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
-					.then(function(id, result) {
+					.then(function (id, result) {
 						return THIS.noOne(id)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "U", noTransaction))
 							.catch(_transactionFault.bind(null, reject));
@@ -3676,9 +3684,9 @@ var GloboTest = {};
 		 * |data|Object|Name Value Pairs|
 		 * |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 		 */
-		this.noDestroy = function(data, noTransaction, filters) {
+		this.noDestroy = function (data, noTransaction, filters) {
 
-			if (_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
+			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
 			var
 				noFilters = resolveID(filters ? filters : data, _entityConfig),
@@ -3687,10 +3695,10 @@ var GloboTest = {};
 
 			sqlStmt = noWebSQLStatementFactory.createSqlDeleteStmt(_entityName, noFilters);
 
-			return $q(function(resolve, reject) {
-				if (noTransaction) {
+			return $q(function (resolve, reject) {
+				if(noTransaction) {
 					_getOne(noFilters)
-						.then(function(datum) {
+						.then(function (datum) {
 							_exec(sqlStmt)
 								.then(_recordTransaction.bind(null, resolve, _entityName, "D", noTransaction, datum))
 								.catch(reject);
@@ -3710,7 +3718,7 @@ var GloboTest = {};
 		function resolveID(query, entityConfig) {
 			var filters = new noInfoPath.data.NoFilters();
 
-			if (angular.isNumber(query)) {
+			if(angular.isNumber(query)) {
 				//Assume rowid
 				/*
 				 *	When query a number, a filter is created on the instrinsic
@@ -3720,7 +3728,7 @@ var GloboTest = {};
 				 */
 				filters.quickAdd("rowid", "eq", query);
 
-			} else if (angular.isString(query)) {
+			} else if(angular.isString(query)) {
 				//Assume guid
 				/*
 				 * When the query is a string it is assumed a table is being queried
@@ -3729,16 +3737,16 @@ var GloboTest = {};
 				 * > Passing a string when the entity is
 				 * a SQL View is not allowed.
 				 */
-				if (entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+				if(entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
 
 				filters.quickAdd(entityConfig.primaryKey, "eq", query);
 
-			} else if (angular.isObject(query)) {
-				if (query.__type === "NoFilters") {
+			} else if(angular.isObject(query)) {
+				if(query.__type === "NoFilters") {
 					filters = query;
 				} else {
 					//Simple key/value pairs. Assuming all are equal operators and are anded.
-					for (var k in query) {
+					for(var k in query) {
 						filters.quickAdd(k, "eq", query[k]);
 					}
 				}
@@ -3780,7 +3788,7 @@ var GloboTest = {};
 		 * > inherently replicatable.
 		 *
 		 */
-		this.noOne = function(query) {
+		this.noOne = function (query) {
 			/**
 			 *	When 'query' is an object then check to see if it is a
 			 *	NoFilters object.  If not, add a filter to the intrinsic filters object
@@ -3791,10 +3799,10 @@ var GloboTest = {};
 			//Internal _getOne requires and NoFilters object.
 			//return _getOne(filters);
 			return this.noRead(filters)
-				.then(function(resultset) {
+				.then(function (resultset) {
 					var data;
 
-					if (resultset.length === 0) {
+					if(resultset.length === 0) {
 						data = {};
 					} else {
 						data = resultset[0];
@@ -3807,10 +3815,10 @@ var GloboTest = {};
 		/*
 		 *	### @method noUpsert(data)
 		 */
-		this.noUpsert = function(data, noTransaction) {
-			if (_entityConfig.entityType === "V") throw "Upsert operation not supported by SQL Views.";
+		this.noUpsert = function (data, noTransaction) {
+			if(_entityConfig.entityType === "V") throw "Upsert operation not supported by SQL Views.";
 
-			if (data[this.primaryKey]) {
+			if(data[this.primaryKey]) {
 				return this.noUpdate(data, noTransaction);
 			} else {
 				return this.noCreate(data, noTransaction);
@@ -3825,12 +3833,12 @@ var GloboTest = {};
 		 * #### Returns
 		 * AngularJS Promise.
 		 */
-		this.noClear = function() {
-			if (_entityConfig.entityType === "V") throw "Clear operation not supported by SQL Views.";
+		this.noClear = function () {
+			if(_entityConfig.entityType === "V") throw "Clear operation not supported by SQL Views.";
 
 			var sqlStmt = noWebSQLStatementFactory.createSqlClearStmt(_entityName);
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
 					.then(resolve)
 					.catch(reject);
@@ -3844,17 +3852,17 @@ var GloboTest = {};
 		 *	Inserts object in to the WebSQL database, converting data from
 		 *	ANSI SQL to WebSQL.  No transactions are recorded during this operation.
 		 */
-		this.noBulkCreate = function(data) {
-			if (_entityConfig.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
+		this.noBulkCreate = function (data) {
+			if(_entityConfig.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
 
-			for (var c in _entityConfig.columns) {
+			for(var c in _entityConfig.columns) {
 				var col = _entityConfig.columns[c];
 				data[c] = noWebSQLStatementFactory.convertToWebSQL(col.type, data[c]);
 			}
 
 			var sqlStmt = noWebSQLStatementFactory.createSqlInsertStmt(_entityName, data, null);
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
 					.then(resolve)
 					.catch(reject);
@@ -3872,8 +3880,8 @@ var GloboTest = {};
 		 *	Returns an AngularJS Promise.  Takes advantage of
 		 *	Promise.notify to report project of the bulkLoad operation.
 		 */
-		this.bulkLoad = function(data, progress) {
-			if (entityConfig.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
+		this.bulkLoad = function (data, progress) {
+			if(entityConfig.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
 
 			var deferred = $q.defer(),
 				table = this;
@@ -3881,7 +3889,7 @@ var GloboTest = {};
 			function _import(data, progress) {
 				var total = data ? data.length : 0;
 
-				$timeout(function() {
+				$timeout(function () {
 					//progress.rows.start({max: total});
 					deferred.notify(progress);
 				});
@@ -3893,21 +3901,21 @@ var GloboTest = {};
 				//});
 
 				function _next() {
-					if (currentItem < data.length) {
+					if(currentItem < data.length) {
 						var datum = data[currentItem];
 
 						table.noBulkCreate(datum)
-							.then(function(data) {
+							.then(function (data) {
 								//progress.updateRow(progress.rows);
 								deferred.notify(data);
 							})
-							.catch(function() {
+							.catch(function () {
 								deferred.reject({
 									entity: table,
 									error: arguments
 								});
 							})
-							.finally(function() {
+							.finally(function () {
 								currentItem++;
 								_next();
 							});
@@ -3922,7 +3930,7 @@ var GloboTest = {};
 			//console.info("bulkLoad: ", table.TableName)
 
 			table.noClear()
-				.then(function() {
+				.then(function () {
 					_import(data, progress);
 				}.bind(this));
 
@@ -3933,7 +3941,7 @@ var GloboTest = {};
 		SQLOPS.U = this.noUpdate;
 		SQLOPS.D = this.noDestroy;
 
-		this.noImport = function(noChange) {
+		this.noImport = function (noChange) {
 			function checkForExisting() {
 				var id = noChange.changedPKID;
 
@@ -3944,7 +3952,8 @@ var GloboTest = {};
 				var
 					localDate = new Date(data.ModifiedDate),
 					remoteDate = new Date(changes.ModifiedDate),
-					same = moment(localDate).isSame(remoteDate, 'second');
+					same = moment(localDate)
+					.isSame(remoteDate, 'second');
 
 				console.log(localDate, remoteDate, same);
 
@@ -3957,7 +3966,7 @@ var GloboTest = {};
 					"U": THIS.noUpdate
 				};
 				//console.log(data, changes);
-				if (isSame(data, changes.values)) {
+				if(isSame(data, changes.values)) {
 					console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
 					changes.isSame = true;
 					resolve(changes);
@@ -3970,7 +3979,7 @@ var GloboTest = {};
 
 
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 
 				function ok(data) {
 					console.log(data);
@@ -3983,9 +3992,9 @@ var GloboTest = {};
 				}
 
 				checkForExisting()
-					.then(function(data) {
+					.then(function (data) {
 
-						switch (noChange.operation) {
+						switch(noChange.operation) {
 							case "D":
 
 								THIS.noDestroy(noChange.changedPKID)
@@ -4023,7 +4032,7 @@ var GloboTest = {};
 		 *	supplied Entity Configuration and Database.
 		 *
 		 */
-		this.create = function(entityConfig, entityName, database) {
+		this.create = function (entityConfig, entityName, database) {
 			var entity = new NoWebSqlEntity($rootScope, $q, $timeout, _, noWebSqlStatementFactory, entityConfig, entityName, database, noDbSchema);
 			return entity;
 		};
@@ -4037,16 +4046,16 @@ var GloboTest = {};
 
 		Object.defineProperties(this, {
 			"isInitialized": {
-				"get": function() {
+				"get": function () {
 					return !!noLocalStorage.getItem(_name);
 				}
 			}
 		});
 
 		//TODO: modify config to also contain Views, as well as, Tables.
-		this.configure = function(noUser, schema) {
-			if (!noUser || noUser.constructor.name !== "NoInfoPathUser") throw "noWebSql::configure requires the first parameter to be a NoInfoPathUser object.";
-			if (!schema || schema.constructor.name !== "NoDbSchema") throw "noWebSql::configure requires the second parameter to be a NoDbSchema object.";
+		this.configure = function (noUser, schema) {
+			if(!noUser || noUser.constructor.name !== "NoInfoPathUser") throw "noWebSql::configure requires the first parameter to be a NoInfoPathUser object.";
+			if(!schema || schema.constructor.name !== "NoDbSchema") throw "noWebSql::configure requires the second parameter to be a NoDbSchema object.";
 
 			var _webSQL = null,
 				promises = [],
@@ -4057,7 +4066,7 @@ var GloboTest = {};
 			_webSQL.currentUser = noUser;
 			_webSQL.name = schema.config.dbName;
 
-			angular.forEach(schema.tables, function(table, name) {
+			angular.forEach(schema.tables, function (table, name) {
 
 				var
 					db = this,
@@ -4071,24 +4080,24 @@ var GloboTest = {};
 			}, _webSQL);
 
 			return $q.all(promises)
-				.then(function() {
+				.then(function () {
 					$rootScope[noWebSQLInitialized] = _webSQL;
 					return _webSQL;
 				})
-				.catch(function(err) {
+				.catch(function (err) {
 					console.error(err);
 				});
 		};
 
-		this.whenReady = function() {
-			return $q(function(resolve, reject) {
+		this.whenReady = function () {
+			return $q(function (resolve, reject) {
 				var noWebSQLInitialized = "noWebSQL_" + config.dbName;
 
-				if ($rootScope[noWebSQLInitialized]) {
+				if($rootScope[noWebSQLInitialized]) {
 					resolve();
 				} else {
-					$rootScope.$watch(noWebSQLInitialized, function(newval, oldval, scope) {
-						if (newval) {
+					$rootScope.$watch(noWebSQLInitialized, function (newval, oldval, scope) {
+						if(newval) {
 							resolve();
 						}
 					});
@@ -4096,7 +4105,7 @@ var GloboTest = {};
 			});
 		};
 
-		this.getDatabase = function(databaseName) {
+		this.getDatabase = function (databaseName) {
 			return $rootScope["noWebSQL_" + databaseName];
 		};
 
@@ -4107,19 +4116,19 @@ var GloboTest = {};
 
 	.constant("WEBSQL_STATEMENT_BUILDERS", WEBSQL_STATEMENT_BUILDERS)
 
-	.factory("noWebSqlStatementFactory", ["WEBSQL_IDENTIFIERS", "WEBSQL_STATEMENT_BUILDERS", function(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS) {
+	.factory("noWebSqlStatementFactory", ["WEBSQL_IDENTIFIERS", "WEBSQL_STATEMENT_BUILDERS", function (WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS) {
 		return new NoWebSqlStatementFactory(WEBSQL_IDENTIFIERS, WEBSQL_STATEMENT_BUILDERS);
 	}])
 
-	.factory("noWebSqlEntityFactory", ["$rootScope", "$q", "$timeout", "lodash", "noWebSqlStatementFactory", "noDbSchema", function($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory, noDbSchema) {
+	.factory("noWebSqlEntityFactory", ["$rootScope", "$q", "$timeout", "lodash", "noWebSqlStatementFactory", "noDbSchema", function ($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory, noDbSchema) {
 		return new NoWebSqlEntityFactory($rootScope, $q, $timeout, lodash, noWebSqlStatementFactory, noDbSchema);
 	}])
 
-	.factory("noWebSql", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", "noDbSchema", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema) {
+	.factory("noWebSql", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", "noDbSchema", function ($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema) {
 		return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema);
 	}])
 
-	.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", "noDbSchema", function($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema) {
+	.factory("noWebSQL", ["$rootScope", "lodash", "$q", "$timeout", "noWebSqlEntityFactory", "noLocalStorage", "noWebSqlStatementFactory", "noDbSchema", function ($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema) {
 		return new NoWebSqlService($rootScope, _, $q, $timeout, noWebSqlEntityFactory, noLocalStorage, noWebSqlStatementFactory, noDbSchema);
 	}]);
 })(angular);
@@ -4170,11 +4179,11 @@ var GloboTest = {};
  *   involved, how to carry out the transaction, and in what order.
  *
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage) {
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage) {
 
 			function NoTransaction(userId, config, thescope) {
 				//var transCfg = noTransConfig;
@@ -4184,24 +4193,25 @@ var GloboTest = {};
 
 				Object.defineProperties(this, {
 					"__type": {
-						"get": function() {
+						"get": function () {
 							return "NoTransaction";
 						}
 					}
 				});
 
 				this.transactionId = noInfoPath.createUUID();
-				this.timestamp = (new Date()).toJSON();
+				this.timestamp = (new Date())
+					.toJSON();
 				this.userId = userId;
 				this.changes = new NoChanges();
 				this.state = "pending";
 
-				this.addChange = function(tableName, data, changeType) {
+				this.addChange = function (tableName, data, changeType) {
 					var tableCfg = scope["noDbSchema_" + config.noDataSource.databaseName];
 					this.changes.add(tableName, data, changeType, tableCfg);
 				};
 
-				this.toObject = function() {
+				this.toObject = function () {
 					var json = angular.fromJson(angular.toJson(this));
 					json.changes = _.toArray(json.changes);
 
@@ -4221,11 +4231,11 @@ var GloboTest = {};
 					keysd.push("DateCreated");
 					keysd.push("CreatedBy");
 
-					for (var t in noTransactions) {
+					for(var t in noTransactions) {
 						var transaction = noTransactions[t],
 							en = config.noDataSource.crudEntity ? config.noDataSource.crudEntity : config.noDataSource.entityName;
 
-						if (_.isBoolean(transaction)) {
+						if(_.isBoolean(transaction)) {
 							noTransactions[t] = [{
 								entityName: en
 									//omit_fields: keysd
@@ -4239,7 +4249,7 @@ var GloboTest = {};
 				function resolveProvider(provider, scope, data) {
 					var prov;
 
-					switch (provider) {
+					switch(provider) {
 						case "data":
 							prov = data;
 							break;
@@ -4259,7 +4269,7 @@ var GloboTest = {};
 				this.upsert = function upsert(data) {
 					data = data ? data : {};
 
-					return $q(function(resolve, reject) {
+					return $q(function (resolve, reject) {
 						var
 							THIS = SELF,
 							dsCfg = config.noDataSource,
@@ -4270,20 +4280,20 @@ var GloboTest = {};
 							results = {},
 							preOps = {
 								"noop": angular.noop,
-								"basic": function(curEntity, data, scope) {
+								"basic": function (curEntity, data, scope) {
 									var writableData = {};
 
 
 
-									if (curEntity.fields) {
-										for (var f in curEntity.fields) {
+									if(curEntity.fields) {
+										for(var f in curEntity.fields) {
 											var fld = curEntity.fields[f],
 												fldName, prov, val;
 
 											//When field value is get remote values then store on
 											//the writableData object.
 
-											if (angular.isString(fld)) {
+											if(angular.isString(fld)) {
 												/*
 												 *	When a field is a string then the value will be the
 												 *	property on the data object provider to the call
@@ -4292,7 +4302,7 @@ var GloboTest = {};
 												fldName = fld;
 												val = data[fld];
 
-											} else if (angular.isObject(fld)) {
+											} else if(angular.isObject(fld)) {
 												/*
 												 *	When a field is an object then confgure as if the
 												 *	value will be coming from a trusted provider like
@@ -4300,7 +4310,7 @@ var GloboTest = {};
 												 */
 												fldName = fld.field;
 
-												if (angular.isObject(fld.value)) {
+												if(angular.isObject(fld.value)) {
 													/*
 													 *	When `scope` is the provider then the directive scope is used.
 													 *	Otherwise the supplied injecable provider will be used.
@@ -4308,10 +4318,10 @@ var GloboTest = {};
 
 													prov = resolveProvider(fld.value.provider, scope, data);
 
-													if (prov && fld.value.method) {
+													if(prov && fld.value.method) {
 														var params = [];
 
-														for (var pi = 0; pi < fld.value.method.params.length; pi++) {
+														for(var pi = 0; pi < fld.value.method.params.length; pi++) {
 															var cfg = fld.value.method.params[pi],
 																prov2 = resolveProvider(cfg.provider, scope, data);
 
@@ -4319,7 +4329,7 @@ var GloboTest = {};
 														}
 
 														val = prov[fld.value.method.name].apply(null, params);
-													} else if (prov && fld.value.property) {
+													} else if(prov && fld.value.property) {
 														val = noInfoPath.getItem(prov, fld.value.property);
 													}
 
@@ -4337,7 +4347,7 @@ var GloboTest = {};
 											//NOTE: This is temporary and should be refactored
 											//      into the actual provider.  And be data
 											//      driven not conditional.
-											if (fld.type === "date") {
+											if(fld.type === "date") {
 												val = noInfoPath.toDbDate(val);
 											}
 
@@ -4346,7 +4356,7 @@ var GloboTest = {};
 
 										writableData = angular.merge(data, writableData);
 
-									} else if (curEntity.dataService) {
+									} else if(curEntity.dataService) {
 										var service = $injector.get(curEntity.dataService.provider),
 											method = service[curEntity.dataService.method];
 
@@ -4356,7 +4366,7 @@ var GloboTest = {};
 										writableData = data;
 									}
 
-									if (curEntity.omit_fields) {
+									if(curEntity.omit_fields) {
 										writableData = _.omit(writableData, curEntity.omit_fields);
 									}
 
@@ -4365,15 +4375,15 @@ var GloboTest = {};
 									return writableData;
 
 								},
-								"joiner": function(curEntity, data, scope) {
+								"joiner": function (curEntity, data, scope) {
 									var writableData = {};
 
-									if (curEntity.fields) {
-										for (var f in curEntity.fields) {
+									if(curEntity.fields) {
+										for(var f in curEntity.fields) {
 											var fld = curEntity.fields[f],
 												prov, value;
 
-											switch (fld.value.provider) {
+											switch(fld.value.provider) {
 												case "data":
 													var t = {};
 													t[fld.value.property] = data;
@@ -4397,7 +4407,7 @@ var GloboTest = {};
 
 											writableData[fld.field] = value;
 										}
-									} else if (curEntity.dataService) {
+									} else if(curEntity.dataService) {
 										var service = $injector.get(curEntity.dataService.provider),
 											method = service[curEntity.dataService.method];
 
@@ -4406,7 +4416,7 @@ var GloboTest = {};
 									}
 									return writableData;
 								},
-								"joiner-many": function(curEntity, data, scope) {
+								"joiner-many": function (curEntity, data, scope) {
 									var writableData = {
 											drop: [],
 											add: []
@@ -4415,15 +4425,15 @@ var GloboTest = {};
 										sourceDataAdd = scope[curEntity.source.add.property],
 										createJoin = preOps.joiner;
 
-									if (sourceDataDrop) {
-										for (var dd = 0; dd < sourceDataDrop.length; dd++) {
+									if(sourceDataDrop) {
+										for(var dd = 0; dd < sourceDataDrop.length; dd++) {
 											var sdd = sourceDataDrop[dd];
 											writableData.drop.push(createJoin(curEntity, sdd, scope));
 										}
 									}
 
-									if (sourceDataAdd) {
-										for (var da = 0; da < sourceDataAdd.length; da++) {
+									if(sourceDataAdd) {
+										for(var da = 0; da < sourceDataAdd.length; da++) {
 											var sda = sourceDataAdd[da];
 											writableData.add.push(createJoin(curEntity, sda, scope));
 										}
@@ -4439,11 +4449,11 @@ var GloboTest = {};
 							filter.quickAdd(parentCfg.primaryKey, "eq", data[parentCfg.primaryKey]);
 
 							return entity.noRead(filter)
-								.then(function(data) {
+								.then(function (data) {
 									console.log(data.paged);
 
 									var ra = [];
-									for (var d = 0; d < data.length; d++) {
+									for(var d = 0; d < data.length; d++) {
 										var datum = data[d];
 										ra.push(datum[entity.primaryKey[0]]);
 									}
@@ -4456,23 +4466,23 @@ var GloboTest = {};
 						 * are recorded in the current transaction.
 						 */
 						function dropAllRelatedToParentKey(ds, curEntity, data) {
-							return $q(function(resolve, reject) {
+							return $q(function (resolve, reject) {
 								var d = 0;
 
 								function recurse() {
 									var datum = data[d++],
 										filter = new noInfoPath.data.NoFilters();
 
-									if (datum) {
+									if(datum) {
 
 										filter.quickAdd(curEntity.primaryKey, "eq", datum);
 
 										ds.destroy(null, SELF, filter)
-											.then(function(r) {
+											.then(function (r) {
 												console.log(r);
 												recurse();
 											})
-											.catch(function(err) {
+											.catch(function (err) {
 												console.error(err);
 												reject(err);
 											});
@@ -4490,19 +4500,19 @@ var GloboTest = {};
 						 * Add each record one at a time to ensure that the transaction is recorded.
 						 */
 						function addAllRelatedToParentKey(ds, entity, data, scope) {
-							return $q(function(resolve, reject) {
+							return $q(function (resolve, reject) {
 								var d = 0;
 
 								function recurse() {
 									var datum = data[d++];
 
-									if (datum) {
+									if(datum) {
 										ds.create(datum, SELF)
-											.then(function(r) {
+											.then(function (r) {
 												console.log(r);
 												recurse();
 											})
-											.catch(function(err) {
+											.catch(function (err) {
 												console.error(err);
 												reject(err);
 											});
@@ -4521,12 +4531,12 @@ var GloboTest = {};
 						//Perform create or update operation.
 						function executeDataOperation(dataSource, curEntity, opType, writableData) {
 							return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
-								.then(function(data) {
+								.then(function (data) {
 									//get row from base data source
 									var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
 									//TODO: see where and when this is used.
-									if (curEntity.cacheOnScope) {
+									if(curEntity.cacheOnScope) {
 										scope[curEntity.entityName] = data;
 									}
 
@@ -4561,7 +4571,7 @@ var GloboTest = {};
 								preOp, dsConfig, dataSource, writableData, exec;
 
 							//Check to see if we have run out of entities to recurse.
-							if (!curEntity || curOpEntity >= opEntites.length) {
+							if(!curEntity || curOpEntity >= opEntites.length) {
 								resolve(results);
 								return;
 							}
@@ -4590,7 +4600,7 @@ var GloboTest = {};
 							dataSource = noDataSource.create(dsConfig, scope);
 
 							//resolve writeable data, execution function.
-							switch (preOp) {
+							switch(preOp) {
 								case "joiner-many":
 									/*
 									 *  ### joiner-many
@@ -4601,7 +4611,7 @@ var GloboTest = {};
 									 */
 									writableData = preOps[preOp](curEntity, data, scope);
 
-									exec = function() {
+									exec = function () {
 										return getAllRelatedToParentKey(dsCfg, dataSource.entity, data)
 											.then(dropAllRelatedToParentKey.bind(null, dataSource, curEntity))
 											.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
@@ -4648,7 +4658,7 @@ var GloboTest = {};
 							 *	member table.
 							 *
 							 */
-							if ((opType === "update" && !curEntity.createOnly) || opType == "create") {
+							if((opType === "update" && !curEntity.createOnly) || opType == "create") {
 								exec(dataSource, curEntity, opType, writableData);
 							} else {
 								_recurse();
@@ -4669,15 +4679,15 @@ var GloboTest = {};
 				 *	logic to be implement at the record level, before saving.
 				 *
 				 */
-				this.bulkUpsert = function(data, constructor) {
+				this.bulkUpsert = function (data, constructor) {
 					//console.log(data);
-					return $q(function(resolve, reject) {
+					return $q(function (resolve, reject) {
 						var promises = [];
 
-						for (var i = 0; i < data.length; i++) {
+						for(var i = 0; i < data.length; i++) {
 							var model = data[i];
 
-							if (model.dirty) {
+							if(model.dirty) {
 								promises.push(this.upsert(new constructor(model)));
 							}
 						}
@@ -4689,10 +4699,10 @@ var GloboTest = {};
 					}.bind(this));
 				};
 
-				this.destroy = function(data, filters) {
+				this.destroy = function (data, filters) {
 					data = data ? data : {};
 
-					return $q(function(resolve, reject) {
+					return $q(function (resolve, reject) {
 						var THIS = SELF,
 							dsCfg = config.noDataSource,
 							opType = "destroy",
@@ -4705,7 +4715,7 @@ var GloboTest = {};
 							var curEntity = opEntites[curOpEntity],
 								preOp, dsConfig, dataSource, writableData;
 
-							if (!curEntity || curOpEntity >= opEntites.length) {
+							if(!curEntity || curOpEntity >= opEntites.length) {
 								resolve(results);
 								return;
 							}
@@ -4721,7 +4731,7 @@ var GloboTest = {};
 							writableData = data; //preOps[preOp](curEntity, data, scope);
 
 							dataSource[opType](writableData, SELF, filters)
-								.then(function(data) {
+								.then(function (data) {
 									results[config.noDataSource.entityName] = writableData;
 									_recurse();
 
@@ -4737,14 +4747,14 @@ var GloboTest = {};
 			function NoChanges() {
 				Object.defineProperties(this, {
 					"__type": {
-						"get": function() {
+						"get": function () {
 							return "NoChanges";
 						}
 					}
 				});
 				var arr = [];
 				noInfoPath.setPrototypeOf(this, arr);
-				this.add = function(tableName, data, changeType, tableCfg) {
+				this.add = function (tableName, data, changeType, tableCfg) {
 					var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
 						change = new NoChange(tableName, data, changeType, tableCfg, !!syncVer ? syncVer.version : 0);
 
@@ -4758,30 +4768,30 @@ var GloboTest = {};
 				function normalizeValues(inData) {
 					var data = angular.copy(inData),
 						converters = {
-							"bit": function(d) {
+							"bit": function (d) {
 								return !!d;
 							},
-							"decimal": function(d) {
+							"decimal": function (d) {
 								var r = d;
-								if (r) {
+								if(r) {
 									r = String(r);
 								}
 
 								return r;
 							},
-							"undefined": function(d) {
+							"undefined": function (d) {
 								return d;
 							}
 						};
 
-					for (var c in data) {
+					for(var c in data) {
 						var dt,
 							col = tblSchema.columns[c];
 
-						if (col) {
+						if(col) {
 							dt = converters[col.type];
 
-							if (!dt) {
+							if(!dt) {
 								dt = converters["undefined"];
 							}
 
@@ -4793,7 +4803,7 @@ var GloboTest = {};
 
 				Object.defineProperties(this, {
 					"__type": {
-						"get": function() {
+						"get": function () {
 							return "NoChange";
 						}
 					}
@@ -4808,24 +4818,24 @@ var GloboTest = {};
 			function NoTransactionCache() {
 
 
-				this.beginTransaction = function(userId, noTransConfig, scope) {
+				this.beginTransaction = function (userId, noTransConfig, scope) {
 					return new NoTransaction(userId, noTransConfig, scope);
 				};
 
-				this.endTransaction = function(transaction) {
+				this.endTransaction = function (transaction) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
 					console.log(transaction);
 
 					return entity.noCreate(transaction.toObject())
-						.then(function() {
+						.then(function () {
 							$rootScope.$broadcast("noTransactionCache::localDataUpdated", transaction);
 						});
 				};
 
-				this.getAllPending = function() {
-					return $q(function(resolve, reject) {
+				this.getAllPending = function () {
+					return $q(function (resolve, reject) {
 						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 							entity = db.NoInfoPath_Changes;
 
@@ -4839,7 +4849,7 @@ var GloboTest = {};
 					});
 				};
 
-				this.markTransactionSynced = function(t) {
+				this.markTransactionSynced = function (t) {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
@@ -4849,7 +4859,7 @@ var GloboTest = {};
 
 				};
 
-				this.dropAllSynced = function() {
+				this.dropAllSynced = function () {
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
@@ -4857,14 +4867,14 @@ var GloboTest = {};
 						.where("state")
 						.equals("synced")
 						.toArray()
-						.then(function(data) {
-							for (var d in data) {
+						.then(function (data) {
+							for(var d in data) {
 								var datum = data[d];
 
 								entity.noDestroy(datum);
 							}
 						})
-						.catch(function(err) {
+						.catch(function (err) {
 							console.error(err);
 						});
 				};
@@ -5044,7 +5054,7 @@ var GloboTest = {};
  *
  *	### \_extendDexieTables
  */
-(function(angular, Dexie, undefined) {
+(function (angular, Dexie, undefined) {
 	"use strict";
 
 	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
@@ -5054,7 +5064,7 @@ var GloboTest = {};
 		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
 			var transData = result2 && result2.rows.length ? result2 : result1;
 
-			if (trans) trans.addChange(tableName, transData, operation);
+			if(trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
 
 		}
@@ -5065,13 +5075,13 @@ var GloboTest = {};
 
 		Object.defineProperties(this, {
 			"isInitialized": {
-				"get": function() {
+				"get": function () {
 					return !!noLocalStorage.getItem(_name);
 				}
 			}
 		});
 
-		this.configure = function(noUser, schema) {
+		this.configure = function (noUser, schema) {
 			var _dexie = new Dexie(schema.config.dbName),
 				noIndexedDbInitialized = "noIndexedDb_" + schema.config.dbName;
 
@@ -5079,8 +5089,8 @@ var GloboTest = {};
 				function _toDexieClass(tsqlTableSchema) {
 					var _table = {};
 
-					angular.forEach(tsqlTableSchema.columns, function(column, columnName) {
-						switch (column.type) {
+					angular.forEach(tsqlTableSchema.columns, function (column, columnName) {
+						switch(column.type) {
 							case "uniqueidentifier":
 							case "nvarchar":
 							case "varchar":
@@ -5106,7 +5116,7 @@ var GloboTest = {};
 					return _table;
 				}
 
-				angular.forEach(dbSchema, function(table, tableName) {
+				angular.forEach(dbSchema, function (table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
 					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					table.parentSchema = schema;
@@ -5125,32 +5135,32 @@ var GloboTest = {};
 				$rootScope.$digest();
 			}
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				_dexie.currentUser = noUser;
-				_dexie.on('error', function(err) {
+				_dexie.on('error', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.error("Dexie Error: " + err);
 					_reject($rootScope, reject, err);
 				});
 
-				_dexie.on('blocked', function(err) {
+				_dexie.on('blocked', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					noLogService.warn("IndexedDB is currently execting a blocking operation.");
 					_reject($rootScope, reject, err);
 				});
 
-				_dexie.on('versionchange', function(err) {
+				_dexie.on('versionchange', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
 					//noLogService.error("IndexedDB as detected a version change");
 					_reject($rootScope, reject, "IndexedDB as detected a version change");
 				});
 
-				_dexie.on('populate', function(err) {
+				_dexie.on('populate', function (err) {
 					//Log to console or show en error indicator somewhere in your GUI...
 					//noLogService.warn("IndedexDB populate...  not implemented.");
 				});
 
-				_dexie.on('ready', function(data) {
+				_dexie.on('ready', function (data) {
 					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
 					// Log to console or show en error indicator somewhere in your GUI...
 					$rootScope[noIndexedDbInitialized] = _dexie;
@@ -5159,7 +5169,7 @@ var GloboTest = {};
 
 				});
 
-				if (_dexie.isOpen()) {
+				if(_dexie.isOpen()) {
 					//Do nothing, `ready` event should bubble up.
 
 					// $timeout(function() {
@@ -5167,7 +5177,7 @@ var GloboTest = {};
 					// 	window.noInfoPath.digest(deferred.resolve);
 					// });
 				} else {
-					if (_.size(schema.store)) {
+					if(_.size(schema.store)) {
 						_dexie.version(schema.config.version)
 							.stores(schema.store);
 						_extendDexieTables.call(_dexie, schema.tables);
@@ -5182,17 +5192,17 @@ var GloboTest = {};
 
 		};
 
-		this.whenReady = function(config) {
+		this.whenReady = function (config) {
 			var deferred = $q.defer();
 
-			$timeout(function() {
+			$timeout(function () {
 				var noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
 
-				if ($rootScope[noIndexedDbInitialized]) {
+				if($rootScope[noIndexedDbInitialized]) {
 					deferred.resolve();
 				} else {
-					$rootScope.$watch(noIndexedDbInitialized, function(newval, oldval, scope) {
-						if (newval) {
+					$rootScope.$watch(noIndexedDbInitialized, function (newval, oldval, scope) {
+						if(newval) {
 							deferred.resolve();
 						}
 					});
@@ -5202,7 +5212,7 @@ var GloboTest = {};
 			return deferred.promise;
 		};
 
-		this.getDatabase = function(databaseName) {
+		this.getDatabase = function (databaseName) {
 			return $rootScope["noIndexedDb_" + databaseName];
 		};
 
@@ -5219,27 +5229,27 @@ var GloboTest = {};
 					"in": "anyOfIgnoreCase"
 				};
 
-			db.WriteableTable.prototype.noCreate = function(data, trans) {
+			db.WriteableTable.prototype.noCreate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this;
 
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
-				_dexie.transaction("rw", table, function() {
+				_dexie.transaction("rw", table, function () {
 						data.CreatedBy = _dexie.currentUser.userId;
 						data.DateCreated = noInfoPath.toDbDate(new Date());
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 
-						if (!data[table.schema.primKey.name]) {
+						if(!data[table.schema.primKey.name]) {
 							data[table.schema.primKey.name] = noInfoPath.createUUID();
 						}
 
 						_dexie.nosync = true;
 
 						table.add(data)
-							.then(function(data) {
+							.then(function (data) {
 								//noLogService.log("addSuccessful", data);
 
 								table.get(data)
@@ -5247,12 +5257,12 @@ var GloboTest = {};
 									.catch(_transactionFault.bind(null, deferred.reject));
 
 							})
-							.catch(function(err) {
+							.catch(function (err) {
 								//deferred.reject("noCRUD::create " + err);
 								deferred.reject(err);
 							});
 					})
-					.catch(function(err) {
+					.catch(function (err) {
 						deferred.reject("noCRUD::createTrans " + err);
 						deferred.reject(err);
 					});
@@ -5281,48 +5291,48 @@ var GloboTest = {};
 						"in": "in"
 					},
 					compareOps = {
-						"is null": function(a) {
+						"is null": function (a) {
 							return a === null;
 						},
-						"is not null": function(a) {
+						"is not null": function (a) {
 							return a !== null;
 						},
-						"eq": function(a, b) {
+						"eq": function (a, b) {
 							return a === b;
 						},
-						"ne": function(a, b) {
+						"ne": function (a, b) {
 							return a !== b;
 						},
-						"gt": function(a, b) {
+						"gt": function (a, b) {
 							return a > b;
 						},
-						"ge": function(a, b) {
+						"ge": function (a, b) {
 							return a >= b;
 						},
-						"lt": function(a, b) {
+						"lt": function (a, b) {
 							return a < b;
 						},
-						"le": function(a, b) {
+						"le": function (a, b) {
 							return a <= b;
 						},
-						"contains": function(a, b) {
+						"contains": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.indexOf(b) > -1 : false;
 						},
-						"notcontains": function(a, b) {
+						"notcontains": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.indexOf(b) === -1 : false;
 						},
-						"startswith": function(a, b) {
+						"startswith": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.indexOf(b) === 0 : false;
 						},
-						"endswith": function(a, b) {
+						"endswith": function (a, b) {
 							var areStrings = angular.isString(a) && angular.isString(b);
 							return areString ? a.lastIndexOf(b) > -1 : false;
 						},
-						"in": function(a, b) {
-							return  a.indexof(b) > -1;
+						"in": function (a, b) {
+							return a.indexof(b) > -1;
 						}
 					},
 					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
@@ -5342,19 +5352,19 @@ var GloboTest = {};
 						return ok;
 					}
 
-					if (!!filters) {
-						for (var fi = 0; fi < filters.length; fi++) {
+					if(!!filters) {
+						for(var fi = 0; fi < filters.length; fi++) {
 							var filter = filters[fi],
 								ex = filter.filters[0],
 								where, evaluator, logic;
 
-							if (fi === 0) {
+							if(fi === 0) {
 								//When `fi` is 0 create the WhereClause, extract the evaluator
 								//that will be used to create a collection based on the filter.
 								where = table.where(filter.column);
 
 								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
-								if (table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
+								if(table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
 									evaluator = where[indexedOperators[ex.operator]];
 									collection = evaluator.call(where, ex.value);
 								} else {
@@ -5363,7 +5373,7 @@ var GloboTest = {};
 
 								logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
 							} else {
-								if (logic) {
+								if(logic) {
 									collection = logic(_logicCB.bind(null, filter, ex));
 								}
 							}
@@ -5384,18 +5394,18 @@ var GloboTest = {};
 							bval = noInfoPath.getItem(b, s.column);
 
 
-						if (s.dir === "desc") {
-							if (aval < bval) {
+						if(s.dir === "desc") {
+							if(aval < bval) {
 								return 1;
 							}
-							if (aval > bval) {
+							if(aval > bval) {
 								return -1;
 							}
 						} else {
-							if (aval > bval) {
+							if(aval > bval) {
 								return 1;
 							}
-							if (aval < bval) {
+							if(aval < bval) {
 								return -1;
 							}
 						}
@@ -5405,8 +5415,8 @@ var GloboTest = {};
 
 					}
 
-					if (sorts) {
-						for (var s = 0; s < sorts.length; s++) {
+					if(sorts) {
+						for(var s = 0; s < sorts.length; s++) {
 							var sort = sorts[s];
 
 							arrayOfThings.sort(_compare.bind(null, sort));
@@ -5415,7 +5425,7 @@ var GloboTest = {};
 				}
 
 				function _page(page, arrayOfThings) {
-					if (page) {
+					if(page) {
 						arrayOfThings.page(page);
 					}
 				}
@@ -5436,11 +5446,11 @@ var GloboTest = {};
 						ft = theDb[col.refTable];
 
 					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
-					if (!ft) {
+					if(!ft) {
 						ft = theDb[aliases[col.refTable]];
 					}
 
-					if (!ft) throw "Invalid refTable " + aliases[col.refTable];
+					if(!ft) throw "Invalid refTable " + aliases[col.refTable];
 
 					// if(tableCache[col.refTable]) {
 					// 	tbl = tableCache[col.refTable];
@@ -5448,7 +5458,7 @@ var GloboTest = {};
 					// 	tableCache[col.refTable] = tbl;
 					// }
 
-					if (!keys) {
+					if(!keys) {
 						throw {
 							error: "Invalid key value",
 							col: col,
@@ -5460,7 +5470,7 @@ var GloboTest = {};
 					filters.quickAdd(col.refColumn, "in", keys);
 
 					//follow the foreign key and get is data.
-					if (keys.length > 0) {
+					if(keys.length > 0) {
 						return ft.noRead(filters)
 							.catch(_expand_fault.bind(table, col, keys, filters));
 					} else {
@@ -5470,7 +5480,7 @@ var GloboTest = {};
 				}
 
 				function _finalResults(finalResults) {
-					if (finalResults.exception) {
+					if(finalResults.exception) {
 						console.warn(finalResults.exception);
 						resolve(new noInfoPath.data.NoResults([]));
 					} else {
@@ -5486,10 +5496,10 @@ var GloboTest = {};
 
 				function _finished_following_fk(columns, arrayOfThings, refData) {
 
-					for (var i = 0; i < arrayOfThings.length; i++) {
+					for(var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
 
-						for (var c in columns) {
+						for(var c in columns) {
 							var col = columns[c],
 								key = item[col.column],
 								refTable = refData[col.refTable].paged,
@@ -5511,10 +5521,10 @@ var GloboTest = {};
 
 				function _finished_following_meta(columns, arrayOfThings, refData) {
 					console.log(columns, arrayOfThings, refData);
-					for (var i = 0; i < arrayOfThings.length; i++) {
+					for(var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
 
-						for (var c in columns) {
+						for(var c in columns) {
 							var col = columns[c],
 								key = item[col.columnName],
 								data = refData[key];
@@ -5539,7 +5549,7 @@ var GloboTest = {};
 					var promises = {},
 						columns = table.noInfoPath.foreignKeys;
 
-					for (var c in columns) {
+					for(var c in columns) {
 						var col = columns[c],
 							keys = _.pluck(arrayOfThings, col.column);
 
@@ -5592,18 +5602,18 @@ var GloboTest = {};
 						noEntity = ctx.table.noInfoPath,
 						columns = noEntity.columns;
 
-					for (var colName in columns) {
+					for(var colName in columns) {
 						var col = columns[colName];
 
-						if (col.followMetaDataKeys) {
-							for (var i = 0; i < arrayOfThings.length; i++) {
+						if(col.followMetaDataKeys) {
+							for(var i = 0; i < arrayOfThings.length; i++) {
 								var thing = arrayOfThings[i],
 									meta = thing.MetaDataDefinitionID,
 									fiters;
 
 								//Only folow lookup columns.
-								if (meta.InputType === "combobox") {
-									if (!!thing[colName]) {
+								if(meta.InputType === "combobox") {
+									if(!!thing[colName]) {
 										filters = new noInfoPath.data.NoFilters();
 										filters.quickAdd(meta.ValueField, "eq", thing[colName]);
 
@@ -5646,12 +5656,12 @@ var GloboTest = {};
 
 				}
 
-				for (var ai in arguments) {
+				for(var ai in arguments) {
 					var arg = arguments[ai];
 
 					//success and error must always be first, then
-					if (angular.isObject(arg)) {
-						switch (arg.__type) {
+					if(angular.isObject(arg)) {
+						switch(arg.__type) {
 							case "NoFilters":
 								filters = arg;
 								break;
@@ -5672,7 +5682,7 @@ var GloboTest = {};
 					sort: sort
 				};
 
-				return $q(function(resolve, reject) {
+				return $q(function (resolve, reject) {
 					var collection,
 						data,
 						promise;
@@ -5687,7 +5697,7 @@ var GloboTest = {};
 							.catch(_fault.bind(ctx, ctx, reject));
 						//.then(_finish(collection, table, resolve, reject));
 
-					} catch (err) {
+					} catch(err) {
 						console.error(err);
 						reject(err);
 					}
@@ -5703,14 +5713,14 @@ var GloboTest = {};
 
 			db.Table.prototype.noRead = NoRead_new;
 
-			db.WriteableTable.prototype.noUpdate = function(data, trans) {
+			db.WriteableTable.prototype.noUpdate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this,
 					key = data[table.noInfoPath.primaryKey];
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
-				_dexie.transaction("rw", table, function() {
+				_dexie.transaction("rw", table, function () {
 						Dexie.currentTransaction.nosync = true;
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
@@ -5720,14 +5730,14 @@ var GloboTest = {};
 
 					})
 					.then(angular.noop())
-					.catch(function(err) {
+					.catch(function (err) {
 						window.noInfoPath.digestError(deferred.reject, err);
 					});
 
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noDestroy = function(data, trans, filters) {
+			db.WriteableTable.prototype.noDestroy = function (data, trans, filters) {
 				var deferred = $q.defer(),
 					table = this,
 					key = data[table.noInfoPath.primaryKey],
@@ -5736,10 +5746,10 @@ var GloboTest = {};
 				//noLogService.log("adding: ", _dexie.currentUser);
 				//noLogService.log(key);
 
-				_dexie.transaction("rw", table, function() {
+				_dexie.transaction("rw", table, function () {
 						Dexie.currentTransaction.nosync = true;
 
-						if (!!filters) {
+						if(!!filters) {
 							//First filter will use where();
 							var filter = filters[0],
 								where = table.where(filter.column),
@@ -5759,23 +5769,23 @@ var GloboTest = {};
 						}
 					})
 					.then(angular.noop())
-					.catch(function(err) {
+					.catch(function (err) {
 						deferred.reject(err);
 					});
 
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noOne = function(data) {
+			db.WriteableTable.prototype.noOne = function (data) {
 				var table = this,
 					key = data[table.noInfoPath.primaryKey];
 
-				return $q(function(resolve, reject) {
+				return $q(function (resolve, reject) {
 					table.noRead(data)
-						.then(function(results) {
+						.then(function (results) {
 							resolve(results.length > 0 ? results[0] : {});
 						})
-						.catch(function(err) {
+						.catch(function (err) {
 							reject(err);
 						});
 
@@ -5783,39 +5793,39 @@ var GloboTest = {};
 
 			};
 
-			db.WriteableTable.prototype.bulkLoad = function(data, progress) {
+			db.WriteableTable.prototype.bulkLoad = function (data, progress) {
 				var deferred = $q.defer(),
 					table = this;
 				//var table = this;
 				function _import(data, progress) {
 					var total = data ? data.length : 0;
 
-					$timeout(function() {
+					$timeout(function () {
 						//progress.rows.start({max: total});
 						deferred.notify(progress);
 					});
 
 					var currentItem = 0;
 
-					_dexie.transaction('rw', table, function() {
+					_dexie.transaction('rw', table, function () {
 						Dexie.currentTransaction.nosync = true;
 						_next();
 					});
 
 
 					function _next() {
-						if (currentItem < data.length) {
+						if(currentItem < data.length) {
 							var datum = data[currentItem];
 
 							table.add(datum)
-								.then(function(data) {
+								.then(function (data) {
 									//progress.updateRow(progress.rows);
 									deferred.notify(data);
 								})
-								.catch(function(err) {
+								.catch(function (err) {
 									deferred.reject(err);
 								})
-								.finally(function() {
+								.finally(function () {
 									currentItem++;
 									_next();
 								});
@@ -5830,10 +5840,10 @@ var GloboTest = {};
 				//console.info("bulkLoad: ", table.TableName)
 
 				table.clear()
-					.then(function() {
+					.then(function () {
 						_import(data, progress);
 					}.bind(this))
-					.catch(function(err) {
+					.catch(function (err) {
 						console.error(err);
 					});
 
@@ -5855,11 +5865,11 @@ var GloboTest = {};
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 
-	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 
@@ -5885,7 +5895,7 @@ var GloboTest = {};
  *
  *	```
  */
-(function(angular, undefined) {
+(function (angular, undefined) {
 
 	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields) {
 		var provider = $injector.get(dsConfig.dataProvider),
@@ -5897,55 +5907,55 @@ var GloboTest = {};
 
 		Object.defineProperties(this, {
 			"entity": {
-				"get": function() {
+				"get": function () {
 					return entity;
 				}
 			}
 		});
 
 
-		this.create = function(data, noTrans) {
-			if (isNoView) throw "create operation not supported on entities of type NoView";
+		this.create = function (data, noTrans) {
+			if(isNoView) throw "create operation not supported on entities of type NoView";
 
 			return entity.noCreate(data, noTrans);
 
 		};
 
-		this.read = function(options) {
+		this.read = function (options) {
 			function requestData(scope, config, entity, queryParser, resolve, reject) {
 				var params = angular.merge({}, options);
 
 				params.filter = noDynamicFilters.configure(config, scope);
 
-				if (config.sort) {
+				if(config.sort) {
 					params.sort = config.sort;
 				}
 
-				if (config.take) {
+				if(config.take) {
 					params.take = config.take;
 					params.skip = config.skip;
 				}
 
 				return entity.noRead.apply(entity, queryParser.parse(params))
-					.then(function(data) {
+					.then(function (data) {
 
 						data = noCalculatedFields.calculate(config, data);
 
 						resolve(data);
 					})
-					.catch(function(err) {
+					.catch(function (err) {
 						reject(err);
 					});
 
 			}
 
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				var waitFor, filterValues;
 
-				if (dsConfig.waitFor) {
-					waitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
-						if (newval) {
+				if(dsConfig.waitFor) {
+					waitFor = _scope.$watch(dsConfig.waitFor.property, function (newval, oldval, scope) {
+						if(newval) {
 							requestData(scope, dsConfig, entity, qp, resolve, reject);
 
 							waitFor();
@@ -5959,33 +5969,33 @@ var GloboTest = {};
 
 		};
 
-		this.update = function(data, noTrans) {
-			if (isNoView) throw "update operation not supported on entities of type NoView";
+		this.update = function (data, noTrans) {
+			if(isNoView) throw "update operation not supported on entities of type NoView";
 
 			return entity.noUpdate(data, noTrans);
 		};
 
-		this.destroy = function(data, noTrans, filters) {
-			if (isNoView) throw "destroy operation not supported on entities of type NoView";
+		this.destroy = function (data, noTrans, filters) {
+			if(isNoView) throw "destroy operation not supported on entities of type NoView";
 
 			return entity.noDestroy(data, noTrans, filters);
 		};
 
-		this.one = function(id) {
+		this.one = function (id) {
 			function requestData(scope, config, entity, resolve, reject) {
 				var params = [];
 
-				if (id) {
+				if(id) {
 					filterValues = {};
 					filterValues[config.primaryKey] = id;
-				} else if (dsConfig.lookup) {
+				} else if(dsConfig.lookup) {
 					filterValues = $injector.get(dsConfig.lookup.source, _scope);
 
-				} else if (dsConfig.filter) {
+				} else if(dsConfig.filter) {
 					filterValues = new noInfoPath.data.NoFilters(noDynamicFilters.configure(config, _scope));
 				}
 
-				if (entity.constructor.name === "NoView") {
+				if(entity.constructor.name === "NoView") {
 					params[0] = filterValues;
 					params[1] = config.primaryKey;
 				} else {
@@ -5993,17 +6003,17 @@ var GloboTest = {};
 				}
 
 				return entity.noOne.apply(entity, params)
-					.then(function(data) {
+					.then(function (data) {
 						resolve(data);
 					})
-					.catch(function(err) {
+					.catch(function (err) {
 						reject(err);
 					});
 
 			}
 
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				var endWaitFor, filterValues;
 				/*
 				 *	@property noDataSource.waitFor
@@ -6011,9 +6021,9 @@ var GloboTest = {};
 				 *	Use this property when you want the data source wait for some other
 				 *	NoInfoPath component to update the `scope`.
 				 */
-				if (dsConfig.waitFor) {
-					endWaitFor = _scope.$watch(dsConfig.waitFor.property, function(newval, oldval, scope) {
-						if (newval) {
+				if(dsConfig.waitFor) {
+					endWaitFor = _scope.$watch(dsConfig.waitFor.property, function (newval, oldval, scope) {
+						if(newval) {
 
 							requestData(scope, dsConfig, entity, resolve, reject);
 
@@ -6032,7 +6042,7 @@ var GloboTest = {};
 
 	angular.module("noinfopath.data")
 
-	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", "noCalculatedFields", function($injector, $q, noDynamicFilters, noCalculatedFields) {
+	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", "noCalculatedFields", function ($injector, $q, noDynamicFilters, noCalculatedFields) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -6051,7 +6061,7 @@ var GloboTest = {};
 		 *	An instance of a NoDataSource object.
 		 *
 		 */
-		this.create = function(dsConfig, scope) {
+		this.create = function (dsConfig, scope) {
 			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields);
 		};
 	}]);
@@ -6060,27 +6070,27 @@ var GloboTest = {};
 })(angular);
 
 //misc.js
-(function(angular, undefined) {
+(function (angular, undefined) {
 	angular.module("noinfopath.data")
-		.service("noFullName", [function() {
+		.service("noFullName", [function () {
 			var temp;
 
 			function parse(inval) {
 				temp = inval.split(" ");
 			}
 
-			this.firstName = function(fullName) {
+			this.firstName = function (fullName) {
 				parse(fullName);
-				if (temp && temp.length > 0) {
+				if(temp && temp.length > 0) {
 					return temp[0];
 				} else {
 					return "";
 				}
 			};
 
-			this.lastName = function(fullName) {
+			this.lastName = function (fullName) {
 				parse(fullName);
-				if (temp && temp.length > 1) {
+				if(temp && temp.length > 1) {
 					return temp[1];
 				} else {
 					return "";
@@ -6106,14 +6116,14 @@ var GloboTest = {};
 	 *	```
 	 */
 
-	.service("noCalculatedFields", [function(){
+	.service("noCalculatedFields", [function () {
 
-		function timespanDays(parserCfg, data){
+		function timespanDays(parserCfg, data) {
 			var d1 = data[parserCfg.parser.fields.date1] ? new Date(data[parserCfg.parser.fields.date1]) : "",
 				d2 = data[parserCfg.parser.fields.date2] ? new Date(data[parserCfg.parser.fields.date2]) : "",
 				rd;
 
-			if (angular.isDate(d1) && angular.isDate(d2)){
+			if(angular.isDate(d1) && angular.isDate(d2)) {
 				rd = (d1 - d2) / 1000 / 60 / 60 / 24;
 			}
 
@@ -6124,16 +6134,16 @@ var GloboTest = {};
 			"timespanDays": timespanDays
 		};
 
-		this.calculate = function(dsConfig, data) {
+		this.calculate = function (dsConfig, data) {
 
 			var calculatedFields = dsConfig.calculatedFields;
 
-			if (calculatedFields) {
+			if(calculatedFields) {
 
-				for (var d = 0; d < data.length; d++) {
+				for(var d = 0; d < data.length; d++) {
 					var datum = data[d];
 
-					for (var i = 0; i < calculatedFields.length; i++) {
+					for(var i = 0; i < calculatedFields.length; i++) {
 						var cf = calculatedFields[i],
 							provider = cf.parser.provider ? $injector.get(cf.parser.provider) : fns,
 							method = provider[cf.parser.method];
@@ -6152,7 +6162,7 @@ var GloboTest = {};
 })(angular);
 
 //dynamic-filter.js
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	function NoDynamicFilterService($injector) {
@@ -6166,7 +6176,7 @@ var GloboTest = {};
 		 */
 		function normalizeFilterValue(value, type) {
 			var outval = value;
-			switch (type) {
+			switch(type) {
 				case "date":
 					outval = noInfoPath.toDbDate(value);
 					break;
@@ -6181,7 +6191,7 @@ var GloboTest = {};
 
 		function resolveValueSource(valueCfg, scope) {
 			var source;
-			if (["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
+			if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
 				source = $injector.get(valueCfg.source);
 			} else {
 				source = scope;
@@ -6202,7 +6212,7 @@ var GloboTest = {};
 		 *	> NOTE: Currently $rootScope is the only supported injectable source.
 		 */
 		function configureValueWatch(dsConfig, filterCfg, source, cb) {
-			if (source.$watch && filterCfg.value.watch && cb) {
+			if(source.$watch && filterCfg.value.watch && cb) {
 				var filter = angular.copy(filterCfg);
 				source.$watch(filterCfg.value.property, cb.bind(filter, dsConfig, filterCfg));
 			}
@@ -6240,11 +6250,11 @@ var GloboTest = {};
 			 *	string "scope" or the name of an AngularJS injectable service that
 			 *	is a JavaScript object. Possible services could be $rootScope or $stateParams.
 			 */
-			for (var f in filters) {
+			for(var f in filters) {
 				var filter = filters[f],
 					source, value;
-				if (angular.isObject(filter.value)) {
-					if (angular.isArray(filter.value)) {
+				if(angular.isObject(filter.value)) {
+					if(angular.isArray(filter.value)) {
 						values[filter.field] = normalizeFilterValue(filter.value); // in statement
 					} else {
 						source = resolveValueSource(filter.value, scope);
@@ -6261,13 +6271,13 @@ var GloboTest = {};
 		function makeFilters(dsConfig, scope, watchCB) {
 			var filters = [],
 				filterValues;
-			if (dsConfig.filter) {
+			if(dsConfig.filter) {
 				filterValues = resolveFilterValues(dsConfig, dsConfig.filter, scope, watchCB);
-				for (var f in dsConfig.filter) {
+				for(var f in dsConfig.filter) {
 					var filter = dsConfig.filter[f],
 						value;
-					if (angular.isObject(filter.value)) {
-						if (angular.isArray(filter.value)) {
+					if(angular.isObject(filter.value)) {
+						if(angular.isArray(filter.value)) {
 							value = filter.value; // in statement
 						} else {
 							value = filterValues[filter.field];
@@ -6294,20 +6304,20 @@ var GloboTest = {};
 
 //template-cache.js
 /*
-*	NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
-*	inferred in the documentation or perform by ngInclude.
-*/
-(function(angular, undefined) {
+ *	NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
+ *	inferred in the documentation or perform by ngInclude.
+ */
+(function (angular, undefined) {
 	angular.module("noinfopath.data")
-		.service("noTemplateCache", ["$q", "$templateRequest", "$templateCache", function($q, $templateRequest, $templateCache){
-			this.get = function(url){
+		.service("noTemplateCache", ["$q", "$templateRequest", "$templateCache", function ($q, $templateRequest, $templateCache) {
+			this.get = function (url) {
 
-				return $q(function(resolve, reject){
+				return $q(function (resolve, reject) {
 					var tmp = $templateCache.get(url);
 
 					if(tmp) {
 						resolve(tmp);
-					}else{
+					} else {
 						$templateRequest(url)
 							.then($templateCache.get.bind(this, url))
 							.then(resolve)
@@ -6319,21 +6329,21 @@ var GloboTest = {};
 })(angular);
 
 //mock-http.js
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	function NoMockHTTPService($injector, $q, $rootScope, noLogService) {
 		var THIS = this;
 
-		this.whenReady = function(tables) {
+		this.whenReady = function (tables) {
 
-			return $q(function(resolve, reject) {
-				if ($rootScope.noMockHTTPInitialized) {
+			return $q(function (resolve, reject) {
+				if($rootScope.noMockHTTPInitialized) {
 					noLogService.log("noMockHTTP Ready.");
 					resolve();
 				} else {
-					$rootScope.$watch("noMockHTTPServiceInitialized", function(newval) {
-						if (newval) {
+					$rootScope.$watch("noMockHTTPServiceInitialized", function (newval) {
+						if(newval) {
 							noLogService.log("noMockHTTP ready.");
 							resolve();
 						}
@@ -6343,10 +6353,10 @@ var GloboTest = {};
 			});
 		};
 
-		this.configure = function(noUser, schema ) {
+		this.configure = function (noUser, schema) {
 			var jsonDataProvider = $injector.get(schema.config.dataProvider);
-			return $q(function(resolve, reject) {
-				for (var t in schema.tables) {
+			return $q(function (resolve, reject) {
+				for(var t in schema.tables) {
 					var table = schema.tables[t];
 					THIS[t] = new NoTable($q, t, table, jsonDataProvider[t]);
 				}
@@ -6360,7 +6370,7 @@ var GloboTest = {};
 
 		};
 
-		this.getDatabase = function(databaseName) {
+		this.getDatabase = function (databaseName) {
 			return $rootScope["noMockHTTP_" + databaseName];
 		};
 
@@ -6373,32 +6383,32 @@ var GloboTest = {};
 
 		Object.defineProperties(this, {
 			entity: {
-				get: function() {
+				get: function () {
 					return _table;
 				}
 			}
 		});
 
-		this.noCreate = function(data) {
+		this.noCreate = function (data) {
 
 			return $q.when({});
 		};
 
-		this.noRead = function() {
+		this.noRead = function () {
 			return $q.when(new noInfoPath.data.NoResults(data));
 		};
 
-		this.noUpdate = function(data) {
+		this.noUpdate = function (data) {
 
 			return $q.when({});
 
 		};
 
-		this.noDestroy = function(data) {
+		this.noDestroy = function (data) {
 			return $q.when("200");
 		};
 
-		this.noOne = function(query) {
+		this.noOne = function (query) {
 			return $q.when({});
 
 		};
@@ -6407,29 +6417,29 @@ var GloboTest = {};
 
 	angular.module('noinfopath.data')
 
-		.provider("noMockHTTP", [function() {
-			this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function($injector, $q, $rootScope, noLogService) {
-				return new NoMockHTTPService($injector, $q, $rootScope, noLogService);
+	.provider("noMockHTTP", [function () {
+		this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function ($injector, $q, $rootScope, noLogService) {
+			return new NoMockHTTPService($injector, $q, $rootScope, noLogService);
 			}];
 		}]);
 })(angular);
 
 //file-storage.js
-(function(){
+(function () {
 	"use strict";
 
 
 	function NoLocalFileStorageService($q, noDataSource) {
 
 		/**
-		*	@method cache(file)
-		*
-		*	Saves a file to the noDataSource defined in the config object.
-		*
-		*	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
-		*
-		*/
-		this.cache = function saveToCache(fileObj){
+		 *	@method cache(file)
+		 *
+		 *	Saves a file to the noDataSource defined in the config object.
+		 *
+		 *	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
+		 *
+		 */
+		this.cache = function saveToCache(fileObj) {
 			var dsCfg = {
 				"dataProvider": "noIndexedDb",
 				"databaseName": "NoInfoPath_dtc_v1",
@@ -6448,10 +6458,10 @@ var GloboTest = {};
 		};
 
 		/**
-		*	@method removeFromCache(file)
-		*
-		*	Deletes a file by FileID from the NoInfoPath_FileUploadCache.
-		*/
+		 *	@method removeFromCache(file)
+		 *
+		 *	Deletes a file by FileID from the NoInfoPath_FileUploadCache.
+		 */
 		this.removeFromCache = function (fileID) {
 			var dsCfg = {
 				"dataProvider": "noIndexedDb",
@@ -6471,17 +6481,17 @@ var GloboTest = {};
 		};
 
 		/**
-		*	@method read(file)
-		*
-		*	Reads a file from a DOM File object and converts to a binary
-		*	string compatible with the local, and upstream file systems.
-		*/
+		 *	@method read(file)
+		 *
+		 *	Reads a file from a DOM File object and converts to a binary
+		 *	string compatible with the local, and upstream file systems.
+		 */
 		this.read = function (file, comp) {
-			return $q(function(resolve, reject){
+			return $q(function (resolve, reject) {
 				var fileObj = {},
 					reader = new FileReader();
 
-				reader.onloadend = function(e){
+				reader.onloadend = function (e) {
 					fileObj.name = file.name;
 					fileObj.size = file.size;
 					fileObj.type = file.type;
@@ -6490,7 +6500,7 @@ var GloboTest = {};
 					resolve(fileObj);
 				};
 
-				reader.onerror = function(err) {
+				reader.onerror = function (err) {
 					console.error(err);
 					reject(err);
 				};
@@ -6503,6 +6513,5 @@ var GloboTest = {};
 	}
 
 	angular.module("noinfopath.data")
-		.service("noLocalFileStorage", ["$q", "noDataSource", NoLocalFileStorageService])
-		;
+		.service("noLocalFileStorage", ["$q", "noDataSource", NoLocalFileStorageService]);
 })();

@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.21
+ *	@version 1.2.22
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -68,20 +68,20 @@
  *
  */
 (noInfoPath.data = {});
-(function(angular, undefined) {
+(function (angular, undefined) {
 	"use strict";
 
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', function($injector, $parse, $timeout, $q, $rootScope, $browser, $filter) {
+	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter) {
 
 		function _digestTimeout() {
 
 
-			if ($timeout.flush && $browser.deferredFns.length) {
-				if ($rootScope.$$phase) {
-					setTimeout(function() {
+			if($timeout.flush && $browser.deferredFns.length) {
+				if($rootScope.$$phase) {
+					setTimeout(function () {
 						$timeout.flush();
 					}, 10);
 				} else {
@@ -95,7 +95,7 @@
 		function _digestError(fn, error) {
 			var digestError = error;
 
-			if (angular.isObject(error)) {
+			if(angular.isObject(error)) {
 				digestError = error.toString();
 			}
 
@@ -107,14 +107,14 @@
 		function _digest(fn, data) {
 			var message = [];
 
-			if (angular.isArray(data)) {
+			if(angular.isArray(data)) {
 				message = data;
 			} else {
 				message = [data];
 			}
 
-			if (window.jasmine) {
-				$timeout(function() {
+			if(window.jasmine) {
+				$timeout(function () {
 					fn.apply(null, message);
 				});
 				$timeout.flush();

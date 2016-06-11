@@ -209,7 +209,7 @@ var
 	WEBSQL_STATEMENT_BUILDERS_MOCKS = {
 		"createTable": {
 			params: ["foo", noDbSchemaMock.foo],
-		//	expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
+			//	expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT REFERENCES bar (barID) NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
 			expected: "CREATE TABLE IF NOT EXISTS foo (Description TEXT NULL,fooID TEXT PRIMARY KEY ASC,barID TEXT NULL,number INTEGER NULL,price NUMERIC,CreatedBy TEXT,DateCreated DATE,ModifiedBy TEXT,ModifiedDate DATE)"
 		},
 		"createView": {
@@ -220,19 +220,19 @@ var
 			params: ["foo", sampleCreateData],
 			expected: {
 				queryString: "INSERT INTO foo (fooID,Description,barID,number,price) VALUES (?,?,?,?,?);",
-				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083","Test",null,12,4.87]
+				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083", "Test", null, 12, 4.87]
 			}
 		},
 		"sqlUpdate": {
 			params: ["foo", sampleUpdateData, testFilter],
 			expected: {
 				queryString: "UPDATE foo SET fooID = ?, Description = ?, barID = ?, number = ?, price = ? WHERE (fooID = ?)",
-				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083","noTest","128f28ca-e926-4259-d202-b754fe5b11c7",42,19.95, "0eec54c3-1c7e-48af-a9da-d7da62820083"]
+				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083", "noTest", "128f28ca-e926-4259-d202-b754fe5b11c7", 42, 19.95, "0eec54c3-1c7e-48af-a9da-d7da62820083"]
 			}
 		},
 		"sqlDelete": {
 			//tableName, filters
-			params: ["foo",  testFilter],
+			params: ["foo", testFilter],
 			expected: {
 				queryString: "DELETE FROM foo WHERE (fooID = ?)",
 				valueArray: ["0eec54c3-1c7e-48af-a9da-d7da62820083"]
@@ -258,7 +258,7 @@ var
 		"bigint": {
 			params: [10],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10
 			},
 			antiParams: ["x"],
@@ -267,7 +267,7 @@ var
 		"bit": {
 			params: [1],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 1
 			},
 			antiParams: ["x"],
@@ -276,7 +276,7 @@ var
 		"decimal": {
 			params: [10.2],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10.2
 			},
 			antiParams: ["x"],
@@ -285,7 +285,7 @@ var
 		"int": {
 			params: [10],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10
 			},
 			antiParams: ["x"],
@@ -294,7 +294,7 @@ var
 		"money": {
 			params: [10.2],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10.2
 			},
 			antiParams: ["x"],
@@ -303,7 +303,7 @@ var
 		"numeric": {
 			params: [10.2],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10.2
 			},
 			antiParams: ["x"],
@@ -312,7 +312,7 @@ var
 		"smallint": {
 			params: [1],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 1
 			},
 			antiParams: ["x"],
@@ -321,7 +321,7 @@ var
 		"smallmoney": {
 			params: [10.2],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10.2
 			},
 			antiParams: ["x"],
@@ -330,7 +330,7 @@ var
 		"tinyint": {
 			params: [1],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 1
 			},
 			antiParams: ["x"],
@@ -339,7 +339,7 @@ var
 		"float": {
 			params: [10.2],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10.2
 			},
 			antiParams: ["x"],
@@ -348,7 +348,7 @@ var
 		"real": {
 			params: [10.2],
 			expected: {
-				type:  "number",
+				type: "number",
 				result: 10.2
 			},
 			antiParams: ["x"],
@@ -411,7 +411,7 @@ var
 		"char": {
 			params: ["c"],
 			expected: {
-				type:  "string",
+				type: "string",
 				result: "c"
 			},
 			antiParams: [0],
@@ -489,5 +489,4 @@ var
 			antiParams: [0],
 			antiExpected: null
 		}
-	}
-;
+	};
