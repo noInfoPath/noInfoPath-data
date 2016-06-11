@@ -785,39 +785,42 @@
 				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
 				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
-				function _followRelations(follow, arrayOfThings){
-					var promises = {},
-						columns = table.noInfoPath.foreignKeys,
-						promiseKeys = {};
+			function _followRelations(follow, arrayOfThings) {
+				var promises = {},
+					columns = table.noInfoPath.foreignKeys,
+					promiseKeys = {};
 
-					if(follow){
-						for (var c in columns){
-							var col = columns[c],
+				if (follow) {
+					for (var c in columns) {
+						var col = columns[c],
 							keys = _.pluck(arrayOfThings.rows, col.column),
-							o = {col : col, keys: keys};
+							o = {
+								col: col,
+								keys: keys
+							};
 
-							if (promiseKeys[col.refTable]) {
-								promiseKeys[col.refTable].keys = promiseKeys[col.refTable].keys.concat(o.keys);
-							} else {
-								promiseKeys[col.refTable] = o;
-							}
+						if (promiseKeys[col.refTable]) {
+							promiseKeys[col.refTable].keys = promiseKeys[col.refTable].keys.concat(o.keys);
+						} else {
+							promiseKeys[col.refTable] = o;
 						}
-
-						for (var pk in promiseKeys){
-							var obj = promiseKeys[pk];
-
-							promises[pk] = _expand(obj.col, obj.keys);
-						}
-
-						return _.size(promises) > 0 ?
-							$q.all(promises)
-								.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-								.catch(_fault) :
-								$q.when(arrayOfThings);
-					} else {
-						return $q.when(arrayOfThings);
 					}
+
+					for (var pk in promiseKeys) {
+						var obj = promiseKeys[pk];
+
+						promises[pk] = _expand(obj.col, obj.keys);
+					}
+
+					return _.size(promises) > 0 ?
+						$q.all(promises)
+						.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+						.catch(_fault) :
+						$q.when(arrayOfThings);
+				} else {
+					return $q.when(arrayOfThings);
 				}
+			}
 
 			function _expand(col, keys) {
 				var theDb = col.refDatabaseName ? THIS.getDatabase(col.refDatabaseName) : _db,
@@ -925,7 +928,7 @@
 							page = arg;
 							break;
 						default:
-							if (typeof(arg) === "boolean"){
+							if (typeof(arg) === "boolean") {
 								follow = arg;
 							}
 					}
