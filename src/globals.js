@@ -144,13 +144,18 @@
 			return dateResult;
 		}
 
+		function _isCompoundFilter(indexName){
+			return indexName.match(/^\[.*\+.*\]$/gi);
+		}
+
 		var _data = {
 			getItem: _getItem,
 			setItem: _setItem,
 			digest: _digest,
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
-			toDbDate: _toDbDate
+			toDbDate: _toDbDate,
+			isCompoundFilter: _isCompoundFilter
 		};
 
 		angular.extend(noInfoPath, _data);

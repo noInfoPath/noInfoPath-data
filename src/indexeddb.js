@@ -443,7 +443,10 @@
 						}
 					},
 					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
-					filters, sort, page;
+					filters, sort, page, follow = true,
+					exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [];
+
+
 
 				function _filter(filters, table) {
 					var collection;
@@ -459,33 +462,47 @@
 						return ok;
 					}
 
+					function _filterNormal(fi, filter, ex){
+						console.log(table, filter, ex);
+
+						var where, evaluator, logic;
+
+						if(fi === 0) {
+							//When `fi` is 0 create the WhereClause, extract the evaluator
+							//that will be used to create a collection based on the filter.
+							where = table.where(filter.column);
+
+							//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
+							if(table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
+								evaluator = where[indexedOperators[ex.operator]];
+								collection = evaluator.call(where, ex.value);
+							} else {
+								collection = table.toCollection();
+							}
+
+							logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
+						} else {
+							if(logic) {
+								collection = logic(_logicCB.bind(null, filter, ex));
+							}
+						}
+
+					}
+
+					function _filterCompound(fi, filter, ex){
+						console.log("Compound", fi, filter, ex);
+					}
+
 					if(!!filters) {
 						for(var fi = 0; fi < filters.length; fi++) {
 							var filter = filters[fi],
-								ex = filter.filters[0],
-								where, evaluator, logic;
+								ex = filter.filters[0];
 
-							if(fi === 0) {
-								//When `fi` is 0 create the WhereClause, extract the evaluator
-								//that will be used to create a collection based on the filter.
-								where = table.where(filter.column);
-
-								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
-								if(table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
-									evaluator = where[indexedOperators[ex.operator]];
-									collection = evaluator.call(where, ex.value);
-								} else {
-									collection = table.toCollection();
-								}
-
-								logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
-							} else {
-								if(logic) {
-									collection = logic(_logicCB.bind(null, filter, ex));
-								}
-							}
-
-
+							// if(noInfoPath.isCompoundFilter(filter.column)){
+							// 	_filterCompound(fi, filter, ex);
+							// }else{
+								_filterNormal(fi, filter, ex);
+							// }
 						}
 						//More indexed filters
 					} else {
@@ -559,6 +576,9 @@
 
 					if(!ft) throw "Invalid refTable " + aliases[col.refTable];
 
+					if(exclusions.indexOf(col.column) > -1) {
+						return $q.when(new noInfoPath.data.NoResults());
+					}
 					// if(tableCache[col.refTable]) {
 					// 	tbl = tableCache[col.refTable];
 					// } else {
@@ -651,27 +671,30 @@
 					// return item;
 				}
 
-				function _followRelations(arrayOfThings) {
+				function _followRelations(follow, arrayOfThings) {
+
 					//console.log(table.noInfoPath);
 					var promises = {},
 						columns = table.noInfoPath.foreignKeys;
 
-					for(var c in columns) {
-						var col = columns[c],
-							keys = _.pluck(arrayOfThings, col.column);
+					if(follow){
+						for(var c in columns) {
+							var col = columns[c],
+								keys = _.pluck(arrayOfThings, col.column);
 
-						promises[col.refTable] = _expand(col, keys);
+							promises[col.refTable] = _expand(col, keys);
 
+						}
+
+						return _.size(promises) > 0 ?
+							$q.all(promises)
+								.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+								.catch(_fault) :
+							$q.when(arrayOfThings);
+					}else{
+						$q.when(arrayOfThings);
 					}
 
-
-
-
-					return _.size(promises) > 0 ?
-						$q.all(promises)
-						.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-						.catch(_fault) :
-						$q.when(arrayOfThings);
 				}
 
 				/**
@@ -767,7 +790,7 @@
 					var arg = arguments[ai];
 
 					//success and error must always be first, then
-					if(angular.isObject(arg)) {
+					if(angular.isObject(arg) || typeof (arg) === "boolean") {
 						switch(arg.__type) {
 							case "NoFilters":
 								filters = arg;
@@ -778,8 +801,13 @@
 							case "NoPage":
 								page = arg;
 								break;
+							default:
+								if(typeof (arg) === "boolean") {
+									follow = arg;
+								}
 						}
 					}
+
 				}
 
 				var ctx = {
@@ -798,7 +826,7 @@
 						collection = _filter(filters, table);
 
 						collection.toArray()
-							.then(_followRelations.bind(ctx))
+							.then(_followRelations.bind(ctx, follow))
 							.then(_followMetaData.bind(ctx, ctx))
 							.then(_finish.bind(ctx, resolve, reject))
 							.catch(_fault.bind(ctx, ctx, reject));
