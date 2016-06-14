@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.22
+ *	@version 1.2.23
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -144,13 +144,18 @@
 			return dateResult;
 		}
 
+		function _isCompoundFilter(indexName){
+			return indexName.match(/^\[.*\+.*\]$/gi);
+		}
+
 		var _data = {
 			getItem: _getItem,
 			setItem: _setItem,
 			digest: _digest,
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
-			toDbDate: _toDbDate
+			toDbDate: _toDbDate,
+			isCompoundFilter: _isCompoundFilter
 		};
 
 		angular.extend(noInfoPath, _data);

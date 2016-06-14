@@ -48,10 +48,10 @@
 		 *
 		 *	> NOTE: Currently $rootScope is the only supported injectable source.
 		 */
-		function configureValueWatch(dsConfig, filterCfg, source, cb) {
-			if(source.$watch && filterCfg.value.watch && cb) {
+		function configureValueWatch(dsConfig, filterCfg, value, source, cb) {
+			if(source.$watch && value.watch && cb) {
 				var filter = angular.copy(filterCfg);
-				source.$watch(filterCfg.value.property, cb.bind(filter, dsConfig, filterCfg));
+				source.$watch(value.property, cb.bind(filter, dsConfig, filterCfg, value));
 			}
 		}
 		/**
@@ -71,7 +71,7 @@
 		 *   > Otherwise assume source is an injectable.
 		 */
 		function resolveFilterValues(dsConfig, filters, scope, watchCB) {
-			var values = {};
+			var values = {}, compoundValues = [];
 			/*
 			 *	@property noDataSource.filter
 			 *
@@ -92,10 +92,21 @@
 					source, value;
 				if(angular.isObject(filter.value)) {
 					if(angular.isArray(filter.value)) {
-						values[filter.field] = normalizeFilterValue(filter.value); // in statement
+						if(noInfoPath.isCompoundFilter(filter.field)){
+							for(var vi=0; vi < filter.value.length; vi++){
+								var valObj = filter.value[vi];
+								source = resolveValueSource(valObj, scope);
+								configureValueWatch(dsConfig, filter, valObj, source, watchCB);
+								compoundValues.push(normalizeFilterValue(noInfoPath.getItem(source, valObj.property), valObj.type));
+							}
+							//Will assume guids and wrap them in quotes
+							values[filter.field] = compoundValues;
+						}else{
+							values[filter.field] = normalizeFilterValue(filter.value); // in statement
+						}
 					} else {
 						source = resolveValueSource(filter.value, scope);
-						configureValueWatch(dsConfig, filter, source, watchCB);
+						configureValueWatch(dsConfig, filter, filter.value, source, watchCB);
 						values[filter.field] = normalizeFilterValue(noInfoPath.getItem(source, filter.value.property), filter.value.type);
 					}
 				} else {
@@ -114,7 +125,8 @@
 					var filter = dsConfig.filter[f],
 						value;
 					if(angular.isObject(filter.value)) {
-						if(angular.isArray(filter.value)) {
+
+						if(angular.isArray(filter.value) && !noInfoPath.isCompoundFilter(filter.field)) {
 							value = filter.value; // in statement
 						} else {
 							value = filterValues[filter.field];
