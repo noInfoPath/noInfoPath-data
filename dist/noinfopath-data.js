@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.24
+ *	@version 1.2.25
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -144,7 +144,7 @@
 			return dateResult;
 		}
 
-		function _isCompoundFilter(indexName){
+		function _isCompoundFilter(indexName) {
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
 
@@ -1053,7 +1053,7 @@
 		arr.page = function (nopage) {
 			if(!nopage) throw "nopage is a required parameter for NoResults::page";
 
-			if(nopage.take === _raw.length) {
+			if(nopage.take >= _raw.length) {
 				_page = _raw;
 			} else {
 				_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);
@@ -3441,8 +3441,8 @@ var GloboTest = {};
 			var table = this,
 				filters, sort, page, readObject,
 				follow = true,
-				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
-				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
+				aliases = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.tableAliases ? table.noInfoPath.parentSchema.config.tableAliases : {},
+				exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
 			function _followRelations(follow, arrayOfThings) {
 				var promises = {},
@@ -5423,7 +5423,7 @@ var GloboTest = {};
 						return ok;
 					}
 
-					function _filterNormal(fi, filter, ex){
+					function _filterNormal(fi, filter, ex) {
 						console.log(table, filter, ex);
 
 						var where, evaluator, logic;
@@ -5450,7 +5450,7 @@ var GloboTest = {};
 
 					}
 
-					function _filterCompound(fi, filter, ex){
+					function _filterCompound(fi, filter, ex) {
 						console.log("Compound", fi, filter, ex);
 					}
 
@@ -5462,7 +5462,7 @@ var GloboTest = {};
 							// if(noInfoPath.isCompoundFilter(filter.column)){
 							// 	_filterCompound(fi, filter, ex);
 							// }else{
-								_filterNormal(fi, filter, ex);
+							_filterNormal(fi, filter, ex);
 							// }
 						}
 						//More indexed filters
@@ -5638,7 +5638,7 @@ var GloboTest = {};
 					var promises = {},
 						columns = table.noInfoPath.foreignKeys;
 
-					if(follow){
+					if(follow) {
 						for(var c in columns) {
 							var col = columns[c],
 								keys = _.pluck(arrayOfThings, col.column);
@@ -5649,10 +5649,10 @@ var GloboTest = {};
 
 						return _.size(promises) > 0 ?
 							$q.all(promises)
-								.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-								.catch(_fault) :
+							.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+							.catch(_fault) :
 							$q.when(arrayOfThings);
-					}else{
+					} else {
 						$q.when(arrayOfThings);
 					}
 
@@ -6330,7 +6330,8 @@ var GloboTest = {};
 		 *   > Otherwise assume source is an injectable.
 		 */
 		function resolveFilterValues(dsConfig, filters, scope, watchCB) {
-			var values = {}, compoundValues = [];
+			var values = {},
+				compoundValues = [];
 			/*
 			 *	@property noDataSource.filter
 			 *
@@ -6351,8 +6352,8 @@ var GloboTest = {};
 					source, value;
 				if(angular.isObject(filter.value)) {
 					if(angular.isArray(filter.value)) {
-						if(noInfoPath.isCompoundFilter(filter.field)){
-							for(var vi=0; vi < filter.value.length; vi++){
+						if(noInfoPath.isCompoundFilter(filter.field)) {
+							for(var vi = 0; vi < filter.value.length; vi++) {
 								var valObj = filter.value[vi];
 								source = resolveValueSource(valObj, scope);
 								configureValueWatch(dsConfig, filter, valObj, source, watchCB);
@@ -6360,7 +6361,7 @@ var GloboTest = {};
 							}
 							//Will assume guids and wrap them in quotes
 							values[filter.field] = compoundValues;
-						}else{
+						} else {
 							values[filter.field] = normalizeFilterValue(filter.value); // in statement
 						}
 					} else {

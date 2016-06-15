@@ -889,7 +889,7 @@
 		arr.page = function (nopage) {
 			if(!nopage) throw "nopage is a required parameter for NoResults::page";
 
-			if(nopage.take === _raw.length) {
+			if(nopage.take >= _raw.length) {
 				_page = _raw;
 			} else {
 				_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);
