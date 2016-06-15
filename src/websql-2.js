@@ -783,8 +783,8 @@
 			var table = this,
 				filters, sort, page, readObject,
 				follow = true,
-				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
-				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
+				aliases = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.tableAliases ? table.noInfoPath.parentSchema.config.tableAliases : {},
+				exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
 			function _followRelations(follow, arrayOfThings) {
 				var promises = {},

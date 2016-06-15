@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.24
+ *	@version 1.2.25
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1053,7 +1053,7 @@
 		arr.page = function (nopage) {
 			if(!nopage) throw "nopage is a required parameter for NoResults::page";
 
-			if(nopage.take === _raw.length) {
+			if(nopage.take >= _raw.length) {
 				_page = _raw;
 			} else {
 				_page = _raw.slice(nopage.skip, nopage.skip + nopage.take);
@@ -3441,8 +3441,8 @@ var GloboTest = {};
 			var table = this,
 				filters, sort, page, readObject,
 				follow = true,
-				aliases = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.tableAliases : {},
-				exclusions = table.noInfoPath.parentSchema.config ? table.noInfoPath.parentSchema.config.followExceptions : [];
+				aliases = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.tableAliases ? table.noInfoPath.parentSchema.config.tableAliases : {},
+				exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
 			function _followRelations(follow, arrayOfThings) {
 				var promises = {},
