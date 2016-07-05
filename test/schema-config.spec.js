@@ -20,7 +20,7 @@ describe("Testing noDbSchema Full Database Configuration functionality", functio
 
 
 	var results;
-	it("noDbSchema.whenReady should yeild two NoDbSchema instances on $rootScope.", function (done) {
+	xit("noDbSchema.whenReady should yeild two NoDbSchema instances on $rootScope.", function (done) {
 		$httpBackend
 			.when("GET", "http://noinfopath-rest.img.local/api/NoDbSchema")
 			.respond(200, noDbSchemaMock);
@@ -51,7 +51,7 @@ describe("Testing noDbSchema Full Database Configuration functionality", functio
 		$httpBackend.flush();
 	});
 
-	it("Testing noDbSchema::configureDatabases", function (done) {
+	xit("Testing noDbSchema::configureDatabases", function (done) {
 		$rootScope.noDbSchema_NoInfoPath_dtc_v1 = noDbSchema.create(mockConfig, mockConfig.noDbSchema[0], mockConfig.noDbSchema[0].schemaSource.schema);
 		$rootScope.noDbSchema_FCFNv2 = noDbSchema.create(mockConfig, mockConfig.noDbSchema[1], tablesMock);
 

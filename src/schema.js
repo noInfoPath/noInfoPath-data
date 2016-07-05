@@ -284,9 +284,10 @@ var GloboTest = {};
 		 * > NOTE: noDbSchema property of noConfig is an array of NoInfoPath data provider configuration objects.
 		 */
 		this.whenReady = function (config) {
-			noConfig = config.current;
 
-			var noDbSchemaConfig = noConfig.noDbSchema,
+
+			var noConfig = config.current,
+				noDbSchemaConfig = noConfig.noDbSchema,
 				promises = [];
 
 			for(var c in noDbSchemaConfig) {
