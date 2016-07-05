@@ -105,9 +105,13 @@ module.exports = function(grunt) {
 		nodocs: {
 			"internal": {
 				options: {
-					src: 'dist/noinfopath-data.js',
+					src: 'src/*.js',
 					dest: 'docs/noinfopath-data.md',
-					start: ['/*', '/**']
+					start: ['/*', '/**'],
+					multiDocs: {
+						multiFiles: true,
+						dest: "docs/"
+					}
 				}
 			},
 			"internalGlobals": {

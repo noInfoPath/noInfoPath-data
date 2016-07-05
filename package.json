@@ -41,7 +41,7 @@
     "grunt-contrib-uglify": "^0.9.1",
     "grunt-contrib-watch": "^0.6.1",
     "grunt-karma": "^0.10.1",
-    "grunt-nodocs": "0.0.10",
+    "grunt-nodocs": "^1.0.2",
     "grunt-version": "^1.0.0",
     "jasmine-ajax": "^3.0.0",
     "jasmine-core": "^2.1.3",
