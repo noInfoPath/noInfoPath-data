@@ -87,6 +87,7 @@
 				return $http.get(url)
 					.then(function (resp) {
 						noLocalStorage.setItem("noConfig", resp.data);
+						return resp.data;
 					})
 					.catch(function (err) {
 						throw err;
@@ -101,11 +102,11 @@
 
 				return $q(function (resolve, reject) {
 					if($rootScope.noConfig) {
-						resolve();
+						resolve($rootScope.noConfig);
 					} else {
 						$rootScope.$watch("noConfig", function (newval) {
 							if(newval) {
-								resolve();
+								resolve(newval);
 							}
 						});
 
