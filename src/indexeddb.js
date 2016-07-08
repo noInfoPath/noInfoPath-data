@@ -921,7 +921,7 @@
 							if (results.length > 0){
 								resolve(results[0]);
 							} else {
-								throw "noIndexedDb::noOne: Record Not Found";
+								reject("noIndexedDb::noOne: Record Not Found");
 							}
 						})
 						.catch(function (err) {
