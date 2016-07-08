@@ -1150,13 +1150,14 @@
 					var data;
 
 					if(resultset.length === 0) {
-						data = {};
+						throw "noWebSQL::noOne: Record Not Found";
 					} else {
 						data = resultset[0];
 					}
 
 					return data;
 				});
+
 		};
 
 		/*
