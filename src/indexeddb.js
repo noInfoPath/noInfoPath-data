@@ -918,7 +918,11 @@
 				return $q(function (resolve, reject) {
 					table.noRead(data)
 						.then(function (results) {
-							resolve(results.length > 0 ? results[0] : {});
+							if (results.length > 0){
+								resolve(results[0]);
+							} else {
+								reject("noIndexedDb::noOne: Record Not Found");
+							}
 						})
 						.catch(function (err) {
 							reject(err);

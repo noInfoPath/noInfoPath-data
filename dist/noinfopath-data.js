@@ -3810,13 +3810,14 @@ var GloboTest = {};
 					var data;
 
 					if(resultset.length === 0) {
-						data = {};
+						throw "noWebSQL::noOne: Record Not Found";
 					} else {
 						data = resultset[0];
 					}
 
 					return data;
 				});
+
 		};
 
 		/*
@@ -5881,7 +5882,11 @@ var GloboTest = {};
 				return $q(function (resolve, reject) {
 					table.noRead(data)
 						.then(function (results) {
-							resolve(results.length > 0 ? results[0] : {});
+							if (results.length > 0){
+								resolve(results[0]);
+							} else {
+								throw "noIndexedDb::noOne: Record Not Found";
+							}
 						})
 						.catch(function (err) {
 							reject(err);
