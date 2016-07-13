@@ -4207,9 +4207,9 @@ var GloboTest = {};
 						}
 					});
 
+					this.namespace = config.noDataSource.databaseName;
 					this.transactionId = noInfoPath.createUUID();
-					this.timestamp = (new Date())
-						.toJSON();
+					this.timestamp = (new Date()).toJSON();
 					this.userId = userId;
 					this.changes = new NoChanges();
 					this.state = "pending";
@@ -4896,7 +4896,7 @@ var GloboTest = {};
 						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 							entity = db.NoInfoPath_Changes;
 
-						console.log(transaction);
+						console.log(db);
 
 						return entity.noCreate(transaction.toObject())
 							.then(function () {

@@ -21,7 +21,7 @@ module.exports = function(config) {
         'node_modules/angular/angular.js',
         'node_modules/angular-mocks/angular-mocks.js',
         'node_modules/angular-base64/angular-base64.min.js',
-        'bower_components/ng-lodash/build/ng-lodash.js',
+        'node_modules/ng-lodash/build/ng-lodash.js',
         'node_modules/dexie/dist/dexie.js',
         'node_modules/noinfopath/dist/noinfopath.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
