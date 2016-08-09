@@ -5955,6 +5955,13 @@ var GloboTest = {};
 
 		}
 
+
+		this.destroyDb = function(databaseName) {
+			var db = $rootScope["noIndexedDb_" + databaseName];
+			db.delete();
+			delete $rootScope["noIndexedDb_" + databaseName];
+		};
+		
 		/**
 		 *	### Class noDatum
 		 *	This is a contructor function used by Dexie when creating and returning data objects.
