@@ -993,11 +993,20 @@
 
 
 		this.destroyDb = function(databaseName) {
-			var db = $rootScope["noIndexedDb_" + databaseName];
-			db.delete();
-			delete $rootScope["noIndexedDb_" + databaseName];
+			var deferred = $q.defer();
+			var db = _noIndexedDb.getDatabase(databaseName);
+			if(db) {
+				db.delete()
+					.then(function(res) {
+						delete $rootScope["noIndexedDb_" + databaseName];
+						deferred.resolve(res);					
+					});
+			} else {
+				deferred.resolve(false);
+			}
+			return deferred.promise;
 		};
-		
+
 		/**
 		 *	### Class noDatum
 		 *	This is a contructor function used by Dexie when creating and returning data objects.

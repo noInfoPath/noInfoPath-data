@@ -2372,6 +2372,29 @@ var GloboTest = {};
 
 		};
 
+		this.deleteDatabases = function(noDbSchemaConfigs) {
+			var promises = [];
+
+			for(var s in noDbSchemaConfigs) {
+				var schemaName = noDbSchemaConfigs[s],
+					schema = $rootScope[schemaName],
+					provider;
+
+				if(schema) {
+					provider = $injector.get(schema.config.provider);
+					promises.push(provider.destroyDb(schema.config.dbName));
+				}
+			}
+
+			return $q.all(promises)
+				.then(function(resp) {
+					console.log(resp);
+				})
+				.catch(function (err) {
+					console.error(err);
+				});
+		};
+
 		this.getSchema = function (dbName) {
 			var schema = $rootScope["noDbSchema_" + dbName];
 			return schema;
@@ -5957,11 +5980,20 @@ var GloboTest = {};
 
 
 		this.destroyDb = function(databaseName) {
-			var db = $rootScope["noIndexedDb_" + databaseName];
-			db.delete();
-			delete $rootScope["noIndexedDb_" + databaseName];
+			var deferred = $q.defer();
+			var db = _noIndexedDb.getDatabase(databaseName);
+			if(db) {
+				db.delete()
+					.then(function(res) {
+						delete $rootScope["noIndexedDb_" + databaseName];
+						deferred.resolve(res);					
+					});
+			} else {
+				deferred.resolve(false);
+			}
+			return deferred.promise;
 		};
-		
+
 		/**
 		 *	### Class noDatum
 		 *	This is a contructor function used by Dexie when creating and returning data objects.
