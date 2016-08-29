@@ -64,3 +64,14 @@ by attaching it to the `window` object as ```window.noInfoPath```
 #### setItem
 
 
+When query a number, a filter is created on the instrinsic
+filters object using the `rowid`  WebSQL column as the column
+to filter on. Query will be the target
+value of query.
+
+When the query is a string it is assumed a table is being queried
+by it's primary key.
+
+> Passing a string when the entity is
+a SQL View is not allowed.
+

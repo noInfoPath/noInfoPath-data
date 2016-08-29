@@ -148,6 +148,49 @@
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
 
+		function _resolveID(query, entityConfig) {
+			var filters = new noInfoPath.data.NoFilters();
+
+			if(angular.isNumber(query)) {
+				//Assume rowid
+				/*
+				 *	When query a number, a filter is created on the instrinsic
+				 *	filters object using the `rowid`  WebSQL column as the column
+				 *	to filter on. Query will be the target
+				 *	value of query.
+				 */
+				filters.quickAdd("rowid", "eq", query);
+
+			} else if(angular.isString(query)) {
+				//Assume guid
+				/*
+				 * When the query is a string it is assumed a table is being queried
+				 * by it's primary key.
+				 *
+				 * > Passing a string when the entity is
+				 * a SQL View is not allowed.
+				 */
+				if(entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+
+				filters.quickAdd(entityConfig.primaryKey, "eq", query);
+
+			} else if(angular.isObject(query)) {
+				if(query.__type === "NoFilters") {
+					filters = query;
+				} else {
+					//Simple key/value pairs. Assuming all are equal operators and are anded.
+					for(var k in query) {
+						filters.quickAdd(k, "eq", query[k]);
+					}
+				}
+
+			} else {
+				throw "One requires a query parameter. May be a Number, String or Object";
+			}
+
+			return filters;
+		}
+
 		var _data = {
 			getItem: _getItem,
 			setItem: _setItem,
@@ -155,7 +198,8 @@
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
 			toDbDate: _toDbDate,
-			isCompoundFilter: _isCompoundFilter
+			isCompoundFilter: _isCompoundFilter,
+			resolveID: _resolveID
 		};
 
 		angular.extend(noInfoPath, _data);
@@ -3696,7 +3740,7 @@ var GloboTest = {};
 			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
 			var
-				noFilters = resolveID(filters ? filters : data, _entityConfig),
+				noFilters = noInfoPath.resolveID(filters ? filters : data, _entityConfig),
 				id = data ? data[_entityConfig.primaryKey] : false,
 				sqlStmt, deleted;
 
@@ -3721,49 +3765,6 @@ var GloboTest = {};
 
 
 		};
-
-		function resolveID(query, entityConfig) {
-			var filters = new noInfoPath.data.NoFilters();
-
-			if(angular.isNumber(query)) {
-				//Assume rowid
-				/*
-				 *	When query a number, a filter is created on the instrinsic
-				 *	filters object using the `rowid`  WebSQL column as the column
-				 *	to filter on. Query will be the target
-				 *	value of query.
-				 */
-				filters.quickAdd("rowid", "eq", query);
-
-			} else if(angular.isString(query)) {
-				//Assume guid
-				/*
-				 * When the query is a string it is assumed a table is being queried
-				 * by it's primary key.
-				 *
-				 * > Passing a string when the entity is
-				 * a SQL View is not allowed.
-				 */
-				if(entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
-
-				filters.quickAdd(entityConfig.primaryKey, "eq", query);
-
-			} else if(angular.isObject(query)) {
-				if(query.__type === "NoFilters") {
-					filters = query;
-				} else {
-					//Simple key/value pairs. Assuming all are equal operators and are anded.
-					for(var k in query) {
-						filters.quickAdd(k, "eq", query[k]);
-					}
-				}
-
-			} else {
-				throw "One requires a query parameter. May be a Number, String or Object";
-			}
-
-			return filters;
-		}
 
 		/*
 		 * ### @method noOne(data)
@@ -3801,7 +3802,7 @@ var GloboTest = {};
 			 *	NoFilters object.  If not, add a filter to the intrinsic filters object
 			 *	based on the query's key property, and the query's value.
 			 */
-			var filters = resolveID(query, _entityConfig);
+			var filters = noInfoPath.resolveID(query, _entityConfig);
 
 			//Internal _getOne requires and NoFilters object.
 			//return _getOne(filters);
@@ -3817,7 +3818,6 @@ var GloboTest = {};
 
 					return data;
 				});
-
 		};
 
 		/*
@@ -4719,7 +4719,6 @@ var GloboTest = {};
 
 								var curEntity = opEntites[curOpEntity];
 
-
 								//Check to see if we have run out of entities to recurse.
 								if(!curEntity || curOpEntity >= opEntites.length) {
 									resolve(results);
@@ -5133,10 +5132,15 @@ var GloboTest = {};
 		var _name, _noIndexedDb = this;
 
 		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
+			console.log(arguments);
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
+		}
+
+		function _resolveUpdateRecord(data, table){
+
 
 		}
 
@@ -5304,7 +5308,7 @@ var GloboTest = {};
 				var deferred = $q.defer(),
 					table = this;
 
-
+				data = _unfollow_data(table, data);
 				//noLogService.log("adding: ", _dexie.currentUser);
 
 				_dexie.transaction("rw", table, function () {
@@ -5518,7 +5522,7 @@ var GloboTest = {};
 					}
 				}
 
-				function _expand_fault(col, keys, fitlers, err) {
+				function _expand_fault(col, keys, filters, err) {
 					console.error({
 						error: err,
 						column: col,
@@ -5530,6 +5534,48 @@ var GloboTest = {};
 
 				function _expand(col, keys) {
 					var theDb = col.refDatabaseName ? _noIndexedDb.getDatabase(col.refDatabaseName) : db,
+						filters = new noInfoPath.data.NoFilters(),
+						ft = theDb[col.refTable];
+
+					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
+					if(!ft) {
+						ft = theDb[aliases[col.refTable]];
+					}
+
+					if(!ft) throw "Invalid refTable " + aliases[col.refTable];
+
+					if(exclusions.indexOf(col.column) > -1) {
+						return $q.when(new noInfoPath.data.NoResults());
+					}
+					// if(tableCache[col.refTable]) {
+					// 	tbl = tableCache[col.refTable];
+					// } else {
+					// 	tableCache[col.refTable] = tbl;
+					// }
+
+					if(!keys) {
+						throw {
+							error: "Invalid key value",
+							col: col,
+							item: item
+						};
+					}
+
+					//Configure foreign key filter
+					filters.quickAdd(col.refColumn, "in", keys);
+
+					//follow the foreign key and get is data.
+					if(keys.length > 0) {
+						return ft.noRead(filters)
+							.catch(_expand_fault.bind(table, col, keys, filters));
+					} else {
+						return $q.when(new noInfoPath.data.NoResults());
+					}
+
+				}
+
+				function _expand2(col, keys) {
+					var theDb = db,
 						filters = new noInfoPath.data.NoFilters(),
 						ft = theDb[col.refTable];
 
@@ -5639,15 +5685,31 @@ var GloboTest = {};
 
 					//console.log(table.noInfoPath);
 					var promises = {},
+						allKeys = {},
+						queue = [],
 						columns = table.noInfoPath.foreignKeys;
 
 					if(follow){
 						for(var c in columns) {
 							var col = columns[c],
-								keys = _.pluck(arrayOfThings, col.column);
+								keys = _.compact(_.pluck(arrayOfThings, col.column));  //need to remove falsey values
 
-							promises[col.refTable] = _expand(col, keys);
+							if(!allKeys[col.refTable]){
+								allKeys[col.refTable] = {
+									col : col,
+									keys: []
+								};
+							}
 
+							// group keys by ref table
+							allKeys[col.refTable].keys = allKeys[col.refTable].keys.concat(keys);
+							//promises[col.refTable] = _expand(col, keys);
+						}
+
+						for(var k in allKeys){
+							var keys2 = allKeys[k];
+
+							promises[k] = _expand(keys2.col, keys2.keys);
 						}
 
 						return _.size(promises) > 0 ?
@@ -5703,7 +5765,7 @@ var GloboTest = {};
 							for(var i = 0; i < arrayOfThings.length; i++) {
 								var thing = arrayOfThings[i],
 									meta = thing.MetaDataDefinitionID,
-									fiters;
+									filters;
 
 								//Only folow lookup columns.
 								if(meta.InputType === "combobox") {
@@ -5819,11 +5881,14 @@ var GloboTest = {};
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
+				data = _unfollow_data(table, data);
+
 				_dexie.transaction("rw", table, function () {
 						Dexie.currentTransaction.nosync = true;
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
+							.then(table.noOne.bind(table, key))
 							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
 					})
@@ -5874,25 +5939,21 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noOne = function (data) {
-				var table = this,
-					key = data[table.noInfoPath.primaryKey];
+			db.WriteableTable.prototype.noOne = function (query) {
+				var noFilters = noInfoPath.resolveID(query, this.noInfoPath);
 
-				return $q(function (resolve, reject) {
-					table.noRead(data)
-						.then(function (results) {
-							if (results.length > 0){
-								resolve(results[0]);
+				return this.noRead(noFilters)
+						.then(function (resultset) {
+							var data;
+
+							if(resultset.length === 0) {
+								throw "noIndexedDb::noOne: Record Not Found";
 							} else {
-								reject("noIndexedDb::noOne: Record Not Found");
+								data = resultset[0];
 							}
-						})
-						.catch(function (err) {
-							reject(err);
+
+							return data;
 						});
-
-				});
-
 			};
 
 			db.WriteableTable.prototype.bulkLoad = function (data, progress) {
@@ -5951,6 +6012,26 @@ var GloboTest = {};
 
 				return deferred.promise;
 			};
+
+			function _unfollow_data(table, data){
+				var foreignKeys;
+
+				//console.log(table.noInfoPath);
+				//Resolve FKs
+				foreignKeys = table.noInfoPath.foreignKeys ? table.noInfoPath.foreignKeys : null;
+
+				for(var fks in foreignKeys){
+
+					var fk = foreignKeys[fks],
+						datum = data[fk.column];
+
+					if (datum){
+						data[fk.column] = datum[fk.refColumn] ? datum[fk.refColumn] : null;
+					}
+				}
+
+				return data;
+			}
 
 		}
 

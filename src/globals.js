@@ -148,6 +148,49 @@
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
 
+		function _resolveID(query, entityConfig) {
+			var filters = new noInfoPath.data.NoFilters();
+
+			if(angular.isNumber(query)) {
+				//Assume rowid
+				/*
+				 *	When query a number, a filter is created on the instrinsic
+				 *	filters object using the `rowid`  WebSQL column as the column
+				 *	to filter on. Query will be the target
+				 *	value of query.
+				 */
+				filters.quickAdd("rowid", "eq", query);
+
+			} else if(angular.isString(query)) {
+				//Assume guid
+				/*
+				 * When the query is a string it is assumed a table is being queried
+				 * by it's primary key.
+				 *
+				 * > Passing a string when the entity is
+				 * a SQL View is not allowed.
+				 */
+				if(entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+
+				filters.quickAdd(entityConfig.primaryKey, "eq", query);
+
+			} else if(angular.isObject(query)) {
+				if(query.__type === "NoFilters") {
+					filters = query;
+				} else {
+					//Simple key/value pairs. Assuming all are equal operators and are anded.
+					for(var k in query) {
+						filters.quickAdd(k, "eq", query[k]);
+					}
+				}
+
+			} else {
+				throw "One requires a query parameter. May be a Number, String or Object";
+			}
+
+			return filters;
+		}
+
 		var _data = {
 			getItem: _getItem,
 			setItem: _setItem,
@@ -155,7 +198,8 @@
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
 			toDbDate: _toDbDate,
-			isCompoundFilter: _isCompoundFilter
+			isCompoundFilter: _isCompoundFilter,
+			resolveID: _resolveID
 		};
 
 		angular.extend(noInfoPath, _data);
