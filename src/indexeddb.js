@@ -176,11 +176,6 @@
 			resolve(transData);
 		}
 
-		function _resolveUpdateRecord(data, table){
-
-
-		}
-
 		function _transactionFault(reject, err) {
 			reject(err);
 		}
@@ -571,48 +566,6 @@
 
 				function _expand(col, keys) {
 					var theDb = col.refDatabaseName ? _noIndexedDb.getDatabase(col.refDatabaseName) : db,
-						filters = new noInfoPath.data.NoFilters(),
-						ft = theDb[col.refTable];
-
-					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
-					if(!ft) {
-						ft = theDb[aliases[col.refTable]];
-					}
-
-					if(!ft) throw "Invalid refTable " + aliases[col.refTable];
-
-					if(exclusions.indexOf(col.column) > -1) {
-						return $q.when(new noInfoPath.data.NoResults());
-					}
-					// if(tableCache[col.refTable]) {
-					// 	tbl = tableCache[col.refTable];
-					// } else {
-					// 	tableCache[col.refTable] = tbl;
-					// }
-
-					if(!keys) {
-						throw {
-							error: "Invalid key value",
-							col: col,
-							item: item
-						};
-					}
-
-					//Configure foreign key filter
-					filters.quickAdd(col.refColumn, "in", keys);
-
-					//follow the foreign key and get is data.
-					if(keys.length > 0) {
-						return ft.noRead(filters)
-							.catch(_expand_fault.bind(table, col, keys, filters));
-					} else {
-						return $q.when(new noInfoPath.data.NoResults());
-					}
-
-				}
-
-				function _expand2(col, keys) {
-					var theDb = db,
 						filters = new noInfoPath.data.NoFilters(),
 						ft = theDb[col.refTable];
 
@@ -1063,7 +1016,7 @@
 						datum = data[fk.column];
 
 					if (datum){
-						data[fk.column] = datum[fk.refColumn] ? datum[fk.refColumn] : null;
+						data[fk.column] = datum[fk.refColumn] ? datum[fk.refColumn] : datum;
 					}
 				}
 
