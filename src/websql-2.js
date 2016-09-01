@@ -1036,7 +1036,7 @@
 			if(_entityConfig.entityType === "V") throw "Delete operation not supported by SQL Views.";
 
 			var
-				noFilters = resolveID(filters ? filters : data, _entityConfig),
+				noFilters = noInfoPath.resolveID(filters ? filters : data, _entityConfig),
 				id = data ? data[_entityConfig.primaryKey] : false,
 				sqlStmt, deleted;
 
@@ -1061,49 +1061,6 @@
 
 
 		};
-
-		function resolveID(query, entityConfig) {
-			var filters = new noInfoPath.data.NoFilters();
-
-			if(angular.isNumber(query)) {
-				//Assume rowid
-				/*
-				 *	When query a number, a filter is created on the instrinsic
-				 *	filters object using the `rowid`  WebSQL column as the column
-				 *	to filter on. Query will be the target
-				 *	value of query.
-				 */
-				filters.quickAdd("rowid", "eq", query);
-
-			} else if(angular.isString(query)) {
-				//Assume guid
-				/*
-				 * When the query is a string it is assumed a table is being queried
-				 * by it's primary key.
-				 *
-				 * > Passing a string when the entity is
-				 * a SQL View is not allowed.
-				 */
-				if(entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
-
-				filters.quickAdd(entityConfig.primaryKey, "eq", query);
-
-			} else if(angular.isObject(query)) {
-				if(query.__type === "NoFilters") {
-					filters = query;
-				} else {
-					//Simple key/value pairs. Assuming all are equal operators and are anded.
-					for(var k in query) {
-						filters.quickAdd(k, "eq", query[k]);
-					}
-				}
-
-			} else {
-				throw "One requires a query parameter. May be a Number, String or Object";
-			}
-
-			return filters;
-		}
 
 		/*
 		 * ### @method noOne(data)
@@ -1141,7 +1098,7 @@
 			 *	NoFilters object.  If not, add a filter to the intrinsic filters object
 			 *	based on the query's key property, and the query's value.
 			 */
-			var filters = resolveID(query, _entityConfig);
+			var filters = noInfoPath.resolveID(query, _entityConfig);
 
 			//Internal _getOne requires and NoFilters object.
 			//return _getOne(filters);
@@ -1157,7 +1114,6 @@
 
 					return data;
 				});
-
 		};
 
 		/*
