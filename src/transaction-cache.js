@@ -576,7 +576,6 @@
 
 								var curEntity = opEntites[curOpEntity];
 
-
 								//Check to see if we have run out of entities to recurse.
 								if(!curEntity || curOpEntity >= opEntites.length) {
 									resolve(results);

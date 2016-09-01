@@ -114,17 +114,6 @@ Deletes a record from the websql database based on the Primary Key of the data p
 |data|Object|Name Value Pairs|
 |noTransaction|Object|The noTransaction object that will commit changes to the NoInfoPath changes table for data synchronization|
 
-When query a number, a filter is created on the instrinsic
-filters object using the `rowid`  WebSQL column as the column
-to filter on. Query will be the target
-value of query.
-
-When the query is a string it is assumed a table is being queried
-by it's primary key.
-
-> Passing a string when the entity is
-a SQL View is not allowed.
-
 ### @method noOne(data)
 
 Reads exactly one record from the websql database based on the filter derived the data provided.

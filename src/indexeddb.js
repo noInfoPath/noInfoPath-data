@@ -169,11 +169,11 @@
 		var _name, _noIndexedDb = this;
 
 		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
-			var transData = result2 && result2.rows.length ? result2 : result1;
+			//console.log(arguments);
+			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
-
 		}
 
 		function _transactionFault(reject, err) {
@@ -340,7 +340,7 @@
 				var deferred = $q.defer(),
 					table = this;
 
-
+				data = _unfollow_data(table, data);
 				//noLogService.log("adding: ", _dexie.currentUser);
 
 				_dexie.transaction("rw", table, function () {
@@ -554,7 +554,7 @@
 					}
 				}
 
-				function _expand_fault(col, keys, fitlers, err) {
+				function _expand_fault(col, keys, filters, err) {
 					console.error({
 						error: err,
 						column: col,
@@ -675,15 +675,31 @@
 
 					//console.log(table.noInfoPath);
 					var promises = {},
+						allKeys = {},
+						queue = [],
 						columns = table.noInfoPath.foreignKeys;
 
 					if(follow){
 						for(var c in columns) {
 							var col = columns[c],
-								keys = _.pluck(arrayOfThings, col.column);
+								keys = _.compact(_.pluck(arrayOfThings, col.column));  //need to remove falsey values
 
-							promises[col.refTable] = _expand(col, keys);
+							if(!allKeys[col.refTable]){
+								allKeys[col.refTable] = {
+									col : col,
+									keys: []
+								};
+							}
 
+							// group keys by ref table
+							allKeys[col.refTable].keys = allKeys[col.refTable].keys.concat(keys);
+							//promises[col.refTable] = _expand(col, keys);
+						}
+
+						for(var k in allKeys){
+							var keys2 = allKeys[k];
+
+							promises[k] = _expand(keys2.col, keys2.keys);
 						}
 
 						return _.size(promises) > 0 ?
@@ -739,7 +755,7 @@
 							for(var i = 0; i < arrayOfThings.length; i++) {
 								var thing = arrayOfThings[i],
 									meta = thing.MetaDataDefinitionID,
-									fiters;
+									filters;
 
 								//Only folow lookup columns.
 								if(meta.InputType === "combobox") {
@@ -855,14 +871,16 @@
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
+				data = _unfollow_data(table, data);
+
 				_dexie.transaction("rw", table, function () {
 						Dexie.currentTransaction.nosync = true;
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+							.then(table.noOne.bind(table, key))
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
-
 					})
 					.then(angular.noop())
 					.catch(function (err) {
@@ -911,25 +929,21 @@
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noOne = function (data) {
-				var table = this,
-					key = data[table.noInfoPath.primaryKey];
+			db.WriteableTable.prototype.noOne = function (query) {
+				var noFilters = noInfoPath.resolveID(query, this.noInfoPath);
 
-				return $q(function (resolve, reject) {
-					table.noRead(data)
-						.then(function (results) {
-							if (results.length > 0){
-								resolve(results[0]);
+				return this.noRead(noFilters)
+						.then(function (resultset) {
+							var data;
+
+							if(resultset.length === 0) {
+								throw "noIndexedDb::noOne: Record Not Found";
 							} else {
-								reject("noIndexedDb::noOne: Record Not Found");
+								data = resultset[0];
 							}
-						})
-						.catch(function (err) {
-							reject(err);
+
+							return data;
 						});
-
-				});
-
 			};
 
 			db.WriteableTable.prototype.bulkLoad = function (data, progress) {
@@ -988,6 +1002,102 @@
 
 				return deferred.promise;
 			};
+
+			db.WriteableTable.prototype.noImport = function (noChange) {
+				var THIS = this;
+
+				function checkForExisting() {
+					var id = noChange.changedPKID;
+
+					return THIS.noOne(id)
+						.catch(function(err){
+							//console.error(err);
+							return false;
+						});
+				}
+
+				function isSame(data, changes) {
+					var
+						localDate = new Date(data.ModifiedDate),
+						remoteDate = new Date(changes.ModifiedDate),
+						same = moment(localDate).isSame(remoteDate, 'second');
+
+					console.log(localDate, remoteDate, same);
+
+					return same;
+				}
+
+				function save(changes, data, resolve, reject) {
+					var ops = {
+						"I": THIS.noCreate.bind(THIS),
+						"U": THIS.noUpdate.bind(THIS)
+					};
+					//console.log(data, changes);
+					if(isSame(data, changes.values)) {
+						console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
+						changes.isSame = true;
+						resolve(changes);
+					} else {
+						ops[changes.operation](changes.values)
+							.then(resolve)
+							.catch(reject);
+					}
+				}
+
+
+				return $q(function (resolve, reject) {
+
+					function ok(data) {
+						console.log(data);
+						resolve(data);
+					}
+
+					function fault(err) {
+						console.error(err);
+						reject(err);
+					}
+
+					checkForExisting()
+						.then(function (data) {
+							console.log("XXXXX", data);
+							// if(data) {
+								switch(noChange.operation) {
+									case "D":
+										THIS.noDestroy(noChange.changedPKID)
+											.then(ok)
+											.catch(fault);
+										break;
+
+									case "I":
+										if(!data) save(noChange, data, ok, fault);
+										break;
+									case "U":
+										if(data) save(noChange, data, ok, fault);
+										break;
+								}
+							// }else{
+							// 	resolve({});
+							// }
+
+						});
+				});
+			};
+
+			function _unfollow_data(table, data){
+				var foreignKeys = table.noInfoPath.foreignKeys || {};
+
+				for(var fks in foreignKeys){
+
+					var fk = foreignKeys[fks],
+						datum = data[fk.column];
+
+					if (datum){
+						data[fk.column] = datum[fk.refColumn] || datum;
+					}
+				}
+
+				return data;
+			}
 
 		}
 
