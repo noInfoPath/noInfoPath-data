@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.5
+ *	@version 2.0.6
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -144,6 +144,14 @@
 			return dateResult;
 		}
 
+		function _toDisplayDate(date) {
+			var dateResult = moment.utc(date)
+				.format("YYYY-MM-DD HH:mm:ss.sss");
+
+			        
+			return dateResult;
+		}
+
 		function _isCompoundFilter(indexName){
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
@@ -198,6 +206,7 @@
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
 			toDbDate: _toDbDate,
+			toDisplayDate: _toDisplayDate,
 			isCompoundFilter: _isCompoundFilter,
 			resolveID: _resolveID
 		};
@@ -5154,13 +5163,9 @@ var GloboTest = {};
 
 		var _name, _noIndexedDb = this;
 
-<<<<<<< HEAD
 		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
 			console.log(arguments);
-=======
-		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
-			//console.log(arguments);
->>>>>>> 30d02268caf3da49499c66e3e53d558b71fc3e1e
+
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
@@ -6101,7 +6106,7 @@ var GloboTest = {};
 				db.delete()
 					.then(function(res) {
 						delete $rootScope["noIndexedDb_" + databaseName];
-						deferred.resolve(res);					
+						deferred.resolve(res);
 					});
 			} else {
 				deferred.resolve(false);
