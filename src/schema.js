@@ -330,6 +330,29 @@ var GloboTest = {};
 
 		};
 
+		this.deleteDatabases = function(noDbSchemaConfigs) {
+			var promises = [];
+
+			for(var s in noDbSchemaConfigs) {
+				var schemaName = noDbSchemaConfigs[s],
+					schema = $rootScope[schemaName],
+					provider;
+
+				if(schema) {
+					provider = $injector.get(schema.config.provider);
+					promises.push(provider.destroyDb(schema.config.dbName));
+				}
+			}
+
+			return $q.all(promises)
+				.then(function(resp) {
+					console.log(resp);
+				})
+				.catch(function (err) {
+					console.error(err);
+				});
+		};
+
 		this.getSchema = function (dbName) {
 			var schema = $rootScope["noDbSchema_" + dbName];
 			return schema;
