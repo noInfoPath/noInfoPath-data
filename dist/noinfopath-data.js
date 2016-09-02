@@ -4573,35 +4573,40 @@ var GloboTest = {};
 							//Perform create or update operation.
 							function executeDataOperation(dataSource, curEntity, opType, writableData) {
 								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
-									.then(function (data) {
+									.then(function (dataSource, data) {
 										//get row from base data source
-										var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
-										//TODO: see where and when this is used.
-										if(curEntity.cacheOnScope) {
-											scope[curEntity.entityName] = data;
-										}
+										console.log(dataSource.entity.noInfoPath.primaryKey);
 
-										/*
-										 *   #### @property scopeKey
-										 *
-										 *   Use this property allow NoTransaction to store a reference
-										 *   to the entity upon which this data operation was performed.
-										 *   This is useful when you have tables that rely on a one to one
-										 *   relationship.
-										 *
-										 *   It is best practice use this property when ever possible,
-										 *   but it not a required configuration property.
-										 *
-										 */
+										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
+											.then(function(datum){
+												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
-										scope[sk] = data;
+												//TODO: see where and when this is used.
+												if(curEntity.cacheOnScope) {
+													scope[curEntity.entityName] = datum;
+												}
 
-										results[sk] = data;
+												/*
+												 *   #### @property scopeKey
+												 *
+												 *   Use this property allow NoTransaction to store a reference
+												 *   to the entity upon which this data operation was performed.
+												 *   This is useful when you have tables that rely on a one to one
+												 *   relationship.
+												 *
+												 *   It is best practice use this property when ever possible,
+												 *   but it not a required configuration property.
+												 *
+												 */
 
-										_recurse();
+												scope[sk] = datum;
 
-									})
+												results[sk] = datum;
+
+												_recurse();
+											});
+									}.bind(null, dataSource))
 									.catch(reject);
 							}
 
@@ -5863,8 +5868,9 @@ var GloboTest = {};
 			db.WriteableTable.prototype.noUpdate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this,
-					key = data[table.noInfoPath.primaryKey],
-					dataRaw = angular.copy(data);
+					key = data[table.noInfoPath.primaryKey];
+
+				data = angular.copy(data);
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
@@ -5875,8 +5881,8 @@ var GloboTest = {};
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							.then(table.noOne.bind(table, key))
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, dataRaw, data))
+							// .then(table.noOne.bind(table, key))
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
 					})
 					.then(angular.noop())

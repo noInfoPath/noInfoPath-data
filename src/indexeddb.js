@@ -868,8 +868,9 @@
 			db.WriteableTable.prototype.noUpdate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this,
-					key = data[table.noInfoPath.primaryKey],
-					dataRaw = angular.copy(data);
+					key = data[table.noInfoPath.primaryKey];
+
+				data = angular.copy(data);
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
@@ -880,8 +881,8 @@
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							.then(table.noOne.bind(table, key))
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, dataRaw, data))
+							// .then(table.noOne.bind(table, key))
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
 					})
 					.then(angular.noop())
