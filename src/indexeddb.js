@@ -878,7 +878,7 @@
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							.then(table.noOne.bind(table, key))
+							// .then(table.noOne.bind(table, key))
 							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
 					})
@@ -1109,7 +1109,7 @@
 				db.delete()
 					.then(function(res) {
 						delete $rootScope["noIndexedDb_" + databaseName];
-						deferred.resolve(res);					
+						deferred.resolve(res);
 					});
 			} else {
 				deferred.resolve(false);
