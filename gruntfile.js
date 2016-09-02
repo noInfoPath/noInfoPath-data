@@ -16,6 +16,16 @@ module.exports = function(grunt) {
 						dest: '../noinfopath-test-server-node/no/lib/js/noinfopath/'
 					},
 				]
+			},
+			test2 :{
+				files: [
+					{
+						expand: true,
+						flatten: true,
+						src: ['dist/*.js'],
+						dest: '/Users/gochinj/ws/noinfopath-v3/noinfopath-app/test/http/lib/js/noinfopath'
+					}
+				]
 			}
 		},
 		concat: {
@@ -166,7 +176,7 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
-	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'copy:test2']);
 
 	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 

@@ -170,6 +170,7 @@
 
 		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
 			console.log(arguments);
+
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
@@ -1004,12 +1005,88 @@
 				return deferred.promise;
 			};
 
-			function _unfollow_data(table, data){
-				var foreignKeys;
+			db.WriteableTable.prototype.noImport = function (noChange) {
+				var THIS = this;
 
-				//console.log(table.noInfoPath);
-				//Resolve FKs
-				foreignKeys = table.noInfoPath.foreignKeys ? table.noInfoPath.foreignKeys : null;
+				function checkForExisting() {
+					var id = noChange.changedPKID;
+
+					return THIS.noOne(id)
+						.catch(function(err){
+							//console.error(err);
+							return false;
+						});
+				}
+
+				function isSame(data, changes) {
+					var
+						localDate = new Date(data.ModifiedDate),
+						remoteDate = new Date(changes.ModifiedDate),
+						same = moment(localDate).isSame(remoteDate, 'second');
+
+					console.log(localDate, remoteDate, same);
+
+					return same;
+				}
+
+				function save(changes, data, resolve, reject) {
+					var ops = {
+						"I": THIS.noCreate.bind(THIS),
+						"U": THIS.noUpdate.bind(THIS)
+					};
+					//console.log(data, changes);
+					if(isSame(data, changes.values)) {
+						console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
+						changes.isSame = true;
+						resolve(changes);
+					} else {
+						ops[changes.operation](changes.values)
+							.then(resolve)
+							.catch(reject);
+					}
+				}
+
+
+				return $q(function (resolve, reject) {
+
+					function ok(data) {
+						console.log(data);
+						resolve(data);
+					}
+
+					function fault(err) {
+						console.error(err);
+						reject(err);
+					}
+
+					checkForExisting()
+						.then(function (data) {
+							console.log("XXXXX", data);
+							// if(data) {
+								switch(noChange.operation) {
+									case "D":
+										THIS.noDestroy(noChange.changedPKID)
+											.then(ok)
+											.catch(fault);
+										break;
+
+									case "I":
+										if(!data) save(noChange, data, ok, fault);
+										break;
+									case "U":
+										if(data) save(noChange, data, ok, fault);
+										break;
+								}
+							// }else{
+							// 	resolve({});
+							// }
+
+						});
+				});
+			};
+
+			function _unfollow_data(table, data){
+				var foreignKeys = table.noInfoPath.foreignKeys || {};
 
 				for(var fks in foreignKeys){
 
@@ -1017,7 +1094,7 @@
 						datum = data[fk.column];
 
 					if (datum){
-						data[fk.column] = datum[fk.refColumn] ? datum[fk.refColumn] : datum;
+						data[fk.column] = datum[fk.refColumn] || datum;
 					}
 				}
 
@@ -1025,6 +1102,22 @@
 			}
 
 		}
+
+
+		this.destroyDb = function(databaseName) {
+			var deferred = $q.defer();
+			var db = _noIndexedDb.getDatabase(databaseName);
+			if(db) {
+				db.delete()
+					.then(function(res) {
+						delete $rootScope["noIndexedDb_" + databaseName];
+						deferred.resolve(res);
+					});
+			} else {
+				deferred.resolve(false);
+			}
+			return deferred.promise;
+		};
 
 		/**
 		 *	### Class noDatum
