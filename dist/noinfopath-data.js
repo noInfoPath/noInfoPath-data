@@ -144,6 +144,14 @@
 			return dateResult;
 		}
 
+		function _toDisplayDate(date) {
+			var dateResult = moment.utc(date)
+				.format("YYYY-MM-DD HH:mm:ss.sss");
+
+			        
+			return dateResult;
+		}
+
 		function _isCompoundFilter(indexName){
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
@@ -198,6 +206,7 @@
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
 			toDbDate: _toDbDate,
+			toDisplayDate: _toDisplayDate,
 			isCompoundFilter: _isCompoundFilter,
 			resolveID: _resolveID
 		};
@@ -4564,35 +4573,40 @@ var GloboTest = {};
 							//Perform create or update operation.
 							function executeDataOperation(dataSource, curEntity, opType, writableData) {
 								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
-									.then(function (data) {
+									.then(function (dataSource, data) {
 										//get row from base data source
-										var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
-										//TODO: see where and when this is used.
-										if(curEntity.cacheOnScope) {
-											scope[curEntity.entityName] = data;
-										}
+										console.log(dataSource.entity.noInfoPath.primaryKey);
 
-										/*
-										 *   #### @property scopeKey
-										 *
-										 *   Use this property allow NoTransaction to store a reference
-										 *   to the entity upon which this data operation was performed.
-										 *   This is useful when you have tables that rely on a one to one
-										 *   relationship.
-										 *
-										 *   It is best practice use this property when ever possible,
-										 *   but it not a required configuration property.
-										 *
-										 */
+										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
+											.then(function(datum){
+												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
-										scope[sk] = data;
+												//TODO: see where and when this is used.
+												if(curEntity.cacheOnScope) {
+													scope[curEntity.entityName] = datum;
+												}
 
-										results[sk] = data;
+												/*
+												 *   #### @property scopeKey
+												 *
+												 *   Use this property allow NoTransaction to store a reference
+												 *   to the entity upon which this data operation was performed.
+												 *   This is useful when you have tables that rely on a one to one
+												 *   relationship.
+												 *
+												 *   It is best practice use this property when ever possible,
+												 *   but it not a required configuration property.
+												 *
+												 */
 
-										_recurse();
+												scope[sk] = datum;
 
-									})
+												results[sk] = datum;
+
+												_recurse();
+											});
+									}.bind(null, dataSource))
 									.catch(reject);
 							}
 
@@ -5154,12 +5168,13 @@ var GloboTest = {};
 
 		var _name, _noIndexedDb = this;
 
-		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
-			//console.log(arguments);
+		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
+			console.log(arguments);
+
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
-			resolve(transData);
+			resolve(rawData);
 		}
 
 		function _transactionFault(reject, err) {
@@ -5211,7 +5226,7 @@ var GloboTest = {};
 
 				angular.forEach(dbSchema, function (table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
-					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					table.parentSchema = schema;
 					dexieTable.noInfoPath = table;
 					dexieTable.provider = _dexie;
@@ -5346,7 +5361,7 @@ var GloboTest = {};
 								//noLogService.log("addSuccessful", data);
 
 								table.get(data)
-									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans, data))
 									.catch(_transactionFault.bind(null, deferred.reject));
 
 							})
@@ -5855,6 +5870,8 @@ var GloboTest = {};
 					table = this,
 					key = data[table.noInfoPath.primaryKey];
 
+				data = angular.copy(data);
+
 				//noLogService.log("adding: ", _dexie.currentUser);
 
 				data = _unfollow_data(table, data);
@@ -5898,12 +5915,12 @@ var GloboTest = {};
 							collection = method.call(where, ex.value);
 
 							collection.delete()
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
 								.catch(_transactionFault.bind(null, deferred.reject));
 
 						} else {
 							table.delete(key)
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
 								.catch(_transactionFault.bind(null, deferred.reject));
 						}
 					})

@@ -168,12 +168,13 @@
 
 		var _name, _noIndexedDb = this;
 
-		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
-			//console.log(arguments);
+		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
+			console.log(arguments);
+
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
-			resolve(transData);
+			resolve(rawData);
 		}
 
 		function _transactionFault(reject, err) {
@@ -225,7 +226,7 @@
 
 				angular.forEach(dbSchema, function (table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
-					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					table.parentSchema = schema;
 					dexieTable.noInfoPath = table;
 					dexieTable.provider = _dexie;
@@ -360,7 +361,7 @@
 								//noLogService.log("addSuccessful", data);
 
 								table.get(data)
-									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans, data))
 									.catch(_transactionFault.bind(null, deferred.reject));
 
 							})
@@ -869,6 +870,8 @@
 					table = this,
 					key = data[table.noInfoPath.primaryKey];
 
+				data = angular.copy(data);
+
 				//noLogService.log("adding: ", _dexie.currentUser);
 
 				data = _unfollow_data(table, data);
@@ -912,12 +915,12 @@
 							collection = method.call(where, ex.value);
 
 							collection.delete()
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
 								.catch(_transactionFault.bind(null, deferred.reject));
 
 						} else {
 							table.delete(key)
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
 								.catch(_transactionFault.bind(null, deferred.reject));
 						}
 					})
