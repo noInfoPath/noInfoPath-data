@@ -5188,7 +5188,7 @@ var GloboTest = {};
 
 				angular.forEach(dbSchema, function (table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
-					//dexieTable.mapToClass(noDatum, _toDexieClass(table));
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));
 					table.parentSchema = schema;
 					dexieTable.noInfoPath = table;
 					dexieTable.provider = _dexie;
@@ -5842,7 +5842,7 @@ var GloboTest = {};
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							//.then(table.noOne.bind(table, key))
+							.then(table.noOne.bind(table, key))
 							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, dataRaw, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
 					})
