@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.5
+ *	@version 2.0.6
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -5864,7 +5864,7 @@ var GloboTest = {};
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							.then(table.noOne.bind(table, key))
+							// .then(table.noOne.bind(table, key))
 							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
 					})
@@ -6095,7 +6095,7 @@ var GloboTest = {};
 				db.delete()
 					.then(function(res) {
 						delete $rootScope["noIndexedDb_" + databaseName];
-						deferred.resolve(res);					
+						deferred.resolve(res);
 					});
 			} else {
 				deferred.resolve(false);
