@@ -5131,12 +5131,12 @@ var GloboTest = {};
 
 		var _name, _noIndexedDb = this;
 
-		function _recordTransaction(resolve, tableName, operation, trans, result1, result2) {
+		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
 			console.log(arguments);
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
-			resolve(transData);
+			resolve(rawData);
 		}
 
 		function _transactionFault(reject, err) {
@@ -5323,7 +5323,7 @@ var GloboTest = {};
 								//noLogService.log("addSuccessful", data);
 
 								table.get(data)
-									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans))
+									.then(_recordTransaction.bind(null, deferred.resolve, table.name, "C", trans, data))
 									.catch(_transactionFault.bind(null, deferred.reject));
 
 							})
@@ -5830,7 +5830,8 @@ var GloboTest = {};
 			db.WriteableTable.prototype.noUpdate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this,
-					key = data[table.noInfoPath.primaryKey];
+					key = data[table.noInfoPath.primaryKey],
+					dataRaw = angular.copy(data);
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 
@@ -5841,8 +5842,8 @@ var GloboTest = {};
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 						table.update(key, data)
-							.then(table.noOne.bind(table, key))
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, data))
+							//.then(table.noOne.bind(table, key))
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "U", trans, dataRaw, data))
 							.catch(_transactionFault.bind(null, deferred.reject));
 					})
 					.then(angular.noop())
@@ -5875,12 +5876,12 @@ var GloboTest = {};
 							collection = method.call(where, ex.value);
 
 							collection.delete()
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
 								.catch(_transactionFault.bind(null, deferred.reject));
 
 						} else {
 							table.delete(key)
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
 								.catch(_transactionFault.bind(null, deferred.reject));
 						}
 					})
