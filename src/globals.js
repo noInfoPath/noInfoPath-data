@@ -144,6 +144,14 @@
 			return dateResult;
 		}
 
+		function _toDisplayDate(date) {
+			var dateResult = moment.utc(date)
+				.format("YYYY-MM-DD HH:mm:ss.sss");
+
+			        
+			return dateResult;
+		}
+
 		function _isCompoundFilter(indexName){
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
@@ -198,6 +206,7 @@
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
 			toDbDate: _toDbDate,
+			toDisplayDate: _toDisplayDate,
 			isCompoundFilter: _isCompoundFilter,
 			resolveID: _resolveID
 		};
