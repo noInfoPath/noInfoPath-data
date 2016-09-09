@@ -95,7 +95,7 @@ Returns a SQL query string
 		}
 	}
 }
-```
+```url
 
 ### NoDbSchemaFactory
 

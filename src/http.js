@@ -97,7 +97,7 @@
 
 					this.configure = function (noUser, schema) {
 						_currentUser = noUser;
-
+						//console.log("noHTTP::configure", schema);
 						var promise = $q(function (resolve, reject) {
 							for(var t in schema.tables) {
 								var table = schema.tables[t];
@@ -178,7 +178,7 @@
 
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-					var url = noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
+					var url = noUrl.makeResourceUrl(_table.uri || noConfig.current.RESTURI, tableName);
 
 					Object.defineProperties(this, {
 						entity: {

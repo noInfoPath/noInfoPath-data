@@ -103,12 +103,12 @@ var GloboTest = {};
 	 *			}
 	 *		}
 	 *	}
-	 * ```
+	 * ```url
 	 */
 
 
 	function NoDbSchema(_, noConfig, noDbConfig, rawDbSchema) {
-		//console.warn(rawDbSchema);
+		//console.warn("NoDbSchema", noDbConfig);
 
 		var _config = {},
 			_tables = rawDbSchema,
@@ -168,9 +168,6 @@ var GloboTest = {};
 			return o.entityType == "V";
 		});
 
-
-
-
 		angular.forEach(_tables, function (table, tableName) {
 			var keys = [table.primaryKey];
 
@@ -179,6 +176,8 @@ var GloboTest = {};
 
 			//Prep as a Dexie Store config
 			_config[tableName] = keys.join(",");
+
+			table.uri = noDbConfig.uri;
 		});
 
 
@@ -195,9 +194,7 @@ var GloboTest = {};
 			promises = [],
 			schemaSourceProviders = {
 				"inline": function (key, schemaConfig) {
-					return $timeout(function () {
-						return schemaConfig.schemaSource.schema;
-					});
+					return $q.when(schemaConfig.schemaSource.schema);
 				},
 				"noDBSchema": function (key, schemaConfig) {
 					return getRemoteSchema(noConfig)

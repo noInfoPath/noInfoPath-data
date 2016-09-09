@@ -1,4 +1,4 @@
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
 	var DEBUG = !!grunt.option("debug");
 
@@ -17,7 +17,7 @@ module.exports = function(grunt) {
 					},
 				]
 			},
-			test2 :{
+			test2: {
 				files: [
 					{
 						expand: true,
@@ -176,7 +176,7 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
-	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'copy:test2']);
+	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 
 	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
 

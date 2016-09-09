@@ -1137,8 +1137,8 @@
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 
-	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
-		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
+		.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 
 })(angular, Dexie);
