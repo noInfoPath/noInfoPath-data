@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.7
+ *	@version 2.0.9
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4259,7 +4259,6 @@ var GloboTest = {};
 					function normalizeTransactions(config, schema) {
 
 						var noTransactions = config.noDataSource.noTransaction,
-
 							vw = schema.entity(config.noDataSource.crudEntity),
 							lu = schema.entity(config.noDataSource.entityName),
 							keysv = _.keys(lu.columns),
@@ -4321,8 +4320,6 @@ var GloboTest = {};
 									"noop": angular.noop,
 									"basic": function (curEntity, data, scope) {
 										var writableData = {};
-
-
 
 										if(curEntity.fields) {
 											for(var f in curEntity.fields) {
@@ -4573,7 +4570,7 @@ var GloboTest = {};
 									.then(function (dataSource, data) {
 										//get row from base data source
 
-										console.log(dataSource.entity.noInfoPath.primaryKey);
+										console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
 
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
 											.then(function(datum){
@@ -5171,7 +5168,7 @@ var GloboTest = {};
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
-			resolve(rawData);
+			resolve(transData);
 		}
 
 		function _transactionFault(reject, err) {
@@ -6248,7 +6245,7 @@ var GloboTest = {};
 
 		this.one = function (id) {
 			function requestData(scope, config, entity, resolve, reject) {
-				var params = [];
+				var params = [], filterValues;
 
 				if(id) {
 					filterValues = {};
@@ -6279,7 +6276,7 @@ var GloboTest = {};
 
 
 			return $q(function (resolve, reject) {
-				var endWaitFor, filterValues;
+				var endWaitFor;
 				/*
 				 *	@property noDataSource.waitFor
 				 *

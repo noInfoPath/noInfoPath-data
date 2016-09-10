@@ -174,7 +174,7 @@
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
-			resolve(rawData);
+			resolve(transData);
 		}
 
 		function _transactionFault(reject, err) {

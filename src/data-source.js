@@ -106,7 +106,7 @@
 
 		this.one = function (id) {
 			function requestData(scope, config, entity, resolve, reject) {
-				var params = [];
+				var params = [], filterValues;
 
 				if(id) {
 					filterValues = {};
@@ -137,7 +137,7 @@
 
 
 			return $q(function (resolve, reject) {
-				var endWaitFor, filterValues;
+				var endWaitFor;
 				/*
 				 *	@property noDataSource.waitFor
 				 *
