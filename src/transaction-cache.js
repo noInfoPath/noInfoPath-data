@@ -87,7 +87,6 @@
 					function normalizeTransactions(config, schema) {
 
 						var noTransactions = config.noDataSource.noTransaction,
-
 							vw = schema.entity(config.noDataSource.crudEntity),
 							lu = schema.entity(config.noDataSource.entityName),
 							keysv = _.keys(lu.columns),
@@ -362,7 +361,6 @@
 									recurse();
 								});
 							}
-
 							/*
 							 * Add each record one at a time to ensure that the transaction is recorded.
 							 */
@@ -394,7 +392,6 @@
 
 
 							}
-
 							//Perform create or update operation.
 							function executeDataOperation(dataSource, curEntity, opType, writableData) {
 								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)

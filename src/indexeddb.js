@@ -169,7 +169,7 @@
 		var _name, _noIndexedDb = this;
 
 		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
-			console.log(arguments);
+			//console.log(arguments);
 
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
