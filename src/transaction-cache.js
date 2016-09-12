@@ -149,8 +149,6 @@
 									"basic": function (curEntity, data, scope) {
 										var writableData = {};
 
-
-
 										if(curEntity.fields) {
 											for(var f in curEntity.fields) {
 												var fld = curEntity.fields[f],
@@ -398,7 +396,7 @@
 									.then(function (dataSource, data) {
 										//get row from base data source
 
-										console.log(dataSource.entity.noInfoPath.primaryKey);
+										console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
 
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
 											.then(function(datum){

@@ -174,7 +174,7 @@
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
-			resolve(rawData);
+			resolve(transData);
 		}
 
 		function _transactionFault(reject, err) {
@@ -1137,8 +1137,8 @@
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 
-	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
-		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
+		.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 
 })(angular, Dexie);

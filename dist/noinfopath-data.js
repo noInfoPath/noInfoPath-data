@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.6
+ *	@version 2.0.10
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1806,7 +1806,7 @@
 
 					this.configure = function (noUser, schema) {
 						_currentUser = noUser;
-
+						//console.log("noHTTP::configure", schema);
 						var promise = $q(function (resolve, reject) {
 							for(var t in schema.tables) {
 								var table = schema.tables[t];
@@ -1827,7 +1827,7 @@
 						return $rootScope["noHTTP_" + databaseName];
 					};
 
-					this.noRequestJSON = function (url, method, data) {
+					this.noRequestJSON = function (url, method, data, useCreds) {
 						var json = angular.toJson(data);
 
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
@@ -1841,7 +1841,7 @@
 									"Content-Type": "application/json",
 									"Accept": "application/json"
 								},
-								withCredentials: true
+								withCredentials: !!useCreds
 							};
 
 						$http(req)
@@ -1856,7 +1856,7 @@
 						return deferred.promise;
 					};
 
-					this.noRequestForm = function (url, method, data) {
+					this.noRequestForm = function (url, method, data, useCreds) {
 						var deferred = $q.defer(),
 							req = {
 								method: method,
@@ -1865,7 +1865,7 @@
 								headers: {
 									"Content-Type": "application/x-www-form-urlencoded"
 								},
-								withCredentials: true
+								withCredentials: !!useCreds
 							};
 
 						$http(req)
@@ -1887,7 +1887,7 @@
 
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-					var url = noUrl.makeResourceUrl(noConfig.current.RESTURI, tableName);
+					var url = noUrl.makeResourceUrl(_table.uri || noConfig.current.RESTURI, tableName);
 
 					Object.defineProperties(this, {
 						entity: {
@@ -2198,12 +2198,12 @@ var GloboTest = {};
 	 *			}
 	 *		}
 	 *	}
-	 * ```
+	 * ```url
 	 */
 
 
 	function NoDbSchema(_, noConfig, noDbConfig, rawDbSchema) {
-		//console.warn(rawDbSchema);
+		//console.warn("NoDbSchema", noDbConfig);
 
 		var _config = {},
 			_tables = rawDbSchema,
@@ -2263,9 +2263,6 @@ var GloboTest = {};
 			return o.entityType == "V";
 		});
 
-
-
-
 		angular.forEach(_tables, function (table, tableName) {
 			var keys = [table.primaryKey];
 
@@ -2274,6 +2271,8 @@ var GloboTest = {};
 
 			//Prep as a Dexie Store config
 			_config[tableName] = keys.join(",");
+
+			table.uri = noDbConfig.uri;
 		});
 
 
@@ -2290,9 +2289,7 @@ var GloboTest = {};
 			promises = [],
 			schemaSourceProviders = {
 				"inline": function (key, schemaConfig) {
-					return $timeout(function () {
-						return schemaConfig.schemaSource.schema;
-					});
+					return $q.when(schemaConfig.schemaSource.schema);
 				},
 				"noDBSchema": function (key, schemaConfig) {
 					return getRemoteSchema(noConfig)
@@ -4262,7 +4259,6 @@ var GloboTest = {};
 					function normalizeTransactions(config, schema) {
 
 						var noTransactions = config.noDataSource.noTransaction,
-
 							vw = schema.entity(config.noDataSource.crudEntity),
 							lu = schema.entity(config.noDataSource.entityName),
 							keysv = _.keys(lu.columns),
@@ -4324,8 +4320,6 @@ var GloboTest = {};
 									"noop": angular.noop,
 									"basic": function (curEntity, data, scope) {
 										var writableData = {};
-
-
 
 										if(curEntity.fields) {
 											for(var f in curEntity.fields) {
@@ -4576,7 +4570,7 @@ var GloboTest = {};
 									.then(function (dataSource, data) {
 										//get row from base data source
 
-										console.log(dataSource.entity.noInfoPath.primaryKey);
+										console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
 
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
 											.then(function(datum){
@@ -5174,7 +5168,7 @@ var GloboTest = {};
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
 			if(trans) trans.addChange(tableName, transData, operation);
-			resolve(rawData);
+			resolve(transData);
 		}
 
 		function _transactionFault(reject, err) {
@@ -6137,8 +6131,8 @@ var GloboTest = {};
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 
-	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
-		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
+		.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 
 })(angular, Dexie);
@@ -6251,7 +6245,7 @@ var GloboTest = {};
 
 		this.one = function (id) {
 			function requestData(scope, config, entity, resolve, reject) {
-				var params = [];
+				var params = [], filterValues;
 
 				if(id) {
 					filterValues = {};
@@ -6282,7 +6276,7 @@ var GloboTest = {};
 
 
 			return $q(function (resolve, reject) {
-				var endWaitFor, filterValues;
+				var endWaitFor;
 				/*
 				 *	@property noDataSource.waitFor
 				 *
