@@ -118,7 +118,7 @@
 						return $rootScope["noHTTP_" + databaseName];
 					};
 
-					this.noRequestJSON = function (url, method, data) {
+					this.noRequestJSON = function (url, method, data, useCreds) {
 						var json = angular.toJson(data);
 
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
@@ -132,7 +132,7 @@
 									"Content-Type": "application/json",
 									"Accept": "application/json"
 								},
-								withCredentials: true
+								withCredentials: !!useCreds
 							};
 
 						$http(req)
@@ -147,7 +147,7 @@
 						return deferred.promise;
 					};
 
-					this.noRequestForm = function (url, method, data) {
+					this.noRequestForm = function (url, method, data, useCreds) {
 						var deferred = $q.defer(),
 							req = {
 								method: method,
@@ -156,7 +156,7 @@
 								headers: {
 									"Content-Type": "application/x-www-form-urlencoded"
 								},
-								withCredentials: true
+								withCredentials: !!useCreds
 							};
 
 						$http(req)
