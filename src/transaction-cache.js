@@ -359,7 +359,6 @@
 									recurse();
 								});
 							}
-
 							/*
 							 * Add each record one at a time to ensure that the transaction is recorded.
 							 */
@@ -391,7 +390,6 @@
 
 
 							}
-
 							//Perform create or update operation.
 							function executeDataOperation(dataSource, curEntity, opType, writableData) {
 								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
