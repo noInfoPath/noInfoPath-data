@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.10
+ *	@version 2.0.11
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4531,7 +4531,6 @@ var GloboTest = {};
 									recurse();
 								});
 							}
-
 							/*
 							 * Add each record one at a time to ensure that the transaction is recorded.
 							 */
@@ -4563,7 +4562,6 @@ var GloboTest = {};
 
 
 							}
-
 							//Perform create or update operation.
 							function executeDataOperation(dataSource, curEntity, opType, writableData) {
 								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
@@ -5163,7 +5161,7 @@ var GloboTest = {};
 		var _name, _noIndexedDb = this;
 
 		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
-			console.log(arguments);
+			//console.log(arguments);
 
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
 
@@ -5447,19 +5445,14 @@ var GloboTest = {};
 					var collection;
 
 					function _logicCB(filter, ex, value) {
-
 						var val = noInfoPath.getItem(value, filter.column),
 							op = compareOps[filterOps[ex.operator]],
 							ok = op ? op(val, ex.value) : false;
-
-						console.log(val, ex.operator, ex.value, ok);
 
 						return ok;
 					}
 
 					function _filterNormal(fi, filter, ex){
-						console.log(table, filter, ex);
-
 						var where, evaluator, logic;
 
 						if(fi === 0) {

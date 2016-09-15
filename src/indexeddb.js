@@ -453,19 +453,14 @@
 					var collection;
 
 					function _logicCB(filter, ex, value) {
-
 						var val = noInfoPath.getItem(value, filter.column),
 							op = compareOps[filterOps[ex.operator]],
 							ok = op ? op(val, ex.value) : false;
-
-						console.log(val, ex.operator, ex.value, ok);
 
 						return ok;
 					}
 
 					function _filterNormal(fi, filter, ex){
-						console.log(table, filter, ex);
-
 						var where, evaluator, logic;
 
 						if(fi === 0) {
