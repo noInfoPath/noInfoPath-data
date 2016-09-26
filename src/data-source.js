@@ -44,7 +44,7 @@
 
 		};
 
-		this.read = function (options) {
+		this.read = function (options, follow) {
 			function requestData(scope, config, entity, queryParser, resolve, reject) {
 				var params = angular.merge({}, options);
 
@@ -59,7 +59,10 @@
 					params.skip = config.skip;
 				}
 
-				return entity.noRead.apply(entity, queryParser.parse(params))
+				var x = queryParser.parse(params);
+					if(follow === false) x.push(false);
+
+				return entity.noRead.apply(entity, x)
 					.then(function (data) {
 
 						data = noCalculatedFields.calculate(config, data);
@@ -147,9 +150,7 @@
 				if(dsConfig.waitFor) {
 					endWaitFor = _scope.$watch(dsConfig.waitFor.property, function (newval, oldval, scope) {
 						if(newval) {
-
 							requestData(scope, dsConfig, entity, resolve, reject);
-
 							endWaitFor();
 						}
 					});
