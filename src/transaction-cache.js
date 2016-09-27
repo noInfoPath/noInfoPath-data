@@ -48,7 +48,7 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage)
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser)
 			{
 
 				function NoTransaction(userId, config, thescope) {
@@ -133,7 +133,7 @@
 					normalizeTransactions(config, schema);
 
 					this.upsert = function upsert(data) {
-						data = data ? data : {};
+						data = noParameterParser.parse(data ? data : {});
 
 						return $q(function (resolve, reject) {
 							var
@@ -400,11 +400,14 @@
 
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
 											.then(function(datum){
-												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
+												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
+													foo = angular.copy(scope[sk]);
 
-												//TODO: see where and when this is used.
+												noParameterParser.update(datum, foo);
+
+
 												if(curEntity.cacheOnScope) {
-													scope[curEntity.entityName] = datum;
+													scope[curEntity.entityName] = foo;
 												}
 
 												/*
@@ -420,9 +423,9 @@
 												 *
 												 */
 
-												scope[sk] = datum;
+												scope[sk] = foo;
 
-												results[sk] = datum;
+												results[sk] = foo;
 
 												_recurse();
 											});
