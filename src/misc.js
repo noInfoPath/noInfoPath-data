@@ -59,8 +59,22 @@
 			return rd;
 		}
 
+		function timespanHours(parserCfg, data){
+			var d1 = data[parserCfg.parser.fields.date1] ? moment(new Date(data[parserCfg.parser.fields.date1])) : "",
+				d2 = data[parserCfg.parser.fields.date2] ? moment(new Date(data[parserCfg.parser.fields.date2])) : "",
+				rd;
+
+				if(d1.isValid() && d2.isValid()) {
+					rd = d1.diff(d2, 'hours', true);
+					rd = Math.round(rd * 100) / 100; // moment does not round when diffing. It floors.
+				}
+
+			return rd;
+		}
+
 		var fns = {
-			"timespanDays": timespanDays
+			"timespanDays": timespanDays,
+			"timespanHours": timespanHours
 		};
 
 		this.calculate = function (dsConfig, data) {
