@@ -401,13 +401,15 @@
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
 											.then(function(datum){
 												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
-													foo = angular.copy(scope[sk]);
+													pure;
+													//foo = angular.copy(scope[sk]);
 
-												noParameterParser.update(datum, foo);
+												noParameterParser.update(datum, scope[sk]);
 
+												pure = noParameterParser.parse(scope[sk]);
 
 												if(curEntity.cacheOnScope) {
-													scope[curEntity.entityName] = foo;
+													scope[curEntity.entityName] = pure;
 												}
 
 												/*
@@ -423,9 +425,9 @@
 												 *
 												 */
 
-												scope[sk] = foo;
+												//scope[sk] = foo;
 
-												results[sk] = foo;
+												results[sk] = pure;
 
 												_recurse();
 											});
