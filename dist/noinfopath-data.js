@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.13
+ *	@version 2.0.14
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4576,31 +4576,33 @@ var GloboTest = {};
 													pure;
 													//foo = angular.copy(scope[sk]);
 
-												noParameterParser.update(datum, scope[sk]);
+												if(scope[sk]){
+													noParameterParser.update(datum, scope[sk]);
 
-												pure = noParameterParser.parse(scope[sk]);
+													pure = noParameterParser.parse(scope[sk]);
 
-												if(curEntity.cacheOnScope) {
-													scope[curEntity.entityName] = pure;
+													if(curEntity.cacheOnScope) {
+														scope[curEntity.entityName] = pure;
+													}
+
+													/*
+													 *   #### @property scopeKey
+													 *
+													 *   Use this property allow NoTransaction to store a reference
+													 *   to the entity upon which this data operation was performed.
+													 *   This is useful when you have tables that rely on a one to one
+													 *   relationship.
+													 *
+													 *   It is best practice use this property when ever possible,
+													 *   but it not a required configuration property.
+													 *
+													 */
+
+													//scope[sk] = foo;
+
+													results[sk] = pure;
 												}
-
-												/*
-												 *   #### @property scopeKey
-												 *
-												 *   Use this property allow NoTransaction to store a reference
-												 *   to the entity upon which this data operation was performed.
-												 *   This is useful when you have tables that rely on a one to one
-												 *   relationship.
-												 *
-												 *   It is best practice use this property when ever possible,
-												 *   but it not a required configuration property.
-												 *
-												 */
-
-												//scope[sk] = foo;
-
-												results[sk] = pure;
-
+											
 												_recurse();
 											});
 									}.bind(null, dataSource))
@@ -6413,7 +6415,7 @@ var GloboTest = {};
 
 			var calculatedFields = dsConfig.calculatedFields;
 
-			if(calculatedFields) {
+			if(calculatedFields && calculatedFields.length && data && data.length) {
 
 				for(var d = 0; d < data.length; d++) {
 					var datum = data[d];
