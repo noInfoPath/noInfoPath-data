@@ -81,7 +81,7 @@
 
 			var calculatedFields = dsConfig.calculatedFields;
 
-			if(calculatedFields) {
+			if(calculatedFields && calculatedFields.length && data && data.length) {
 
 				for(var d = 0; d < data.length; d++) {
 					var datum = data[d];

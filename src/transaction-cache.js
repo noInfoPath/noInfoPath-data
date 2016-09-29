@@ -404,31 +404,33 @@
 													pure;
 													//foo = angular.copy(scope[sk]);
 
-												noParameterParser.update(datum, scope[sk]);
+												if(scope[sk]){
+													noParameterParser.update(datum, scope[sk]);
 
-												pure = noParameterParser.parse(scope[sk]);
+													pure = noParameterParser.parse(scope[sk]);
 
-												if(curEntity.cacheOnScope) {
-													scope[curEntity.entityName] = pure;
+													if(curEntity.cacheOnScope) {
+														scope[curEntity.entityName] = pure;
+													}
+
+													/*
+													 *   #### @property scopeKey
+													 *
+													 *   Use this property allow NoTransaction to store a reference
+													 *   to the entity upon which this data operation was performed.
+													 *   This is useful when you have tables that rely on a one to one
+													 *   relationship.
+													 *
+													 *   It is best practice use this property when ever possible,
+													 *   but it not a required configuration property.
+													 *
+													 */
+
+													//scope[sk] = foo;
+
+													results[sk] = pure;
 												}
-
-												/*
-												 *   #### @property scopeKey
-												 *
-												 *   Use this property allow NoTransaction to store a reference
-												 *   to the entity upon which this data operation was performed.
-												 *   This is useful when you have tables that rely on a one to one
-												 *   relationship.
-												 *
-												 *   It is best practice use this property when ever possible,
-												 *   but it not a required configuration property.
-												 *
-												 */
-
-												//scope[sk] = foo;
-
-												results[sk] = pure;
-
+											
 												_recurse();
 											});
 									}.bind(null, dataSource))
