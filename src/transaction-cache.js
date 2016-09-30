@@ -48,8 +48,7 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser)
-			{
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser){
 
 				function NoTransaction(userId, config, thescope) {
 					//var transCfg = noTransConfig;
@@ -399,10 +398,10 @@
 										console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
 
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
-											.then(function(datum){
+											.then(function (datum) {
 												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
 													pure;
-													//foo = angular.copy(scope[sk]);
+												//foo = angular.copy(scope[sk]);
 
 												noParameterParser.update(datum, scope[sk]);
 
@@ -820,5 +819,5 @@
 				// noInfoPath.data.NoTransactionCache = NoTransactionCache;
 
 				return new NoTransactionCache($q, noIndexedDb);
-				}]);
+			}]);
 })(angular);
