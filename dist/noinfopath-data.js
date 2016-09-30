@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.12
+ *	@version 2.0.14
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4576,31 +4576,33 @@ var GloboTest = {};
 													pure;
 													//foo = angular.copy(scope[sk]);
 
-												noParameterParser.update(datum, scope[sk]);
+												if(scope[sk]){
+													noParameterParser.update(datum, scope[sk]);
 
-												pure = noParameterParser.parse(scope[sk]);
+													pure = noParameterParser.parse(scope[sk]);
 
-												if(curEntity.cacheOnScope) {
-													scope[curEntity.entityName] = pure;
+													if(curEntity.cacheOnScope) {
+														scope[curEntity.entityName] = pure;
+													}
+
+													/*
+													 *   #### @property scopeKey
+													 *
+													 *   Use this property allow NoTransaction to store a reference
+													 *   to the entity upon which this data operation was performed.
+													 *   This is useful when you have tables that rely on a one to one
+													 *   relationship.
+													 *
+													 *   It is best practice use this property when ever possible,
+													 *   but it not a required configuration property.
+													 *
+													 */
+
+													//scope[sk] = foo;
+
+													results[sk] = pure;
 												}
-
-												/*
-												 *   #### @property scopeKey
-												 *
-												 *   Use this property allow NoTransaction to store a reference
-												 *   to the entity upon which this data operation was performed.
-												 *   This is useful when you have tables that rely on a one to one
-												 *   relationship.
-												 *
-												 *   It is best practice use this property when ever possible,
-												 *   but it not a required configuration property.
-												 *
-												 */
-
-												//scope[sk] = foo;
-
-												results[sk] = pure;
-
+											
 												_recurse();
 											});
 									}.bind(null, dataSource))
@@ -6391,15 +6393,29 @@ var GloboTest = {};
 			return rd;
 		}
 
+		function timespanHours(parserCfg, data){
+			var d1 = data[parserCfg.parser.fields.date1] ? moment(new Date(data[parserCfg.parser.fields.date1])) : "",
+				d2 = data[parserCfg.parser.fields.date2] ? moment(new Date(data[parserCfg.parser.fields.date2])) : "",
+				rd;
+
+				if(d1.isValid() && d2.isValid()) {
+					rd = d1.diff(d2, 'hours', true);
+					rd = Math.round(rd * 100) / 100; // moment does not round when diffing. It floors.
+				}
+
+			return rd;
+		}
+
 		var fns = {
-			"timespanDays": timespanDays
+			"timespanDays": timespanDays,
+			"timespanHours": timespanHours
 		};
 
 		this.calculate = function (dsConfig, data) {
 
 			var calculatedFields = dsConfig.calculatedFields;
 
-			if(calculatedFields) {
+			if(calculatedFields && calculatedFields.length && data && data.length) {
 
 				for(var d = 0; d < data.length; d++) {
 					var datum = data[d];
