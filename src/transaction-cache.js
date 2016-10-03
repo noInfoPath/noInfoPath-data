@@ -48,7 +48,7 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser){
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", "noActionQueue", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser, noActionQueue){
 
 				function NoTransaction(userId, config, thescope) {
 					//var transCfg = noTransConfig;
@@ -395,10 +395,10 @@
 									.then(function (dataSource, data) {
 										//get row from base data source
 
-										console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
+										//console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
 
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
-											.then(function (datum) {
+											.then(function (scope, datum) {
 												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
 													pure;
 												//foo = angular.copy(scope[sk]);
@@ -429,9 +429,20 @@
 
 													results[sk] = pure;
 												}
-											
-												_recurse();
-											});
+
+												//If there is an ActionQueue then execute it.
+												if(curEntity.actions && curEntity.actions.post) {
+													//support post operation actions for now.
+													var execQueue = noActionQueue.createQueue(datum, scope, {}, curEntity.actions.post);
+
+													noActionQueue.synchronize(execQueue)
+														.then(_recurse);
+												}else{
+													_recurse();
+												}
+
+
+											}.bind(null, scope));
 									}.bind(null, dataSource))
 									.catch(reject);
 							}
@@ -759,7 +770,7 @@
 						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 							entity = db.NoInfoPath_Changes;
 
-						console.log(db);
+						//console.log(db);
 
 						return entity.noCreate(transaction.toObject())
 							.then(function () {

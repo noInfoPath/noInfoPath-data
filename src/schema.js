@@ -319,7 +319,7 @@ var GloboTest = {};
 
 			return $q.all(promises)
 				.then(function (resp) {
-					console.log(resp);
+					console.log("NoDbSchemaFactory::configureDatabases complete");
 				})
 				.catch(function (err) {
 					console.error(err);
@@ -343,7 +343,7 @@ var GloboTest = {};
 
 			return $q.all(promises)
 				.then(function(resp) {
-					console.log(resp);
+					console.log("NoDbSchemaFactory::deleteDatabases complete");
 				})
 				.catch(function (err) {
 					console.error(err);
