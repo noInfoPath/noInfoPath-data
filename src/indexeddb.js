@@ -625,10 +625,12 @@
 						for(var c in columns) {
 							var col = columns[c],
 								key = item[col.column],
-								refTable = refData[col.refTable].paged,
+								refTable = !col.noFollow && refData[col.refTable].paged,
 								filter = {},
 								refItem;
 
+							if(col.noFollow) continue;
+							
 							filter[col.refColumn] = key;
 
 							refItem = _.find(refTable, filter);
@@ -679,6 +681,8 @@
 						for(var c in columns) {
 							var col = columns[c],
 								keys = _.compact(_.pluck(arrayOfThings, col.column));  //need to remove falsey values
+
+							if(col.noFollow) continue;
 
 							if(!allKeys[col.refTable]){
 								allKeys[col.refTable] = {

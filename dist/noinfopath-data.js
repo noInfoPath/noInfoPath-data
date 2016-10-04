@@ -5634,10 +5634,12 @@ var GloboTest = {};
 						for(var c in columns) {
 							var col = columns[c],
 								key = item[col.column],
-								refTable = refData[col.refTable].paged,
+								refTable = !col.noFollow && refData[col.refTable].paged,
 								filter = {},
 								refItem;
 
+							if(col.noFollow) continue;
+							
 							filter[col.refColumn] = key;
 
 							refItem = _.find(refTable, filter);
@@ -5688,6 +5690,8 @@ var GloboTest = {};
 						for(var c in columns) {
 							var col = columns[c],
 								keys = _.compact(_.pluck(arrayOfThings, col.column));  //need to remove falsey values
+
+							if(col.noFollow) continue;
 
 							if(!allKeys[col.refTable]){
 								allKeys[col.refTable] = {
@@ -6169,7 +6173,7 @@ var GloboTest = {};
  */
 (function (angular, undefined) {
 
-	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields) {
+	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			entity = db[dsConfig.entityName],
@@ -6185,7 +6189,11 @@ var GloboTest = {};
 			}
 		});
 
-
+		// var tmpFilters = noDynamicFilters.configure(dsCfg, scope, watch);
+		// ds.filter = tmpFilters ? {
+		// 	filters: tmpFilters
+		// } : undefined;
+		//
 		this.create = function (data, noTrans) {
 			if(isNoView) throw "create operation not supported on entities of type NoView";
 
@@ -6197,7 +6205,7 @@ var GloboTest = {};
 			function requestData(scope, config, entity, queryParser, resolve, reject) {
 				var params = angular.merge({}, options);
 
-				params.filter = noDynamicFilters.configure(config, scope);
+				params.filter = noDynamicFilters.configure(config, scope, watch);
 
 				if(config.sort) {
 					params.sort = config.sort;
@@ -6334,8 +6342,8 @@ var GloboTest = {};
 		 *	An instance of a NoDataSource object.
 		 *
 		 */
-		this.create = function (dsConfig, scope) {
-			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields);
+		this.create = function (dsConfig, scope, watch) {
+			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch);
 		};
 	}]);
 
