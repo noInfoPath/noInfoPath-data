@@ -6765,6 +6765,27 @@ var GloboTest = {};
 		};
 
 		/**
+		 *	@method cache(file)
+		 *
+		 *	Saves a file to the noDataSource defined in the config object.
+		 *
+		 *	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
+		 *
+		 */
+		this.get = function loadFromCache(fileID) {
+			var dsCfg = {
+				"dataProvider": "noIndexedDb",
+				"databaseName": "NoInfoPath_dtc_v1",
+				"entityName": "NoInfoPath_FileUploadCache",
+				"primaryKey": "FileID"
+			};
+
+			var ds = noDataSource.create(dsCfg, {});
+
+			return ds.one(fileID);
+		};
+
+		/**
 		 *	@method removeFromCache(file)
 		 *
 		 *	Deletes a file by FileID from the NoInfoPath_FileUploadCache.
