@@ -171,7 +171,7 @@
 		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
 			//console.log(arguments);
 
-			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
+			var transData = result2 && result2.rows && result2.rows.length ? result2 : angular.isObject(result1) ? result1 : rawData;
 
 			if(trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
@@ -630,7 +630,7 @@
 								refItem;
 
 							if(col.noFollow) continue;
-							
+
 							filter[col.refColumn] = key;
 
 							refItem = _.find(refTable, filter);
@@ -1102,7 +1102,6 @@
 			}
 
 		}
-
 
 		this.destroyDb = function(databaseName) {
 			var deferred = $q.defer();

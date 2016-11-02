@@ -199,6 +199,14 @@
 			return filters;
 		}
 
+		function _toScopeSafeGuid(uid) {
+ 			return (uid || "").replace(/-/g, "_");
+		}
+
+		function _fromScopeSafeGuid(ssuid) {
+			return (ssuid || "").replace(/_/g, "-");
+		}
+
 		var _data = {
 			getItem: _getItem,
 			setItem: _setItem,
@@ -208,7 +216,9 @@
 			toDbDate: _toDbDate,
 			toDisplayDate: _toDisplayDate,
 			isCompoundFilter: _isCompoundFilter,
-			resolveID: _resolveID
+			resolveID: _resolveID,
+			toScopeSafeGuid: _toScopeSafeGuid,
+			fromScopeSafeGuid: _fromScopeSafeGuid
 		};
 
 		angular.extend(noInfoPath, _data);
@@ -5180,7 +5190,7 @@ var GloboTest = {};
 		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
 			//console.log(arguments);
 
-			var transData = result2 && result2.rows && result2.rows.length ? result2 : result1;
+			var transData = result2 && result2.rows && result2.rows.length ? result2 : angular.isObject(result1) ? result1 : rawData;
 
 			if(trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
@@ -5639,7 +5649,7 @@ var GloboTest = {};
 								refItem;
 
 							if(col.noFollow) continue;
-							
+
 							filter[col.refColumn] = key;
 
 							refItem = _.find(refTable, filter);
@@ -6112,7 +6122,6 @@ var GloboTest = {};
 
 		}
 
-
 		this.destroyDb = function(databaseName) {
 			var deferred = $q.defer();
 			var db = _noIndexedDb.getDatabase(databaseName);
@@ -6221,9 +6230,7 @@ var GloboTest = {};
 
 				return entity.noRead.apply(entity, x)
 					.then(function (data) {
-
 						data = noCalculatedFields.calculate(config, data);
-
 						resolve(data);
 					})
 					.catch(function (err) {
@@ -6493,6 +6500,7 @@ var GloboTest = {};
 			}
 			return source;
 		}
+
 		/*
 		 *	@method configureFilterWatch
 		 *
@@ -6508,10 +6516,13 @@ var GloboTest = {};
 		 */
 		function configureValueWatch(dsConfig, filterCfg, value, source, cb) {
 			if(source.$watch && value.watch && cb) {
+				if(value.default) noInfoPath.setItem(source, value.property, value.default);
+
 				var filter = angular.copy(filterCfg);
 				source.$watch(value.property, cb.bind(filter, dsConfig, filterCfg, value));
 			}
 		}
+
 		/**
 		 *   ### resolveFilterValues(filters)
 		 *   #### This is more information

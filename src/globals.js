@@ -199,6 +199,14 @@
 			return filters;
 		}
 
+		function _toScopeSafeGuid(uid) {
+ 			return (uid || "").replace(/-/g, "_");
+		}
+
+		function _fromScopeSafeGuid(ssuid) {
+			return (ssuid || "").replace(/_/g, "-");
+		}
+
 		var _data = {
 			getItem: _getItem,
 			setItem: _setItem,
@@ -208,7 +216,9 @@
 			toDbDate: _toDbDate,
 			toDisplayDate: _toDisplayDate,
 			isCompoundFilter: _isCompoundFilter,
-			resolveID: _resolveID
+			resolveID: _resolveID,
+			toScopeSafeGuid: _toScopeSafeGuid,
+			fromScopeSafeGuid: _fromScopeSafeGuid
 		};
 
 		angular.extend(noInfoPath, _data);

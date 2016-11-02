@@ -35,6 +35,7 @@
 			}
 			return source;
 		}
+
 		/*
 		 *	@method configureFilterWatch
 		 *
@@ -50,10 +51,13 @@
 		 */
 		function configureValueWatch(dsConfig, filterCfg, value, source, cb) {
 			if(source.$watch && value.watch && cb) {
+				if(value.default) noInfoPath.setItem(source, value.property, value.default);
+
 				var filter = angular.copy(filterCfg);
 				source.$watch(value.property, cb.bind(filter, dsConfig, filterCfg, value));
 			}
 		}
+
 		/**
 		 *   ### resolveFilterValues(filters)
 		 *   #### This is more information

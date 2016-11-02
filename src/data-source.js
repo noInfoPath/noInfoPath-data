@@ -68,9 +68,7 @@
 
 				return entity.noRead.apply(entity, x)
 					.then(function (data) {
-
 						data = noCalculatedFields.calculate(config, data);
-
 						resolve(data);
 					})
 					.catch(function (err) {
