@@ -4629,6 +4629,14 @@ var GloboTest = {};
 									.catch(reject);
 							}
 
+							function executeDataOperationBulk(dataSource, curEntity, opType, writableData) {
+								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
+									.then(function (dataSource, data) {
+										return data;
+									}.bind(null, dataSource))
+									.catch(reject);
+							}
+
 							function _entity_standard(curEntity) {
 								var primaryKey, opType, preOp, dsConfig, dataSource, writableData, exec;
 
@@ -4752,7 +4760,7 @@ var GloboTest = {};
 									var model = data[i];
 
 									if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
-										promises.push(executeDataOperation(dataSource, curEntity, opType, new classConstructor(model, results)));
+										promises.push(executeDataOperationBulk(dataSource, curEntity, opType, new classConstructor(model, results)));
 									}
 								}
 
@@ -4868,6 +4876,7 @@ var GloboTest = {};
 							_recurse();
 						});
 					};
+
 				}
 
 				function NoChanges() {
@@ -6180,6 +6189,7 @@ var GloboTest = {};
  *
  *	```
  */
+
 (function (angular, undefined) {
 
 	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch) {

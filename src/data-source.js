@@ -18,6 +18,7 @@
  *
  *	```
  */
+
 (function (angular, undefined) {
 
 	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch) {

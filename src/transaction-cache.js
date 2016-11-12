@@ -447,6 +447,14 @@
 									.catch(reject);
 							}
 
+							function executeDataOperationBulk(dataSource, curEntity, opType, writableData) {
+								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
+									.then(function (dataSource, data) {
+										return data;
+									}.bind(null, dataSource))
+									.catch(reject);
+							}
+
 							function _entity_standard(curEntity) {
 								var primaryKey, opType, preOp, dsConfig, dataSource, writableData, exec;
 
@@ -570,7 +578,7 @@
 									var model = data[i];
 
 									if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
-										promises.push(executeDataOperation(dataSource, curEntity, opType, new classConstructor(model, results)));
+										promises.push(executeDataOperationBulk(dataSource, curEntity, opType, new classConstructor(model, results)));
 									}
 								}
 
@@ -686,6 +694,7 @@
 							_recurse();
 						});
 					};
+
 				}
 
 				function NoChanges() {
