@@ -705,7 +705,7 @@
 			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
 					.then(function (result) {
-						return THIS.noOne(result.insertId)
+						return THIS.noOne(result.insertId, false)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "C", noTransaction))
 							.catch(_transactionFault.bind(null, reject));
 					})
@@ -1010,7 +1010,7 @@
 			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
 					.then(function (id, result) {
-						return THIS.noOne(id)
+						return THIS.noOne(id, false)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "U", noTransaction))
 							.catch(_transactionFault.bind(null, reject));
 					}.bind(null, id))
@@ -1135,7 +1135,7 @@
 		 * > inherently replicatable.
 		 *
 		 */
-		this.noOne = function (query) {
+		this.noOne = function (query, follow) {
 			/**
 			 *	When 'query' is an object then check to see if it is a
 			 *	NoFilters object.  If not, add a filter to the intrinsic filters object
@@ -1145,7 +1145,7 @@
 
 			//Internal _getOne requires and NoFilters object.
 			//return _getOne(filters);
-			return this.noRead(filters)
+			return this.noRead(filters, follow)
 				.then(function (resultset) {
 					var data;
 
@@ -1292,7 +1292,7 @@
 			function checkForExisting() {
 				var id = noChange.changedPKID;
 
-				return THIS.noOne(id);
+				return THIS.noOne(id, false);
 			}
 
 			function isSame(data, changes) {

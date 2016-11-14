@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.25
+ *	@version 1.2.26
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -144,6 +144,13 @@
 			return dateResult;
 		}
 
+		function _toDisplayDate(date) {
+			var dateResult = moment.utc(date)
+				.format("YYYY-MM-DD HH:mm:ss.sss");
+
+			return dateResult;
+		}
+
 		function _isCompoundFilter(indexName){
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
@@ -155,6 +162,7 @@
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
 			toDbDate: _toDbDate,
+			toDisplayDate: _toDisplayDate,
 			isCompoundFilter: _isCompoundFilter
 		};
 

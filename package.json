@@ -1,6 +1,6 @@
 {
   "name": "@noinfopath/noinfopath-data",
-  "version": "1.2.25",
+  "version": "1.2.26",
   "description": "noInfoPath data module",
   "license": "MIT",
   "author": "noInfoPath <info@noInfoPath.org> (http://www.noinfopath.org/)",
@@ -24,6 +24,7 @@
     "jasmine-core": "^2.4.1",
     "jsdoc": "^3.4.0",
     "moment": "^2.11.1",
+    "ng-lodash": "^0.2.3",
     "noinfopath": "^0.2.5",
     "noinfopath-helpers": "0.0.16",
     "phantomjs": "^1.9.19"

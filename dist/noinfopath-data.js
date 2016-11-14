@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.25
+ *	@version 1.2.26
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -144,7 +144,14 @@
 			return dateResult;
 		}
 
-		function _isCompoundFilter(indexName) {
+		function _toDisplayDate(date) {
+			var dateResult = moment.utc(date)
+				.format("YYYY-MM-DD HH:mm:ss.sss");
+
+			return dateResult;
+		}
+
+		function _isCompoundFilter(indexName){
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
 
@@ -155,6 +162,7 @@
 			digestError: _digestError,
 			digestTimeout: _digestTimeout,
 			toDbDate: _toDbDate,
+			toDisplayDate: _toDisplayDate,
 			isCompoundFilter: _isCompoundFilter
 		};
 
@@ -454,9 +462,15 @@
 	function normalizeSafeValue(inval) {
 		var outval = inval;
 
-		if(angular.isDate(inval)) {
-			outval = "datetime( ?, 'utc')";
-		} else if(angular.isString(inval)) {
+		// if(angular.isDate(inval)) {
+		// 	var d = noInfoPath.toDbDate(noInfoPath.toDisplayDate(inval.toDateString()));
+		// 	// if(d.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/)){
+		// 	// 	outval = "datetime( ?, 'utc')";
+		// 	// } else {
+		// 		outval = "date( ?, 'utc')";
+		// 	// }
+		// } else
+		if(angular.isString(inval)) {
 			outval = "?";
 		}
 
@@ -512,8 +526,15 @@
 
 		this.toSafeSQL = function () {
 			var opFn = normalizeOperator(this.operator),
-				v = stringSearch[this.operator] ? this.value : "?",
-				rs = opFn(v) + normalizeLogic(this.logic);
+				v, rs;
+
+			if(angular.isDate(this.value)){
+				this.value = noInfoPath.toDbDate(noInfoPath.toDisplayDate(this.value.toDateString()));
+			}
+
+			v = stringSearch[this.operator] ? this.value : "?";
+
+			rs = opFn(v) + normalizeLogic(this.logic);
 
 			return rs;
 		};
@@ -762,7 +783,7 @@
 			var ocol = incol;
 
 			if(angular.isDate(val)) {
-				ocol = "datetime(" + incol + ",'utc')";
+				//ocol = "datetime(" + incol + ",'utc')";
 			}
 
 			return ocol;
@@ -3363,7 +3384,7 @@ var GloboTest = {};
 			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
 					.then(function (result) {
-						return THIS.noOne(result.insertId)
+						return THIS.noOne(result.insertId, false)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "C", noTransaction))
 							.catch(_transactionFault.bind(null, reject));
 					})
@@ -3668,7 +3689,7 @@ var GloboTest = {};
 			return $q(function (resolve, reject) {
 				_exec(sqlStmt)
 					.then(function (id, result) {
-						return THIS.noOne(id)
+						return THIS.noOne(id, false)
 							.then(_recordTransaction.bind(null, resolve, _entityName, "U", noTransaction))
 							.catch(_transactionFault.bind(null, reject));
 					}.bind(null, id))
@@ -3793,7 +3814,7 @@ var GloboTest = {};
 		 * > inherently replicatable.
 		 *
 		 */
-		this.noOne = function (query) {
+		this.noOne = function (query, follow) {
 			/**
 			 *	When 'query' is an object then check to see if it is a
 			 *	NoFilters object.  If not, add a filter to the intrinsic filters object
@@ -3803,7 +3824,7 @@ var GloboTest = {};
 
 			//Internal _getOne requires and NoFilters object.
 			//return _getOne(filters);
-			return this.noRead(filters)
+			return this.noRead(filters, follow)
 				.then(function (resultset) {
 					var data;
 
@@ -3950,7 +3971,7 @@ var GloboTest = {};
 			function checkForExisting() {
 				var id = noChange.changedPKID;
 
-				return THIS.noOne(id);
+				return THIS.noOne(id, false);
 			}
 
 			function isSame(data, changes) {
@@ -4457,8 +4478,6 @@ var GloboTest = {};
 
 								return entity.noRead(filter)
 									.then(function (data) {
-										console.log(data.paged);
-
 										var ra = [];
 										for(var d = 0; d < data.length; d++) {
 											var datum = data[d];
@@ -4570,6 +4589,14 @@ var GloboTest = {};
 									.catch(reject);
 							}
 
+							function executeDataOperationBulk(dataSource, curEntity, opType, writableData) {
+								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
+									.then(function (data) {
+										return data;
+									})
+									.catch(reject);
+							}
+
 							function _entity_standard(curEntity) {
 								var primaryKey, opType, preOp, dsConfig, dataSource, writableData, exec;
 
@@ -4672,9 +4699,6 @@ var GloboTest = {};
 
 								primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
 
-								//Create or Update the curEntity.
-								opType = data[primaryKey] ? "update" : "create";
-
 								//create the datasource config used to create datasource.
 								// dsConfig = angular.merge({}, config.noDataSource, {
 								// 	entityName: curEntity.entityName
@@ -4690,26 +4714,25 @@ var GloboTest = {};
 
 
 								for(var i = 0; i < data.length; i++) {
-									var model = data[i];
+									var model = data[i],
+										datum = new classConstructor(model, results);
+
+										//Create or Update the curEntity.
+										//NOTE: How can you determine this without referencing each data row? This is a bug waiting to happen.
+										//NOTE: It was a bug, moved here cause each data item needs to be evaluated separately.
+										opType = datum[primaryKey] ? "update" : "create";
 
 									if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
-										promises.push(executeDataOperation(dataSource, curEntity, opType, new classConstructor(model, results)));
+										promises.push(executeDataOperationBulk(dataSource, curEntity, opType, datum));
 									}
 								}
 
-
-
-
 								$q.all(promises)
-									.then(_recurse)
+									.then(function(res){
+										results[curEntity] = res;
+										_recurse();
+									})
 									.catch(reject);
-
-
-
-
-
-								//SELF.bulkUpsert(data, classConstructor, curEntity.bulk.ignoreDirtyFlag, results)
-
 							}
 
 							function _recurse() {
@@ -5423,7 +5446,7 @@ var GloboTest = {};
 						return ok;
 					}
 
-					function _filterNormal(fi, filter, ex) {
+					function _filterNormal(fi, filter, ex){
 						console.log(table, filter, ex);
 
 						var where, evaluator, logic;
@@ -5450,7 +5473,7 @@ var GloboTest = {};
 
 					}
 
-					function _filterCompound(fi, filter, ex) {
+					function _filterCompound(fi, filter, ex){
 						console.log("Compound", fi, filter, ex);
 					}
 
@@ -5462,7 +5485,7 @@ var GloboTest = {};
 							// if(noInfoPath.isCompoundFilter(filter.column)){
 							// 	_filterCompound(fi, filter, ex);
 							// }else{
-							_filterNormal(fi, filter, ex);
+								_filterNormal(fi, filter, ex);
 							// }
 						}
 						//More indexed filters
@@ -5638,7 +5661,7 @@ var GloboTest = {};
 					var promises = {},
 						columns = table.noInfoPath.foreignKeys;
 
-					if(follow) {
+					if(follow){
 						for(var c in columns) {
 							var col = columns[c],
 								keys = _.pluck(arrayOfThings, col.column);
@@ -5649,10 +5672,10 @@ var GloboTest = {};
 
 						return _.size(promises) > 0 ?
 							$q.all(promises)
-							.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-							.catch(_fault) :
+								.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+								.catch(_fault) :
 							$q.when(arrayOfThings);
-					} else {
+					}else{
 						$q.when(arrayOfThings);
 					}
 
@@ -6330,8 +6353,7 @@ var GloboTest = {};
 		 *   > Otherwise assume source is an injectable.
 		 */
 		function resolveFilterValues(dsConfig, filters, scope, watchCB) {
-			var values = {},
-				compoundValues = [];
+			var values = {}, compoundValues = [];
 			/*
 			 *	@property noDataSource.filter
 			 *
@@ -6352,8 +6374,8 @@ var GloboTest = {};
 					source, value;
 				if(angular.isObject(filter.value)) {
 					if(angular.isArray(filter.value)) {
-						if(noInfoPath.isCompoundFilter(filter.field)) {
-							for(var vi = 0; vi < filter.value.length; vi++) {
+						if(noInfoPath.isCompoundFilter(filter.field)){
+							for(var vi=0; vi < filter.value.length; vi++){
 								var valObj = filter.value[vi];
 								source = resolveValueSource(valObj, scope);
 								configureValueWatch(dsConfig, filter, valObj, source, watchCB);
@@ -6361,7 +6383,7 @@ var GloboTest = {};
 							}
 							//Will assume guids and wrap them in quotes
 							values[filter.field] = compoundValues;
-						} else {
+						}else{
 							values[filter.field] = normalizeFilterValue(filter.value); // in statement
 						}
 					} else {
@@ -6397,7 +6419,8 @@ var GloboTest = {};
 					filters.push({
 						field: filter.field,
 						operator: filter.operator,
-						value: value
+						value: value,
+						logic: filter.logic ? filter.logic : "and"
 					});
 				}
 			}

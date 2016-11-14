@@ -317,8 +317,6 @@
 
 								return entity.noRead(filter)
 									.then(function (data) {
-										console.log(data.paged);
-
 										var ra = [];
 										for(var d = 0; d < data.length; d++) {
 											var datum = data[d];
@@ -430,6 +428,14 @@
 									.catch(reject);
 							}
 
+							function executeDataOperationBulk(dataSource, curEntity, opType, writableData) {
+								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
+									.then(function (data) {
+										return data;
+									})
+									.catch(reject);
+							}
+
 							function _entity_standard(curEntity) {
 								var primaryKey, opType, preOp, dsConfig, dataSource, writableData, exec;
 
@@ -532,9 +538,6 @@
 
 								primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
 
-								//Create or Update the curEntity.
-								opType = data[primaryKey] ? "update" : "create";
-
 								//create the datasource config used to create datasource.
 								// dsConfig = angular.merge({}, config.noDataSource, {
 								// 	entityName: curEntity.entityName
@@ -550,26 +553,25 @@
 
 
 								for(var i = 0; i < data.length; i++) {
-									var model = data[i];
+									var model = data[i],
+										datum = new classConstructor(model, results);
+
+										//Create or Update the curEntity.
+										//NOTE: How can you determine this without referencing each data row? This is a bug waiting to happen.
+										//NOTE: It was a bug, moved here cause each data item needs to be evaluated separately.
+										opType = datum[primaryKey] ? "update" : "create";
 
 									if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
-										promises.push(executeDataOperation(dataSource, curEntity, opType, new classConstructor(model, results)));
+										promises.push(executeDataOperationBulk(dataSource, curEntity, opType, datum));
 									}
 								}
 
-
-
-
 								$q.all(promises)
-									.then(_recurse)
+									.then(function(res){
+										results[curEntity] = res;
+										_recurse();
+									})
 									.catch(reject);
-
-
-
-
-
-								//SELF.bulkUpsert(data, classConstructor, curEntity.bulk.ignoreDirtyFlag, results)
-
 							}
 
 							function _recurse() {

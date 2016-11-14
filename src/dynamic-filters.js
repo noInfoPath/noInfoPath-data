@@ -137,7 +137,8 @@
 					filters.push({
 						field: filter.field,
 						operator: filter.operator,
-						value: value
+						value: value,
+						logic: filter.logic ? filter.logic : "and"
 					});
 				}
 			}

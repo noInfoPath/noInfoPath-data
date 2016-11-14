@@ -290,9 +290,15 @@
 	function normalizeSafeValue(inval) {
 		var outval = inval;
 
-		if(angular.isDate(inval)) {
-			outval = "datetime( ?, 'utc')";
-		} else if(angular.isString(inval)) {
+		// if(angular.isDate(inval)) {
+		// 	var d = noInfoPath.toDbDate(noInfoPath.toDisplayDate(inval.toDateString()));
+		// 	// if(d.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/)){
+		// 	// 	outval = "datetime( ?, 'utc')";
+		// 	// } else {
+		// 		outval = "date( ?, 'utc')";
+		// 	// }
+		// } else
+		if(angular.isString(inval)) {
 			outval = "?";
 		}
 
@@ -348,8 +354,15 @@
 
 		this.toSafeSQL = function () {
 			var opFn = normalizeOperator(this.operator),
-				v = stringSearch[this.operator] ? this.value : "?",
-				rs = opFn(v) + normalizeLogic(this.logic);
+				v, rs;
+
+			if(angular.isDate(this.value)){
+				this.value = noInfoPath.toDbDate(noInfoPath.toDisplayDate(this.value.toDateString()));
+			}
+
+			v = stringSearch[this.operator] ? this.value : "?";
+
+			rs = opFn(v) + normalizeLogic(this.logic);
 
 			return rs;
 		};
@@ -598,7 +611,7 @@
 			var ocol = incol;
 
 			if(angular.isDate(val)) {
-				ocol = "datetime(" + incol + ",'utc')";
+				//ocol = "datetime(" + incol + ",'utc')";
 			}
 
 			return ocol;

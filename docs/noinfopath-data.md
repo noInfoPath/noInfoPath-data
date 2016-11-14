@@ -1,5 +1,4 @@
 # noinfopath-data
-@version 1.2.25
 
 ## Overview
 NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -389,9 +388,7 @@ Implements a INoQueryBuilder compatible service that converts NoFilters,
 NoSort, NoPage into ODATA compatible query object.
 
 
-### @class MockStorage
 
-### @class NoStorage
 
 ## @service noConfig
 
@@ -630,14 +627,6 @@ Creates unique instances of NoDbSchema based on noDBSchema configuration data.
 ## noDbSchema
 The noDbSchema service provides access to the database configuration that defines how to configure the local IndexedDB data store.
 
-### Properties
-
-
-|Name|Type|Description|
-|----|----|-----------|
-|store|Object|A hash table compatible with Dexie::store method that is used to configure the database.|
-|tables|Object|A hash table of NoInfoPath database schema definitions|
-|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 
 ## @interface INoQueryBuilder
 
@@ -914,7 +903,6 @@ data/table as defined in the noTransaction configuration and it's
 an update is performed.
 
 
-@property createOnly
 
 Use this property to `create` new related records in a transaction
 member table when a matching item does not exist. So, this also
@@ -1139,7 +1127,6 @@ underlying CRUD interface.
 
 ```
 
-@property noDataSource.waitFor
 
 Use this property when you want the data source wait for some other
 NoInfoPath component to update the `scope`.
@@ -1177,14 +1164,12 @@ noDateFunctions Service
 }]
 ```
 
-@method normalizeFilterValue
 
 Evaluates the type parameter looking for know types, and converts
 converts the value parameter to explicitly be of the type provied.
 
 If the type is not a supported type then value is returned unchanged.
 
-@method configureFilterWatch
 
 If the filterCfg parameter's value property, has a watch property, and
 the value's source property is an AngularJS  observable object
@@ -1211,7 +1196,6 @@ the source is injected using the $injector service.
   > property set to `scope` then use the directives scope variable.
   > Otherwise assume source is an injectable.
 
-@property noDataSource.filter
 
 An array of NoInfoPath dynamic filters. Each filter defines what
 the provider of the filter data is, and what property to filter on.
@@ -1228,18 +1212,15 @@ is a JavaScript object. Possible services could be $rootScope or $stateParams.
 NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
 inferred in the documentation or perform by ngInclude.
 
-@method cache(file)
 
 Saves a file to the noDataSource defined in the config object.
 
 > NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
 
 
-@method removeFromCache(file)
 
 Deletes a file by FileID from the NoInfoPath_FileUploadCache.
 
-@method read(file)
 
 Reads a file from a DOM File object and converts to a binary
 string compatible with the local, and upstream file systems.

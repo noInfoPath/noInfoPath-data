@@ -86,7 +86,7 @@ describe("Testing Classes", function () {
 					}
 				]
 			);
-			var expected = "(FlavorID = '128f28ca-e926-4259-d202-b754fe5b11c7')",
+			var expected = "(FlavorID = ?)",
 				actual = filter.toSQL();
 
 			expect(actual)
@@ -101,7 +101,7 @@ describe("Testing Classes", function () {
 				"logic": null
 			}]);
 			var actual = filters.toSQL();
-			var expected = "(FlavorID = '128f28ca-e926-4259-d202-b754fe5b11c7')";
+			var expected = "(FlavorID = ?)";
 
 			expect(actual)
 				.toBe(expected);
@@ -140,10 +140,10 @@ describe("Testing Classes", function () {
 
 		it("testing multiple filters NoFilters.toSQL()", function () {
 			var filters = new noInfoPath.data.NoFilters();
-			filters.add("FlavorID", null, true, true, [{
+			filters.add("FlavorID", "and", true, true, [{
 				"operator": "eq",
 				"value": "128f28ca-e926-4259-d202-b754fe5b11c7",
-				"logic": null
+				"logic": null,
 			}]);
 			filters.add("Pie", "and", true, true, [{
 				"operator": "eq",
@@ -151,7 +151,7 @@ describe("Testing Classes", function () {
 				"logic": null
 			}]);
 			var actual = filters.toSQL();
-			var expected = "(Pie = 'Apple') and (FlavorID = '128f28ca-e926-4259-d202-b754fe5b11c7')";
+			var expected = "(FlavorID = ?) and (Pie = ?)";
 
 			expect(actual)
 				.toBe(expected);
