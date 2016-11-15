@@ -27,12 +27,17 @@
 		}
 
 		function resolveValueSource(valueCfg, scope) {
-			var source;
-			if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
-				source = $injector.get(valueCfg.source);
-			} else {
-				source = scope;
+			var source, tmp = {};
+
+			if(valueCfg.source) {
+				if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
+					source = $injector.get(valueCfg.source);
+				} else {
+					source = scope;
+				}
 			}
+
+
 			return source;
 		}
 
@@ -50,7 +55,7 @@
 		 *	> NOTE: Currently $rootScope is the only supported injectable source.
 		 */
 		function configureValueWatch(dsConfig, filterCfg, value, source, cb) {
-			if(source.$watch && value.watch && cb) {
+			if(source && source.$watch && value.watch && cb) {
 				if(value.default) noInfoPath.setItem(source, value.property, value.default);
 
 				var filter = angular.copy(filterCfg);
@@ -100,8 +105,12 @@
 							for(var vi=0; vi < filter.value.length; vi++){
 								var valObj = filter.value[vi];
 								source = resolveValueSource(valObj, scope);
-								configureValueWatch(dsConfig, filter, valObj, source, watchCB);
-								compoundValues.push(normalizeFilterValue(noInfoPath.getItem(source, valObj.property), valObj.type));
+								if(source) {
+									configureValueWatch(dsConfig, filter, valObj, source, watchCB);
+									compoundValues.push(normalizeFilterValue(noInfoPath.getItem(source, valObj.property), valObj.type));
+								} else {
+									compoundValues.push(valObj);
+								}
 							}
 							//Will assume guids and wrap them in quotes
 							values[filter.field] = compoundValues;

@@ -5468,7 +5468,7 @@ var GloboTest = {};
 							return areString ? a.lastIndexOf(b) > -1 : false;
 						},
 						"in": function (a, b) {
-							return a.indexof(b) > -1;
+							return b.indexOf(a) > -1;
 						}
 					},
 					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
@@ -5506,9 +5506,12 @@ var GloboTest = {};
 
 							logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
 						} else {
-							if(logic) {
+							// logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
+							if(filter.logic) {
+								logic = collection[filter.logic].bind(collection);
 								collection = logic(_logicCB.bind(null, filter, ex));
 							}
+
 						}
 
 					}
@@ -6189,7 +6192,6 @@ var GloboTest = {};
  *
  *	```
  */
-
 (function (angular, undefined) {
 
 	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch) {
@@ -6502,12 +6504,17 @@ var GloboTest = {};
 		}
 
 		function resolveValueSource(valueCfg, scope) {
-			var source;
-			if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
-				source = $injector.get(valueCfg.source);
-			} else {
-				source = scope;
+			var source, tmp = {};
+
+			if(valueCfg.source) {
+				if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
+					source = $injector.get(valueCfg.source);
+				} else {
+					source = scope;
+				}
 			}
+
+
 			return source;
 		}
 
@@ -6525,7 +6532,7 @@ var GloboTest = {};
 		 *	> NOTE: Currently $rootScope is the only supported injectable source.
 		 */
 		function configureValueWatch(dsConfig, filterCfg, value, source, cb) {
-			if(source.$watch && value.watch && cb) {
+			if(source && source.$watch && value.watch && cb) {
 				if(value.default) noInfoPath.setItem(source, value.property, value.default);
 
 				var filter = angular.copy(filterCfg);
@@ -6575,8 +6582,12 @@ var GloboTest = {};
 							for(var vi=0; vi < filter.value.length; vi++){
 								var valObj = filter.value[vi];
 								source = resolveValueSource(valObj, scope);
-								configureValueWatch(dsConfig, filter, valObj, source, watchCB);
-								compoundValues.push(normalizeFilterValue(noInfoPath.getItem(source, valObj.property), valObj.type));
+								if(source) {
+									configureValueWatch(dsConfig, filter, valObj, source, watchCB);
+									compoundValues.push(normalizeFilterValue(noInfoPath.getItem(source, valObj.property), valObj.type));
+								} else {
+									compoundValues.push(valObj);
+								}
 							}
 							//Will assume guids and wrap them in quotes
 							values[filter.field] = compoundValues;
@@ -6836,27 +6847,39 @@ var GloboTest = {};
 		 *	string compatible with the local, and upstream file systems.
 		 */
 		this.read = function (file, comp) {
-			return $q(function (resolve, reject) {
-				var fileObj = {},
-					reader = new FileReader();
+			var deferred = $q.defer();
 
-				reader.onloadend = function (e) {
-					fileObj.name = file.name;
-					fileObj.size = file.size;
-					fileObj.type = file.type;
-					fileObj.blob = e.target.result;
+			var fileObj = {},
+				reader = new FileReader();
 
-					resolve(fileObj);
-				};
+			reader.onloadstart = function(e) {
+				fileObj.name = file.name;
+				fileObj.size = file.size;
+				fileObj.type = file.type;
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
 
-				reader.onerror = function (err) {
-					console.error(err);
-					reject(err);
-				};
 
-				reader[comp.readMethod || "readAsBinaryString"](file);
-			});
+			reader.onload = function (e) {
+				fileObj.blob = e.target.result;
 
+				deferred.resolve(fileObj);
+			};
+
+			reader.onerror = function (err) {
+				deferred.reject(err);
+			};
+
+			reader.onprogress = function (e) {
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
+
+			reader[comp.readMethod || "readAsBinaryString"](file);
+			//reader.readAsArrayBuffer(file);
+
+			return deferred.promise;
 		};
 
 	}

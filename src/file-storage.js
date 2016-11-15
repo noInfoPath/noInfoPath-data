@@ -82,27 +82,39 @@
 		 *	string compatible with the local, and upstream file systems.
 		 */
 		this.read = function (file, comp) {
-			return $q(function (resolve, reject) {
-				var fileObj = {},
-					reader = new FileReader();
+			var deferred = $q.defer();
 
-				reader.onloadend = function (e) {
-					fileObj.name = file.name;
-					fileObj.size = file.size;
-					fileObj.type = file.type;
-					fileObj.blob = e.target.result;
+			var fileObj = {},
+				reader = new FileReader();
 
-					resolve(fileObj);
-				};
+			reader.onloadstart = function(e) {
+				fileObj.name = file.name;
+				fileObj.size = file.size;
+				fileObj.type = file.type;
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
 
-				reader.onerror = function (err) {
-					console.error(err);
-					reject(err);
-				};
 
-				reader[comp.readMethod || "readAsBinaryString"](file);
-			});
+			reader.onload = function (e) {
+				fileObj.blob = e.target.result;
 
+				deferred.resolve(fileObj);
+			};
+
+			reader.onerror = function (err) {
+				deferred.reject(err);
+			};
+
+			reader.onprogress = function (e) {
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
+
+			reader[comp.readMethod || "readAsBinaryString"](file);
+			//reader.readAsArrayBuffer(file);
+
+			return deferred.promise;
 		};
 
 	}

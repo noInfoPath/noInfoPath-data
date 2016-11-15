@@ -440,7 +440,7 @@
 							return areString ? a.lastIndexOf(b) > -1 : false;
 						},
 						"in": function (a, b) {
-							return a.indexof(b) > -1;
+							return b.indexOf(a) > -1;
 						}
 					},
 					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
@@ -478,9 +478,12 @@
 
 							logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
 						} else {
-							if(logic) {
+							// logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
+							if(filter.logic) {
+								logic = collection[filter.logic].bind(collection);
 								collection = logic(_logicCB.bind(null, filter, ex));
 							}
+
 						}
 
 					}
