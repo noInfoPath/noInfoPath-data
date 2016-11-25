@@ -447,8 +447,6 @@
 					filters, sort, page, follow = true,
 					exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [];
 
-
-
 				function _filter(filters, table) {
 					var collection;
 
@@ -460,35 +458,41 @@
 						return ok;
 					}
 
-					function _filterNormal(fi, filter, ex){
+					function _filterNormal(fi, filter, ex) {
+
 						var where, evaluator, logic;
 
-						if(fi === 0) {
-							//When `fi` is 0 create the WhereClause, extract the evaluator
-							//that will be used to create a collection based on the filter.
-							where = table.where(filter.column);
+						try {
 
-							//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
-							if(table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
-								evaluator = where[indexedOperators[ex.operator]];
-								collection = evaluator.call(where, ex.value);
+
+							if(fi === 0) {
+								//When `fi` is 0 create the WhereClause, extract the evaluator
+								//that will be used to create a collection based on the filter.
+								where = table.where(filter.column);
+
+								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
+								if(table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
+									evaluator = where[indexedOperators[ex.operator]];
+									collection = evaluator.call(where, ex.value);
+								} else {
+									collection = table.toCollection();
+								}
+
+								logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
 							} else {
-								collection = table.toCollection();
-							}
+								// logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
+								if(filter.logic) {
+									logic = collection[filter.logic].bind(collection);
+									collection = logic(_logicCB.bind(null, filter, ex));
+								}
 
-							logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
-						} else {
-							// logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
-							if(filter.logic) {
-								logic = collection[filter.logic].bind(collection);
-								collection = logic(_logicCB.bind(null, filter, ex));
 							}
-
+						} catch(err) {
+							throw {error: err, collection: collection, arguments: [fi, filter, ex]};
 						}
-
 					}
 
-					function _filterCompound(fi, filter, ex){
+					function _filterCompound(fi, filter, ex) {
 						console.log("Compound", fi, filter, ex);
 					}
 
@@ -500,7 +504,7 @@
 							// if(noInfoPath.isCompoundFilter(filter.column)){
 							// 	_filterCompound(fi, filter, ex);
 							// }else{
-								_filterNormal(fi, filter, ex);
+							_filterNormal(fi, filter, ex);
 							// }
 						}
 						//More indexed filters
@@ -616,7 +620,7 @@
 
 				function _fault(ctx, reject, err) {
 					ctx.error = err;
-					console.error(ctx);
+					//console.error(ctx);
 					reject(ctx);
 				}
 
@@ -648,7 +652,7 @@
 
 
 				function _finished_following_meta(columns, arrayOfThings, refData) {
-					console.log(columns, arrayOfThings, refData);
+					//console.log(columns, arrayOfThings, refData);
 					for(var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
 
@@ -680,16 +684,16 @@
 						queue = [],
 						columns = table.noInfoPath.foreignKeys;
 
-					if(follow){
+					if(follow) {
 						for(var c in columns) {
 							var col = columns[c],
-								keys = _.compact(_.pluck(arrayOfThings, col.column));  //need to remove falsey values
+								keys = _.compact(_.pluck(arrayOfThings, col.column)); //need to remove falsey values
 
 							if(col.noFollow) continue;
 
-							if(!allKeys[col.refTable]){
+							if(!allKeys[col.refTable]) {
 								allKeys[col.refTable] = {
-									col : col,
+									col: col,
 									keys: []
 								};
 							}
@@ -699,7 +703,7 @@
 							//promises[col.refTable] = _expand(col, keys);
 						}
 
-						for(var k in allKeys){
+						for(var k in allKeys) {
 							var keys2 = allKeys[k];
 
 							promises[k] = _expand(keys2.col, keys2.keys);
@@ -707,10 +711,10 @@
 
 						return _.size(promises) > 0 ?
 							$q.all(promises)
-								.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-								.catch(_fault) :
+							.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+							.catch(_fault) :
 							$q.when(arrayOfThings);
-					}else{
+					} else {
 						$q.when(arrayOfThings);
 					}
 
@@ -852,7 +856,7 @@
 						//.then(_finish(collection, table, resolve, reject));
 
 					} catch(err) {
-						console.error(err);
+						console.error("NoRead_new", err);
 						reject(err);
 					}
 
@@ -938,17 +942,17 @@
 				var noFilters = noInfoPath.resolveID(query, this.noInfoPath);
 
 				return this.noRead(noFilters)
-						.then(function (resultset) {
-							var data;
+					.then(function (resultset) {
+						var data;
 
-							if(resultset.length === 0) {
-								throw "noIndexedDb::noOne: Record Not Found";
-							} else {
-								data = resultset[0];
-							}
+						if(resultset.length === 0) {
+							throw "noIndexedDb::noOne: Record Not Found";
+						} else {
+							data = resultset[0];
+						}
 
-							return data;
-						});
+						return data;
+					});
 			};
 
 			db.WriteableTable.prototype.bulkLoad = function (data, progress) {
@@ -1015,7 +1019,7 @@
 					var id = noChange.changedPKID;
 
 					return THIS.noOne(id)
-						.catch(function(err){
+						.catch(function (err) {
 							//console.error(err);
 							return false;
 						});
@@ -1066,20 +1070,20 @@
 						.then(function (data) {
 							console.log("XXXXX", data);
 							// if(data) {
-								switch(noChange.operation) {
-									case "D":
-										THIS.noDestroy(noChange.changedPKID)
-											.then(ok)
-											.catch(fault);
-										break;
+							switch(noChange.operation) {
+								case "D":
+									THIS.noDestroy(noChange.changedPKID)
+										.then(ok)
+										.catch(fault);
+									break;
 
-									case "I":
-										if(!data) save(noChange, data, ok, fault);
-										break;
-									case "U":
-										if(data) save(noChange, data, ok, fault);
-										break;
-								}
+								case "I":
+									if(!data) save(noChange, data, ok, fault);
+									break;
+								case "U":
+									if(data) save(noChange, data, ok, fault);
+									break;
+							}
 							// }else{
 							// 	resolve({});
 							// }
@@ -1088,15 +1092,15 @@
 				});
 			};
 
-			function _unfollow_data(table, data){
+			function _unfollow_data(table, data) {
 				var foreignKeys = table.noInfoPath.foreignKeys || {};
 
-				for(var fks in foreignKeys){
+				for(var fks in foreignKeys) {
 
 					var fk = foreignKeys[fks],
 						datum = data[fk.column];
 
-					if (datum){
+					if(datum) {
 						data[fk.column] = datum[fk.refColumn] || datum;
 					}
 				}
@@ -1106,12 +1110,12 @@
 
 		}
 
-		this.destroyDb = function(databaseName) {
+		this.destroyDb = function (databaseName) {
 			var deferred = $q.defer();
 			var db = _noIndexedDb.getDatabase(databaseName);
 			if(db) {
 				db.delete()
-					.then(function(res) {
+					.then(function (res) {
 						delete $rootScope["noIndexedDb_" + databaseName];
 						deferred.resolve(res);
 					});
@@ -1138,8 +1142,8 @@
 			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 
-		.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
-			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
+	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 
 })(angular, Dexie);

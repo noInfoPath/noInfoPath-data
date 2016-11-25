@@ -152,7 +152,7 @@
 			return dateResult;
 		}
 
-		function _isCompoundFilter(indexName){
+		function _isCompoundFilter(indexName) {
 			return indexName.match(/^\[.*\+.*\]$/gi);
 		}
 
@@ -186,9 +186,13 @@
 				if(query.__type === "NoFilters") {
 					filters = query;
 				} else {
-					//Simple key/value pairs. Assuming all are equal operators and are anded.
-					for(var k in query) {
-						filters.quickAdd(k, "eq", query[k]);
+					if(entityConfig.primaryKey) {
+						filters.quickAdd(entityConfig.primaryKey, "eq", query[entityConfig.primaryKey]);
+					} else {
+						//Simple key/value pairs. Assuming all are equal operators and are anded.
+						for(var k in query) {
+							filters.quickAdd(k, "eq", query[k]);
+						}
 					}
 				}
 
@@ -200,11 +204,11 @@
 		}
 
 		function _toScopeSafeGuid(uid) {
- 			return (uid || "").replace(/-/g, "_");
+			return(uid || "").replace(/-/g, "_");
 		}
 
 		function _fromScopeSafeGuid(ssuid) {
-			return (ssuid || "").replace(/_/g, "-");
+			return(ssuid || "").replace(/_/g, "-");
 		}
 
 		var _data = {

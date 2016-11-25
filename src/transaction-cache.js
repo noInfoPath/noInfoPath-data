@@ -576,22 +576,16 @@
 
 								for(var i = 0; i < data.length; i++) {
 									var model = data[i];
+									opType = model[primaryKey] ? "update" : "create";
 
 									if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
 										promises.push(executeDataOperationBulk(dataSource, curEntity, opType, new classConstructor(model, results)));
 									}
 								}
 
-
-
-
 								$q.all(promises)
 									.then(_recurse)
 									.catch(reject);
-
-
-
-
 
 								//SELF.bulkUpsert(data, classConstructor, curEntity.bulk.ignoreDirtyFlag, results)
 
@@ -697,6 +691,40 @@
 
 				}
 
+				function NoTransactionLite(userId, namespace, thecope) {
+					//var transCfg = noTransConfig;
+					var SELF = this,
+						scope = thescope;
+
+					Object.defineProperties(this, {
+						"__type": {
+							"get": function () {
+								return "NoTransactionLite";
+							}
+						}
+					});
+
+					this.namespace = namespace;
+					this.transactionId = noInfoPath.createUUID();
+					this.timestamp = (new Date()).toJSON();
+					this.userId = userId;
+					this.changes = new NoChanges();
+					this.state = "pending";
+
+					this.addChange = function (tableName, data, changeType) {
+						var tableCfg = scope["noDbSchema_" + namespace];
+						this.changes.add(tableName, data, changeType, tableCfg);
+					};
+
+					this.toObject = function () {
+						var json = angular.fromJson(angular.toJson(this));
+						json.changes = _.toArray(json.changes);
+
+						return json;
+					};
+				}
+
+
 				function NoChanges() {
 					Object.defineProperties(this, {
 						"__type": {
@@ -772,7 +800,11 @@
 
 
 					this.beginTransaction = function (userId, noTransConfig, scope) {
-						return new NoTransaction(userId, noTransConfig, scope);
+						if(angular.isObject(noTransConfig)) {
+							return new NoTransaction(userId, noTransConfig, scope);
+						} else {
+							return new NoTransactionLite(userId, noTransConfig, scope);
+						}
 					};
 
 					this.endTransaction = function (transaction) {
