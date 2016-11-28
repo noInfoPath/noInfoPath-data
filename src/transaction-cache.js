@@ -545,6 +545,21 @@
 							}
 
 							function _entity_bulk(curEntity) {
+								function _resolveMethod(curEntity, sdProv, sdProp) {
+									var method;
+
+									if(angular.isFunction(sdProp))
+									{
+									 	method = sdProp;
+									} else if(sdProp === undefined && curEntity.bulk.sourceData.method) {
+										method = sdProv[curEntity.bulk.sourceData.method].bind(sdProv);
+									} else if(sdProp !== undefined && curEntity.bulk.sourceData.method) {
+										method = sdProp[curEntity.bulk.sourceData.method].bind(sdProp);
+									}
+
+									return method;
+								}
+
 								//Current version requires an objectFactory when using bulk feature.
 								if(!curEntity.objectFactory) throw "objectFactory property is required when using bulk upsert feature.";
 
@@ -552,7 +567,8 @@
 									classConstructor = ofProv.get(curEntity.objectFactory.className),
 									sdProv = curEntity.bulk.sourceData.provider === "scope" ? scope : $injector.get(curEntity.bulk.sourceData.provider),
 									sdProp = sdProv[curEntity.bulk.sourceData.property],
-									data = curEntity.bulk.sourceData.method ? sdProp[curEntity.bulk.sourceData.method]() : sdProp,
+									sdMeth = _resolveMethod(curEntity, sdProv, sdProp),
+									data = sdMeth ? sdMeth() : sdProp,
 									dataSource, primaryKey, opType, promises = [];
 
 								primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
@@ -568,26 +584,44 @@
 								//dsConfig = angular.merge({}, config.noDataSource, curEntity);
 								//console.log(dsConfig);
 
-								//create the noDataSource object.
-								dataSource = noDataSource.create(curEntity, scope);
-
-								//console.log(data);
 
 
-								for(var i = 0; i < data.length; i++) {
-									var model = data[i];
-									opType = model[primaryKey] ? "update" : "create";
-
-									if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
-										promises.push(executeDataOperationBulk(dataSource, curEntity, opType, new classConstructor(model, results)));
-									}
-								}
-
-								$q.all(promises)
-									.then(_recurse)
-									.catch(reject);
 
 								//SELF.bulkUpsert(data, classConstructor, curEntity.bulk.ignoreDirtyFlag, results)
+
+
+
+								function _doTheUpserts(data) {
+									//create the noDataSource object.
+									dataSource = noDataSource.create(curEntity, scope);
+
+									//console.log(data);
+
+
+									for(var i = 0; i < data.length; i++) {
+										var model = data[i];
+										opType = model[primaryKey] ? "update" : "create";
+
+										if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
+											promises.push(executeDataOperationBulk(dataSource, curEntity, opType, new classConstructor(model, results)));
+										}
+									}
+
+									$q.all(promises)
+										.then(_recurse)
+										.catch(reject);
+								}
+
+
+								if(data.then) {
+									data
+										.then(_doTheUpserts)
+										.catch(function(e){
+											reject(e);
+										});
+								} else {
+									_doTheUpserts(data);
+								}
 
 							}
 

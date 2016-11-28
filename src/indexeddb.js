@@ -567,6 +567,11 @@
 					return err;
 				}
 
+				function _expand_success(col, keys, filters, results)	{
+					console.log("_expand_success", arguments);
+					return results;
+				}
+
 				function _expand(col, keys) {
 					var theDb = col.refDatabaseName ? _noIndexedDb.getDatabase(col.refDatabaseName) : db,
 						filters = new noInfoPath.data.NoFilters(),
@@ -602,6 +607,7 @@
 					//follow the foreign key and get is data.
 					if(keys.length > 0) {
 						return ft.noRead(filters)
+							.then(_expand_success.bind(table, col, keys, filters))
 							.catch(_expand_fault.bind(table, col, keys, filters));
 					} else {
 						return $q.when(new noInfoPath.data.NoResults());
