@@ -1092,10 +1092,15 @@
 				if(query.__type === "NoFilters") {
 					filters = query;
 				} else {
-					//Simple key/value pairs. Assuming all are equal operators and are anded.
-					for(var k in query) {
-						filters.quickAdd(k, "eq", query[k]);
+					if(entityConfig.primaryKey) {
+						filters.quickAdd(entityConfig.primaryKey, "eq", query[entityConfig.primaryKey]);
+					}else{
+						for(var k in query) {
+							filters.quickAdd(k, "eq", query[k]);
+						}						
 					}
+					//Simple key/value pairs. Assuming all are equal operators and are anded.
+
 				}
 
 			} else {
