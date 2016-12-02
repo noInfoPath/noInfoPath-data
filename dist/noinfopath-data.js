@@ -5666,7 +5666,7 @@ var GloboTest = {};
 				}
 
 				function _expand_success(col, keys, filters, results)	{
-					console.log("_expand_success", arguments);
+					//console.log("_expand_success", arguments);
 					return results;
 				}
 
@@ -6268,6 +6268,18 @@ var GloboTest = {};
  *        "primaryKey": "PercentColorID",
  *        "queryParser": "noQueryParser",
  *        "sort":  [{"field": "Percentage", "dir": "asc"}]
+ *        "aggregation": {
+ *             "actions": [
+ *					{
+ *						"provider": "aCustomProvider",
+ *						"method": "aMethod",
+ *						"params": [
+ *
+ *						],
+ *						"noContextParams": true
+ *					}
+ *             ]
+ *        }
  *    }
  *
  *	```
@@ -6323,7 +6335,18 @@ var GloboTest = {};
 				return entity.noRead.apply(entity, x)
 					.then(function (data) {
 						data = noCalculatedFields.calculate(config, data);
-						resolve(data);
+						//If there is an ActionQueue then execute it.
+						if(config.aggregation && config.aggregation.actions) {
+							var execQueue = noActionQueue.createQueue(data, scope, {}, config.aggregation.action);
+
+							noActionQueue.synchronize(execQueue)
+								.then(function(results){
+									resolve(results);
+								});
+						}else{
+							resolve(data);
+						}
+
 					})
 					.catch(function (err) {
 						reject(err);

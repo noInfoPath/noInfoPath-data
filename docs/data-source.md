@@ -12,6 +12,18 @@ underlying CRUD interface.
        "primaryKey": "PercentColorID",
        "queryParser": "noQueryParser",
        "sort":  [{"field": "Percentage", "dir": "asc"}]
+       "aggregation": {
+            "actions": [
+				{
+					"provider": "aCustomProvider",
+					"method": "aMethod",
+					"params": [
+
+					],
+					"noContextParams": true
+				}
+            ]
+       }
    }
 
 ```

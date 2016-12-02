@@ -568,7 +568,7 @@
 				}
 
 				function _expand_success(col, keys, filters, results)	{
-					console.log("_expand_success", arguments);
+					//console.log("_expand_success", arguments);
 					return results;
 				}
 
