@@ -84,7 +84,7 @@ describe("Testing date formatter", function () {
 				expect(output).toBe(expected);
 			});
 
-			it("should return null when passed UTC time value.", function(){
+			it("should return a dbDate when passed UTC time value.", function(){
 				var input = 1514696400000,
 					output = noInfoPath.toDbDate(input),
 					expected = "2017-12-31T05:00:00.000";
