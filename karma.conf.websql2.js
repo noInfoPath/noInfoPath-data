@@ -48,7 +48,8 @@ module.exports = function(config) {
         'test/schema.spec.js',
         'test/http.spec.js',
         'test/websql2/noWebSql.spec.js',
-        'test/schema-config.spec.js'
+        'test/schema-config.spec.js',
+		'test/date-formatter.spec.js'
     ],
 
 

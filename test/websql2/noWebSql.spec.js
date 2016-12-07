@@ -3,8 +3,8 @@ var noWebSql, noDbSchema, noLoginService;
 describe("Testing noWebSql", function () {
 	beforeEach(function () {
 
-		module("noinfopath.data");
 		module("ngLodash");
+		module("noinfopath.data");
 		module("noinfopath.data.mocks");
 
 		inject(function ($injector) {

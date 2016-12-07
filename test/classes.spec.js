@@ -294,5 +294,25 @@ describe("Testing Classes", function () {
 			expect(result.timestamp)
 				.toBeDefined();
 		});
+
+
+	});
+
+	describe("Testing date functions", function(){
+		describe("toDbDate", function() {
+			it("should convert a valid date object to dbDate", function(){
+				var input = new Date("12/31/2017"),
+					output = noInfopath.toDbDate(input);
+
+				console.log(output);
+
+				expect(output);
+			});
+
+			it("should return null when passed a falsey value", function(){
+				var input = "";
+			});
+
+		})
 	});
 });

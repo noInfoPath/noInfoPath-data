@@ -16,10 +16,11 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
         'node_modules/es5-shim/es5-shim.min.js',
+		'node_modules/moment/min/moment.min.js',
         'node_modules/noinfopath-helpers/node_modules/jquery/dist/jquery.js',
         'node_modules/angular/angular.js',
         'node_modules/angular-mocks/angular-mocks.js',
-        'bower_components/ng-lodash/build/ng-lodash.js',
+        'node_modules/ng-lodash/build/ng-lodash.js',
         'node_modules/noinfopath/dist/noinfopath.js',
         'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
         'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
@@ -35,7 +36,7 @@ module.exports = function(config) {
         'test/mock/db.json.mock.js',
         'test/mock/sql-builder.mock.js',
         'test/mock/configuration.mock.js',
-        'test/mock/schema.mock.js',
+        //'test/mock/schema.mock.js',
 		'src/globals.js',
 		'src/classes.js',
 		'src/configuration.js',
@@ -51,14 +52,14 @@ module.exports = function(config) {
 		'src/data-source.js',
         //'src/transaction-cache.js',
 
-        //'test/date-formatter.spec.js'
+        'test/date-formatter.spec.js'
         // 'test/storage.spec.js',
         // 'test/http.spec.js',
         // 'test/configuration.spec.js',
          //'test/query-builder.spec.js',
-        'test/classes.spec.js',
+        //'test/classes.spec.js'
         // 'test/schema.spec.js',
-		 'test/websql-parser.spec.js'
+		 //'test/websql-parser.spec.js'
         //'test/websql.spec.js'
       //  'test/sql-builder.spec.js'
     ],
