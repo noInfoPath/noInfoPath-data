@@ -48,7 +48,7 @@
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage)
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser)
 			{
 
 				function NoTransaction(userId, config, thescope) {
@@ -134,7 +134,7 @@
 					normalizeTransactions(config, schema);
 
 					this.upsert = function upsert(data) {
-						data = data ? data : {};
+						data = noParameterParser.parse(data ? data : {});
 
 						return $q(function (resolve, reject) {
 							var
@@ -401,26 +401,32 @@
 										var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName;
 
 										//TODO: see where and when this is used.
-										if(curEntity.cacheOnScope) {
-											scope[curEntity.entityName] = data;
+										if(scope[sk]){
+											noParameterParser.update(datum, scope[sk]);
+
+											pure = noParameterParser.parse(scope[sk]);
+
+											if(curEntity.cacheOnScope) {
+												scope[curEntity.entityName] = pure;
+											}
+
+											/*
+											 *   #### @property scopeKey
+											 *
+											 *   Use this property allow NoTransaction to store a reference
+											 *   to the entity upon which this data operation was performed.
+											 *   This is useful when you have tables that rely on a one to one
+											 *   relationship.
+											 *
+											 *   It is best practice use this property when ever possible,
+											 *   but it not a required configuration property.
+											 *
+											 */
+
+											//scope[sk] = foo;
+
+											results[sk] = pure;
 										}
-
-										/*
-										 *   #### @property scopeKey
-										 *
-										 *   Use this property allow NoTransaction to store a reference
-										 *   to the entity upon which this data operation was performed.
-										 *   This is useful when you have tables that rely on a one to one
-										 *   relationship.
-										 *
-										 *   It is best practice use this property when ever possible,
-										 *   but it not a required configuration property.
-										 *
-										 */
-
-										scope[sk] = data;
-
-										results[sk] = data;
 
 										_recurse();
 
