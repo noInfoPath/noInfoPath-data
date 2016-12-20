@@ -30,16 +30,45 @@
 			var source, tmp = {};
 
 			if(valueCfg.source) {
-				if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1) {
+				if(["$rootScope", "$stateParams"].indexOf(valueCfg.source) > -1 || valueCfg.source !== "scope") {
 					source = $injector.get(valueCfg.source);
 				} else {
 					source = scope;
 				}
 			}
 
-
 			return source;
 		}
+
+		function resolveParams(prov, valueCfg) {
+			var val, meth;
+
+			if(valueCfg.method) {
+				meth = prov[valueCfg.method];
+				val = meth();
+			} else if(valueCfg.property) {
+				val = noInfoPath.getItem(prov, valueCfg.property);
+			}
+
+			return val;
+		}
+
+		// function resolveParams(valueCfg) {
+		// 	var params = [];
+		//
+		// 	if(valueCfg.params) {
+		// 		for(var i=0; i < valueCfg.params.length, i++) {
+		// 			var param = valueCfg.params[i];
+		//
+		// 			if(angular.isObject(param)) {
+		// 				var source = resolveValueSource(param, scope);
+		// 			} else {
+		//
+		// 			}
+		// 		}
+		//
+		// 	}
+		// }
 
 		/*
 		 *	@method configureFilterWatch
@@ -106,8 +135,23 @@
 								var valObj = filter.value[vi];
 								source = resolveValueSource(valObj, scope);
 								if(source) {
-									configureValueWatch(dsConfig, filter, valObj, source, watchCB);
-									compoundValues.push(normalizeFilterValue(noInfoPath.getItem(source, valObj.property), valObj.type));
+									if(valObj.watch) {
+										configureValueWatch(dsConfig, filter, valObj, source, watchCB);
+										compoundValues.push(normalizeFilterValue(noInfoPath.getItem(source, valObj.property), valObj.type));
+									} else {
+										//The following is a hack. This is needs to replacedw with a Generic
+										//ParameterResolver in the future.
+										var meth = source[valObj.method]
+										if(valObj.method) {
+											compoundValues.push(source[valObj.method](scope));
+										} else if(valObj.property){
+											compoundValues.push(source[valObj.property]);
+										} else {
+											console.warn("Need to implent the source is not a function case.", source);
+										}
+										//var tmp = resolveValue(source, valObj);
+										//compoundValues.push(tmp);
+									}
 								} else {
 									compoundValues.push(valObj);
 								}

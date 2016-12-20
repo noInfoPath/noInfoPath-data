@@ -400,13 +400,14 @@
 										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
 											.then(function (scope, datum) {
 												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
-													pure;
-												//foo = angular.copy(scope[sk]);
+													pure = noParameterParser.parse(datum);
 
+												//foo = angular.copy(scope[sk]);
+												results[sk] = pure;
+												
 												if(scope[sk]){
 													noParameterParser.update(datum, scope[sk]);
 
-													pure = noParameterParser.parse(scope[sk]);
 
 													if(curEntity.cacheOnScope) {
 														scope[curEntity.entityName] = pure;
@@ -427,7 +428,7 @@
 
 													//scope[sk] = foo;
 
-													results[sk] = pure;
+
 												}
 
 												//If there is an ActionQueue then execute it.

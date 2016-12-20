@@ -49,7 +49,8 @@ module.exports = function (grunt) {
 					'src/dynamic-filters.js',
 					'src/template-cache.js',
 					'src/mock-http.js',
-					'src/file-storage.js'
+					'src/file-storage.js',
+					'src/no-local-file-storage.js'
 				],
 				dest: 'dist/noinfopath-data.js'
 			},

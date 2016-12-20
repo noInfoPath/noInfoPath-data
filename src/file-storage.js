@@ -72,7 +72,7 @@
 
 			var ds = noDataSource.create(dsCfg, {});
 
-			return ds.destory(dsCfg);
+			return ds.destroy(fileID);
 		};
 
 		/**
@@ -111,7 +111,8 @@
 				deferred.notify(e);
 			};
 
-			reader[comp.readMethod || "readAsBinaryString"](file);
+			reader.readAsBinaryString(file);
+			//reader[comp.readMethod || "readAsArrayBuffer"](file);
 			//reader.readAsArrayBuffer(file);
 
 			return deferred.promise;
@@ -119,6 +120,8 @@
 
 	}
 
+
 	angular.module("noinfopath.data")
 		.service("noLocalFileStorage", ["$q", "noDataSource", NoLocalFileStorageService]);
+
 })();
