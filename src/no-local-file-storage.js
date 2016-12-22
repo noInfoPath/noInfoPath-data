@@ -1,3 +1,4 @@
+// no-local-file-storage.js
 (function(angular, storageInfo, requestFileSystem, undefined) {
     function NoLocalFileSystemService($q, noLocalFileStorage, noMimeTypes) {
 
@@ -240,4 +241,4 @@
 		.service("noMimeTypes", [NoMimeTypeService])
         .service("noLocalFileSystem", ["$q", "noLocalFileStorage", "noMimeTypes", NoLocalFileSystemService])
 		;
-})(angular, navigator.webkitPersistentStorage, window.requestFileSystem || window.webkitRequestFileSystem)
+})(angular, navigator.webkitPersistentStorage, window.requestFileSystem || window.webkitRequestFileSystem);
