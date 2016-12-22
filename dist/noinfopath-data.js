@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 1.2.29
+ *	@version 1.2.30
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -4279,7 +4279,8 @@ var GloboTest = {};
 							if(_.isBoolean(transaction)) {
 								noTransactions[t] = [
 									{
-										entityName: en
+										entityName: en,
+										scopeKey: config.scopeKey ? config.scopeKey : undefined
 											//omit_fields: keysd
 									}];
 							}
@@ -6577,7 +6578,7 @@ var GloboTest = {};
 })(angular);
 
 //file-storage.js
-(function () {
+(function (angular, undefined) {
 	"use strict";
 
 
@@ -6666,4 +6667,50 @@ var GloboTest = {};
 
 	angular.module("noinfopath.data")
 		.service("noLocalFileStorage", ["$q", "noDataSource", NoLocalFileStorageService]);
-})();
+})(angular);
+
+//parameter-parser.js
+(function(angular, undefined){
+	"use strict";
+
+	angular.module("noinfopath.data")
+		.service("noParameterParser", [function () {
+			this.parse = function (data) {
+				var keys = Object.keys(data).filter(function (v, k) {
+						if(v.indexOf("$") === -1 && v.indexOf(".") === -1) return v;
+					}),
+					values = {};
+				keys.forEach(function (k) {
+					var haveSomething = !!data[k],
+						haveModelValue = haveSomething && data[k].hasOwnProperty("$modelValue");
+
+					if(haveModelValue) {
+						values[k] = data[k].$modelValue;
+					} else if(haveSomething) {
+						values[k] = data[k];
+					} else {
+						values[k] = null;
+					}
+
+				});
+
+				return values;
+			};
+			this.update = function (src, dest) {
+				var keys = Object.keys(src).filter(function (v, k) {
+					if(v.indexOf("$") === -1) return v;
+				});
+				keys.forEach(function (k) {
+					var d = dest[k];
+					if(d && d.hasOwnProperty("$viewValue")) {
+						d.$setViewValue(src[k]);
+						d.$render();
+						d.$setPristine();
+						d.$setUntouched();
+					} else {
+						dest[k] = src[k];
+					}
+				});
+			};
+		}]);
+})(angular);

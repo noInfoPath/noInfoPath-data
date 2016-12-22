@@ -1,5 +1,5 @@
 //file-storage.js
-(function () {
+(function (angular, undefined) {
 	"use strict";
 
 
@@ -88,4 +88,4 @@
 
 	angular.module("noinfopath.data")
 		.service("noLocalFileStorage", ["$q", "noDataSource", NoLocalFileStorageService]);
-})();
+})(angular);

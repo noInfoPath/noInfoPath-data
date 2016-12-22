@@ -104,7 +104,8 @@
 							if(_.isBoolean(transaction)) {
 								noTransactions[t] = [
 									{
-										entityName: en
+										entityName: en,
+										scopeKey: config.scopeKey ? config.scopeKey : undefined
 											//omit_fields: keysd
 									}];
 							}
