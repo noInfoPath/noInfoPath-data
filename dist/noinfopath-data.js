@@ -5355,13 +5355,13 @@ var GloboTest = {};
 				_dexie.currentUser = noUser;
 				_dexie.on('error', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.error("Dexie Error: " + err);
+					console.error("Dexie Error: ", arguments);
 					_reject($rootScope, reject, err);
 				});
 
 				_dexie.on('blocked', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
-					noLogService.warn("IndexedDB is currently execting a blocking operation.");
+					console.warn("IndexedDB is currently execting a blocking operation.");
 					_reject($rootScope, reject, err);
 				});
 
@@ -5377,7 +5377,7 @@ var GloboTest = {};
 				});
 
 				_dexie.on('ready', function (data) {
-					noLogService.log("noIndexedDb_" + schema.config.dbName + " ready.");
+					console.log("noIndexedDb_" + schema.config.dbName + " ready.");
 					// Log to console or show en error indicator somewhere in your GUI...
 					$rootScope[noIndexedDbInitialized] = _dexie;
 
@@ -5399,7 +5399,7 @@ var GloboTest = {};
 						_extendDexieTables.call(_dexie, schema.tables);
 						_dexie.open();
 					} else {
-						noLogService.warn("Waiting for noDbSchema data.");
+						console.warn("Waiting for noDbSchema data.");
 					}
 
 				}
