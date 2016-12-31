@@ -71,9 +71,9 @@
 					this.changes = new NoChanges();
 					this.state = "pending";
 
-					this.addChange = function (tableName, data, changeType) {
-						var tableCfg = scope["noDbSchema_" + config.noDataSource.databaseName];
-						this.changes.add(tableName, data, changeType, tableCfg);
+					this.addChange = function (tableName, data, changeType, dbName) {
+						var tableCfg = scope["noDbSchema_" + (dbName || config.noDataSource.databaseName)];
+						this.changes.add(tableName, data, changeType, tableCfg, (dbName || config.noDataSource.databaseName));
 					};
 
 					this.toObject = function () {
@@ -771,15 +771,15 @@
 					});
 					var arr = [];
 					noInfoPath.setPrototypeOf(this, arr);
-					this.add = function (tableName, data, changeType, tableCfg) {
+					this.add = function (tableName, data, changeType, tableCfg, ns) {
 						var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
-							change = new NoChange(tableName, data, changeType, tableCfg, !!syncVer ? syncVer.version : 0);
+							change = new NoChange(tableName, data, changeType, tableCfg, !!syncVer ? syncVer.version : 0, ns);
 
 						this.unshift(change);
 					};
 				}
 
-				function NoChange(tableName, data, changeType, tableCfg, version) {
+				function NoChange(tableName, data, changeType, tableCfg, version, ns) {
 					var tblSchema = tableCfg.tables[tableName];
 
 					function normalizeValues(inData) {
@@ -826,6 +826,7 @@
 						}
 					});
 
+					this.namespace = ns;
 					this.tableName = tableName;
 					this.data = normalizeValues(data);
 					this.changeType = changeType;

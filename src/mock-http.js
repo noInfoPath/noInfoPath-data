@@ -2,19 +2,19 @@
 (function (angular, undefined) {
 	"use strict";
 
-	function NoMockHTTPService($injector, $q, $rootScope, noLogService) {
+	function NoMockHTTPService($injector, $q, $rootScope) {
 		var THIS = this;
 
 		this.whenReady = function (tables) {
 
 			return $q(function (resolve, reject) {
 				if($rootScope.noMockHTTPInitialized) {
-					noLogService.log("noMockHTTP Ready.");
+					console.log("noMockHTTP Ready.");
 					resolve();
 				} else {
 					$rootScope.$watch("noMockHTTPServiceInitialized", function (newval) {
 						if(newval) {
-							noLogService.log("noMockHTTP ready.");
+							console.log("noMockHTTP ready.");
 							resolve();
 						}
 					});
@@ -31,7 +31,7 @@
 					THIS[t] = new NoTable($q, t, table, jsonDataProvider[t]);
 				}
 				$rootScope.noHTTPInitialized = true;
-				noLogService.log("noMockHTTP_" + schema.config.dbName + " ready.");
+				console.log("noMockHTTP_" + schema.config.dbName + " ready.");
 
 				$rootScope["noMockHTTP_" + schema.config.dbName] = THIS;
 
@@ -88,8 +88,8 @@
 	angular.module('noinfopath.data')
 
 	.provider("noMockHTTP", [function () {
-		this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function ($injector, $q, $rootScope, noLogService) {
-			return new NoMockHTTPService($injector, $q, $rootScope, noLogService);
+		this.$get = ['$injector', '$q', '$rootScope', 'noLogService', function ($injector, $q, $rootScope) {
+			return new NoMockHTTPService($injector, $q, $rootScope);
 			}];
 		}]);
 })(angular);

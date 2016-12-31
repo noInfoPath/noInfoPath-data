@@ -129,7 +129,7 @@
 		this.destroy = function (data, noTrans, filters) {
 			if(isNoView) throw "destroy operation not supported on entities of type NoView";
 
-			return entity.noDestroy(data, noTrans, filters);
+			return data ? entity.noDestroy(data, noTrans, filters) : entity.noClear();
 		};
 
 		this.one = function (id) {

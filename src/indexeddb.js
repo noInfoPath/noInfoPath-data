@@ -944,6 +944,31 @@
 				return deferred.promise;
 			};
 
+			db.WriteableTable.prototype.noClear = function () {
+				var deferred = $q.defer(),
+					table = this,
+					collection;
+
+				//noLogService.log("adding: ", _dexie.currentUser);
+				//noLogService.log(key);
+
+				_dexie.transaction("rw", table, function () {
+						Dexie.currentTransaction.nosync = true;
+						collection = table.toCollection();
+
+						collection.delete()
+							.then(deferred.resolve)
+							.catch(deferred.reject);
+
+					})
+					.then(angular.noop())
+					.catch(function (err) {
+						deferred.reject(err);
+					});
+
+				return deferred.promise;
+			};
+
 			db.WriteableTable.prototype.noOne = function (query) {
 				var noFilters = noInfoPath.resolveID(query, this.noInfoPath);
 

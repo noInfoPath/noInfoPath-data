@@ -68,7 +68,7 @@
 			$httpProviderRef = $httpProvider;
 	}])
 		.provider("noHTTP", [function () {
-			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noLogService', 'noConfig', function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noLogService, noConfig) {
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig) {
 
 				function NoHTTP(queryBuilder) {
 					var THIS = this,
@@ -80,13 +80,13 @@
 
 						return $q(function (resolve, reject) {
 							if($rootScope.noHTTPInitialized) {
-								noLogService.log("noHTTP Ready.");
+								console.log("noHTTP Ready.");
 								resolve();
 							} else {
-								//noLogService.log("noDbSchema is not ready yet.")
+								//console.log("noDbSchema is not ready yet.")
 								$rootScope.$watch("noHTTPInitialized", function (newval) {
 									if(newval) {
-										noLogService.log("noHTTP ready.");
+										console.log("noHTTP ready.");
 										resolve();
 									}
 								});
@@ -104,7 +104,7 @@
 								THIS[t] = new NoTable(t, table, queryBuilder);
 							}
 							$rootScope.noHTTPInitialized = true;
-							noLogService.log("noHTTP_" + schema.config.dbName + " ready.");
+							console.log("noHTTP_" + schema.config.dbName + " ready.");
 
 							$rootScope["noHTTP_" + schema.config.dbName] = THIS;
 
@@ -218,7 +218,7 @@
 					};
 
 					this.noRead = function () {
-						//noLogService.debug("noRead say's, 'swag!'");
+						//console.debug("noRead say's, 'swag!'");
 						var filters, sort, page;
 
 						for(var ai in arguments) {
@@ -259,7 +259,7 @@
 								deferred.resolve(resp);
 							})
 							.error(function (reason) {
-								noLogService.error(arguments);
+								console.error(arguments);
 								deferred.reject(reason);
 							});
 

@@ -177,7 +177,7 @@ var GloboTest = {};
 			//Prep as a Dexie Store config
 			_config[tableName] = keys.join(",");
 
-			table.uri = noDbConfig.uri;
+			table.uri = table.uri || noDbConfig.uri;
 		});
 
 
