@@ -1103,7 +1103,11 @@
 							// if(data) {
 							switch(noChange.operation) {
 								case "D":
-									THIS.noDestroy(noChange.changedPKID)
+									var t = {};
+
+									t[THIS.noInfoPath.primaryKey] = noChange.changedPKID;
+
+									THIS.noDestroy(t)
 										.then(ok)
 										.catch(fault);
 									break;
