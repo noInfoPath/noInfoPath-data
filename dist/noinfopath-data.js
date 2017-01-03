@@ -6158,11 +6158,16 @@ var GloboTest = {};
 				function checkForExisting() {
 					var id = noChange.changedPKID;
 
-					return THIS.noOne(id)
-						.catch(function (err) {
-							//console.error(err);
-							return false;
-						});
+					return $q(function(resolve, reject){
+						THIS.noOne(id)
+							.then(resolve)
+							.catch(function (err) {
+								//console.error(err);
+								resolve(false);
+								return false;
+							});
+					})
+
 				}
 
 				function isSame(data, changes) {
@@ -6208,7 +6213,7 @@ var GloboTest = {};
 
 					checkForExisting()
 						.then(function (data) {
-							console.log("XXXXX", data);
+							console.log("checkForExisting", !!data);
 							// if(data) {
 							switch(noChange.operation) {
 								case "D":
@@ -6222,10 +6227,18 @@ var GloboTest = {};
 									break;
 
 								case "I":
-									if(!data) save(noChange, data, ok, fault);
+									if(!data) {
+										save(noChange, data, ok, fault)
+									}else{
+										resolve(data);
+									}
 									break;
 								case "U":
-									if(data) save(noChange, data, ok, fault);
+									if(data) {
+										save(noChange, data, ok, fault)
+									}else{
+										resolve(data);
+									}
 									break;
 							}
 							// }else{
