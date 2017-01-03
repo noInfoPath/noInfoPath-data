@@ -1140,6 +1140,11 @@
 				});
 			};
 
+			db.WriteableTable.prototype.hasPrimaryKeys = function (keyList) {
+				return this.where(":id").anyOfIgnoreCase(keyList).primaryKeys();
+			}
+
+
 			function _unfollow_data(table, data) {
 				var foreignKeys = table.noInfoPath.foreignKeys || {};
 
@@ -1172,6 +1177,7 @@
 			}
 			return deferred.promise;
 		};
+
 
 		/**
 		 *	### Class noDatum
