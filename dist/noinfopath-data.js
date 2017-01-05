@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.26
+ *	@version 2.0.27
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1827,7 +1827,9 @@
 					};
 
 					this.configure = function (noUser, schema) {
-						_currentUser = noUser;
+						_currentUser = noUser.data || noUser;
+						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
 						//console.log("noHTTP::configure", schema);
 						var promise = $q(function (resolve, reject) {
 							for(var t in schema.tables) {
@@ -1867,10 +1869,10 @@
 							};
 
 						$http(req)
-							.success(function (data) {
+							.then(function (data) {
 								deferred.resolve(data);
 							})
-							.error(function (reason) {
+							.catch(function (reason) {
 								console.error(reason);
 								deferred.reject(reason);
 							});
@@ -1891,10 +1893,10 @@
 							};
 
 						$http(req)
-							.success(function (data) {
+							.then(function (data) {
 								deferred.resolve(data);
 							})
-							.error(function (reason) {
+							.catch(function (reason) {
 								console.error(reason);
 								deferred.reject(reason);
 							});
@@ -1906,6 +1908,8 @@
 				function NoTable(tableName, table, queryBuilder) {
 					var THIS = this,
 						_table = table;
+
+					this.noInfoPath = table;
 
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
@@ -1935,12 +1939,12 @@
 							};
 
 						$http(req)
-							.success(function (data) {
+							.then(function (data) {
 								//console.log(angular.toJson(data) );
 
 								deferred.resolve(data);
 							})
-							.error(function (reason) {
+							.catch(function (reason) {
 								console.error(reason);
 								deferred.reject(reason);
 							});
@@ -1984,12 +1988,12 @@
 							};
 
 						$http(req)
-							.success(function (data) {
-								//console.log( angular.toJson(data));
-								var resp = new noInfoPath.data.NoResults(data);
+							.then(function (results) {
+								//console.log( angular.toJson(results));
+								var resp = new noInfoPath.data.NoResults(results.data || results);
 								deferred.resolve(resp);
 							})
-							.error(function (reason) {
+							.catch(function (reason) {
 								console.error(arguments);
 								deferred.reject(reason);
 							});
@@ -2013,10 +2017,10 @@
 							};
 
 						$http(req)
-							.success(function (data, status) {
+							.then(function (data, status) {
 								deferred.resolve(status);
 							})
-							.error(function (reason) {
+							.catch(function (reason) {
 								console.error(reason);
 								deferred.reject(reason);
 							});
@@ -2038,10 +2042,10 @@
 							};
 
 						$http(req)
-							.success(function (data, status) {
+							.then(function (data, status) {
 								deferred.resolve(status);
 							})
-							.error(function (reason) {
+							.catch(function (reason) {
 								console.error(reason);
 								deferred.reject(reason);
 							});
@@ -2076,9 +2080,9 @@
 							 * > Passing a string when the entity is
 							 * a SQL View is not allowed.
 							 */
-							if(_entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+							if(THIS.noInfoPath.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
 
-							filters.quickAdd(_entityConfig.primaryKey, "eq", query);
+							filters.quickAdd(THIS.noInfoPath.primaryKey, "eq", query);
 
 						} else if(angular.isObject(query)) {
 							if(query.__type === "NoFilters") {
@@ -2097,6 +2101,7 @@
 						//Internal _getOne requires and NoFilters object.
 						return THIS.noRead(filters)
 							.then(function (data) {
+								console.log("noHTTP.noRead", data);
 								if(data.length) {
 									return data[0];
 								} else if(data.paged && data.paged.length) {
