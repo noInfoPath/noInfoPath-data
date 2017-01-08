@@ -26,20 +26,27 @@
 				return values;
 			};
 			this.update = function (src, dest) {
-				var keys = Object.keys(src).filter(function (v, k) {
+				var THIS = this,
+					keys = Object.keys(src).filter(function (v, k) {
 					if(v.indexOf("$") === -1) return v;
 				});
 				keys.forEach(function (k) {
 					var d = dest[k];
 					if(d && d.hasOwnProperty("$viewValue")) {
-						d.$setViewValue(src[k]);
-						d.$render();
-						d.$setPristine();
-						d.$setUntouched();
+						THIS.updateOne(d, src[k]);
 					} else {
 						dest[k] = src[k];
 					}
 				});
+
+				dest.$setPristine();
 			};
+
+			this.updateOne = function(ctrl, value) {
+				ctrl.$setViewValue(value);
+				ctrl.$render();
+				ctrl.$setPristine();
+				ctrl.$setUntouched();
+			}
 		}]);
 })(angular);
