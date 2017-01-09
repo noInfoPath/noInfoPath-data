@@ -56,22 +56,26 @@
 
         function _save(fileObj) {
 
-            return $q(function(resolve, reject) {
-				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type)
-                if (!fileSystem) reject();
+			return $q(function(resolve, reject) {
+				if (!fileSystem || fileObj === null) {
+					reject("File not found in File Cache.");
+					return;
+				}
 
-                fileSystem.root.getFile(path, {
-                    create: true
-                }, function(fileEntry) {
-                    fileEntry.createWriter(function(writer) {
+				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type)
+
+				fileSystem.root.getFile(path, {
+					create: true
+				}, function(fileEntry) {
+					fileEntry.createWriter(function(writer) {
 						var arr = [str2ab(fileObj.blob)],
 							blob = new Blob(arr, {type: fileObj.type});
-                        writer.write(blob);
+						writer.write(blob);
 
 						 resolve(fileObj);
-                    }, reject);
-                }, reject);
-            });
+					}, reject);
+				}, reject);
+			});
 
         }
         this.save = _save;

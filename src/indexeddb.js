@@ -977,7 +977,8 @@
 						var data;
 
 						if(resultset.length === 0) {
-							throw "noIndexedDb::noOne: Record Not Found";
+							//throw "noIndexedDb::noOne: Record Not Found";
+							return null;
 						} else {
 							data = resultset[0];
 						}
