@@ -1,4 +1,5 @@
 ## noIndexedDB
+
 The noIndexedDB factory creates and configures a new instance of Dexie.
 Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that
 extends the query capabilites of Dexie, and exposes a CRUD interface

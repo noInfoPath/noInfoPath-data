@@ -1,6 +1,7 @@
 //indexeddb.js
 /*
  *	## noIndexedDB
+ *
  *	The noIndexedDB factory creates and configures a new instance of Dexie.
  *	Dexie is a wrapper around IndexedDB.  noIndexedDB is a Dexie AddOn that
  *	extends the query capabilites of Dexie, and exposes a CRUD interface
@@ -245,11 +246,19 @@
 
 			return $q(function (resolve, reject) {
 				_dexie.currentUser = noUser;
-				_dexie.on('error', function (err) {
-					// Log to console or show en error indicator somewhere in your GUI...
-					console.error("Dexie Error: ", arguments);
-					_reject($rootScope, reject, err);
-				});
+				// _dexie.on('error', function (err) {
+				// 	// Log to console or show en error indicator somewhere in your GUI...
+				// 	console.error("Dexie Error: ", arguments);
+				// 	_reject($rootScope, reject, err);
+				// });
+
+				function handler (event) {
+				    event.preventDefault(); // Prevents default handler (would log to console).
+				    var reason = event.reason;
+				    console.warn("Unhandled promise rejection:", (reason && (reason.stack || reason)));
+				};
+
+				window.addEventListener ("unhandledrejection", handler);
 
 				_dexie.on('blocked', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
