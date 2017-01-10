@@ -1077,7 +1077,7 @@
 						remoteDate = new Date(changes.ModifiedDate),
 						same = moment(localDate).isSame(remoteDate, 'second');
 
-					console.log(localDate, remoteDate, same);
+					//console.log(localDate, remoteDate, same);
 
 					return same;
 				}
@@ -1089,7 +1089,7 @@
 					};
 					//console.log(data, changes);
 					if(isSame(data, changes.values)) {
-						console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
+						//console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
 						changes.isSame = true;
 						resolve(changes);
 					} else {
@@ -1103,18 +1103,18 @@
 				return $q(function (resolve, reject) {
 
 					function ok(data) {
-						console.log(data);
+						//console.log(data);
 						resolve(data);
 					}
 
 					function fault(err) {
-						console.error(err);
+						//console.error(err);
 						reject(err);
 					}
 
 					checkForExisting()
 						.then(function (data) {
-							console.log("checkForExisting", !!data);
+							//console.log("checkForExisting", !!data);
 							// if(data) {
 							switch(noChange.operation) {
 								case "D":

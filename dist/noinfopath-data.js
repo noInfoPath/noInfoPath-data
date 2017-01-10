@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.30
+ *	@version 2.0.31
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1797,7 +1797,7 @@
 	angular.module('noinfopath.data')
 		.config(["$httpProvider", function ($httpProvider) {
 			$httpProviderRef = $httpProvider;
-	}])
+		}])
 		.provider("noHTTP", [function () {
 			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig) {
 
@@ -1860,7 +1860,6 @@
 							req = {
 								method: method,
 								url: url,
-								data: json,
 								headers: {
 									"Content-Type": "application/json",
 									"Accept": "application/json"
@@ -1868,6 +1867,10 @@
 								withCredentials: !!useCreds
 							};
 
+						if(!!data) {
+							req.data =  json
+						}
+						
 						$http(req)
 							.then(function (data) {
 								deferred.resolve(data);
@@ -6191,7 +6194,7 @@ var GloboTest = {};
 						remoteDate = new Date(changes.ModifiedDate),
 						same = moment(localDate).isSame(remoteDate, 'second');
 
-					console.log(localDate, remoteDate, same);
+					//console.log(localDate, remoteDate, same);
 
 					return same;
 				}
@@ -6203,7 +6206,7 @@ var GloboTest = {};
 					};
 					//console.log(data, changes);
 					if(isSame(data, changes.values)) {
-						console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
+						//console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
 						changes.isSame = true;
 						resolve(changes);
 					} else {
@@ -6217,18 +6220,18 @@ var GloboTest = {};
 				return $q(function (resolve, reject) {
 
 					function ok(data) {
-						console.log(data);
+						//console.log(data);
 						resolve(data);
 					}
 
 					function fault(err) {
-						console.error(err);
+						//console.error(err);
 						reject(err);
 					}
 
 					checkForExisting()
 						.then(function (data) {
-							console.log("checkForExisting", !!data);
+							//console.log("checkForExisting", !!data);
 							// if(data) {
 							switch(noChange.operation) {
 								case "D":

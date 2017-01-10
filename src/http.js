@@ -66,7 +66,7 @@
 	angular.module('noinfopath.data')
 		.config(["$httpProvider", function ($httpProvider) {
 			$httpProviderRef = $httpProvider;
-	}])
+		}])
 		.provider("noHTTP", [function () {
 			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig) {
 
@@ -129,7 +129,6 @@
 							req = {
 								method: method,
 								url: url,
-								data: json,
 								headers: {
 									"Content-Type": "application/json",
 									"Accept": "application/json"
@@ -137,6 +136,10 @@
 								withCredentials: !!useCreds
 							};
 
+						if(!!data) {
+							req.data =  json
+						}
+						
 						$http(req)
 							.then(function (data) {
 								deferred.resolve(data);
