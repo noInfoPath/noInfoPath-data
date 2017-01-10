@@ -255,7 +255,7 @@
 				function handler (event) {
 				    event.preventDefault(); // Prevents default handler (would log to console).
 				    var reason = event.reason;
-				    console.warn("Unhandled promise rejection:", (reason && (reason.stack || reason)));
+				    console.error("Unhandled promise rejection:", (reason && (reason.stack || reason)));
 				};
 
 				window.addEventListener ("unhandledrejection", handler);
