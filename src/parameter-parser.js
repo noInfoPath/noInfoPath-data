@@ -39,7 +39,7 @@
 					}
 				});
 
-				dest.$setPristine();
+				if(dest.$setPristine) dest.$setPristine();
 			};
 
 			this.updateOne = function(ctrl, value) {
