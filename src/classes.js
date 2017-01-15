@@ -423,7 +423,7 @@
 				var fltr = this[fi],
 					os = fltr.toODATA();
 
-				if(fltr.logic && this.length > 1) os = os + " " + fltr.logic + " ";
+				if(fltr.logic && this.length > 1 && fi !== this.length-1 ) os = os + " " + fltr.logic + " ";
 
 				tmp.push(os);
 			}
