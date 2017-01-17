@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.33
+ *	@version 2.0.34
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -1799,7 +1799,7 @@
 			$httpProviderRef = $httpProvider;
 		}])
 		.provider("noHTTP", [function () {
-			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig) {
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', "noParameterParser", function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig, noParameterParser) {
 
 				function NoHTTP(queryBuilder) {
 					var THIS = this,
@@ -1852,7 +1852,7 @@
 					};
 
 					this.noRequestJSON = function (url, method, data, useCreds) {
-						var json = angular.toJson(data);
+						var json = angular.toJson(noParameterParser.parse(data || {}));
 
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
 
@@ -1870,7 +1870,7 @@
 						if(!!data) {
 							req.data =  json
 						}
-						
+
 						$http(req)
 							.then(function (data) {
 								deferred.resolve(data);
@@ -1885,10 +1885,11 @@
 
 					this.noRequestForm = function (url, method, data, useCreds) {
 						var deferred = $q.defer(),
+							json = $.param(noParameterParser.parse(data)),
 							req = {
 								method: method,
 								url: url,
-								data: $.param(data),
+								data: json,
 								headers: {
 									"Content-Type": "application/x-www-form-urlencoded"
 								},
@@ -7719,14 +7720,18 @@ var GloboTest = {};
 					}
 				});
 
-				if(dest.$setPristine) dest.$setPristine();
+				if(dest.$setPristine) {
+					dest.$setPristine();
+					dest.$setUntouched();
+					dest.$commitViewValue();
+				}
 			};
 
 			this.updateOne = function(ctrl, value) {
 				ctrl.$setViewValue(value);
-				ctrl.$render();
 				ctrl.$setPristine();
 				ctrl.$setUntouched();
+				ctrl.$render();
 			}
 		}]);
 })(angular);

@@ -1,6 +1,6 @@
 //http.spec.js
 describe("Testing noHTTP service", function () {
-	var noHTTP, noHTTPProvider, noDbSchema, $timeout, $httpBackend, $rootScope, scope, createController, $controller, noLoginService;
+	var noHTTP, noHTTPProvider, noDbSchema, $timeout, $httpBackend, $rootScope, scope, createController, $controller, noLoginService, noParameterParser;
 
 	beforeEach(function () {
 		module("noinfopath.helpers");
@@ -14,7 +14,7 @@ describe("Testing noHTTP service", function () {
 			$httpBackend = $injector.get("$httpBackend");
 			$timeout = $injector.get("$timeout");
 			noLoginService = $injector.get("noLoginService");
-
+			noParameterParser = $injector.get("noParameterParser");
 			// $rootScope = $injector.get("$rootScope");
 			// $controller = $injector.get("$controller");
 		});

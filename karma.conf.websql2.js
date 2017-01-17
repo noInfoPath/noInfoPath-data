@@ -35,6 +35,7 @@ module.exports = function(config) {
         'test/mock/statement-builders.mock.js',
         'test/mock/statement-factory.mock.js',
         'src/storage.js',
+		'src/parameter-parser.js',
         'src/http.js',
         'src/indexeddb.js',
         'src/websql-2.js',

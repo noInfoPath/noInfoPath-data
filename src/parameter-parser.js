@@ -39,14 +39,18 @@
 					}
 				});
 
-				if(dest.$setPristine) dest.$setPristine();
+				if(dest.$setPristine) {
+					dest.$setPristine();
+					dest.$setUntouched();
+					dest.$commitViewValue();
+				}
 			};
 
 			this.updateOne = function(ctrl, value) {
 				ctrl.$setViewValue(value);
-				ctrl.$render();
 				ctrl.$setPristine();
 				ctrl.$setUntouched();
+				ctrl.$render();
 			}
 		}]);
 })(angular);

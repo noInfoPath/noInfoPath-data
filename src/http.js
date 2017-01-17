@@ -68,7 +68,7 @@
 			$httpProviderRef = $httpProvider;
 		}])
 		.provider("noHTTP", [function () {
-			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig) {
+			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', "noParameterParser", function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig, noParameterParser) {
 
 				function NoHTTP(queryBuilder) {
 					var THIS = this,
@@ -121,7 +121,7 @@
 					};
 
 					this.noRequestJSON = function (url, method, data, useCreds) {
-						var json = angular.toJson(data);
+						var json = angular.toJson(noParameterParser.parse(data || {}));
 
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
 
@@ -139,7 +139,7 @@
 						if(!!data) {
 							req.data =  json
 						}
-						
+
 						$http(req)
 							.then(function (data) {
 								deferred.resolve(data);
@@ -154,10 +154,11 @@
 
 					this.noRequestForm = function (url, method, data, useCreds) {
 						var deferred = $q.defer(),
+							json = $.param(noParameterParser.parse(data)),
 							req = {
 								method: method,
 								url: url,
-								data: $.param(data),
+								data: json,
 								headers: {
 									"Content-Type": "application/x-www-form-urlencoded"
 								},
