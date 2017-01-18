@@ -47,10 +47,12 @@
 			};
 
 			this.updateOne = function(ctrl, value) {
-				ctrl.$setViewValue(value);
-				ctrl.$setPristine();
-				ctrl.$setUntouched();
-				ctrl.$render();
+				if(ctrl) {
+					ctrl.$setViewValue(value);
+					ctrl.$setPristine();
+					ctrl.$setUntouched();
+					ctrl.$render();
+				}
 			}
 		}]);
 })(angular);

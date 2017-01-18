@@ -1072,14 +1072,19 @@
 				}
 
 				function isSame(data, changes) {
-					var
-						localDate = new Date(data.ModifiedDate),
-						remoteDate = new Date(changes.ModifiedDate),
-						same = moment(localDate).isSame(remoteDate, 'second');
+					if(!!data) {
+						var
+							localDate = new Date(data.ModifiedDate),
+							remoteDate = new Date(changes.ModifiedDate),
+							same = moment(localDate).isSame(remoteDate, 'second');
 
-					//console.log(localDate, remoteDate, same);
+						//console.log(localDate, remoteDate, same);
 
-					return same;
+						return same;
+					} else {
+						return false;
+					}
+
 				}
 
 				function save(changes, data, resolve, reject) {
