@@ -178,6 +178,8 @@ var GloboTest = {};
 			_config[tableName] = keys.join(",");
 
 			table.uri = table.uri || noDbConfig.uri;
+
+			
 		});
 
 

@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.35
+ *	@version 2.0.36
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -2304,6 +2304,8 @@ var GloboTest = {};
 			_config[tableName] = keys.join(",");
 
 			table.uri = table.uri || noDbConfig.uri;
+
+			
 		});
 
 
@@ -6032,7 +6034,7 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noDestroy = function (data, trans, filters) {
+			db.WriteableTable.prototype.__delete = function _delete(data, trans, filters) {
 				var deferred = $q.defer(),
 					table = this,
 					key = data[table.noInfoPath.primaryKey],
@@ -6069,6 +6071,147 @@ var GloboTest = {};
 					});
 
 				return deferred.promise;
+			};
+
+			db.WriteableTable.prototype.noDestroy = function (data, trans, filters) {
+
+
+				function _followRelations(tableSchema, rootDatum) {
+					var rootRelation = {schema: tableSchema, table: this, deletionKeys: [rootDatum[this.noInfoPath.primaryKey]]},
+						relations = [rootRelation];
+
+					function _flatten(parentSchema) {
+						for(var si=0; si < parentSchema.relationships.length; si++) {
+							var relation = parentSchema.relationships[si],
+								ro = {
+									relation: relation,
+									schema: this.noInfoPath.parentSchema.entity(relation.refTable),
+									table: db[relation.refTable],
+									deletionKeys: []
+								};
+
+							relations.unshift(ro);
+
+							if(!!ro.schema.relationships) _flatten.call(this, ro.schema);
+
+						}
+					}
+
+					function _resolveOnToManyRelationship(deferred, childIndex){
+						var parentRelation = relations[childIndex + 1],
+							childRelation = relations[childIndex],
+							f = new noInfoPath.data.NoFilters();
+
+						if(parentRelation && childRelation) {
+
+								f.quickAdd(childRelation.relation.refColumn, "in", parentRelation.deletionKeys);
+
+								childRelation.table.noRead(f)
+									.then(function(data){
+										var keys = _.pluck(data, childRelation.schema.primaryKey);
+										childRelation.deletionKeys = keys;
+										_resolveOnToManyRelationship(deferred, childIndex - 1);
+									})
+									.catch(function(err){
+										console.error(err);
+									});
+
+						} else {
+							if(childIndex > -1)
+							{
+								deferred.reject("Something might have gone wrong @ index ", childIndex);
+							} else {
+								console.log(childIndex, relations);
+								deferred.resolve(relations)
+							}
+						}
+
+					}
+
+					function _cascadeDeletes(results) {
+						var deleteTargets = results,
+							deferred = $q.defer();
+
+						function _recurseRelations(curIndex) {
+							var deleteTarget = deleteTargets[curIndex],
+								deleteData = {};
+
+							// deleteData[deleteTarget.schema.primaryKey] =
+							if(deleteTarget) {
+								_recurseDeletions(deleteTarget)
+									.then(function(result){
+										_recurseRelations(curIndex  + 1);
+									})
+									.catch(function(err){
+										console.error(err);
+									});
+							} else {
+								deferred.resolve();
+							}
+
+
+						}
+
+						function _recurseDeletions(deleteTarget) {
+							var deferred = $q.defer();
+
+							function _recurse(curIndex) {
+								var key = deleteTarget.deletionKeys[curIndex],
+									deleteItem = {};
+
+								if(key) {
+									deleteItem[deleteTarget.schema.primaryKey] = key;
+
+									deleteTarget.table.__delete(deleteItem)
+										.then(function(results){
+											_recurse(curIndex + 1);
+										})
+										.catch(function(err){
+											deferred.reject(err);
+										});
+								} else {
+									deferred.resolve("all done.");
+								}
+							}
+
+							_recurse(0);
+
+							return deferred.promise;
+
+						}
+
+						_recurseRelations(0);
+					}
+
+					return $q(function(resolve, reject){
+						var resolveOneToManyDeferred = $q.defer(),
+							resolveDeletes = $q.defer();
+
+						_flatten.call(this, this.noInfoPath);
+
+						if(relations.length < 2) throw "Error occured resolving deletion data.";
+
+						_resolveOnToManyRelationship(resolveOneToManyDeferred, relations.length-2);
+
+						resolveOneToManyDeferred.promise
+							.then(_cascadeDeletes.bind(this))
+							.then(resolve)
+							.catch(reject);
+
+
+					}.bind(this));
+				}
+
+				function _execute(data, trans, filters){
+					if(!!this.noInfoPath.relationships) {
+						return _followRelations.call(this, this.noInfoPath, data);
+					} else {
+						return this.__delete.call(this, data, trans, filters);
+					}
+
+				}
+
+				return _execute.call(this, data, trans, filters);
 			};
 
 			db.WriteableTable.prototype.noClear = function () {
