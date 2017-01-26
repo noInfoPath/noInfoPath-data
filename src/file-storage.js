@@ -13,7 +13,7 @@
 		*	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
 		*
 		*/
-		this.cache = function saveToCache(fileObj) {
+		this.cache = function saveToCache(fileObj, trans) {
 			var dsCfg = {
 				"dataProvider": "noIndexedDb",
 				"databaseName": "NoInfoPath_dtc_v1",
@@ -28,7 +28,7 @@
 
 			var ds = noDataSource.create(dsCfg, {});
 
-			return ds.create(fileObj);
+			return ds.create(fileObj, trans);
 		};
 
 		/**
@@ -57,7 +57,7 @@
 		*
 		*	Deletes a file by FileID from the NoInfoPath_FileUploadCache.
 		*/
-		this.removeFromCache = function(fileID) {
+		this.removeFromCache = function(fileID, trans) {
 			var dsCfg = {
 				"dataProvider": "noIndexedDb",
 				"databaseName": "NoInfoPath_dtc_v1",
@@ -72,7 +72,7 @@
 
 			var ds = noDataSource.create(dsCfg, {});
 
-			return ds.destroy(fileID);
+			return ds.destroy(fileID, trans);
 		};
 
 		/**

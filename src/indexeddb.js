@@ -165,7 +165,7 @@
 (function (angular, Dexie, undefined) {
 	"use strict";
 
-	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noQueryParser) {
+	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noLocalFileStorage) {
 
 		var _name, _noIndexedDb = this;
 
@@ -917,38 +917,48 @@
 			db.WriteableTable.prototype.__delete = function _delete(data, trans, filters) {
 				var deferred = $q.defer(),
 					table = this,
-					key = data[table.noInfoPath.primaryKey],
+					key = angular.isString(data) ? data : data[table.noInfoPath.primaryKey],
 					collection;
 
 				//noLogService.log("adding: ", _dexie.currentUser);
 				//noLogService.log(key);
+				function _deleteCachedFile(data, trans) {
+					if(table.noInfoPath.NoInfoPath_FileUploadCache) {
+						return noLocalFileStorage.removeFromCache(data, trans);
+					}else {
+						return $q.when(data);
+					}
+				}
 
 				_dexie.transaction("rw", table, function () {
-						Dexie.currentTransaction.nosync = true;
 
-						if(!!filters) {
-							//First filter will use where();
-							var filter = filters[0],
-								where = table.where(filter.column),
-								ex = filter.filters[0],
-								method = where[indexedOperators[ex.operator]];
+					Dexie.currentTransaction.nosync = true;
 
-							collection = method.call(where, ex.value);
+					if(!!filters) {
+						//First filter will use where();
+						var filter = filters[0],
+							where = table.where(filter.column),
+							ex = filter.filters[0],
+							method = where[indexedOperators[ex.operator]];
 
-							collection.delete()
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
-								.catch(_transactionFault.bind(null, deferred.reject));
+						collection = method.call(where, ex.value);
 
-						} else {
-							table.delete(key)
-								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
-								.catch(_transactionFault.bind(null, deferred.reject));
-						}
-					})
-					.then(angular.noop())
-					.catch(function (err) {
-						deferred.reject(err);
-					});
+						collection.delete()
+							.then(_deleteCachedFile.bind(null, data, trans))
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
+							.catch(_transactionFault.bind(null, deferred.reject));
+
+					} else {
+						table.delete(key)
+							.then(_deleteCachedFile.bind(null, data, trans))
+							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
+							.catch(_transactionFault.bind(null, deferred.reject));
+					}
+				}.bind(null, data))
+				.then(angular.noop())
+				.catch(function (err) {
+					deferred.reject(err);
+				});
 
 				return deferred.promise;
 			};
@@ -958,38 +968,53 @@
 
 				function _followRelations(tableSchema, rootDatum) {
 					var rootRelation = {schema: tableSchema, table: this, deletionKeys: [rootDatum[this.noInfoPath.primaryKey]]},
-						relations = [rootRelation];
+						relations = [rootRelation],
+						parentKeys = {};
+
+					parentKeys[rootRelation.schema.entityName] = rootRelation.deletionKeys;
 
 					function _flatten(parentSchema) {
 						for(var si=0; si < parentSchema.relationships.length; si++) {
 							var relation = parentSchema.relationships[si],
 								ro = {
+									parent: parentSchema,
 									relation: relation,
 									schema: this.noInfoPath.parentSchema.entity(relation.refTable),
 									table: db[relation.refTable],
-									deletionKeys: []
+									deletionKeys: [],
+									fileKeys: []
 								};
 
 							relations.unshift(ro);
 
-							if(!!ro.schema.relationships) _flatten.call(this, ro.schema);
+							if(!!ro.schema.relationships) {
+								_flatten.call(this, ro.schema);
+							}
 
 						}
 					}
 
 					function _resolveOnToManyRelationship(deferred, childIndex){
-						var parentRelation = relations[childIndex + 1],
-							childRelation = relations[childIndex],
+						var childRelation = relations[childIndex],
 							f = new noInfoPath.data.NoFilters();
 
-						if(parentRelation && childRelation) {
+						if(childRelation) {
 
-								f.quickAdd(childRelation.relation.refColumn, "in", parentRelation.deletionKeys);
+								f.quickAdd(childRelation.relation.refColumn, "in", parentKeys[childRelation.parent.entityName]);
 
+								//console.log(childRelation.parent.entityName, f.toSQL());
 								childRelation.table.noRead(f)
 									.then(function(data){
 										var keys = _.pluck(data, childRelation.schema.primaryKey);
-										childRelation.deletionKeys = keys;
+										if(childRelation.schema.relationships) parentKeys[childRelation.schema.entityName] = keys;
+										childRelation.deletionKeys = data;
+
+										if(childRelation.schema.NoInfoPath_FileUploadCache) {
+											childRelation.fileKeys = data;
+
+											console.log(childRelation.fileKeys);
+										}
+
 										_resolveOnToManyRelationship(deferred, childIndex - 1);
 									})
 									.catch(function(err){
@@ -1001,8 +1026,8 @@
 							{
 								deferred.reject("Something might have gone wrong @ index ", childIndex);
 							} else {
-								console.log(childIndex, relations);
-								deferred.resolve(relations)
+								//console.log(childIndex, relations);
+								deferred.resolve(relations);
 							}
 						}
 
@@ -1036,13 +1061,12 @@
 							var deferred = $q.defer();
 
 							function _recurse(curIndex) {
-								var key = deleteTarget.deletionKeys[curIndex],
-									deleteItem = {};
+								var deleteItem = deleteTarget.deletionKeys[curIndex];
 
-								if(key) {
-									deleteItem[deleteTarget.schema.primaryKey] = key;
+								if(deleteItem) {
+									//deleteItem[deleteTarget.schema.primaryKey] = key[deleteTarget.schema.primaryKey];
 
-									deleteTarget.table.__delete(deleteItem)
+									deleteTarget.table.__delete(deleteItem, trans)
 										.then(function(results){
 											_recurse(curIndex + 1);
 										})
@@ -1061,6 +1085,8 @@
 						}
 
 						_recurseRelations(0);
+
+						return deferred.promise;
 					}
 
 					return $q(function(resolve, reject){
@@ -1068,6 +1094,8 @@
 							resolveDeletes = $q.defer();
 
 						_flatten.call(this, this.noInfoPath);
+
+						//console.log(relations);
 
 						if(relations.length < 2) throw "Error occured resolving deletion data.";
 
@@ -1086,7 +1114,10 @@
 					if(!!this.noInfoPath.relationships) {
 						return _followRelations.call(this, this.noInfoPath, data);
 					} else {
-						return this.__delete.call(this, data, trans, filters);
+						return this.__delete.call(this, data, trans, filters)
+							.catch(function(err){
+								console.error(err);
+							});
 					}
 
 				}
@@ -1348,12 +1379,12 @@
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
-			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
+		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", "noLocalFileStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD) {
+			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD);
 		}])
 
-	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
-		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
+	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", "noLocalFileStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD) {
+		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD);
 		}]);
 
 })(angular, Dexie);
