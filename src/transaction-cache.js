@@ -828,7 +828,7 @@
 
 					this.namespace = ns;
 					this.tableName = tableName;
-					this.data = normalizeValues(data);
+					this.data = !!tblSchema ? normalizeValues(data) : data;
 					this.changeType = changeType;
 					this.version = version;
 				}

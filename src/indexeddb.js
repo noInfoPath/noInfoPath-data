@@ -295,6 +295,7 @@
 					// });
 				} else {
 					if(_.size(schema.store)) {
+						console.log(schema.config.dbName, schema.store);
 						_dexie.version(schema.config.version)
 							.stores(schema.store);
 						_extendDexieTables.call(_dexie, schema.tables);

@@ -1,7 +1,7 @@
 //globals.js
 /*
  *	# noinfopath-data
- *	@version 2.0.37
+ *	@version 2.0.38
  *
  *	## Overview
  *	NoInfoPath data provides several services to access data from local storage or remote XHR or WebSocket data services.
@@ -5033,7 +5033,7 @@ var GloboTest = {};
 
 					this.namespace = ns;
 					this.tableName = tableName;
-					this.data = normalizeValues(data);
+					this.data = !!tblSchema ? normalizeValues(data) : data;
 					this.changeType = changeType;
 					this.version = version;
 				}
@@ -5415,6 +5415,7 @@ var GloboTest = {};
 					// });
 				} else {
 					if(_.size(schema.store)) {
+						console.log(schema.config.dbName, schema.store);
 						_dexie.version(schema.config.version)
 							.stores(schema.store);
 						_extendDexieTables.call(_dexie, schema.tables);
