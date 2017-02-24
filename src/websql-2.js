@@ -472,15 +472,15 @@
 		/**
 		 *   Data is scrubed for undesirable data artifacts such as `undefined`.
 		 */
-		function scrubData(data) {
+		function scrubData(data, keepRecordStats) {
 			var scrubbed = {},
-				ignore = ["ModifiedBy", "ModifiedDate", "CreatedBy", "DateCreated"];
+				ignore = keepRecordStats ? [] : ["ModifiedBy", "ModifiedDate", "CreatedBy", "DateCreated"];
 
 			for(var ck in _entityConfig.columns) {
 				var col = _entityConfig.columns[ck],
 					val = data[ck];
 
-				if(_.indexOf(ignore, ck) === -1) {
+				if( _.indexOf(ignore, ck) === -1) {
 					//scrub undefined.
 					val = val === "undefined" || val === undefined ? null : val;
 

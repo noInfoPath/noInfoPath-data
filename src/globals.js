@@ -74,7 +74,7 @@
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter) {
+	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', "lodash", function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter, _) {
 
 		function _digestTimeout() {
 
@@ -219,6 +219,8 @@
 		function _fromScopeSafeGuid(ssuid) {
 			return(ssuid || "").replace(/_/g, "-");
 		}
+
+
 
 		var _data = {
 			getItem: _getItem,

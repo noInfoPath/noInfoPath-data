@@ -28,7 +28,6 @@ NoFilters is an array of NoFilterExpression objects.
 
 ### Properties
 
-|Name|Type|Description|
 |----|----|------------|
 |length|Number|Number of elements in the array.|
 

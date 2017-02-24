@@ -30,7 +30,6 @@
  *
  * ### Properties
  *
- * |Name|Type|Description|
  * |----|----|------------|
  * |length|Number|Number of elements in the array.|
  *
@@ -881,7 +880,13 @@
 			},
 			"paged": {
 				"get": function () {
-					return _page;
+					var o = [];
+
+					_page.forEach(function(e, i){
+						o[i] = e;
+					});
+
+					return o;
 				}
 			}
 		});
@@ -899,6 +904,24 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
+	function NoReadOptions(options) {
+		var ops = options || {};
+
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function () {
+					return "NoReadOptions";
+				}
+			}
+		});
+
+		this.followForeignKeys = ops.followForeignKeys || true;
+		this.followRelations = ops.followRelations || false;
+		this.followParentKeys = ops.followParentKeys || true;
+		this.deepFollowParentKeys = ops.deepFollowParentKeys || false;
+		this.deepFollowRelations = ops.deepFollowRelations || false;
+	}
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
@@ -908,7 +931,8 @@
 		NoSortExpression: NoSortExpression,
 		NoSort: NoSort,
 		NoPage: NoPage,
-		NoResults: NoResults
+		NoResults: NoResults,
+		NoReadOptions: NoReadOptions
 	};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);

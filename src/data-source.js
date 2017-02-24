@@ -35,6 +35,7 @@
 	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
+			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
 			entity = db[dsConfig.entityName],
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
@@ -75,8 +76,13 @@
 					params.skip = config.skip;
 				}
 
-				var x = queryParser.parse(params);
-					if(follow === false) x.push(false);
+				var x = queryParser.parse(params) || [];
+				if(!angular.isUndefined(follow)) {
+					noReadOptions.followForeignKeys = follow;
+				}
+
+
+				x.push(noReadOptions);
 
 				return entity.noRead.apply(entity, x)
 					.then(function (data) {
@@ -151,6 +157,7 @@
 					params[1] = config.primaryKey;
 				} else {
 					params[0] = filterValues;
+					params[1] = noReadOptions;
 				}
 
 				return entity.noOne.apply(entity, params)

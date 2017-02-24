@@ -51,7 +51,8 @@ module.exports = function (grunt) {
 					'src/mock-http.js',
 					'src/file-storage.js',
 					'src/no-local-file-storage.js',
-					'src/parameter-parser.js'
+					'src/parameter-parser.js',
+					'src/metadata.js'
 				],
 				dest: 'dist/noinfopath-data.js'
 			},

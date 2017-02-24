@@ -74,7 +74,7 @@
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
 
 
-	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter) {
+	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', "lodash", function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter, _) {
 
 		function _digestTimeout() {
 
@@ -220,6 +220,8 @@
 			return(ssuid || "").replace(/_/g, "-");
 		}
 
+
+
 		var _data = {
 			getItem: _getItem,
 			setItem: _setItem,
@@ -270,7 +272,6 @@
  *
  * ### Properties
  *
- * |Name|Type|Description|
  * |----|----|------------|
  * |length|Number|Number of elements in the array.|
  *
@@ -1121,7 +1122,13 @@
 			},
 			"paged": {
 				"get": function () {
-					return _page;
+					var o = [];
+
+					_page.forEach(function(e, i){
+						o[i] = e;
+					});
+
+					return o;
 				}
 			}
 		});
@@ -1139,6 +1146,24 @@
 		noInfoPath.setPrototypeOf(this, arr);
 	}
 
+	function NoReadOptions(options) {
+		var ops = options || {};
+
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function () {
+					return "NoReadOptions";
+				}
+			}
+		});
+
+		this.followForeignKeys = ops.followForeignKeys || true;
+		this.followRelations = ops.followRelations || false;
+		this.followParentKeys = ops.followParentKeys || true;
+		this.deepFollowParentKeys = ops.deepFollowParentKeys || false;
+		this.deepFollowRelations = ops.deepFollowRelations || false;
+	}
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
@@ -1148,7 +1173,8 @@
 		NoSortExpression: NoSortExpression,
 		NoSort: NoSort,
 		NoPage: NoPage,
-		NoResults: NoResults
+		NoResults: NoResults,
+		NoReadOptions: NoReadOptions
 	};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
@@ -3238,15 +3264,15 @@ var GloboTest = {};
 		/**
 		 *   Data is scrubed for undesirable data artifacts such as `undefined`.
 		 */
-		function scrubData(data) {
+		function scrubData(data, keepRecordStats) {
 			var scrubbed = {},
-				ignore = ["ModifiedBy", "ModifiedDate", "CreatedBy", "DateCreated"];
+				ignore = keepRecordStats ? [] : ["ModifiedBy", "ModifiedDate", "CreatedBy", "DateCreated"];
 
 			for(var ck in _entityConfig.columns) {
 				var col = _entityConfig.columns[ck],
 					val = data[ck];
 
-				if(_.indexOf(ignore, ck) === -1) {
+				if( _.indexOf(ignore, ck) === -1) {
 					//scrub undefined.
 					val = val === "undefined" || val === undefined ? null : val;
 
@@ -5142,6 +5168,7 @@ var GloboTest = {};
  *	##### Parameters
  *
  *	|Name|Type|Description|
+ *	|----|----|-----------|
  *	|data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
  *
  *	##### Returns
@@ -5155,7 +5182,7 @@ var GloboTest = {};
  *
  *	##### Parameters
  *
- *	|Name|Type|Descriptions|
+ *	|Name|Type|Description|
  *	|----|----|------------|
  *	|filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|
  *	|sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
@@ -5294,7 +5321,7 @@ var GloboTest = {};
 
 			var transData = result2 && result2.rows && result2.rows.length ? result2 : angular.isObject(result1) ? result1 : rawData;
 
-			if(trans) trans.addChange(tableName, transData, operation);
+			if (trans) trans.addChange(tableName, transData, operation);
 			resolve(transData);
 		}
 
@@ -5319,26 +5346,26 @@ var GloboTest = {};
 					var _table = {};
 
 					angular.forEach(tsqlTableSchema.columns, function (column, columnName) {
-						switch(column.type) {
-							case "uniqueidentifier":
-							case "nvarchar":
-							case "varchar":
-								_table[columnName] = "String";
-								break;
+						switch (column.type) {
+						case "uniqueidentifier":
+						case "nvarchar":
+						case "varchar":
+							_table[columnName] = "String";
+							break;
 
-							case "date":
-							case "datetime":
-								_table[columnName] = "Date";
-								break;
+						case "date":
+						case "datetime":
+							_table[columnName] = "Date";
+							break;
 
-							case "bit":
-								_table[columnName] = "Boolean";
-								break;
+						case "bit":
+							_table[columnName] = "Boolean";
+							break;
 
-							case "int":
-							case "decimal":
-								_table[columnName] = "Number";
-								break;
+						case "int":
+						case "decimal":
+							_table[columnName] = "Number";
+							break;
 						}
 					});
 
@@ -5372,13 +5399,13 @@ var GloboTest = {};
 				// 	_reject($rootScope, reject, err);
 				// });
 
-				function handler (event) {
-				    event.preventDefault(); // Prevents default handler (would log to console).
-				    var reason = event.reason;
-				    console.error("Unhandled promise rejection:", (reason && (reason.stack || reason)));
-				};
+				function handler(event) {
+					event.preventDefault(); // Prevents default handler (would log to console).
+					var reason = event.reason;
+					console.error("Unhandled promise rejection:", (reason && (reason.stack || reason)));
+				}
 
-				window.addEventListener ("unhandledrejection", handler);
+				window.addEventListener("unhandledrejection", handler);
 
 				_dexie.on('blocked', function (err) {
 					// Log to console or show en error indicator somewhere in your GUI...
@@ -5406,7 +5433,7 @@ var GloboTest = {};
 
 				});
 
-				if(_dexie.isOpen()) {
+				if (_dexie.isOpen()) {
 					//Do nothing, `ready` event should bubble up.
 
 					// $timeout(function() {
@@ -5414,7 +5441,7 @@ var GloboTest = {};
 					// 	window.noInfoPath.digest(deferred.resolve);
 					// });
 				} else {
-					if(_.size(schema.store)) {
+					if (_.size(schema.store)) {
 						console.log(schema.config.dbName, schema.store);
 						_dexie.version(schema.config.version)
 							.stores(schema.store);
@@ -5436,11 +5463,11 @@ var GloboTest = {};
 			$timeout(function () {
 				var noIndexedDbInitialized = "noIndexedDb_" + config.dbName;
 
-				if($rootScope[noIndexedDbInitialized]) {
+				if ($rootScope[noIndexedDbInitialized]) {
 					deferred.resolve();
 				} else {
 					$rootScope.$watch(noIndexedDbInitialized, function (newval, oldval, scope) {
-						if(newval) {
+						if (newval) {
 							deferred.resolve();
 						}
 					});
@@ -5465,6 +5492,68 @@ var GloboTest = {};
 					"startswith": "startsWith",
 					"bt": "between",
 					"in": "anyOfIgnoreCase"
+				},
+				filterOps = {
+					"is null": "is null",
+					"is not null": "is not null",
+					eq: "eq",
+					neq: "ne",
+					gt: "gt",
+					ge: "ge",
+					gte: "ge",
+					lt: "lt",
+					le: "le",
+					lte: "le",
+					contains: "contains",
+					doesnotcontain: "notcontains",
+					endswith: "endswith",
+					startswith: "startswith",
+					"in": "in"
+				},
+				compareOps = {
+					"is null": function (a) {
+						return a === null;
+					},
+					"is not null": function (a) {
+						return a !== null;
+					},
+					"eq": function (a, b) {
+						return a === b;
+					},
+					"ne": function (a, b) {
+						return a !== b;
+					},
+					"gt": function (a, b) {
+						return a > b;
+					},
+					"ge": function (a, b) {
+						return a >= b;
+					},
+					"lt": function (a, b) {
+						return a < b;
+					},
+					"le": function (a, b) {
+						return a <= b;
+					},
+					"contains": function (a, b) {
+						var areStrings = angular.isString(a) && angular.isString(b);
+						return areString ? a.indexOf(b) > -1 : false;
+					},
+					"notcontains": function (a, b) {
+						var areStrings = angular.isString(a) && angular.isString(b);
+						return areString ? a.indexOf(b) === -1 : false;
+					},
+					"startswith": function (a, b) {
+						var areStrings = angular.isString(a) && angular.isString(b);
+						return areString ? a.indexOf(b) === 0 : false;
+					},
+					"endswith": function (a, b) {
+						var areStrings = angular.isString(a) && angular.isString(b);
+						return areString ? a.lastIndexOf(b) > -1 : false;
+					},
+					"in": function (a, b) {
+						return b.indexOf(a) > -1;
+					}
 				};
 
 			db.WriteableTable.prototype.noCreate = function (data, trans) {
@@ -5480,7 +5569,7 @@ var GloboTest = {};
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _dexie.currentUser.userId;
 
-						if(!data[table.schema.primKey.name]) {
+						if (!data[table.schema.primKey.name]) {
 							data[table.schema.primKey.name] = noInfoPath.createUUID();
 						}
 
@@ -5508,74 +5597,13 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-
 			function NoRead_new() {
 				var table = this,
-					filterOps = {
-						"is null": "is null",
-						"is not null": "is not null",
-						eq: "eq",
-						neq: "ne",
-						gt: "gt",
-						ge: "ge",
-						gte: "ge",
-						lt: "lt",
-						le: "le",
-						lte: "le",
-						contains: "contains",
-						doesnotcontain: "notcontains",
-						endswith: "endswith",
-						startswith: "startswith",
-						"in": "in"
-					},
-					compareOps = {
-						"is null": function (a) {
-							return a === null;
-						},
-						"is not null": function (a) {
-							return a !== null;
-						},
-						"eq": function (a, b) {
-							return a === b;
-						},
-						"ne": function (a, b) {
-							return a !== b;
-						},
-						"gt": function (a, b) {
-							return a > b;
-						},
-						"ge": function (a, b) {
-							return a >= b;
-						},
-						"lt": function (a, b) {
-							return a < b;
-						},
-						"le": function (a, b) {
-							return a <= b;
-						},
-						"contains": function (a, b) {
-							var areStrings = angular.isString(a) && angular.isString(b);
-							return areString ? a.indexOf(b) > -1 : false;
-						},
-						"notcontains": function (a, b) {
-							var areStrings = angular.isString(a) && angular.isString(b);
-							return areString ? a.indexOf(b) === -1 : false;
-						},
-						"startswith": function (a, b) {
-							var areStrings = angular.isString(a) && angular.isString(b);
-							return areString ? a.indexOf(b) === 0 : false;
-						},
-						"endswith": function (a, b) {
-							var areStrings = angular.isString(a) && angular.isString(b);
-							return areString ? a.lastIndexOf(b) > -1 : false;
-						},
-						"in": function (a, b) {
-							return b.indexOf(a) > -1;
-						}
-					},
 					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
 					filters, sort, page, follow = true,
-					exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [];
+					exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [],
+					nogroup;
+
 
 				function _filter(filters, table) {
 					var collection;
@@ -5595,13 +5623,13 @@ var GloboTest = {};
 						try {
 
 
-							if(fi === 0) {
+							if (fi === 0) {
 								//When `fi` is 0 create the WhereClause, extract the evaluator
 								//that will be used to create a collection based on the filter.
 								where = table.where(filter.column);
 
 								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
-								if(table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
+								if (table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
 									evaluator = where[indexedOperators[ex.operator]];
 									collection = evaluator.call(where, ex.value);
 								} else {
@@ -5611,14 +5639,18 @@ var GloboTest = {};
 								logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
 							} else {
 								// logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
-								if(filter.logic) {
+								if (filter.logic) {
 									logic = collection[filter.logic].bind(collection);
 									collection = logic(_logicCB.bind(null, filter, ex));
 								}
 
 							}
-						} catch(err) {
-							throw {error: err, collection: collection, arguments: [fi, filter, ex]};
+						} catch (err) {
+							throw {
+								error: err,
+								collection: collection,
+								arguments: [fi, filter, ex]
+							};
 						}
 					}
 
@@ -5626,8 +5658,8 @@ var GloboTest = {};
 						console.log("Compound", fi, filter, ex);
 					}
 
-					if(!!filters) {
-						for(var fi = 0; fi < filters.length; fi++) {
+					if (!!filters) {
+						for (var fi = 0; fi < filters.length; fi++) {
 							var filter = filters[fi],
 								ex = filter.filters[0];
 
@@ -5651,18 +5683,18 @@ var GloboTest = {};
 							bval = noInfoPath.getItem(b, s.column);
 
 
-						if(s.dir === "desc") {
-							if(aval < bval) {
+						if (s.dir === "desc") {
+							if (aval < bval) {
 								return 1;
 							}
-							if(aval > bval) {
+							if (aval > bval) {
 								return -1;
 							}
 						} else {
-							if(aval > bval) {
+							if (aval > bval) {
 								return 1;
 							}
-							if(aval < bval) {
+							if (aval < bval) {
 								return -1;
 							}
 						}
@@ -5672,17 +5704,19 @@ var GloboTest = {};
 
 					}
 
-					if(sorts) {
-						for(var s = 0; s < sorts.length; s++) {
+					if (sorts) {
+						for (var s = 0; s < sorts.length; s++) {
 							var sort = sorts[s];
 
-							arrayOfThings.sort(_compare.bind(null, sort));
+							arrayOfThings = arrayOfThings.sort(_compare.bind(null, sort));
 						}
 					}
+
+					return arrayOfThings;
 				}
 
 				function _page(page, arrayOfThings) {
-					if(page) {
+					if (page) {
 						arrayOfThings.page(page);
 					}
 				}
@@ -5697,24 +5731,34 @@ var GloboTest = {};
 					return err;
 				}
 
-				function _expand_success(col, keys, filters, results)	{
+				function _expand_success(col, keys, filters, results) {
 					//console.log("_expand_success", arguments);
 					return results;
 				}
 
+				function _expand2_success(col, keys, filters, results) {
+					//console.log("_expand_success", arguments);
+					//if(!nogroup) console.groupEnd();
+					return {
+						results: results,
+						col: col
+					};
+				}
+
 				function _expand(col, keys) {
+
 					var theDb = col.refDatabaseName ? _noIndexedDb.getDatabase(col.refDatabaseName) : db,
 						filters = new noInfoPath.data.NoFilters(),
 						ft = theDb[col.refTable];
 
 					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
-					if(!ft) {
+					if (!ft) {
 						ft = theDb[aliases[col.refTable]];
 					}
 
-					if(!ft) throw "Invalid refTable " + aliases[col.refTable];
+					if (!ft) throw "Invalid refTable " + aliases[col.refTable];
 
-					if(exclusions.indexOf(col.column) > -1) {
+					if (exclusions.indexOf(col.column) > -1) {
 						return $q.when(new noInfoPath.data.NoResults());
 					}
 					// if(tableCache[col.refTable]) {
@@ -5723,7 +5767,7 @@ var GloboTest = {};
 					// 	tableCache[col.refTable] = tbl;
 					// }
 
-					if(!keys) {
+					if (!keys) {
 						throw {
 							error: "Invalid key value",
 							col: col,
@@ -5735,8 +5779,8 @@ var GloboTest = {};
 					filters.quickAdd(col.refColumn, "in", keys);
 
 					//follow the foreign key and get is data.
-					if(keys.length > 0) {
-						return ft.noRead(filters)
+					if (keys.length > 0) {
+						return ft.noRead(filters, 1)
 							.then(_expand_success.bind(table, col, keys, filters))
 							.catch(_expand_fault.bind(table, col, keys, filters));
 					} else {
@@ -5745,8 +5789,51 @@ var GloboTest = {};
 
 				}
 
+				function _expand2(col, keys) {
+					var theDb = col.refDatabaseName ? _noIndexedDb.getDatabase(col.refDatabaseName) : db,
+						filters = new noInfoPath.data.NoFilters(),
+						ft = theDb[col.refTable];
+
+					//If we don't have a foreign key table, then try  to dereference it using the aliases hash.
+					if (!ft) {
+						ft = theDb[aliases[col.refTable]];
+					}
+
+					if (!ft) throw "Invalid refTable " + col.refTable;
+
+					if (exclusions.indexOf(col.column) > -1) {
+						return $q.when(new noInfoPath.data.NoResults());
+					}
+					// if(tableCache[col.refTable]) {
+					// 	tbl = tableCache[col.refTable];
+					// } else {
+					// 	tableCache[col.refTable] = tbl;
+					// }
+
+					if (!keys) {
+						throw {
+							error: "Invalid key value",
+							col: col,
+							item: item
+						};
+					}
+
+					//Configure foreign key filter
+					filters.quickAdd(col.refColumn, "in", keys);
+
+					//follow the foreign key and get is data.
+					if (keys.length > 0) {
+						return ft.noRead(filters, false, 1)
+							.then(_expand2_success.bind(table, col, keys, filters))
+							.catch(_expand_fault.bind(table, col, keys, filters));
+					} else {
+						return $q.when(new noInfoPath.data.NoResults());
+					}
+
+				}
+
 				function _finalResults(finalResults) {
-					if(finalResults.exception) {
+					if (finalResults.exception) {
 						console.warn(finalResults.exception);
 						resolve(new noInfoPath.data.NoResults([]));
 					} else {
@@ -5755,6 +5842,8 @@ var GloboTest = {};
 				}
 
 				function _fault(ctx, reject, err) {
+					//if(!nogroup) console.groupEnd();
+
 					ctx.error = err;
 					//console.error(ctx);
 					reject(ctx);
@@ -5762,17 +5851,17 @@ var GloboTest = {};
 
 				function _finished_following_fk(columns, arrayOfThings, refData) {
 
-					for(var i = 0; i < arrayOfThings.length; i++) {
+					for (var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
 
-						for(var c in columns) {
+						for (var c in columns) {
 							var col = columns[c],
 								key = item[col.column],
 								refTable = !col.noFollow && refData[col.refTable].paged,
 								filter = {},
 								refItem;
 
-							if(col.noFollow) continue;
+							if (col.noFollow) continue;
 
 							filter[col.refColumn] = key;
 
@@ -5781,7 +5870,7 @@ var GloboTest = {};
 							item[col.column] = refItem || key;
 						}
 					}
-
+					//console.log("finished following FK for", table.noInfoPath.entityName);
 					return arrayOfThings;
 
 				}
@@ -5789,10 +5878,10 @@ var GloboTest = {};
 
 				function _finished_following_meta(columns, arrayOfThings, refData) {
 					//console.log(columns, arrayOfThings, refData);
-					for(var i = 0; i < arrayOfThings.length; i++) {
+					for (var i = 0; i < arrayOfThings.length; i++) {
 						var item = arrayOfThings[i];
 
-						for(var c in columns) {
+						for (var c in columns) {
 							var col = columns[c],
 								key = item[col.columnName],
 								data = refData[key];
@@ -5814,20 +5903,19 @@ var GloboTest = {};
 
 				function _followRelations(follow, arrayOfThings) {
 
-					//console.log(table.noInfoPath);
 					var promises = {},
 						allKeys = {},
 						queue = [],
 						columns = table.noInfoPath.foreignKeys;
 
-					if(follow) {
-						for(var c in columns) {
+					if (follow) {
+						for (var c in columns) {
 							var col = columns[c],
 								keys = _.compact(_.pluck(arrayOfThings, col.column)); //need to remove falsey values
 
-							if(col.noFollow) continue;
+							if (col.noFollow) continue;
 
-							if(!allKeys[col.refTable]) {
+							if (!allKeys[col.refTable]) {
 								allKeys[col.refTable] = {
 									col: col,
 									keys: []
@@ -5839,19 +5927,143 @@ var GloboTest = {};
 							//promises[col.refTable] = _expand(col, keys);
 						}
 
-						for(var k in allKeys) {
+						for (var k in allKeys) {
 							var keys2 = allKeys[k];
+							//console.log("Following Foreign Key for", table.noInfoPath.entityName, keys2.col.refTable, keys2.col.column, keys2.keys.join());
 
 							promises[k] = _expand(keys2.col, keys2.keys);
 						}
 
-						return _.size(promises) > 0 ?
-							$q.all(promises)
-							.then(_finished_following_fk.bind(table, columns, arrayOfThings))
-							.catch(_fault) :
-							$q.when(arrayOfThings);
+						if (_.size(promises) > 0) {
+							//console.group();
+
+							return $q.all(promises)
+								.then(_finished_following_fk.bind(table, columns, arrayOfThings))
+								.catch(_fault);
+						} else {
+							return $q.when(arrayOfThings);
+						}
+
 					} else {
-						$q.when(arrayOfThings);
+						return $q.when(arrayOfThings);
+					}
+
+				}
+
+				/*
+				 *	### relationships
+				 *
+				 *	This property controls operations that require cascadeing
+				 *	deletes or reads.
+				 *
+				 *	*Prototypical entry in the array of relationships.*
+				 *
+				 *	```json
+				 *	{
+				 *		"column": "ID",
+				 *		"refTable": "ReportBidItemAttributes",
+				 *		"refColumn": "ReportBidItemValueID",
+				 *		"cascadeDeletes": true,
+				 *		"followOnRead": true,
+				 *		"pivotMetaDataResults": true
+				 *		"sort": {"column": "Order", "dir", "asc"}
+				 *	}
+				 *	```
+				 *	#### Properties
+				 *
+				 *	|Name|Type|Description|
+				 *	|----|----|-----------|
+				 *	|column|String|The name of the column in the host table that is to be looked up in the `refTable`.|
+				 *	|refTable|String|Table that contains the related table.|
+				 *	|refColumn|String|Name of the column that contains the data to match value in the host table, pointed to by `column`.
+				 *	|cascadeDeletes|Boolean|When true, indicates that all related row should be delete when the host row is deleted.|
+				 *	|followOnRead|Boolean|Populated the relationship on the host record when read a host record.  NOTE: you must set the `refColumn` to `noFollow: true` on the foreigh key configuration, when this property is set to true|
+				 *	|sort|Object|Specifies the column and direction to sort by.|
+				 */
+				function _followOneToManyRelations(arrayOfThings) {
+
+					//console.log("new call to follow relations for", table.noInfoPath.entityName);
+
+					var promises = {},
+						allKeys = {},
+						queue = [],
+						columns = table.noInfoPath.relationships || [];
+
+					if (columns.length > 0) {
+						// console.log("processing relations");
+						for (var c in columns) {
+							var col = columns[c],
+								keys = _.compact(_.pluck(arrayOfThings, col.column)); //need to remove falsey values
+
+
+							if (!col.followOnRead) continue;
+
+
+							if (!allKeys[col.refTable]) {
+								allKeys[col.refTable] = {
+									col: col,
+									keys: []
+								};
+							}
+
+							// group keys by ref table
+							allKeys[col.refTable].keys = allKeys[col.refTable].keys.concat(keys);
+							console.log("Following relation for", table.noInfoPath.entityName, col.refTable, col.column, allKeys[col.refTable].keys.join());
+							//promises[col.refTable] = _expand(col, keys);
+						}
+
+						for (var k in allKeys) {
+							var keys2 = allKeys[k];
+							//Need to call read without follow flag.
+							promises[k] = _expand(keys2.col, keys2.keys);
+						}
+
+						var p = _.size(promises) > 0 ?
+							$q.all(promises)
+							.then(function (table, columns, arrayOfThings, data) {
+								//console.log(data);
+								for (var t = 0; t < arrayOfThings.length; t++) {
+									var thing = arrayOfThings[t];
+
+									for (var c = 0; c < columns.length; c++) {
+										var col = columns[c],
+											filter = {},
+											values;
+
+										filter[col.refColumn] = thing[col.column];
+
+										values = _.filter(data[col.refTable], filter);
+										if (col.sort) {
+											values = _sort([col.sort], values);
+										}
+
+										if (col.pivotMetaDataResults) {
+											thing.metadata = {};
+											for (var v = 0; v < values.length; v++) {
+												var value = values[v],
+													meta = value.MetaDataDefinitionID;
+
+												if (angular.isObject(value.Value)) {
+													value = value.Value[meta.TextField];
+												} else {
+													value = value.Value;
+												}
+												thing.metadata[meta.Name] = value;
+											}
+										} else {
+											thing[col.refTable] = values;
+										}
+									}
+
+
+								}
+								return arrayOfThings;
+							}.bind(null, table, columns, arrayOfThings))
+							.catch(_fault) : $q.when(arrayOfThings);
+						return p;
+					} else {
+						//console.log("no relationships to process for", table.noInfoPath.entityName);
+						return $q.when(arrayOfThings);
 					}
 
 				}
@@ -5891,18 +6103,18 @@ var GloboTest = {};
 						noEntity = ctx.table.noInfoPath,
 						columns = noEntity.columns;
 
-					for(var colName in columns) {
+					for (var colName in columns) {
 						var col = columns[colName];
 
-						if(col.followMetaDataKeys) {
-							for(var i = 0; i < arrayOfThings.length; i++) {
+						if (col.followMetaDataKeys) {
+							for (var i = 0; i < arrayOfThings.length; i++) {
 								var thing = arrayOfThings[i],
 									meta = thing.MetaDataDefinitionID,
 									filters;
 
 								//Only folow lookup columns.
-								if(meta.InputType === "combobox") {
-									if(!!thing[colName]) {
+								if (meta.InputType === "combobox") {
+									if (!!thing[colName]) {
 										filters = new noInfoPath.data.NoFilters();
 										filters.quickAdd(meta.ValueField, "eq", thing[colName]);
 
@@ -5934,23 +6146,169 @@ var GloboTest = {};
 
 					_page(page, results);
 
-					//console.log(this, results.paged);
+					//console.log("_finish noRead for", table.noInfoPath.entityName);
 
+					//if(!nogroup) console.groupEnd();
 					resolve(results);
-					// collection.toArray()
-					// 	.then(_followRelations.bind(table, table))
-					// 	.then(_finish_expand.bind(null, columns, arrayOfThings, refData))
-					// 	.then(resolve)
-					// 	.catch(reject);
+
 
 				}
 
-				for(var ai in arguments) {
+
+
+				for (var ai in arguments) {
 					var arg = arguments[ai];
 
 					//success and error must always be first, then
-					if(angular.isObject(arg) || typeof (arg) === "boolean") {
-						switch(arg.__type) {
+					if (angular.isObject(arg) || typeof (arg) === "boolean") {
+						switch (arg.__type) {
+						case "NoFilters":
+							filters = arg;
+							break;
+						case "NoSort":
+							sort = arg;
+							break;
+						case "NoPage":
+							page = arg;
+							break;
+						default:
+							if (typeof (arg) === "boolean") {
+								follow = arg;
+							}
+
+							if (angular.isNumber(arg)) {
+								nogroup = !!arg;
+							}
+						}
+					}
+
+				}
+
+				var ctx = {
+					table: table,
+					filters: filters,
+					page: page,
+					sort: sort
+				};
+
+				return $q(function (resolve, reject) {
+					//if(!nogroup) console.group();
+					//console.log("starting noRead for", table.noInfoPath.entityName);
+					var collection,
+						data,
+						promise;
+
+					try {
+						collection = _filter(filters, table);
+
+						collection.toArray()
+							.then(_followRelations.bind(ctx, follow))
+							.then(_followOneToManyRelations.bind(ctx))
+							.then(_followMetaData.bind(ctx, ctx))
+							.then(_finish.bind(ctx, resolve, reject))
+							.catch(_fault.bind(ctx, ctx, reject));
+						//.then(_finish(collection, table, resolve, reject));
+
+					} catch (err) {
+						console.error("NoRead_new", err);
+						reject(err);
+					}
+
+					//_sort(table, sort, collection);
+
+					//_page(page, collection);
+
+					//_finish(collection, table, resolve, reject);
+
+				});
+			}
+
+			function NoRead_basic() {
+				var table = this,
+					aliases = table.noInfoPath.parentSchema.config.tableAliases || {},
+					filters, sort, page, follow = true,
+					exclusions = table.noInfoPath.parentSchema.config && table.noInfoPath.parentSchema.config.followExceptions ? table.noInfoPath.parentSchema.config.followExceptions : [],
+					nogroup, options;
+
+				function _filter(filters, table) {
+					var collection;
+
+					function _logicCB(filter, ex, value) {
+						var val = noInfoPath.getItem(value, filter.column),
+							op = compareOps[filterOps[ex.operator]],
+							ok = op ? op(val, ex.value) : false;
+
+						return ok;
+					}
+
+					function _filterNormal(fi, filter, ex) {
+
+						var where, evaluator, logic;
+
+						try {
+
+
+							if (fi === 0) {
+								//When `fi` is 0 create the WhereClause, extract the evaluator
+								//that will be used to create a collection based on the filter.
+								where = table.where(filter.column);
+
+								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
+								if (table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
+									evaluator = where[indexedOperators[ex.operator]];
+									collection = evaluator.call(where, ex.value);
+								} else {
+									collection = table.toCollection();
+								}
+
+								logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
+							} else {
+								// logic = filters.length > 1 ? collection[filter.logic].bind(collection) : undefined;
+								if (filter.logic) {
+									logic = collection[filter.logic].bind(collection);
+									collection = logic(_logicCB.bind(null, filter, ex));
+								}
+
+							}
+						} catch (err) {
+							throw {
+								error: err,
+								collection: collection,
+								arguments: [fi, filter, ex]
+							};
+						}
+					}
+
+					function _filterCompound(fi, filter, ex) {
+						console.log("Compound", fi, filter, ex);
+					}
+
+					if (!!filters) {
+						for (var fi = 0; fi < filters.length; fi++) {
+							var filter = filters[fi],
+								ex = filter.filters[0];
+
+							// if(noInfoPath.isCompoundFilter(filter.column)){
+							// 	_filterCompound(fi, filter, ex);
+							// }else{
+							_filterNormal(fi, filter, ex);
+							// }
+						}
+						//More indexed filters
+					} else {
+						collection = table.toCollection();
+					}
+
+					return collection;
+				}
+
+
+				for (var ai in arguments) {
+					var arg = arguments[ai];
+
+					//success and error must always be first, then
+					if (angular.isObject(arg) || typeof (arg) === "boolean") {
+						switch (arg.__type) {
 							case "NoFilters":
 								filters = arg;
 								break;
@@ -5960,13 +6318,11 @@ var GloboTest = {};
 							case "NoPage":
 								page = arg;
 								break;
-							default:
-								if(typeof (arg) === "boolean") {
-									follow = arg;
-								}
+							case "NoReadOptions":
+								options = arg;
+								break;
 						}
 					}
-
 				}
 
 				var ctx = {
@@ -5985,27 +6341,146 @@ var GloboTest = {};
 						collection = _filter(filters, table);
 
 						collection.toArray()
-							.then(_followRelations.bind(ctx, follow))
-							.then(_followMetaData.bind(ctx, ctx))
-							.then(_finish.bind(ctx, resolve, reject))
-							.catch(_fault.bind(ctx, ctx, reject));
-						//.then(_finish(collection, table, resolve, reject));
+							.then(resolve)
+							.catch(reject);
 
-					} catch(err) {
-						console.error("NoRead_new", err);
+					} catch (err) {
+						console.error("NoRead_basic", err);
 						reject(err);
 					}
 
-					//_sort(table, sort, collection);
-
-					//_page(page, collection);
-
-					//_finish(collection, table, resolve, reject);
-
 				});
+
 			}
 
-			db.Table.prototype.noRead = NoRead_new;
+			function NoRead_scripted(filter, scriptName) {
+				var table = this,
+					script = table.noInfoPath.scripts[scriptName];
+
+				function _sort(sorts, arrayOfThings) {
+					function _compare(s, a, b) {
+						var aval = noInfoPath.getItem(a, s.column),
+							bval = noInfoPath.getItem(b, s.column);
+
+
+						if (s.dir === "desc") {
+							if (aval < bval) {
+								return 1;
+							}
+							if (aval > bval) {
+								return -1;
+							}
+						} else {
+							if (aval > bval) {
+								return 1;
+							}
+							if (aval < bval) {
+								return -1;
+							}
+						}
+
+						// a must be equal to b
+						return 0;
+
+					}
+
+					if (sorts) {
+						for (var s = 0; s < sorts.length; s++) {
+							var sort = sorts[s];
+
+							arrayOfThings = arrayOfThings.sort(_compare.bind(null, sort));
+						}
+					}
+
+					return arrayOfThings;
+				}
+
+				function _read(resolver, rootData) {
+					var refTable = db[resolver.refTable],
+						keyValues = _.compact(_.pluck(rootData, resolver.column)),
+						filters = new noInfoPath.data.NoFilters()
+						;
+
+					filters.quickAdd(resolver.refColumn, "in", keyValues);
+
+					return refTable.__read(filters, new noInfoPath.data.NoReadOptions())
+						.then(function(results){
+							rootData.forEach(function(datum){
+								var filter = {};
+
+								filter[resolver.refColumn] = datum[resolver.column];
+
+								switch(resolver.type) {
+									case "foreignKey":
+										datum[resolver.column] = _.find(results, filter);
+										break;
+
+									case "relation":
+										if(resolver.sort) {
+											datum[resolver.refTable] = _sort(resolver.sort, _.select(results, filter));
+										} else {
+											datum[resolver.refTable] = _.select(results, filter);
+										}
+										break;
+								}
+
+							});
+
+							return {resolver: resolver, data: results};
+						});
+				}
+
+				function _continue(result) {
+					//console.log(parentResolver.refTable);
+					if(result.resolver.resolver) {
+						return _recurse(result.resolver.resolver, result.data);
+
+					} else {
+						return $q.when(result);
+					}
+				}
+
+				function _recurse(resolverArray, rootData) {
+					return $q(function(resolve, reject){
+
+						var promises = [];
+
+						resolverArray.forEach(function(resolver){
+							promises.push(_read(resolver, rootData)
+								.then(_continue));
+						});
+
+						$q.all(promises)
+							.then(resolve)
+							.catch(reject);
+					});
+				}
+
+				return $q(function (resolve, reject) {
+					var rootData;
+					console.log("Starting", table.noInfoPath.entityName);
+					table.__read(filter)
+						.then(function(data){
+							rootData = data;
+							return rootData;
+						})
+						.then(_recurse.bind(table, script))
+						.then(function(){
+							resolve(rootData);
+						})
+						.catch(reject);
+
+				});
+
+
+			}
+
+			db.Table.prototype.__read = NoRead_basic;
+
+			db.Table.prototype.noRead = NoRead_new; //NoRead_strategic;
+
+			db.Table.prototype.noReadScripted = NoRead_scripted;
+
 
 			db.WriteableTable.prototype.noUpdate = function (data, trans) {
 				var deferred = $q.defer(),
@@ -6044,63 +6519,67 @@ var GloboTest = {};
 				//noLogService.log("adding: ", _dexie.currentUser);
 				//noLogService.log(key);
 				function _deleteCachedFile(data, trans) {
-					if(table.noInfoPath.NoInfoPath_FileUploadCache) {
+					if (table.noInfoPath.NoInfoPath_FileUploadCache) {
 						return noLocalFileStorage.removeFromCache(data, trans);
-					}else {
+					} else {
 						return $q.when(data);
 					}
 				}
 
 				_dexie.transaction("rw", table, function () {
 
-					Dexie.currentTransaction.nosync = true;
+						Dexie.currentTransaction.nosync = true;
 
-					if(!!filters) {
-						//First filter will use where();
-						var filter = filters[0],
-							where = table.where(filter.column),
-							ex = filter.filters[0],
-							method = where[indexedOperators[ex.operator]];
+						if (!!filters) {
+							//First filter will use where();
+							var filter = filters[0],
+								where = table.where(filter.column),
+								ex = filter.filters[0],
+								method = where[indexedOperators[ex.operator]];
 
-						collection = method.call(where, ex.value);
+							collection = method.call(where, ex.value);
 
-						collection.delete()
-							.then(_deleteCachedFile.bind(null, data, trans))
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
-							.catch(_transactionFault.bind(null, deferred.reject));
+							collection.delete()
+								.then(_deleteCachedFile.bind(null, data, trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
+								.catch(_transactionFault.bind(null, deferred.reject));
 
-					} else {
-						table.delete(key)
-							.then(_deleteCachedFile.bind(null, data, trans))
-							.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
-							.catch(_transactionFault.bind(null, deferred.reject));
-					}
-				}.bind(null, data))
-				.then(angular.noop())
-				.catch(function (err) {
-					deferred.reject(err);
-				});
+						} else {
+							table.delete(key)
+								.then(_deleteCachedFile.bind(null, data, trans))
+								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
+								.catch(_transactionFault.bind(null, deferred.reject));
+						}
+					}.bind(null, data))
+					.then(angular.noop())
+					.catch(function (err) {
+						deferred.reject(err);
+					});
 
 				return deferred.promise;
 			};
 
 			db.WriteableTable.prototype.noDestroy = function (data, trans, filters) {
-
+				var table = this;
 
 				function _followRelations(tableSchema, rootDatum) {
-					var rootRelation = {schema: tableSchema, table: this, deletionKeys: [rootDatum[this.noInfoPath.primaryKey]]},
+					var rootRelation = {
+							schema: tableSchema,
+							table: table,
+							deletionKeys: [rootDatum[table.noInfoPath.primaryKey]]
+						},
 						relations = [rootRelation],
 						parentKeys = {};
 
 					parentKeys[rootRelation.schema.entityName] = rootRelation.deletionKeys;
 
 					function _flatten(parentSchema) {
-						for(var si=0; si < parentSchema.relationships.length; si++) {
+						for (var si = 0; si < parentSchema.relationships.length; si++) {
 							var relation = parentSchema.relationships[si],
 								ro = {
 									parent: parentSchema,
 									relation: relation,
-									schema: this.noInfoPath.parentSchema.entity(relation.refTable),
+									schema: table.noInfoPath.parentSchema.entity(relation.refTable),
 									table: db[relation.refTable],
 									deletionKeys: [],
 									fileKeys: []
@@ -6108,43 +6587,42 @@ var GloboTest = {};
 
 							relations.unshift(ro);
 
-							if(!!ro.schema.relationships) {
-								_flatten.call(this, ro.schema);
+							if (!!ro.schema.relationships) {
+								_flatten.call(table, ro.schema);
 							}
 
 						}
 					}
 
-					function _resolveOnToManyRelationship(deferred, childIndex){
+					function _resolveOnToManyRelationship(deferred, childIndex) {
 						var childRelation = relations[childIndex],
 							f = new noInfoPath.data.NoFilters();
 
-						if(childRelation) {
+						if (childRelation) {
 
-								f.quickAdd(childRelation.relation.refColumn, "in", parentKeys[childRelation.parent.entityName]);
+							f.quickAdd(childRelation.relation.refColumn, "in", parentKeys[childRelation.parent.entityName]);
 
-								//console.log(childRelation.parent.entityName, f.toSQL());
-								childRelation.table.noRead(f)
-									.then(function(data){
-										var keys = _.pluck(data, childRelation.schema.primaryKey);
-										if(childRelation.schema.relationships) parentKeys[childRelation.schema.entityName] = keys;
-										childRelation.deletionKeys = data;
+							//console.log(childRelation.parent.entityName, f.toSQL());
+							childRelation.table.noRead(f, 1)
+								.then(function (data) {
+									var keys = _.pluck(data, childRelation.schema.primaryKey);
+									if (childRelation.schema.relationships) parentKeys[childRelation.schema.entityName] = keys;
+									childRelation.deletionKeys = data;
 
-										if(childRelation.schema.NoInfoPath_FileUploadCache) {
-											childRelation.fileKeys = data;
+									if (childRelation.schema.NoInfoPath_FileUploadCache) {
+										childRelation.fileKeys = data;
 
-											console.log(childRelation.fileKeys);
-										}
+										console.log(childRelation.fileKeys);
+									}
 
-										_resolveOnToManyRelationship(deferred, childIndex - 1);
-									})
-									.catch(function(err){
-										console.error(err);
-									});
+									_resolveOnToManyRelationship(deferred, childIndex - 1);
+								})
+								.catch(function (err) {
+									console.error(err);
+								});
 
 						} else {
-							if(childIndex > -1)
-							{
+							if (childIndex > -1) {
 								deferred.reject("Something might have gone wrong @ index ", childIndex);
 							} else {
 								//console.log(childIndex, relations);
@@ -6163,12 +6641,12 @@ var GloboTest = {};
 								deleteData = {};
 
 							// deleteData[deleteTarget.schema.primaryKey] =
-							if(deleteTarget) {
+							if (deleteTarget) {
 								_recurseDeletions(deleteTarget)
-									.then(function(result){
-										_recurseRelations(curIndex  + 1);
+									.then(function (result) {
+										_recurseRelations(curIndex + 1);
 									})
-									.catch(function(err){
+									.catch(function (err) {
 										console.error(err);
 									});
 							} else {
@@ -6184,14 +6662,14 @@ var GloboTest = {};
 							function _recurse(curIndex) {
 								var deleteItem = deleteTarget.deletionKeys[curIndex];
 
-								if(deleteItem) {
+								if (deleteItem) {
 									//deleteItem[deleteTarget.schema.primaryKey] = key[deleteTarget.schema.primaryKey];
 
 									deleteTarget.table.__delete(deleteItem, trans)
-										.then(function(results){
+										.then(function (results) {
 											_recurse(curIndex + 1);
 										})
-										.catch(function(err){
+										.catch(function (err) {
 											deferred.reject(err);
 										});
 								} else {
@@ -6210,7 +6688,7 @@ var GloboTest = {};
 						return deferred.promise;
 					}
 
-					return $q(function(resolve, reject){
+					return $q(function (resolve, reject) {
 						var resolveOneToManyDeferred = $q.defer(),
 							resolveDeletes = $q.defer();
 
@@ -6218,9 +6696,9 @@ var GloboTest = {};
 
 						//console.log(relations);
 
-						if(relations.length < 2) throw "Error occured resolving deletion data.";
+						if (relations.length < 2) throw "Error occured resolving deletion data.";
 
-						_resolveOnToManyRelationship(resolveOneToManyDeferred, relations.length-2);
+						_resolveOnToManyRelationship(resolveOneToManyDeferred, relations.length - 2);
 
 						resolveOneToManyDeferred.promise
 							.then(_cascadeDeletes.bind(this))
@@ -6228,22 +6706,22 @@ var GloboTest = {};
 							.catch(reject);
 
 
-					}.bind(this));
+					}.bind(table));
 				}
 
-				function _execute(data, trans, filters){
-					if(!!this.noInfoPath.relationships) {
-						return _followRelations.call(this, this.noInfoPath, data);
+				function _execute(data, trans, filters) {
+					if (!!table.noInfoPath.relationships) {
+						return _followRelations.call(table, table.noInfoPath, data);
 					} else {
-						return this.__delete.call(this, data, trans, filters)
-							.catch(function(err){
+						return table.__delete.call(table, data, trans, filters)
+							.catch(function (err) {
 								console.error(err);
 							});
 					}
 
 				}
 
-				return _execute.call(this, data, trans, filters);
+				return _execute.call(table, data, trans, filters);
 			};
 
 			db.WriteableTable.prototype.noClear = function () {
@@ -6271,14 +6749,15 @@ var GloboTest = {};
 				return deferred.promise;
 			};
 
-			db.WriteableTable.prototype.noOne = function (query) {
+			db.WriteableTable.prototype.noOne = function (query, noReadOptions) {
+				//console.log("noReadOptions", noReadOptions);
 				var noFilters = noInfoPath.resolveID(query, this.noInfoPath);
 
-				return this.noRead(noFilters)
+				return this.noRead(noFilters, noReadOptions)
 					.then(function (resultset) {
 						var data;
 
-						if(resultset.length === 0) {
+						if (resultset.length === 0) {
 							//throw "noIndexedDb::noOne: Record Not Found";
 							return null;
 						} else {
@@ -6310,7 +6789,7 @@ var GloboTest = {};
 
 
 					function _next() {
-						if(currentItem < data.length) {
+						if (currentItem < data.length) {
 							var datum = data[currentItem];
 
 							table.add(datum)
@@ -6352,7 +6831,7 @@ var GloboTest = {};
 				function checkForExisting() {
 					var id = noChange.changedPKID;
 
-					return $q(function(resolve, reject){
+					return $q(function (resolve, reject) {
 						THIS.noOne(id)
 							.then(resolve)
 							.catch(function (err) {
@@ -6360,12 +6839,12 @@ var GloboTest = {};
 								resolve(false);
 								return false;
 							});
-					})
+					});
 
 				}
 
 				function isSame(data, changes) {
-					if(!!data) {
+					if (!!data) {
 						var
 							localDate = new Date(data.ModifiedDate),
 							remoteDate = new Date(changes.ModifiedDate),
@@ -6386,7 +6865,7 @@ var GloboTest = {};
 						"U": THIS.noUpdate.bind(THIS)
 					};
 					//console.log(data, changes);
-					if(isSame(data, changes.values)) {
+					if (isSame(data, changes.values)) {
 						//console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
 						changes.isSame = true;
 						resolve(changes);
@@ -6414,31 +6893,31 @@ var GloboTest = {};
 						.then(function (data) {
 							//console.log("checkForExisting", !!data);
 							// if(data) {
-							switch(noChange.operation) {
-								case "D":
-									var t = {};
+							switch (noChange.operation) {
+							case "D":
+								var t = {};
 
-									t[THIS.noInfoPath.primaryKey] = noChange.changedPKID;
+								t[THIS.noInfoPath.primaryKey] = noChange.changedPKID;
 
-									THIS.noDestroy(t)
-										.then(ok)
-										.catch(fault);
-									break;
+								THIS.noDestroy(t)
+									.then(ok)
+									.catch(fault);
+								break;
 
-								case "I":
-									if(!data) {
-										save(noChange, data, ok, fault)
-									}else{
-										resolve(data);
-									}
-									break;
-								case "U":
-									if(data) {
-										save(noChange, data, ok, fault)
-									}else{
-										resolve(data);
-									}
-									break;
+							case "I":
+								if (!data) {
+									save(noChange, data, ok, fault);
+								} else {
+									resolve(data);
+								}
+								break;
+							case "U":
+								if (data) {
+									save(noChange, data, ok, fault);
+								} else {
+									resolve(data);
+								}
+								break;
 							}
 							// }else{
 							// 	resolve({});
@@ -6450,18 +6929,17 @@ var GloboTest = {};
 
 			db.WriteableTable.prototype.hasPrimaryKeys = function (keyList) {
 				return this.where(":id").anyOfIgnoreCase(keyList).primaryKeys();
-			}
-
+			};
 
 			function _unfollow_data(table, data) {
 				var foreignKeys = table.noInfoPath.foreignKeys || {};
 
-				for(var fks in foreignKeys) {
+				for (var fks in foreignKeys) {
 
 					var fk = foreignKeys[fks],
 						datum = data[fk.column];
 
-					if(datum) {
+					if (datum) {
 						data[fk.column] = datum[fk.refColumn] || datum;
 					}
 				}
@@ -6474,7 +6952,7 @@ var GloboTest = {};
 		this.destroyDb = function (databaseName) {
 			var deferred = $q.defer();
 			var db = _noIndexedDb.getDatabase(databaseName);
-			if(db) {
+			if (db) {
 				db.delete()
 					.then(function (res) {
 						delete $rootScope["noIndexedDb_" + databaseName];
@@ -6492,7 +6970,7 @@ var GloboTest = {};
 		 *	This is a contructor function used by Dexie when creating and returning data objects.
 		 */
 		function noDatum() {
-			noLogService.log("noDatum::constructor"); //NOTE: This never seems to get called.
+			console.log("noDatum::constructor"); //NOTE: This never seems to get called.
 		}
 
 		Dexie.addons.push(noDexie);
@@ -6547,6 +7025,7 @@ var GloboTest = {};
 	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
+			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
 			entity = db[dsConfig.entityName],
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
@@ -6587,8 +7066,13 @@ var GloboTest = {};
 					params.skip = config.skip;
 				}
 
-				var x = queryParser.parse(params);
-					if(follow === false) x.push(false);
+				var x = queryParser.parse(params) || [];
+				if(!angular.isUndefined(follow)) {
+					noReadOptions.followForeignKeys = follow;
+				}
+
+
+				x.push(noReadOptions);
 
 				return entity.noRead.apply(entity, x)
 					.then(function (data) {
@@ -6663,6 +7147,7 @@ var GloboTest = {};
 					params[1] = config.primaryKey;
 				} else {
 					params[0] = filterValues;
+					params[1] = noReadOptions;
 				}
 
 				return entity.noOne.apply(entity, params)
@@ -7674,7 +8159,7 @@ var GloboTest = {};
 					return;
 				}
 
-				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type)
+				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type);
 
 				fileSystem.root.getFile(path, {
 					create: true
@@ -7704,6 +8189,42 @@ var GloboTest = {};
 
         }
         this.read = _read;
+
+		function _getFileUrls(docs, resolver) {
+			var promises = [];
+
+
+
+			for(var d=0; d < docs.length; d++) {
+
+				var doc = docs[d],
+					fileId = null,
+					useDoc = false;
+
+				if(angular.isFunction(resolver)) {
+					doc = resolver(doc);
+					fileId = doc.FileID;
+				} else if(angular.isObject(resolver)) {
+					useDoc = noInfoPath.getItem(doc, resolver.key) === resolver.value;
+					if(useDoc) {
+						fileId = doc.FileID;
+					}
+				} else {
+					fileId = doc.FileID;
+				}
+
+				if(fileId) {
+					promises.push(_toUrl(fileId)
+						.then(function(doc, results){
+							return {url: results ? results.url : "", name: doc.name};
+						}.bind(null, docs[d])));
+
+				}
+			}
+
+			return $q.all(promises);
+		}
+		this.getFileUrls = _getFileUrls;
 
 		function _toUrl(fileObj) {
 			return noLocalFileStorage.get(angular.isObject(fileObj) ? fileObj.FileID : fileObj)
@@ -7845,11 +8366,11 @@ var GloboTest = {};
 
 		this.fromExtention = function(ext) {
 			return mimeTypes[ext];
-		}
+		};
 
 		this.fromMimeType = function(mimeType) {
 			return mimeTypesInverted[mimeType];
-		}
+		};
     }
 
 
@@ -7872,11 +8393,12 @@ var GloboTest = {};
 					values = {};
 				keys.forEach(function (k) {
 					var haveSomething = !!data[k],
+						notAnArray = !angular.isArray(data[k]),
 						haveModelValue = haveSomething && data[k].hasOwnProperty("$modelValue");
 
 					if(haveModelValue) {
 						values[k] = data[k].$modelValue;
-					} else if(haveSomething) {
+					} else if(haveSomething && notAnArray) {
 						values[k] = data[k];
 					} else {
 						values[k] = null;
@@ -7916,4 +8438,92 @@ var GloboTest = {};
 				}
 			}
 		}]);
+})(angular);
+
+(function (angular, undefined) {
+	"use strict";
+
+	/*
+	*	{
+	*		"dataProvider": "noIndexedDb",
+	*		"databaseName": "rmEFR2",
+	*		"entityName": "ReportBidItemValues",
+	*		"primaryKey": "ID"
+	*	}
+	*/
+	function MetaDataService($injector, $q, noDataSource, _) {
+
+		function _followMetaData(cfg, arrayOfThings, pivotMetaDataName) {
+			var dprov = $injector.get(cfg.dataProvider),
+				db = dprov.getDatabase(cfg.databaseName),
+				promises = {},
+				keys = {};
+
+			arrayOfThings.forEach(function(thing){
+				thing[pivotMetaDataName].forEach(function(metaDataItem){
+					var meta = metaDataItem.MetaDataDefinitionID,
+						filters;
+
+						//Only need follow lookup columns.
+						if (meta.InputType === "combobox") {
+							if (!!metaDataItem.Value) {
+								filters = new noInfoPath.data.NoFilters();
+								filters.quickAdd(meta.ValueField, "eq", metaDataItem.Value);
+
+								//use the current `db` for looking up the meta data.
+								promises[metaDataItem.Value] = db[meta.ListSource].noOne(filters);
+							}
+						}
+				});
+			});
+
+			return _.size(promises) > 0 ?
+				$q.all(promises)
+					.then(function(refData){
+						arrayOfThings.forEach(function(item){
+							item[pivotMetaDataName].forEach(function(metaItem){
+								var valueCadidate = refData[metaItem.Value];
+								metaItem.Value = valueCadidate ? valueCadidate[metaItem.MetaDataDefinitionID.TextField] : metaItem.Value;
+							});
+						});
+
+						if(pivotMetaDataName) {
+							return _pivotMetaData(arrayOfThings, pivotMetaDataName);
+						} else {
+							return arrayOfThings;
+						}
+					})
+					.catch(function(err){
+						console.error(err);
+					}) :
+				$q.when(arrayOfThings);
+
+		}
+		this.follow = _followMetaData;
+
+		function _pivotMetaData(arrayOfThings, metaDataName){
+			arrayOfThings.forEach(function(thing){
+				thing.metadata = {};
+				thing[metaDataName].forEach(function(value){
+					var meta = value.MetaDataDefinitionID;
+
+					if (angular.isObject(value.Value)) {
+						value = value.Value[meta.TextField];
+					} else {
+						value = value.Value;
+					}
+					thing.metadata[meta.Name] = value;
+				});
+
+			});
+
+			return arrayOfThings;
+		}
+
+	}
+
+	angular.module("noinfopath.data")
+		.service("noMetaData", ["$injector", "$q", "noDataSource", "lodash", MetaDataService])
+		;
+
 })(angular);

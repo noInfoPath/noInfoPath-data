@@ -20,6 +20,7 @@ Adds a new record to the database. If the primary key is provided in that will b
 ##### Parameters
 
 |Name|Type|Description|
+|----|----|-----------|
 |data|Object|An object contains the properties that match the schema for the underlying WriteableTable.
 
 ##### Returns
@@ -33,7 +34,7 @@ for filtering, sorting and paging of data.
 
 ##### Parameters
 
-|Name|Type|Descriptions|
+|Name|Type|Description|
 |----|----|------------|
 |filters|NoFilters|(Optional) Any `NofilterExpression` objects that need to be applied to the the current table.|
 |sort|NoSort|(Optional) Any `NoSortExpression` objects that need to be applied to the result set. The will be applied in the order supplied.|
@@ -159,6 +160,35 @@ Maps to the Dexie.Table.get method.
 
 
 ### \_extendDexieTables
+
+### relationships
+
+This property controls operations that require cascadeing
+deletes or reads.
+
+*Prototypical entry in the array of relationships.*
+
+```json
+{
+	"column": "ID",
+	"refTable": "ReportBidItemAttributes",
+	"refColumn": "ReportBidItemValueID",
+	"cascadeDeletes": true,
+	"followOnRead": true,
+	"pivotMetaDataResults": true
+	"sort": {"column": "Order", "dir", "asc"}
+}
+```
+#### Properties
+
+|Name|Type|Description|
+|----|----|-----------|
+|column|String|The name of the column in the host table that is to be looked up in the `refTable`.|
+|refTable|String|Table that contains the related table.|
+|refColumn|String|Name of the column that contains the data to match value in the host table, pointed to by `column`.
+|cascadeDeletes|Boolean|When true, indicates that all related row should be delete when the host row is deleted.|
+|followOnRead|Boolean|Populated the relationship on the host record when read a host record.  NOTE: you must set the `refColumn` to `noFollow: true` on the foreigh key configuration, when this property is set to true|
+|sort|Object|Specifies the column and direction to sort by.|
 
 ### followMetaDataKeys
 

@@ -11,11 +11,12 @@
 					values = {};
 				keys.forEach(function (k) {
 					var haveSomething = !!data[k],
+						notAnArray = !angular.isArray(data[k]),
 						haveModelValue = haveSomething && data[k].hasOwnProperty("$modelValue");
 
 					if(haveModelValue) {
 						values[k] = data[k].$modelValue;
-					} else if(haveSomething) {
+					} else if(haveSomething && notAnArray) {
 						values[k] = data[k];
 					} else {
 						values[k] = null;

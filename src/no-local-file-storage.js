@@ -62,7 +62,7 @@
 					return;
 				}
 
-				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type)
+				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type);
 
 				fileSystem.root.getFile(path, {
 					create: true
@@ -92,6 +92,42 @@
 
         }
         this.read = _read;
+
+		function _getFileUrls(docs, resolver) {
+			var promises = [];
+
+
+
+			for(var d=0; d < docs.length; d++) {
+
+				var doc = docs[d],
+					fileId = null,
+					useDoc = false;
+
+				if(angular.isFunction(resolver)) {
+					doc = resolver(doc);
+					fileId = doc.FileID;
+				} else if(angular.isObject(resolver)) {
+					useDoc = noInfoPath.getItem(doc, resolver.key) === resolver.value;
+					if(useDoc) {
+						fileId = doc.FileID;
+					}
+				} else {
+					fileId = doc.FileID;
+				}
+
+				if(fileId) {
+					promises.push(_toUrl(fileId)
+						.then(function(doc, results){
+							return {url: results ? results.url : "", name: doc.name};
+						}.bind(null, docs[d])));
+
+				}
+			}
+
+			return $q.all(promises);
+		}
+		this.getFileUrls = _getFileUrls;
 
 		function _toUrl(fileObj) {
 			return noLocalFileStorage.get(angular.isObject(fileObj) ? fileObj.FileID : fileObj)
@@ -233,11 +269,11 @@
 
 		this.fromExtention = function(ext) {
 			return mimeTypes[ext];
-		}
+		};
 
 		this.fromMimeType = function(mimeType) {
 			return mimeTypesInverted[mimeType];
-		}
+		};
     }
 
 
