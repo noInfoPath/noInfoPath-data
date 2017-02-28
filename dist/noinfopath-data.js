@@ -1098,8 +1098,7 @@
 				} else {
 					_total = _raw.length;
 				}
-
-			} else {
+			}  else {
 				_raw = arrayOfThings;
 				_total = _raw.length;
 			}
@@ -1122,9 +1121,10 @@
 			},
 			"paged": {
 				"get": function () {
-					var o = [];
+					var s = !angular.isArray(_page) ? [_page] : _page,
+						o = [];
 
-					_page.forEach(function(e, i){
+					s.forEach(function(e, i){
 						o[i] = e;
 					});
 
@@ -8203,7 +8203,7 @@ var GloboTest = {};
 
 				if(angular.isFunction(resolver)) {
 					doc = resolver(doc);
-					fileId = doc.FileID;
+					fileId = doc ? doc.FileID : "";
 				} else if(angular.isObject(resolver)) {
 					useDoc = noInfoPath.getItem(doc, resolver.key) === resolver.value;
 					if(useDoc) {
@@ -8213,7 +8213,7 @@ var GloboTest = {};
 					fileId = doc.FileID;
 				}
 
-				if(fileId) {
+				if(!!fileId) {
 					promises.push(_toUrl(fileId)
 						.then(function(doc, results){
 							return {url: results ? results.url : "", name: doc.name};

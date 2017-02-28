@@ -856,8 +856,7 @@
 				} else {
 					_total = _raw.length;
 				}
-
-			} else {
+			}  else {
 				_raw = arrayOfThings;
 				_total = _raw.length;
 			}
@@ -880,9 +879,10 @@
 			},
 			"paged": {
 				"get": function () {
-					var o = [];
+					var s = !angular.isArray(_page) ? [_page] : _page,
+						o = [];
 
-					_page.forEach(function(e, i){
+					s.forEach(function(e, i){
 						o[i] = e;
 					});
 
