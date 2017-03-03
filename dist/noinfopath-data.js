@@ -1164,6 +1164,40 @@
 		this.deepFollowRelations = ops.deepFollowRelations || false;
 	}
 
+	function NoDataModel() {
+		var _pristine = {};
+		Object.defineProperty(this, "pristine", {
+			get: function(){
+				return _pristine;
+			}
+		});
+
+		var _data = {};
+		Object.defineProperty(this, "data", {
+			get: function(){
+				return _data;
+			}
+		});
+
+		function _setData(data){
+			_data = data;
+			_pristine = angular.copy(data);
+		}
+
+		this.undo = function() {
+			_data = angular.copy(_pristine);
+		};
+
+		this.clean = function() {
+			//TODO: Add noParameterParser.parse code here.
+		};
+
+		this.update = function() {
+			//TODO: Add noParameterParser.update code here.
+		};
+	}
+
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
@@ -1174,7 +1208,8 @@
 		NoSort: NoSort,
 		NoPage: NoPage,
 		NoResults: NoResults,
-		NoReadOptions: NoReadOptions
+		NoReadOptions: NoReadOptions,
+		NoDataModel: NoDataModel
 	};
 
 	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
