@@ -1155,7 +1155,7 @@
 					var data;
 
 					if(resultset.length === 0) {
-						data = {};
+						data = null;
 					} else {
 						data = resultset[0];
 					}
