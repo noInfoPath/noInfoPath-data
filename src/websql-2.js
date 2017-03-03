@@ -472,9 +472,9 @@
 		/**
 		 *   Data is scrubed for undesirable data artifacts such as `undefined`.
 		 */
-		function scrubData(data) {
+		function scrubData(data, keepRecordStats) {
 			var scrubbed = {},
-				ignore = ["ModifiedBy", "ModifiedDate", "CreatedBy", "DateCreated"];
+				ignore = keepRecordStats ? [] : ["ModifiedBy", "ModifiedDate", "CreatedBy", "DateCreated"];
 
 			for(var ck in _entityConfig.columns) {
 				var col = _entityConfig.columns[ck],
@@ -684,8 +684,9 @@
 				data[_entityConfig.primaryKey] = noInfoPath.createUUID();
 			}
 
+			data = scrubData(data, !noTransaction);
+			
 			if(noTransaction) {
-				data = scrubData(data);
 
 				/*
 				 *
@@ -991,9 +992,9 @@
 
 			noFilters.quickAdd(_entityConfig.primaryKey, "eq", id);
 
+			data = scrubData(data, !noTransaction);
+			
 			if(noTransaction) {
-
-				data = scrubData(data);
 
 				/*
 				 *	When updating a record in the WebSQL DB all tables are expected to have

@@ -403,9 +403,9 @@
 
 										//TODO: see where and when this is used.
 										if(scope[sk]){
-											noParameterParser.update(datum, scope[sk]);
+											noParameterParser.update(data, scope[sk]);
 
-											pure = noParameterParser.parse(scope[sk]);
+											var pure = noParameterParser.parse(scope[sk]);
 
 											if(curEntity.cacheOnScope) {
 												scope[curEntity.entityName] = pure;
