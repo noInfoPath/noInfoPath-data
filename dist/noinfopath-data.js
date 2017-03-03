@@ -1578,22 +1578,26 @@
 		};
 
 		this.setItem = function (k, v) {
-			if(v) {
-				_store.setItem(k, angular.toJson(v));
+			if(angular.isObject(v)) {
+				_store.setItem(k, JSON.stringify(v));
 			} else {
-				_store.setItem(k, undefined);
+				_store.setItem(k, v);
 			}
 
 		};
 
 		this.getItem = function (k) {
-			var x = _store.getItem(k);
+			var x = _store.getItem(k), o;
 
-			if(x === "undefined") {
-				return undefined;
-			} else {
-				return angular.fromJson(x);
+			if(x) {
+				try{
+					o = angular.fromJson(x);
+				}catch(ex) {
+					o = x;
+				}
 			}
+			
+			return o;
 
 		};
 

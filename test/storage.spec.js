@@ -48,7 +48,11 @@ describe("Testing noStorage", function () {
 
 				it("should setItem without errors", function () {
 					store.setItem("Test", "Hello World");
-				})
+				});
+
+				it("should setItem JSON as string", function () {
+					store.setItem("TestObj", {"test", "Hello World"});
+				});
 			});
 
 			describe("Testing getItem method", function () {
@@ -61,8 +65,23 @@ describe("Testing noStorage", function () {
 					var actual = store.getItem("Test");
 					expect(actual)
 						.toBe("Hello World");
-				})
+				});
+
+				it("should getItem by key", function () {
+					var actual = store.getItem("Test");
+					expect(actual)
+						.toBe("Hello World");
+				});
+
+				it("should getItem as object by key", function () {
+					var actual = store.getItem("TestObj");
+					expect(actual)
+						.toBe("Hello World");
+
+					expect(angular.isObject(actual));
+				});
 			});
+
 
 			describe("Testing key method", function () {
 				it("should exist on store", function () {
