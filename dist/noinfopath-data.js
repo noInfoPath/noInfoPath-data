@@ -1193,22 +1193,16 @@
 	 *
 	 *	##### data
 	 *
-	 *	An object that will be saved in the NoDataModel. Th
+	 *	Returns an object that is saved within the NoDataModel. 
 	 *
-	 *	```js
-	 *	{
-	 *		PersonID: "6a2bfe0f-29da-440d-e5b9-62262ac0345c",
-	 *		PersonFirstName: "Foo",
-	 *		PersonLastName: "Bar",
-	 *		PersonAge: 25,
-	 *		Mother: {
-	 *			PersonID: "54dd9168-0111-43e3-9db8-77dc33169b41",
-	 *			PersonFirstName: "Bridget",
-	 *			PersonLastName: "Bar",
-	 *			PersonAge: 50
-	 *    }
-	 *  }
-	 *  ```
+	 *	##### pristine
+	 *
+	 *	Returns an object that is the pristine version of the data. This enables data rollbacks using the undo() method.
+	 *
+	 *	##### __type
+	 *
+	 *	Returns a string that explains that this is an object that was created by the NoDataModel class. Always returns "NoDataModel".
+	 *
 	 *
 	 *	#### Methods
 	 *
@@ -1248,6 +1242,25 @@
 	 *	|Name|Type|Description|
 	 *	|----|----|-----------|
 	 *	|data|Object|An object that will be saved within NoDataModel|
+	 *
+	 *	data
+	 *
+	 *	An object that is to be saved within the NoDataModel object. This data does not need to be flat.
+	 *
+	 *	```js
+	 *	{
+	 *		PersonID: "6a2bfe0f-29da-440d-e5b9-62262ac0345c",
+	 *		PersonFirstName: "Foo",
+	 *		PersonLastName: "Bar",
+	 *		PersonAge: 25,
+	 *		Mother: {
+	 *			PersonID: "54dd9168-0111-43e3-9db8-77dc33169b41",
+	 *			PersonFirstName: "Bridget",
+	 *			PersonLastName: "Bar",
+	 *			PersonAge: 50
+	 *    }
+	 *  }
+	 *  ```
 	 *
 	 *	**Returns**
 	 *	
