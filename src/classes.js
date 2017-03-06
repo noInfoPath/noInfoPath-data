@@ -951,7 +951,7 @@
 		};
 
 		this.update = function() {
-			var temp = {},
+			var temp = {};
 
 			noParameterParser.update(_data, temp);
 
