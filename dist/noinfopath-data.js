@@ -242,11 +242,18 @@
 
 //classes.js
 /*
- * ## @class NoFilterExpression : Object
+ * NoInfoPath Data Classes
+ * -----------------------
  *
+ * TODO: Description
+ *
+ * |
+ *
+ * ### @class NoFilterExpression : Object
+ *	
  * Represents an single filter expression that can be applied to an `IDBObjectStore`.
  *
- * ### Constructor
+ * #### Constructor
  *
  * NoFilterExpression(column, operator, value [, logic])
  *
@@ -257,7 +264,7 @@
  * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
  * |logic|String|(Optional) One of the following values: `and`, `or`.|
  *
- * ### Properties
+ * #### Properties
  *
  * |Name|Type|Description|
  * |----|----|------------|
@@ -1111,6 +1118,11 @@
 		_page = _raw;
 
 		Object.defineProperties(arr, {
+			"__type": {
+				"get": function() {
+					return "NoResults";
+				}
+			},
 			"total": {
 				"get": function () {
 					return _total;
@@ -1164,8 +1176,96 @@
 		this.deepFollowRelations = ops.deepFollowRelations || false;
 	}
 
+	/*
+	 *	### Class NoDataModel
+	 *
+	 *  This class provides functionality to help other NoInfoPath services to 
+	 *	access and utilitze data in a consistant way. It provides a pristine
+	 *	attribute to the data so a directive can 'roll back' a change, for example.
+	 *
+	 *	#### Properties
+	 *
+	 *	|Name|Type|Description|
+	 *	|----|----|-----------|
+	 *	|data|NoResults Object|Returns the data wrapped in a NoInfoPath NoResults object|
+	 *	|pristine|NoResults Object|Returns the pristine data wrapped in a NoInfoPath NoResults object|
+	 *	|__type|String|Returns the type of NoInfoPath object. In this case, it will return "NoDataModel"|
+	 *
+	 *	##### data
+	 *
+	 *	An object that will be saved in the NoDataModel. Th
+	 *
+	 *	```js
+	 *	{
+	 *		PersonID: "6a2bfe0f-29da-440d-e5b9-62262ac0345c",
+	 *		PersonFirstName: "Foo",
+	 *		PersonLastName: "Bar",
+	 *		PersonAge: 25,
+	 *		Mother: {
+	 *			PersonID: "54dd9168-0111-43e3-9db8-77dc33169b41",
+	 *			PersonFirstName: "Bridget",
+	 *			PersonLastName: "Bar",
+	 *			PersonAge: 50
+	 *    }
+	 *  }
+	 *  ```
+	 *
+	 *	#### Methods
+	 *
+	 *	|Name|Description|
+	 *	|----|-----------|
+	 *  |clean()|Removes any Angular properties off the data object, and cleans up 'falsy' values to null|
+	 *	|undo()|Sets the data property back to what is stored in the pristine property|
+	 *	|update(data)|Updtes the data with a matching data object|
+	 *
+	 *	##### clean()
+	 *
+	 *	This method removes any Angular or Kendo data model properties off the data object. It also cleans up any
+	 *	falsy values and returns them as null.
+	 *
+	 *	**Parameters**
+	 *
+	 *	None
+	 *
+	 *	**Returns**
+	 *
+	 *	Undefined
+	 * 
+	 *	##### undo()
+	 *
+	 *	This method returns the value contained within the NoDataModel back to the current pristine value.
+	 *
+	 *	**Parameters**
+	 *
+	 *	None
+	 *
+	 *	##### update(data)
+	 *
+	 *	This method updates the data contained within the data model to the data being passed in.
+	 *
+	 *	**Parameters*
+	 *
+	 *	|Name|Type|Description|
+	 *	|----|----|-----------|
+	 *	|data|Object|An object that will be saved within NoDataModel|
+	 *
+	 *	**Returns**
+	 *	
+	 *	Undefined
+	 *
+	 *	
+	 */
+
 	function NoDataModel() {
-		var _pristine = {};
+		Object.defineProperties(this, {
+			"__type": {
+				"get": function () {
+					return "NoDataModel";
+				}
+			}
+		});
+
+		var _pristine;
 		Object.defineProperty(this, "pristine", {
 			get: function(){
 				return _pristine;
@@ -1175,7 +1275,7 @@
 		var _data = {};
 		Object.defineProperty(this, "data", {
 			get: function(){
-				return new NoResults(_data);
+				return _data;
 			}
 		});
 
@@ -1189,22 +1289,65 @@
 		};
 
 		this.clean = function() {
-			noParameterParser.parse(_data);
+			var keys = Object.keys(_data).filter(function (v, k) {
+						if(v.indexOf("$") === -1 && v.indexOf(".") === -1) return v;
+					}),
+					values = {};
+				keys.forEach(function (k) {
+					var haveSomething = !!_data[k],
+						notAnArray = !angular.isArray(_data[k]),
+						haveModelValue = haveSomething && _data[k].hasOwnProperty("$modelValue");
+
+					if(haveModelValue) {
+						values[k] = _data[k].$modelValue;
+					} else if(haveSomething && notAnArray) {
+						values[k] = _data[k];
+					} else if(angular.isNumber(_data[k])) {
+						values[k] = _data[k];
+					} else {
+						values[k] = null;
+					}
+
+				});
+
+				_setData(values);
 		};
 
-		this.update = function() {
-			var temp = {};
+		this.update = function(src) {
+			var THIS = this,
+					keys = Object.keys(src).filter(function (v, k) {
+					if(v.indexOf("$") === -1) return v;
+				});
+				keys.forEach(function (k) {
+					var d = _data[k];
+					if(d && d.hasOwnProperty("$viewValue")) {
+						updateOne(d, src[k]);
+					} else {
+						_data[k] = src[k];
+					}
+				});
 
-			noParameterParser.update(_data, temp);
+			if(_data.$setPristine) {
+				_data.$setPristine();
+				_data.$setUntouched();
+				_data.$commitViewValue();
+			}
 
-			_setData(temp);
+			function updateOne(ctrl, value) {
+				if(ctrl) {
+					ctrl.$setViewValue(value);
+					ctrl.$setPristine();
+					ctrl.$setUntouched();
+					ctrl.$render();
+				}
+			}
+
+			// The first update of a NoDataModel needs to set the _pristine value.
+			if(!_pristine) {
+				_setData(_data);
+			}
 		};
-
-		this.toArray = function() {
-			return _data;
-		}
 	}
-
 
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.

@@ -24,7 +24,7 @@ describe("Testing Classes", function () {
 			.toBeDefined();
 	});
 
-	describe("Testing filters", function () {
+	xdescribe("Testing filters", function () {
 
 		it("should have a filters object, with atleast one filter", function () {
 			var filters = new noInfoPath.data.NoFilters();
@@ -158,7 +158,7 @@ describe("Testing Classes", function () {
 		});
 	});
 
-	describe("Testing sort", function () {
+	xdescribe("Testing sort", function () {
 
 		it("should have a sort object, with atleast one sort", function () {
 			var sort = new noInfoPath.data.NoSort();
@@ -195,7 +195,7 @@ describe("Testing Classes", function () {
 
 	});
 
-	describe("Testing page", function () {
+	xdescribe("Testing page", function () {
 		it("should have a page object, with a skip and take value", function () {
 			var page = new noInfoPath.data.NoPage(10, 10);
 			expect(page)
@@ -207,7 +207,7 @@ describe("Testing Classes", function () {
 		});
 	});
 
-	describe("Testing transactions", function () {
+	xdescribe("Testing transactions", function () {
 		xit("should have all relevant classes exposed", function () {
 			expect(noInfoPath);
 			expect(noInfoPath.data);
@@ -298,13 +298,11 @@ describe("Testing Classes", function () {
 
 	});
 
-	describe("Testing date functions", function(){
+	xdescribe("Testing date functions", function(){
 		describe("toDbDate", function() {
 			it("should convert a valid date object to dbDate", function(){
 				var input = new Date("12/31/2017"),
 					output = noInfopath.toDbDate(input);
-
-				console.log(output);
 
 				expect(output);
 			});
@@ -314,5 +312,88 @@ describe("Testing Classes", function () {
 			});
 
 		})
+	});
+
+	describe("Testing NoDataModel", function(){
+		it("should create a new NoDataModel", function(){
+			var output = new noInfoPath.data.NoDataModel();
+
+			expect(output.__type).toBe("NoDataModel");
+		});
+
+		it("should update data contained in the NoDataModel using update function", function(){
+			var input =	{
+				PersonID: "6a2bfe0f-29da-440d-e5b9-62262ac0345c",
+				PersonFirstName: "Foo",
+				PersonLastName: "Bar",
+				PersonAge: 25,
+				Mother: {
+					PersonID: "54dd9168-0111-43e3-9db8-77dc33169b41",
+					PersonFirstName: "Bridget",
+					PersonLastName: "Bar",
+					PersonAge: 50
+				}
+			}
+			output = new noInfoPath.data.NoDataModel();
+
+			output.update(input);
+
+			expect(output.data).toBeDefined();
+			expect(output.data).toEqual(input);
+		});
+
+		it("should clean the data using the clean() method, removing falsy values and form control properties", function(){
+			var input = {
+				foo: "bar",
+				alpha: 'A',
+				interger: 10,
+				emptyString: "",
+				undefinedValue: undefined,
+				nullValue: null,
+				zero: 0,
+				$Test: {}
+			},
+			expected = {
+				foo: "bar",
+				alpha: 'A',
+				interger: 10,
+				emptyString: null,
+				undefinedValue: null,
+				nullValue: null,
+				zero: 0
+			},
+			dm = new noInfoPath.data.NoDataModel(),
+			output;
+
+			dm.update(input);
+			dm.clean();
+
+			output = dm.data;
+
+			expect(output).toEqual(expected);
+		});
+
+		it("should undo any changes to the data via the undo() method", function(){
+			var input = {
+				foo: "bar",
+				alpha: 'A',
+				interger: 10
+			},
+			change = {
+				foo: "apple",
+				alpha: 'D',
+				interger: 11
+			},
+			dm = new noInfoPath.data.NoDataModel(),
+			output;
+
+			dm.update(input);
+			dm.update(change);
+			dm.undo();
+
+			output = dm.data;
+
+			expect(output).toEqual(input);
+		});
 	});
 });
