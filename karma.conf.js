@@ -52,12 +52,12 @@ module.exports = function(config) {
 		'src/data-source.js',
         //'src/transaction-cache.js',
 
-        'test/date-formatter.spec.js'
+        //'test/date-formatter.spec.js'
         // 'test/storage.spec.js',
         // 'test/http.spec.js',
         // 'test/configuration.spec.js',
          //'test/query-builder.spec.js',
-        //'test/classes.spec.js'
+        'test/classes.spec.js'
         // 'test/schema.spec.js',
 		 //'test/websql-parser.spec.js'
         //'test/websql.spec.js'

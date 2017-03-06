@@ -50,7 +50,8 @@ module.exports = function(config) {
         'test/http.spec.js',
         'test/websql2/noWebSql.spec.js',
         'test/schema-config.spec.js',
-		'test/date-formatter.spec.js'
+		'test/date-formatter.spec.js',
+        'test/classes.spec.js'
     ],
 
 
