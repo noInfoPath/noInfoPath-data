@@ -98,7 +98,6 @@
 
 			reader.onload = function(e) {
 				fileObj.blob = e.target.result;
-
 				deferred.resolve(fileObj);
 			};
 

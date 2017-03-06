@@ -65,8 +65,11 @@ module.exports = function (grunt) {
 			readme: {
 				src: ['docs/noinfopath-data.md'],
 				dest: 'readme.md'
+			},
+			readmeFull: {
+				src: ['docs/globals.md', 'docs/storage.md', 'docs/file-storage.md', 'docs/data-source.md', 'docs/transaction-cache.md', 'docs/template-cache.md', 'docs/http.md', 'docs/indexeddb.md', 'docs/websql-2.md', 'docs/no-local-file-storage.md'],
+				dest: 'readme.md'
 			}
-
 		},
 		karma: {
 			unit: {
@@ -143,8 +146,22 @@ module.exports = function (grunt) {
 			}
 		},
 		watch: {
-			files: ['src/*.js', 'test/**/*.spec.js'],
-			tasks: ['compile']
+			dev: {
+				files: ['src/*.js', 'test/**/*.spec.js'],
+				tasks: ['compile'],
+				options: {
+					spawn: false
+						// livereload: true
+				}
+			},
+			document: {
+				files: ['src/*.js', 'test/**/*.spec.js'],
+				tasks: ['document'],
+				options: {
+					spawn: false
+						// livereload: true
+				}
+			}
 		},
 		uglify: {
 			options: {
@@ -169,9 +186,9 @@ module.exports = function (grunt) {
 	//Default task(s).
 
 	//Only globals.js in readme.md
-	grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'nodocs:internalGlobals', 'concat:dexie']);
+	//grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'nodocs:internalGlobals', 'concat:dexie']);
 
-	//grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
+	grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readmeFull', 'concat:dexie']);
 
 	grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
@@ -179,9 +196,9 @@ module.exports = function (grunt) {
 
 	grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
-	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readmeFull']);
 
-	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readme']);
+	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readmeFull']);
 
 	grunt.registerTask('test', ['karma:unit']);
 
