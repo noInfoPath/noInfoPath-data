@@ -933,7 +933,7 @@
 		var _data = {};
 		Object.defineProperty(this, "data", {
 			get: function(){
-				return _data;
+				return new NoResults(_data);
 			}
 		});
 
@@ -947,12 +947,20 @@
 		};
 
 		this.clean = function() {
-			//TODO: Add noParameterParser.parse code here.
+			noParameterParser.parse(_data);
 		};
 
 		this.update = function() {
-			//TODO: Add noParameterParser.update code here.
+			var temp = {},
+
+			noParameterParser.update(_data, temp);
+
+			_setData(temp);
 		};
+
+		this.toArray = function() {
+			return _data;
+		}
 	}
 
 
