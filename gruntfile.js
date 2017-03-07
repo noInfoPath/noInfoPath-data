@@ -200,7 +200,7 @@ module.exports = function (grunt) {
 	//Only globals.js in readme.md
 	//grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'nodocs:internalGlobals', 'concat:dexie']);
 
-	grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internalGlobals', 'concat:dexie']);
+	grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internalGlobals', 'nodocs:internal', 'concat:dexie', 'copy:wiki']);
 
 	grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
