@@ -25,20 +25,20 @@ Web browsers.
 
 |Name|Description|
 |----|-----------|
-|[noDataSource](noDataSource)|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
-|[noFileStoreageCRUD](noFileStoreageCRUD)|Establishes a CRUD interface in front of `noLocalFileStorage`.|
-|[noHTTP](noHTTP)|Establishes a CRUD interface in front of the AngularJS `$http` service|
-|[noIndexedDb](noIndexedDb)|Prodvides a CRUD interface for the Browser's native IndexedDB database. (Not fully supported by all browsers.)|
-|[noLocalFileStorage](noFileStoreageCRUD)|Reads a File object retrieved from a standard `input:file` element and saves the data to an IndexedDB object store called NoInfoPath_FileUploadCache. The file blob is stored as `binary string`|
-|[noLocalFileSystem](noLocalFileSystem)|Stores files within the Brower's Temporary Local File System.|
-|[noLocalStorage](noLocalStorage)|Provides access to the Browser's localStorage service.|
-|[noMimeTypes](noLocalFileSystem)|Helper service that returns a mime type given a file extention and vice versa.|
-|[noSessionStorage](noLocalStorage)|Provides access to the Browser's sessionStorage service.|
-|[noTemplateCache](noTemplateCache)|Sits in front of Angular Template cache, but allows files to be retrieve directly without using `ngInclude` or a directives `templateUrl` property.|
-|[noTransactionCache](noTransactionCache)|Manages data transaction by tracking changes made by a CRUD provider service, and stores the changes in the NoInfoPath_Changes object store.|
-|[noWebSQL](noWebSQL)|Provides a CRUD interface for the Browser's native WebSQL database. (Not supported by all Browsers.)|
+|[noDataSource](data-source)|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
+|[noFileStoreageCRUD](file-storage)|Establishes a CRUD interface in front of `noLocalFileStorage`.|
+|[noHTTP](http)|Establishes a CRUD interface in front of the AngularJS `$http` service|
+|[noIndexedDb](indexeddb)|Prodvides a CRUD interface for the Browser's native IndexedDB database. (Not fully supported by all browsers.)|
+|[noLocalFileStorage](no-local-file-storage)|Reads a File object retrieved from a standard `input:file` element and saves the data to an IndexedDB object store called NoInfoPath_FileUploadCache. The file blob is stored as `binary string`|
+|[noLocalFileSystem](file-storage)|Stores files within the Brower's Temporary Local File System.|
+|[noLocalStorage](storage)|Provides access to the Browser's localStorage service.|
+|[noMimeTypes](no-local-file-storage)|Helper service that returns a mime type given a file extention and vice versa.|
+|[noSessionStorage](storage)|Provides access to the Browser's sessionStorage service.|
+|[noTemplateCache](template-cache)|Sits in front of Angular Template cache, but allows files to be retrieve directly without using `ngInclude` or a directives `templateUrl` property.|
+|[noTransactionCache](transaction-cache)|Manages data transaction by tracking changes made by a CRUD provider service, and stores the changes in the NoInfoPath_Changes object store.|
+|[noWebSQL](websql-2)|Provides a CRUD interface for the Browser's native WebSQL database. (Not supported by all Browsers.)|
 
-### [Helper Functions](functions)
+### [Helper Functions](helper-functions)
 
 NoInfoPath Data exposes several helper function on the global noInfoPath object
 that is placed on the browser's instrinsic `window` object.

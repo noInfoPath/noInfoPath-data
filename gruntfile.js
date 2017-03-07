@@ -14,7 +14,7 @@ module.exports = function (grunt) {
 						flatten: true,
 						src: ['dist/*.js'],
 						dest: '../noinfopath-test-server-node/no/lib/js/noinfopath/'
-					},
+					}
 				]
 			},
 			test2: {
@@ -26,12 +26,24 @@ module.exports = function (grunt) {
 						dest: '/Users/gochinj/ws/noinfopath-v3/noinfopath-app/test/http/lib/js/noinfopath'
 					}
 				]
-			}
+			},
+			wiki: {
+				files: [
+					//{expand:true, flatten:false, src: [ 'lib/js/noinfopath/*.*'], dest: 'build/'},
+					{
+						expand: true,
+						flatten: true,
+						src: ['docs/*.md'],
+						dest: '/Users/gochinj/ws/noinfopath/wikis/noinfopath-data.wiki/'
+					}
+				]
+			},
 		},
 		concat: {
 			noinfopath: {
 				src: [
-					'src/globals.js',
+					'src/home.js',
+					'src/helper-functions.js',
 					'src/classes.js',
 					'src/query-builder.js',
 					'src/storage.js',
@@ -67,7 +79,7 @@ module.exports = function (grunt) {
 				dest: 'readme.md'
 			},
 			readmeFull: {
-				src: ['docs/globals.md', 'docs/storage.md', 'docs/file-storage.md', 'docs/data-source.md', 'docs/transaction-cache.md', 'docs/template-cache.md', 'docs/http.md', 'docs/indexeddb.md', 'docs/websql-2.md', 'docs/no-local-file-storage.md'],
+				src: ['docs/globals.md', 'docs/storage.md', 'docs/file-storage.md', 'docs/data-source.md', 'docs/transaction-cache.md', 'docs/template-cache.md', 'docs/http.md', 'docs/indexeddb.md', 'docs/websql-2.md', 'docs/no-local-file-storage.md', 'helper-functions.md', 'classes.md'],
 				dest: 'readme.md'
 			}
 		},
@@ -115,7 +127,7 @@ module.exports = function (grunt) {
 				prefix: '@version\\s*'
 			},
 			defaults: {
-				src: ['src/globals.js']
+				src: ['src/*.js']
 			}
 		},
 		nodocs: {
@@ -188,7 +200,7 @@ module.exports = function (grunt) {
 	//Only globals.js in readme.md
 	//grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'nodocs:internalGlobals', 'concat:dexie']);
 
-	grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readmeFull', 'concat:dexie']);
+	grunt.registerTask('build', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'nodocs:internalGlobals', 'concat:dexie']);
 
 	grunt.registerTask('unstable', ['bumpup', 'version', 'concat:noinfopath', 'nodocs:internal', 'concat:readme', 'concat:dexie']);
 
@@ -196,9 +208,9 @@ module.exports = function (grunt) {
 
 	grunt.registerTask('uglytest', ['concat:noinfopath', 'uglify', 'karma:ugly']);
 
-	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internal', 'concat:readmeFull']);
+	grunt.registerTask('compile', ['karma:noWebSQL2_ci', 'concat:noinfopath', 'nodocs:internalGlobals']);
 
-	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'concat:readmeFull']);
+	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:internal', 'copy:wiki']);
 
 	grunt.registerTask('test', ['karma:unit']);
 

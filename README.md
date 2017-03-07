@@ -1,5 +1,8 @@
-NoInfoPath Data (@noinfopath/noinfopath-data)
-===================
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+NoInfoPath Data (noinfopath-data)
+=============================================
+
 *@version 2.0.41* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
 Copyright (c) 2017 The NoInfoPath Group, LLC.
@@ -22,174 +25,111 @@ Web browsers.
 
 |Name|Description|
 |----|-----------|
-|noLocalStorage|Provides access to the Browser's localStorage service.|
-|noSessionStorage|Provides access to the Browser's sessionStorage service.|
-|noLocalFileSystem|Stores files within the Brower's Temporary Local File System.|
-|noLocalFileStorage|Reads a File object retrieved from a standard `input:file` element and saves the data to an IndexedDB object store called NoInfoPath_FileUploadCache. The file blob is stored as `binary string`|
-|noFileStoreageCRUD|Establishes a CRUD interface in front of `noLocalFileStorage`.|
-|noMimeTypes|Helper service that returns a mime type given a file extention and vice versa.|
-|noDataSource|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
-|noTransactionCache|Manages data transaction by tracking changes made by a CRUD provider service, and stores the changes in the NoInfoPath_Changes object store.|
-|noTemplateCache|Sits in front of Angular Template cache, but allows files to be retrieve directly without using `ngInclude` or a directives `templateUrl` property.|
-|noHTTP|Establishes a CRUD interface in front of the AngularJS `$http` service|
-|noIndexedDb|Prodvides a CRUD interface for the Browser's native IndexedDB database. (Not fully supported by all browsers.)|
-|noWebSQL|Provides a CRUD interface for the Browser's native WebSQL database. (Not supported by all Browsers.)|
+|[noDataSource](noDataSource)|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
+|[noFileStoreageCRUD](noFileStoreageCRUD)|Establishes a CRUD interface in front of `noLocalFileStorage`.|
+|[noHTTP](noHTTP)|Establishes a CRUD interface in front of the AngularJS `$http` service|
+|[noIndexedDb](noIndexedDb)|Prodvides a CRUD interface for the Browser's native IndexedDB database. (Not fully supported by all browsers.)|
+|[noLocalFileStorage](noFileStoreageCRUD)|Reads a File object retrieved from a standard `input:file` element and saves the data to an IndexedDB object store called NoInfoPath_FileUploadCache. The file blob is stored as `binary string`|
+|[noLocalFileSystem](noLocalFileSystem)|Stores files within the Brower's Temporary Local File System.|
+|[noLocalStorage](noLocalStorage)|Provides access to the Browser's localStorage service.|
+|[noMimeTypes](noLocalFileSystem)|Helper service that returns a mime type given a file extention and vice versa.|
+|[noSessionStorage](noLocalStorage)|Provides access to the Browser's sessionStorage service.|
+|[noTemplateCache](noTemplateCache)|Sits in front of Angular Template cache, but allows files to be retrieve directly without using `ngInclude` or a directives `templateUrl` property.|
+|[noTransactionCache](noTransactionCache)|Manages data transaction by tracking changes made by a CRUD provider service, and stores the changes in the NoInfoPath_Changes object store.|
+|[noWebSQL](noWebSQL)|Provides a CRUD interface for the Browser's native WebSQL database. (Not supported by all Browsers.)|
 
-### Helper Functions
-
-|Name|Description|
-|----|-----------|
-|digestTimeout|Deprecated; will be removed in a future release.|
-|digestError|Deprecated; will be removed in a future release.|
-|digest|Deprecated; will be removed in a future release.|
-|setItem(store, key, value)|Sets the `value`, on the `store` using the `key`.|
-|getItem(store, key)|Using the parameters provided, retrieves a value from the `store` using the `key`.|
-|toDbDate(date)|Converts a JavaScript Date to a database compliant date String.|
-|||
-|||
-|||
-|||
-|||
-|||
-
-
-Helper Functions
-----------------
+### [Helper Functions](functions)
 
 NoInfoPath Data exposes several helper function on the global noInfoPath object
 that is placed on the browser's instrinsic `window` object.
 
-### setItem(store, key, value)
+|Name|Description|
+|----|-----------|
+|digest|Deprecated; will be removed in a future release.|
+|digestError|Deprecated; will be removed in a future release.|
+|digestTimeout|Deprecated; will be removed in a future release.|
+|fromScopeSafeGuid|Convertes a "Scope Safe GUID" to a standard GUID.|
+|getItem(store, key)|Using the parameters provided, retrieves a value from the `store` using the `key`.|
+|isCompoundFilter|Checks the provided `indexName` for a string that match the compound key format.|
+|setItem(store, key, value)|Sets the `value`, on the `store` using the `key`.|
+|toDbDate(date)|Converts a JavaScript Date to a database compliant date String.|
+|toDisplayDate|Converts a JavaScript Date to a human readable date string.|
+|toScopeSafeGuid|Converts standards GUID to one that is safe to use as a property name in a JavaScript Object.|
+|resolveID|Creates and returns a NoFilters object.|
 
-Using the parameters provided, sets the `value`, on the `store` using the `key`.
-The value is set using the AngularJS `$parse` service, which allows
-the use of dot separated keys. `$parse` will create a nested object
-based on the depth of the `key`.
+### [Classes](classes)
 
-#### Parameters
+|Name|Description|
+|----|-----------|
+|NoDataModel|TODO|
+|NoFilter|TODO|
+|NoFilters|TODO|
+|NoFilterExpression|TODO|
+|NoPage|TODO|
+|NoReadOptions|TODO|
+|NoResults|TODO|
+|NoSort|TODO|
+|NoSortExpression|TODO|
 
-|Name|Type|Description|
-|----|----|-----------|
-|store|Object|A javascript object on which the value is to be store.|
-|key|String|An optionally dotted notation string that specifies where to set the `value` on the `store`.|
-|value|any|This can be a value of any type; Object, Array, Function, String, Number, Date, or Boolean|
 
-#### Returns
-Undefined
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
 
-**Example**
+___
 
-```js
-	//Given the following test data.
-	var key = "foo.bar.test",
-		store = {},
-		value = "Hello World";
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
 
-	//The expected operations should not fail with the error,
-	//"Cannot access property `foo`, `bar` or `test` of `Undefined`."
-	noInfoPath.setItem(store, key, value);
-	expect(store.foo.bar.test).toBe("Hello World");
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
-	//Result object should resemble the following.
-	var expected = {
-		foo: {
-			bar: {
-				test: "Hello World"
-			}
-		}
-	};
-```
+Copyright (c) 2017 The NoInfoPath Group, LLC.
 
-### getItem(store, key)
+Licensed under the MIT License. (MIT)
 
-Using the parameters provided, retrieves a value from the `store` using the `key`.
-The value is retrieved using the AngularJS `$parse` service, which allows
-the use of dot separated keys. `$parse` will locate the value from a nested object
-based on the depth of the `key`.
+___
 
-#### Parameters
 
-|Name|Type|Description|
-|----|----|-----------|
-|store|Object|A javascript object from which the value is to be retrieved.|
-|key|String|An optionally dotted notation string that specifies where to get the `value` from the `store`.|
+noLocalStorage
+--------------
 
-#### Returns
-A value of any type; `Object`, `Array`, `Function`, `String`, `Number`, `Boolean`, `Date`, `null` or `Undefined`.
+noSessionStorage
+--------------
 
-**Example**
 
-```js
-	//Given the following test data.
-	var key = "foo.bar.test",
-		store = {
-			foo: {
-				bar: {
-					test: "Hello World"
-				}
-			}
-		},
-		value = "Hello World",
-		result = noInfoPath.getItem(store, key);
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
 
-	expect(result).toBe("Hello World");
+___
 
-```
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
 
-### toDbDate(date)
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
-Using the `moment` NPM library, converts a JavaScript Date to a database compliant date String.
-#### Parameters
+Copyright (c) 2017 The NoInfoPath Group, LLC.
 
-|Name|Type|Description|
-|----|----|-----------|
-|date|Date|A javascript Date object to be converted.|
+Licensed under the MIT License. (MIT)
+
+___
+
+
+noFileStoreageCRUD
+------------------
+
+### @method noClear()
+
+Delete all files from the cache, without recording each delete transaction.
 
 #### Returns
-A String that is in  the following format: `YYYY-MM-DDTHH:mm:ss.sss`.
-If `date` is falsey or moment cannot parse the date provided,
-a `null` value is returned.
+AngularJS Promise.
 
-**Example**
+### @method noBulkCreate(data)
 
-```js
-	//Given the following test data.
-	var d = new Date("3/6/2017 13:15:00"),
-		result = noInfoPath.toDbDate(date)
+Inserts a file in to cache without logging a transaction.
 
-	expect(result).toBe("2017-03-06T18:15:00.000Z");
+### @method bulkload(data, progress)
 
-```
+Returns an AngularJS Promise.  Takes advantage of
+Promise.notify to report project of the bulkLoad operation.
 
-### digestError(fn, error)
-*Deprecated*
-
-### digestError(fn, error)
-*Deprecated*
-
-### digestError(fn, error)
-*Deprecated*
-
-When query a number, a filter is created on the instrinsic
-filters object using the `rowid`  WebSQL column as the column
-to filter on. Query will be the target
-value of query.
-
-When the query is a string it is assumed a table is being queried
-by it's primary key.
-
-> Passing a string when the entity is
-a SQL View is not allowed.
-
-### digestError(fn, error)
-*Deprecated*
-
-### digestError(fn, error)
-*Deprecated*
-
-
-
-
+noLocalFileStorage
+------------------
 
 
 Saves a file to the noDataSource defined in the config object.
@@ -210,22 +150,20 @@ Deletes a file by FileID from the NoInfoPath_FileUploadCache.
 Reads a file from a DOM File object and converts to a binary
 string compatible with the local, and upstream file systems.
 
-### @method noClear()
 
-Delete all files from the cache, without recording each delete transaction.
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
 
-#### Returns
-AngularJS Promise.
+___
 
-### @method noBulkCreate(data)
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
 
-Inserts a file in to cache without logging a transaction.
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
-### @method bulkload(data, progress)
+Copyright (c) 2017 The NoInfoPath Group, LLC.
 
-Returns an AngularJS Promise.  Takes advantage of
-Promise.notify to report project of the bulkLoad operation.
+Licensed under the MIT License. (MIT)
 
+___
 
 ## noDataSource Service
 
@@ -240,7 +178,7 @@ underlying CRUD interface.
        "entityName": "LU_PercentColor",
        "primaryKey": "PercentColorID",
        "queryParser": "noQueryParser",
-       "sort":  [{"field": "Percentage", "dir": "asc"}]
+       "sort":  [{"field": "Percentage", "dir": "asc"}],
        "aggregation": {
             "actions": [
 				{
@@ -279,6 +217,31 @@ An instance of a NoDataSource object.
 
 
 
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
+
+noTransactionCache service
+--------------------------
+
+  Each top-level property represents a crud operation that must
+  be handled in a specific manner in order to ensure consistency.
+  Within each operation is a list of NoTables that are part of the
+  transaction.
+
+  For each table in the operation are instructions as to which entity are
+  involved, how to carry out the transaction, and in what order.
+
 
 When a field is a string then the value will be the
 property on the data object provider to the call
@@ -299,22 +262,22 @@ are recorded in the current transaction.
 
 Add each record one at a time to ensure that the transaction is recorded.
 
-  #### @property scopeKey
+#### @property scopeKey
 
-  Use this property allow NoTransaction to store a reference
-  to the entity upon which this data operation was performed.
-  This is useful when you have tables that rely on a one to one
-  relationship.
+Use this property allow NoTransaction to store a reference
+to the entity upon which this data operation was performed.
+This is useful when you have tables that rely on a one to one
+relationship.
 
-  It is best practice use this property when ever possible,
-  but it not a required configuration property.
+It is best practice use this property when ever possible,
+but it not a required configuration property.
 
 
- ### joiner-many
+### joiner-many
 
- `joiner-many` assumes that it represents a multiple choice question.
- In order to keep the algorithm simple we drop all joiner items
- that match the parent key. (i.e. SelectionID)
+`joiner-many` assumes that it represents a multiple choice question.
+In order to keep the algorithm simple we drop all joiner items
+that match the parent key. (i.e. SelectionID)
 
 ### one-one
 
@@ -340,9 +303,40 @@ logic to be implement at the record level, before saving.
 
 
 
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
+
+noTemplateCache
+---------------
+
 NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
 inferred in the documentation or perform by ngInclude.
 
+
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
 
 ## @service noHTTP
 
@@ -419,6 +413,22 @@ by it's primary key.
 a SQL View is not allowed.
 
 
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
+
+noIndexedDB
+------------------
 ## noIndexedDB
 
 The noIndexedDB factory creates and configures a new instance of Dexie.
@@ -642,9 +652,22 @@ lookup table.
 This is a contructor function used by Dexie when creating and returning data objects.
 
 
-# @module NoInfoPath WebSql
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
 
-> noinfopath.data @version 0.0.1 #websql
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
+
+noWebSql
+--------
 
 This module provides full CRUD operations, along with the ability to bulk
 bulkload data into the WebSql database, and to perform a lookup for a single item,
@@ -825,4 +848,25 @@ supplied Entity Configuration and Database.
 
 ## @class NoWebSqlService
 
+
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
+
+noLocalFileSystem
+-----------------
+
+
+noMimeTypes
+-----------
 

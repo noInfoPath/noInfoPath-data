@@ -1,60 +1,77 @@
 //globals.js
 /*
-*	NoInfoPath Data (@noinfopath/noinfopath-data)
-*	===================
-*	*@version 2.0.41* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
-*
-*	Copyright (c) 2017 The NoInfoPath Group, LLC.
-*
-*	Licensed under the MIT License. (MIT)
-*	___
-*
-*	Overview
-*	--------
-*
-*	NoInfoPath Data provides serveral service that all an application to
-*	interact with the various local storage systems found in HTML5 compliant
-*	Web browsers.
-*
-*	### Installation
-*
-*	> npm install @noinfopath/noinfopath-data
-*
-*	### Services
-*
-*	|Name|Description|
-*	|----|-----------|
-*	|noLocalStorage|Provides access to the Browser's localStorage service.|
-*	|noSessionStorage|Provides access to the Browser's sessionStorage service.|
-*	|noLocalFileSystem|Stores files within the Brower's Temporary Local File System.|
-*	|noLocalFileStorage|Reads a File object retrieved from a standard `input:file` element and saves the data to an IndexedDB object store called NoInfoPath_FileUploadCache. The file blob is stored as `binary string`|
-*	|noFileStoreageCRUD|Establishes a CRUD interface in front of `noLocalFileStorage`.|
-*	|noMimeTypes|Helper service that returns a mime type given a file extention and vice versa.|
-*	|noDataSource|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
-*	|noTransactionCache|Manages data transaction by tracking changes made by a CRUD provider service, and stores the changes in the NoInfoPath_Changes object store.|
-*	|noTemplateCache|Sits in front of Angular Template cache, but allows files to be retrieve directly without using `ngInclude` or a directives `templateUrl` property.|
-*	|noHTTP|Establishes a CRUD interface in front of the AngularJS `$http` service|
-*	|noIndexedDb|Prodvides a CRUD interface for the Browser's native IndexedDB database. (Not fully supported by all browsers.)|
-*	|noWebSQL|Provides a CRUD interface for the Browser's native WebSQL database. (Not supported by all Browsers.)|
-*
-*	### Helper Functions
-*
-*	|Name|Description|
-*	|----|-----------|
-*	|digestTimeout|Deprecated; will be removed in a future release.|
-*	|digestError|Deprecated; will be removed in a future release.|
-*	|digest|Deprecated; will be removed in a future release.|
-*	|setItem(store, key, value)|Sets the `value`, on the `store` using the `key`.|
-*	|getItem(store, key)|Using the parameters provided, retrieves a value from the `store` using the `key`.|
-*	|toDbDate(date)|Converts a JavaScript Date to a database compliant date String.|
-*	|||
-*	|||
-*	|||
-*	|||
-*	|||
-*	|||
-
-*
+	*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+	*
+	*	NoInfoPath Data (noinfopath-data)
+	*	=============================================
+	*
+	*	*@version 2.0.42* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*
+	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+	*
+	*	Licensed under the MIT License. (MIT)
+	*	___
+	*
+	*	Overview
+	*	--------
+	*
+	*	NoInfoPath Data provides serveral service that all an application to
+	*	interact with the various local storage systems found in HTML5 compliant
+	*	Web browsers.
+	*
+	*	### Installation
+	*
+	*	> npm install @noinfopath/noinfopath-data
+	*
+	*	### Services
+	*
+	*	|Name|Description|
+	*	|----|-----------|
+	*	|[noDataSource](data-source)|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
+	*	|[noFileStoreageCRUD](file-storage)|Establishes a CRUD interface in front of `noLocalFileStorage`.|
+	*	|[noHTTP](http)|Establishes a CRUD interface in front of the AngularJS `$http` service|
+	*	|[noIndexedDb](indexeddb)|Prodvides a CRUD interface for the Browser's native IndexedDB database. (Not fully supported by all browsers.)|
+	*	|[noLocalFileStorage](no-local-file-storage)|Reads a File object retrieved from a standard `input:file` element and saves the data to an IndexedDB object store called NoInfoPath_FileUploadCache. The file blob is stored as `binary string`|
+	*	|[noLocalFileSystem](file-storage)|Stores files within the Brower's Temporary Local File System.|
+	*	|[noLocalStorage](storage)|Provides access to the Browser's localStorage service.|
+	*	|[noMimeTypes](no-local-file-storage)|Helper service that returns a mime type given a file extention and vice versa.|
+	*	|[noSessionStorage](storage)|Provides access to the Browser's sessionStorage service.|
+	*	|[noTemplateCache](template-cache)|Sits in front of Angular Template cache, but allows files to be retrieve directly without using `ngInclude` or a directives `templateUrl` property.|
+	*	|[noTransactionCache](transaction-cache)|Manages data transaction by tracking changes made by a CRUD provider service, and stores the changes in the NoInfoPath_Changes object store.|
+	*	|[noWebSQL](websql-2)|Provides a CRUD interface for the Browser's native WebSQL database. (Not supported by all Browsers.)|
+	*
+	*	### [Helper Functions](helper-functions)
+	*
+	*	NoInfoPath Data exposes several helper function on the global noInfoPath object
+	*	that is placed on the browser's instrinsic `window` object.
+	*
+	*	|Name|Description|
+	*	|----|-----------|
+	*	|digest|Deprecated; will be removed in a future release.|
+	*	|digestError|Deprecated; will be removed in a future release.|
+	*	|digestTimeout|Deprecated; will be removed in a future release.|
+	*	|fromScopeSafeGuid|Convertes a "Scope Safe GUID" to a standard GUID.|
+	*	|getItem(store, key)|Using the parameters provided, retrieves a value from the `store` using the `key`.|
+	*	|isCompoundFilter|Checks the provided `indexName` for a string that match the compound key format.|
+	*	|setItem(store, key, value)|Sets the `value`, on the `store` using the `key`.|
+	*	|toDbDate(date)|Converts a JavaScript Date to a database compliant date String.|
+	*	|toDisplayDate|Converts a JavaScript Date to a human readable date string.|
+	*	|toScopeSafeGuid|Converts standards GUID to one that is safe to use as a property name in a JavaScript Object.|
+	*	|resolveID|Creates and returns a NoFilters object.|
+	*
+	*	### [Classes](classes)
+	*
+	*	|Name|Description|
+	*	|----|-----------|
+	*	|NoDataModel|TODO|
+	*	|NoFilter|TODO|
+	*	|NoFilters|TODO|
+	*	|NoFilterExpression|TODO|
+	*	|NoPage|TODO|
+	*	|NoReadOptions|TODO|
+	*	|NoResults|TODO|
+	*	|NoSort|TODO|
+	*	|NoSortExpression|TODO|
 */
 
 (noInfoPath.data = {});
@@ -62,305 +79,472 @@
 	"use strict";
 
 	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
+	;
+})(angular);
+
+angular.module("noinfopath.data")
+
+/*
+	*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+	*
+	*	___
+	*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+	*
+	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*
+	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+	*
+	*	Licensed under the MIT License. (MIT)
+	*
+	*	___
+	*
+	*	Helper Functions
+	*	----------------
+	*
+	*	NoInfoPath Data exposes several helper function on the global noInfoPath object
+	*	that is placed on the browser's instrinsic `window` object.
+*/
+.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', "lodash", function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter, _) {
+	function _digest(fn, data) {
+		var message = [];
+
+		if(angular.isArray(data)) {
+			message = data;
+		} else {
+			message = [data];
+		}
+
+		if(window.jasmine) {
+			$timeout(function () {
+				fn.apply(null, message);
+			});
+			$timeout.flush();
+		} else {
+			fn.apply(null, message);
+		}
+
+	}
+
+	function _digestError(fn, error) {
+		var digestError = error;
+
+		if(angular.isObject(error)) {
+			digestError = error.toString();
+		}
+
+		//console.error(digestError);
+
+		_digest(fn, digestError);
+	}
+
+	function _digestTimeout() {
+
+
+		if($timeout.flush && $browser.deferredFns.length) {
+			if($rootScope.$$phase) {
+				setTimeout(function () {
+					$timeout.flush();
+				}, 10);
+			} else {
+				$timeout.flush();
+			}
+			//console.log($timeout.verifyNoPendingTasks());
+
+		}
+	}
 
 	/*
-		*	Helper Functions
-		*	----------------
+		*	### fromScopeSafeGuid(ssuid)
 		*
-		*	NoInfoPath Data exposes several helper function on the global noInfoPath object
-		*	that is placed on the browser's instrinsic `window` object.
+		*	Given a GUID that was previously converted to a "Scope Safe GUID",
+		*	converts the underscores back to dashes.
+		*
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|ssguid|String|A string that is a standard GUID with the dashes converted to underscores.|
+		*
+		*	#### Returns
+		*	Return a GUID suitable for use in Microsoft code where a GUID is
+		*	expected. Or, for use and `uniqueidentifier` in Microsoft SQL Server.
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var ssguid = "d4cf39d2_df46_46be_9058_daa0cc060a29",
+		*			result = noInfoPath.fromScopeSafeGuid(ssguid);
+		*
+		*		expect(result).toBe("d4cf39d2-df46-46be-9058-daa0cc060a29");
+		*
+		*	```
 	*/
-	.run(['$injector', '$parse', '$timeout', '$q', '$rootScope', '$browser', '$filter', "lodash", function ($injector, $parse, $timeout, $q, $rootScope, $browser, $filter, _) {
+	function _fromScopeSafeGuid(ssguid) {
+		return(ssguid || "").replace(/_/g, "-");
+	}
 
-		function _digestTimeout() {
+	/*
+		*	### isCompoundFilter(indexName)
+		*
+		*	Checks the provided `indexName` for a string that match the compound
+		*	key format.  The format specifications is a plus sign separated
+		*	list of field names, enclosed in square brackets.
+		*
+		*	`(i.e "[key1+key2]" or "[key1+key2+key3]", etc.)`
+		*
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|indexName|String|A string the meets the index name format specifications.|
+		*
+		*	#### Returns
+		*	True is the string matches the pattern.
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var indexName = "[color+size]",
+		8			result = noInfoPath.isCompoundFilter(indexName);
+		*
+		*		expect(result).toBeTrue();
+		*
+		*	```
+	*/
+	function _isCompoundFilter(indexName) {
+		return indexName.match(/^\[.*\+.*\]$/gi);
+	}
 
+	/*
+		*	### getItem(store, key)
+		*
+		*	Using the parameters provided, retrieves a value from the `store` using the `key`.
+		*	The value is retrieved using the AngularJS `$parse` service, which allows
+		*	the use of dot separated keys. `$parse` will locate the value from a nested object
+		*	based on the depth of the `key`.
+		*
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|store|Object|A javascript object from which the value is to be retrieved.|
+		*	|key|String|An optionally dotted notation string that specifies where to get the `value` from the `store`.|
+		*
+		*	#### Returns
+		*	A value of any type; `Object`, `Array`, `Function`, `String`, `Number`, `Boolean`, `Date`, `null` or `Undefined`.
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var key = "foo.bar.test",
+		*			store = {
+		*				foo: {
+		*					bar: {
+		*						test: "Hello World"
+		*					}
+		*				}
+		*			},
+		*			value = "Hello World",
+		*			result = noInfoPath.getItem(store, key);
+		*
+		*		expect(result).toBe("Hello World");
+		*
+		*	```
+	*/
+	function _getItem(store, key) {
+		var getter = $parse(key);
+		return getter(store);
+	}
 
-			if($timeout.flush && $browser.deferredFns.length) {
-				if($rootScope.$$phase) {
-					setTimeout(function () {
-						$timeout.flush();
-					}, 10);
+	/*
+		*	### setItem(store, key, value)
+		*
+		*	Using the parameters provided, sets the `value`, on the `store` using the `key`.
+		*	The value is set using the AngularJS `$parse` service, which allows
+		*	the use of dot separated keys. `$parse` will create a nested object
+		*	based on the depth of the `key`.
+		*
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|store|Object|A javascript object on which the value is to be store.|
+		*	|key|String|An optionally dotted notation string that specifies where to set the `value` on the `store`.|
+		*	|value|any|This can be a value of any type; Object, Array, Function, String, Number, Date, or Boolean|
+		*
+		*	#### Returns
+		*	Undefined
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var key = "foo.bar.test",
+		*			store = {},
+		*			value = "Hello World";
+		*
+		*		//The expected operations should not fail with the error,
+		*		//"Cannot access property `foo`, `bar` or `test` of `Undefined`."
+		*		noInfoPath.setItem(store, key, value);
+		*		expect(store.foo.bar.test).toBe("Hello World");
+		*
+		*		//Result object should resemble the following.
+		*		var expected = {
+		*			foo: {
+		*				bar: {
+		*					test: "Hello World"
+		*				}
+		*			}
+		*		};
+		*	```
+	*/
+	function _setItem(store, key, value) {
+		var getter = $parse(key),
+			setter = getter.assign;
+
+		setter(store, value);
+	}
+
+	/*
+		*	### toDbDate(date)
+		*
+		*	Using the `moment` NPM library, converts a JavaScript Date to a database compliant date String.
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|date|Date|A javascript Date object to be converted.|
+		*
+		*	#### Returns
+		*	A String that is in  the following format: `YYYY-MM-DDTHH:mm:ss.sss`.
+		*	If `date` is falsey or moment cannot parse the date provided,
+		*	a `null` value is returned.
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var d = new Date("3/6/2017 13:15:00"),
+		*			result = noInfoPath.toDbDate(date)
+		*
+		*		expect(result).toBe("2017-03-06T18:15:00.000Z");
+		*
+		*	```
+	*/
+	function _toDbDate(date) {
+		var dateResult;
+
+		if(!date) {
+			dateResult = null;
+		} else {
+			dateResult = moment.utc(date)
+				.format("YYYY-MM-DDTHH:mm:ss.sss");
+		}
+
+		if(dateResult === "Invalid date") {
+			dateResult = null;
+		}
+
+		return dateResult;
+	}
+
+	/*
+		*	### toDisplayDate(date)
+		*
+		*	Using the `moment` NPM library, converts a JavaScript Date to a
+		*	human readable date string.
+		*
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|date|Date|A javascript Date object to be converted.|
+		*	|format|String|(optional) Defines the format pattern to use when formatting the date|
+		*
+		*	#### Returns
+		*	A String that is in the format `YYYY-MM-DD HH:mm:ss.sss` or the
+		*	`format` pattern provided.
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var d = new Date("3/6/2017 13:15:00"),
+		*			result = noInfoPath.toDbDate(date)
+		*
+		*		expect(result).toBe("2017-03-06 18:15:00.000");
+		*
+		*	```
+	*/
+	function _toDisplayDate(date, format) {
+		var dateResult = moment.utc(date)
+			.format(format || "YYYY-MM-DD HH:mm:ss.sss");
+
+		        
+		return dateResult;
+	}
+
+	/*
+		*	### toScopeSafeGuid(guid)
+		*
+		*	Given a standard GUID, return a "Scope Safe" GUID that can be used
+		*	as a property name in an object or hash table. (See example for more details.)
+		*	Because JavaScript does not allow dashes in property names, this
+		*	function replaces the dashes with underscores.
+		*
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|guid|String|A string that is a standard GUID. (i.e `d4cf39d2-df46-46be-9058-daa0cc060a29`)|
+		*
+		*	#### Returns
+		*
+		*	Return a "Scope Safe" GUID suitable for use as a property name in
+		*	a JavaScript object.
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var guid = "d4cf39d2-df46-46be-9058-daa0cc060a29",
+		*			result = noInfoPath.toScopeSafeGuid(guid);
+		*
+		*		expect(result).toBe("d4cf39d2_df46_46be_9058_daa0cc060a29");
+		*
+		*	```
+	*/
+	function _toScopeSafeGuid(guid) {
+		return(guid || "").replace(/-/g, "_");
+	}
+
+	/*
+		*	### resolveID(query, entityConfig)
+		*
+		*	When `query` is a number, a filter is created on the instrinsic
+		*	filters object using the `rowid`  WebSQL column as the column
+		*	to filter on. Query will be the target
+		*	value of query.
+		*
+		*	When the `query` is a string it is assumed a table is being queried
+		*	by it's primary key.
+		*
+		*	When `query` is an Object is tested for the existence of `__type`
+		*	property, and that it is equal to "NoFilters". If it is then that
+		*	is the return value.  If `query` is a plain JavaScript Object then
+		*	it is expected to contain one or more name/value pairs (NVP).
+		*
+		*	When the entityConfig contain a primaryKey then the key value is
+		*	extracted from the query object using the primaryKey name. Otherwise,
+		*	all of the NVP's are added to the NoFilters object as "equal"
+		*	operations, and all filters and'ed together.
+		*
+		* 	> Passing a string when the entity is a SQL View is not allowed.
+		*
+		*	#### Parameters
+		*
+		*	|Name|Type|Description|
+		*	|----|----|-----------|
+		*	|query|Number, String, or Object|The query data that needs to be resolved into a NoFilters instance.|
+		*	|entityConfig|Object|A plain JavaScript Object that contains configuration information for the entity that is being queried.|
+		*
+		*	#### Returns
+		*	An `NoFilters` object.
+		*
+		*	**Example**
+		*
+		*	```js
+		*		//Given the following test data.
+		*		var query = "d4cf39d2-df46-46be-9058-daa0cc060a29",
+		*			entityConfig = {
+		*				"entityName": "Contractors",
+		*				"entityType": "T",
+		*				"primaryKey": "ID",
+		*				"foreignKeys": {},
+		*				"columns": {},
+		*				"indexes": [
+		*					"ContractorName"
+		*				]
+		*			},
+		*			result = noInfoPath.resolveID(query, entityConfig);
+		*
+		*		expect(result.__type).toBe("NoFilters");
+		*
+		*	```
+	*/
+	function _resolveID(query, entityConfig) {
+		var filters = new noInfoPath.data.NoFilters();
+
+		if(angular.isNumber(query)) {
+			//Assume rowid
+			filters.quickAdd("rowid", "eq", query);
+
+		} else if(angular.isString(query)) {
+			//Assume guid
+			/*
+			 */
+			if(entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
+
+			filters.quickAdd(entityConfig.primaryKey, "eq", query);
+
+		} else if(angular.isObject(query)) {
+			if(query.__type === "NoFilters") {
+				filters = query;
+			} else {
+				if(entityConfig.primaryKey) {
+					filters.quickAdd(entityConfig.primaryKey, "eq", query[entityConfig.primaryKey]);
 				} else {
-					$timeout.flush();
-				}
-				//console.log($timeout.verifyNoPendingTasks());
-
-			}
-		}
-
-		function _digestError(fn, error) {
-			var digestError = error;
-
-			if(angular.isObject(error)) {
-				digestError = error.toString();
-			}
-
-			//console.error(digestError);
-
-			_digest(fn, digestError);
-		}
-
-		function _digest(fn, data) {
-			var message = [];
-
-			if(angular.isArray(data)) {
-				message = data;
-			} else {
-				message = [data];
-			}
-
-			if(window.jasmine) {
-				$timeout(function () {
-					fn.apply(null, message);
-				});
-				$timeout.flush();
-			} else {
-				fn.apply(null, message);
-			}
-
-		}
-
-		/*
-			*	### setItem(store, key, value)
-			*
-			*	Using the parameters provided, sets the `value`, on the `store` using the `key`.
-			*	The value is set using the AngularJS `$parse` service, which allows
-			*	the use of dot separated keys. `$parse` will create a nested object
-			*	based on the depth of the `key`.
-			*
-			*	#### Parameters
-			*
-			*	|Name|Type|Description|
-			*	|----|----|-----------|
-			*	|store|Object|A javascript object on which the value is to be store.|
-			*	|key|String|An optionally dotted notation string that specifies where to set the `value` on the `store`.|
-			*	|value|any|This can be a value of any type; Object, Array, Function, String, Number, Date, or Boolean|
-			*
-			*	#### Returns
-			*	Undefined
-			*
-			*	**Example**
-			*
-			*	```js
-			*		//Given the following test data.
-			*		var key = "foo.bar.test",
-			*			store = {},
-			*			value = "Hello World";
-			*
-			*		//The expected operations should not fail with the error,
-			*		//"Cannot access property `foo`, `bar` or `test` of `Undefined`."
-			*		noInfoPath.setItem(store, key, value);
-			*		expect(store.foo.bar.test).toBe("Hello World");
-			*
-			*		//Result object should resemble the following.
-			*		var expected = {
-			*			foo: {
-			*				bar: {
-			*					test: "Hello World"
-			*				}
-			*			}
-			*		};
-			*	```
-		*/
-		function _setItem(store, key, value) {
-			var getter = $parse(key),
-				setter = getter.assign;
-
-			setter(store, value);
-		}
-
-		/*
-			*	### getItem(store, key)
-			*
-			*	Using the parameters provided, retrieves a value from the `store` using the `key`.
-			*	The value is retrieved using the AngularJS `$parse` service, which allows
-			*	the use of dot separated keys. `$parse` will locate the value from a nested object
-			*	based on the depth of the `key`.
-			*
-			*	#### Parameters
-			*
-			*	|Name|Type|Description|
-			*	|----|----|-----------|
-			*	|store|Object|A javascript object from which the value is to be retrieved.|
-			*	|key|String|An optionally dotted notation string that specifies where to get the `value` from the `store`.|
-			*
-			*	#### Returns
-			*	A value of any type; `Object`, `Array`, `Function`, `String`, `Number`, `Boolean`, `Date`, `null` or `Undefined`.
-			*
-			*	**Example**
-			*
-			*	```js
-			*		//Given the following test data.
-			*		var key = "foo.bar.test",
-			*			store = {
-			*				foo: {
-			*					bar: {
-			*						test: "Hello World"
-			*					}
-			*				}
-			*			},
-			*			value = "Hello World",
-			*			result = noInfoPath.getItem(store, key);
-			*
-			*		expect(result).toBe("Hello World");
-			*
-			*	```
-		*/
-		function _getItem(store, key) {
-			var getter = $parse(key);
-			return getter(store);
-		}
-
-		/*
-			*	### toDbDate(date)
-			*
-			*	Using the `moment` NPM library, converts a JavaScript Date to a database compliant date String.
-			*	#### Parameters
-			*
-			*	|Name|Type|Description|
-			*	|----|----|-----------|
-			*	|date|Date|A javascript Date object to be converted.|
-			*
-			*	#### Returns
-			*	A String that is in  the following format: `YYYY-MM-DDTHH:mm:ss.sss`.
-			*	If `date` is falsey or moment cannot parse the date provided,
-			*	a `null` value is returned.
-			*
-			*	**Example**
-			*
-			*	```js
-			*		//Given the following test data.
-			*		var d = new Date("3/6/2017 13:15:00"),
-			*			result = noInfoPath.toDbDate(date)
-			*
-			*		expect(result).toBe("2017-03-06T18:15:00.000Z");
-			*
-			*	```
-		*/
-		function _toDbDate(date) {
-			var dateResult;
-
-			if(!date) {
-				dateResult = null;
-			} else {
-				dateResult = moment.utc(date)
-					.format("YYYY-MM-DDTHH:mm:ss.sss");
-			}
-
-			if(dateResult === "Invalid date") {
-				dateResult = null;
-			}
-
-			return dateResult;
-		}
-
-		/*
-		*	### digestError(fn, error)
-		*	*Deprecated*
-		*/
-		function _toDisplayDate(date) {
-			var dateResult = moment.utc(date)
-				.format("YYYY-MM-DD HH:mm:ss.sss");
-
-			        
-			return dateResult;
-		}
-
-		/*
-		*	### digestError(fn, error)
-		*	*Deprecated*
-		*/
-		function _isCompoundFilter(indexName) {
-			return indexName.match(/^\[.*\+.*\]$/gi);
-		}
-
-		/*
-		*	### digestError(fn, error)
-		*	*Deprecated*
-		*/
-		function _resolveID(query, entityConfig) {
-			var filters = new noInfoPath.data.NoFilters();
-
-			if(angular.isNumber(query)) {
-				//Assume rowid
-				/*
-				 *	When query a number, a filter is created on the instrinsic
-				 *	filters object using the `rowid`  WebSQL column as the column
-				 *	to filter on. Query will be the target
-				 *	value of query.
-				 */
-				filters.quickAdd("rowid", "eq", query);
-
-			} else if(angular.isString(query)) {
-				//Assume guid
-				/*
-				 * When the query is a string it is assumed a table is being queried
-				 * by it's primary key.
-				 *
-				 * > Passing a string when the entity is
-				 * a SQL View is not allowed.
-				 */
-				if(entityConfig.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
-
-				filters.quickAdd(entityConfig.primaryKey, "eq", query);
-
-			} else if(angular.isObject(query)) {
-				if(query.__type === "NoFilters") {
-					filters = query;
-				} else {
-					if(entityConfig.primaryKey) {
-						filters.quickAdd(entityConfig.primaryKey, "eq", query[entityConfig.primaryKey]);
-					} else {
-						//Simple key/value pairs. Assuming all are equal operators and are anded.
-						for(var k in query) {
-							filters.quickAdd(k, "eq", query[k]);
-						}
+					//Simple key/value pairs. Assuming all are equal operators and are anded.
+					for(var k in query) {
+						filters.quickAdd(k, "eq", query[k]);
 					}
 				}
-
-			} else {
-				throw "One requires a query parameter. May be a Number, String or Object";
 			}
 
-			return filters;
+		} else {
+			throw "One requires a query parameter. May be a Number, String or Object";
 		}
 
-		/*
-		*	### digestError(fn, error)
-		*	*Deprecated*
-		*/
-		function _toScopeSafeGuid(uid) {
-			return(uid || "").replace(/-/g, "_");
-		}
+		return filters;
+	}
 
-		/*
-		*	### digestError(fn, error)
-		*	*Deprecated*
-		*/
-		function _fromScopeSafeGuid(ssuid) {
-			return(ssuid || "").replace(/_/g, "-");
-		}
+	var _data = {
+		getItem: _getItem,
+		setItem: _setItem,
+		digest: _digest,
+		digestError: _digestError,
+		digestTimeout: _digestTimeout,
+		toDbDate: _toDbDate,
+		toDisplayDate: _toDisplayDate,
+		isCompoundFilter: _isCompoundFilter,
+		resolveID: _resolveID,
+		toScopeSafeGuid: _toScopeSafeGuid,
+		fromScopeSafeGuid: _fromScopeSafeGuid
+	};
 
-		var _data = {
-			getItem: _getItem,
-			setItem: _setItem,
-			digest: _digest,
-			digestError: _digestError,
-			digestTimeout: _digestTimeout,
-			toDbDate: _toDbDate,
-			toDisplayDate: _toDisplayDate,
-			isCompoundFilter: _isCompoundFilter,
-			resolveID: _resolveID,
-			toScopeSafeGuid: _toScopeSafeGuid,
-			fromScopeSafeGuid: _fromScopeSafeGuid
-		};
-
-		angular.extend(noInfoPath, _data);
-	}]);
-})(angular);
+	angular.extend(noInfoPath, _data);
+}]);
 
 //classes.js
 /*
+ *	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+ *
+ *	___
+ *
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+ *
+ *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+ *
+ *	Copyright (c) 2017 The NoInfoPath Group, LLC.
+ *
+ *	Licensed under the MIT License. (MIT)
+ *
+ *	___
+ *
  * NoInfoPath Data Classes
  * -----------------------
  *
@@ -369,7 +553,7 @@
  * |
  *
  * ### @class NoFilterExpression : Object
- *	
+ *
  * Represents an single filter expression that can be applied to an `IDBObjectStore`.
  *
  * #### Constructor
@@ -1298,7 +1482,7 @@
 	/*
 	 *	### Class NoDataModel
 	 *
-	 *  This class provides functionality to help other NoInfoPath services to 
+	 *  This class provides functionality to help other NoInfoPath services to
 	 *	access and utilitze data in a consistant way. It provides a pristine
 	 *	attribute to the data so a directive can 'roll back' a change, for example.
 	 *
@@ -1312,7 +1496,7 @@
 	 *
 	 *	##### data
 	 *
-	 *	Returns an object that is saved within the NoDataModel. 
+	 *	Returns an object that is saved within the NoDataModel.
 	 *
 	 *	##### pristine
 	 *
@@ -1343,7 +1527,7 @@
 	 *	**Returns**
 	 *
 	 *	Undefined
-	 * 
+	 *
 	 *	##### undo()
 	 *
 	 *	This method returns the value contained within the NoDataModel back to the current pristine value.
@@ -1382,10 +1566,10 @@
 	 *  ```
 	 *
 	 *	**Returns**
-	 *	
+	 *
 	 *	Undefined
 	 *
-	 *	
+	 *
 	 */
 
 	function NoDataModel() {
@@ -1822,8 +2006,22 @@
 })(angular);
 
 //storage.js
-/**
-	### @class MockStorage
+
+/*
+*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+*
+*	___
+*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+*
+*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+*
+*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+*
+*	Licensed under the MIT License. (MIT)
+*
+*	___
+*
 */
 (function () {
 	"use strict";
@@ -1868,9 +2066,6 @@
 		};
 	}
 
-	/**
-		### @class NoStorage
-	*/
 	function NoStorage(storetype) {
 		var _store;
 
@@ -1914,7 +2109,7 @@
 					o = x;
 				}
 			}
-			
+
 			return o;
 
 		};
@@ -1929,17 +2124,41 @@
 	}
 
 	angular.module("noinfopath.data")
+		/*
+			*	noLocalStorage
+			*	--------------
+		*/
+		.factory("noLocalStorage", [function () {
+			return new NoStorage("localStorage");
+		}])
+
+		/*
+			*	noSessionStorage
+			*	--------------
+		*/
 		.factory("noSessionStorage", [function () {
 			return new NoStorage("sessionStorage");
 		}])
 
-	.factory("noLocalStorage", [function () {
-		return new NoStorage("localStorage");
-		}]);
+		;
 })(angular);
 
 //configuration.js
 /*
+*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+*
+*	___
+*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+*
+*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+*
+*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+*
+*	Licensed under the MIT License. (MIT)
+*
+*	___
+*
  * ## @service noConfig
  *
  * ### Overview
@@ -2079,6 +2298,20 @@
 
 //http.js
 /*
+ *	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+ *
+ *	___
+ *
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+ *
+ *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+ *
+ *	Copyright (c) 2017 The NoInfoPath Group, LLC.
+ *
+ *	Licensed under the MIT License. (MIT)
+ *
+ *	___
+ *
  * ## @service noHTTP
  *
  * ### Overview
@@ -3114,14 +3347,27 @@ var GloboTest = {};
 
 //websql.js
 /*
- *	# @module NoInfoPath WebSql
- *
- *	> noinfopath.data @version 0.0.1 #websql
- *
- *	This module provides full CRUD operations, along with the ability to bulk
- *	bulkload data into the WebSql database, and to perform a lookup for a single item,
- *	and the abilty to perform upserts.
- */
+	*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+	*
+	*	___
+	*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+	*
+	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*
+	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+	*
+	*	Licensed under the MIT License. (MIT)
+	*
+	*	___
+	*
+	*	noWebSql
+	*	--------
+	*
+	*	This module provides full CRUD operations, along with the ability to bulk
+	*	bulkload data into the WebSql database, and to perform a lookup for a single item,
+	*	and the abilty to perform upserts.
+*/
 (function (angular, undefined) {
 	"use strict";
 
@@ -4552,42 +4798,24 @@ var GloboTest = {};
 })(angular);
 
 //transaction-cache.js
-/*  ## noTransactionCache service
+/*
+ *	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
  *
+ *	___
  *
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
  *
- *  #### noConfig notation example.
+ *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
- *   ```json
- *    "noTransaction": {
- *        "create": {
- *            [
- *               {
- *                    "entityName": "Observations",
- *                    "identityInsert": "lazy",
- *                    "identityType": "guid",
- *                    "order": 1
- *                }
- *            ]
- *        },
- *        "update": {
- *            [
- *               {
- *                    "entityName": "Observations",
- *                    "order": 1
- *                }
- *            ]
- *        },
- *        "destroy": {
- *            [
- *               {
- *                    "entityName": "Observations",
- *                    "order": 1
- *                }
- *            ]
- *        }
- *    }
- *   ```
+ *	Copyright (c) 2017 The NoInfoPath Group, LLC.
+ *
+ *	Licensed under the MIT License. (MIT)
+ *
+ *	___
+ *
+ *	noTransactionCache service
+ *	--------------------------
+ *
  *   Each top-level property represents a crud operation that must
  *   be handled in a specific manner in order to ensure consistency.
  *   Within each operation is a list of NoTables that are part of the
@@ -4601,873 +4829,888 @@ var GloboTest = {};
 	"use strict";
 
 	angular.module("noinfopath.data")
-		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", "noActionQueue", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser, noActionQueue){
+		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", "noActionQueue", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser, noActionQueue) {
 
-				function NoTransaction(userId, config, thescope) {
-					//var transCfg = noTransConfig;
-					var SELF = this,
-						scope = thescope,
-						schema = noDbSchema.getSchema(config.noDataSource.databaseName);
+			function NoTransaction(userId, config, thescope) {
+				//var transCfg = noTransConfig;
+				var SELF = this,
+					scope = thescope,
+					schema = noDbSchema.getSchema(config.noDataSource.databaseName);
 
-					Object.defineProperties(this, {
-						"__type": {
-							"get": function () {
-								return "NoTransaction";
-							}
+				Object.defineProperties(this, {
+					"__type": {
+						"get": function () {
+							return "NoTransaction";
 						}
-					});
+					}
+				});
 
-					this.namespace = config.noDataSource.databaseName;
-					this.transactionId = noInfoPath.createUUID();
-					this.timestamp = (new Date()).toJSON();
-					this.userId = userId;
-					this.changes = new NoChanges();
-					this.state = "pending";
+				this.namespace = config.noDataSource.databaseName;
+				this.transactionId = noInfoPath.createUUID();
+				this.timestamp = (new Date()).toJSON();
+				this.userId = userId;
+				this.changes = new NoChanges();
+				this.state = "pending";
 
-					this.addChange = function (tableName, data, changeType, dbName) {
-						var tableCfg = scope["noDbSchema_" + (dbName || config.noDataSource.databaseName)];
-						this.changes.add(tableName, data, changeType, tableCfg, (dbName || config.noDataSource.databaseName));
-					};
+				this.addChange = function (tableName, data, changeType, dbName) {
+					var tableCfg = scope["noDbSchema_" + (dbName || config.noDataSource.databaseName)];
+					this.changes.add(tableName, data, changeType, tableCfg, (dbName || config.noDataSource.databaseName));
+				};
 
-					this.toObject = function () {
-						var json = angular.fromJson(angular.toJson(this));
-						json.changes = _.toArray(json.changes);
+				this.toObject = function () {
+					var json = angular.fromJson(angular.toJson(this));
+					json.changes = _.toArray(json.changes);
 
-						return json;
-					};
+					return json;
+				};
 
-					function normalizeTransactions(config, schema) {
+				function normalizeTransactions(config, schema) {
 
-						var noTransactions = config.noDataSource.noTransaction,
-							vw = schema.entity(config.noDataSource.crudEntity),
-							lu = schema.entity(config.noDataSource.entityName),
-							keysv = _.keys(lu.columns),
-							keyst = vw ? _.keys(vw.columns) : [],
-							keysd = !config.noDataSource.crudEntity && !keyst.length ? [] : _.difference(keysv, keyst);
+					var noTransactions = config.noDataSource.noTransaction,
+						vw = schema.entity(config.noDataSource.crudEntity),
+						lu = schema.entity(config.noDataSource.entityName),
+						keysv = _.keys(lu.columns),
+						keyst = vw ? _.keys(vw.columns) : [],
+						keysd = !config.noDataSource.crudEntity && !keyst.length ? [] : _.difference(keysv, keyst);
 
-						keysd.push("DateCreated");
-						keysd.push("CreatedBy");
+					keysd.push("DateCreated");
+					keysd.push("CreatedBy");
 
-						for(var t in noTransactions) {
-							var transaction = noTransactions[t],
-								en = config.noDataSource.crudEntity ? config.noDataSource.crudEntity : config.noDataSource.entityName;
+					for (var t in noTransactions) {
+						var transaction = noTransactions[t],
+							en = config.noDataSource.crudEntity ? config.noDataSource.crudEntity : config.noDataSource.entityName;
 
-							if(_.isBoolean(transaction)) {
-								noTransactions[t] = [
-									{
-										entityName: en,
-										scopeKey: config.scopeKey ? config.scopeKey : undefined
-											//omit_fields: keysd
+						if (_.isBoolean(transaction)) {
+							noTransactions[t] = [
+								{
+									entityName: en,
+									scopeKey: config.scopeKey ? config.scopeKey : undefined
+										//omit_fields: keysd
 									}];
-							}
 						}
-
-						//console.log(noTransactions);
 					}
 
-					function resolveProvider(provider, scope, data) {
-						var prov;
+					//console.log(noTransactions);
+				}
 
-						switch(provider) {
-							case "data":
-								prov = data;
-								break;
-							case "scope":
-								prov = scope;
-								break;
-							default:
-								prov = $injector.get(provider);
-								break;
-						}
+				function resolveProvider(provider, scope, data) {
+					var prov;
 
-						return prov;
+					switch (provider) {
+					case "data":
+						prov = data;
+						break;
+					case "scope":
+						prov = scope;
+						break;
+					default:
+						prov = $injector.get(provider);
+						break;
 					}
 
-					normalizeTransactions(config, schema);
+					return prov;
+				}
 
-					this.upsert = function upsert(data) {
-						data = noParameterParser.parse(data ? data : {});
+				normalizeTransactions(config, schema);
 
-						return $q(function (resolve, reject) {
-							var
-								THIS = SELF,
-								dsCfg = config.noDataSource,
-								opType = data[dsCfg.primaryKey] ? "update" : "create",
-								opEntites = dsCfg.noTransaction[opType],
-								curOpEntity = 0,
-								totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
-								results = {},
-								preOps = {
-									"noop": angular.noop,
-									"basic": function (curEntity, data, scope) {
-										var writableData = {};
+				this.upsert = function upsert(data) {
+					data = noParameterParser.parse(data ? data : {});
 
-										if(curEntity.fields) {
-											for(var f in curEntity.fields) {
-												var fld = curEntity.fields[f],
-													fldName, prov, val;
+					return $q(function (resolve, reject) {
+						var
+							THIS = SELF,
+							dsCfg = config.noDataSource,
+							opType = data[dsCfg.primaryKey] ? "update" : "create",
+							opEntites = dsCfg.noTransaction[opType],
+							curOpEntity = 0,
+							totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
+							results = {},
+							preOps = {
+								"noop": angular.noop,
+								"basic": function (curEntity, data, scope) {
+									var writableData = {};
 
-												//When field value is get remote values then store on
-												//the writableData object.
+									if (curEntity.fields) {
+										for (var f in curEntity.fields) {
+											var fld = curEntity.fields[f],
+												fldName, prov, val;
 
-												if(angular.isString(fld)) {
+											//When field value is get remote values then store on
+											//the writableData object.
+
+											if (angular.isString(fld)) {
+												/*
+												 *	When a field is a string then the value will be the
+												 *	property on the data object provider to the call
+												 *	the `basic` preOp
+												 */
+												fldName = fld;
+												val = data[fld];
+
+											} else if (angular.isObject(fld)) {
+												/*
+												 *	When a field is an object then confgure as if the
+												 *	value will be coming from a trusted provider like
+												 *	scope, or $stateParams.
+												 */
+												fldName = fld.field;
+
+												if (angular.isObject(fld.value)) {
 													/*
-													 *	When a field is a string then the value will be the
-													 *	property on the data object provider to the call
-													 *	the `basic` preOp
+													 *	When `scope` is the provider then the directive scope is used.
+													 *	Otherwise the supplied injecable provider will be used.
 													 */
-													fldName = fld;
-													val = data[fld];
 
-												} else if(angular.isObject(fld)) {
-													/*
-													 *	When a field is an object then confgure as if the
-													 *	value will be coming from a trusted provider like
-													 *	scope, or $stateParams.
-													 */
-													fldName = fld.field;
+													prov = resolveProvider(fld.value.provider, scope, data);
 
-													if(angular.isObject(fld.value)) {
-														/*
-														 *	When `scope` is the provider then the directive scope is used.
-														 *	Otherwise the supplied injecable provider will be used.
-														 */
+													if (prov && fld.value.method) {
+														var params = [];
 
-														prov = resolveProvider(fld.value.provider, scope, data);
+														for (var pi = 0; pi < fld.value.method.params.length; pi++) {
+															var cfg = fld.value.method.params[pi],
+																prov2 = resolveProvider(cfg.provider, scope, data);
 
-														if(prov && fld.value.method) {
-															var params = [];
-
-															for(var pi = 0; pi < fld.value.method.params.length; pi++) {
-																var cfg = fld.value.method.params[pi],
-																	prov2 = resolveProvider(cfg.provider, scope, data);
-
-																params.push(noInfoPath.getItem(prov2, cfg.property));
-															}
-
-															val = prov[fld.value.method.name].apply(null, params);
-														} else if(prov && fld.value.property) {
-															val = noInfoPath.getItem(prov, fld.value.property);
+															params.push(noInfoPath.getItem(prov2, cfg.property));
 														}
 
-													} else {
-														/*
-														 *	When field value is a primative type meaning not
-														 *	an object. or array. Use the value as is.
-														 */
-														val = fld.value;
-													}
-												}
-
-
-												//When field has a type convert before saving.
-												//NOTE: This is temporary and should be refactored
-												//      into the actual provider.  And be data
-												//      driven not conditional.
-												if(fld.type === "date") {
-													val = noInfoPath.toDbDate(val);
-												}
-
-												writableData[fldName] = val;
-											}
-
-											writableData = angular.merge(data, writableData);
-
-										} else if(curEntity.dataService) {
-											var service = $injector.get(curEntity.dataService.provider),
-												method = service[curEntity.dataService.method];
-
-											writableData = method(data);
-
-										} else {
-											writableData = data;
-										}
-
-										if(curEntity.omit_fields) {
-											writableData = _.omit(writableData, curEntity.omit_fields);
-										}
-
-										//console.log(writableData);
-
-										return writableData;
-
-									},
-									"joiner": function (curEntity, data, scope) {
-										var writableData = {};
-
-										if(curEntity.fields) {
-											for(var f in curEntity.fields) {
-												var fld = curEntity.fields[f],
-													prov, value;
-
-												switch(fld.value.provider) {
-													case "data":
-														var t = {};
-														t[fld.value.property] = data;
-														prov = t;
-														break;
-
-													case "results":
-														prov = results;
-														break;
-
-													case "scope":
-														prov = scope;
-														break;
-
-													default:
-														prov = $injector.get(fld.value.provider);
-														break;
-												}
-
-												value = noInfoPath.getItem(prov, fld.value.property);
-
-												writableData[fld.field] = value;
-											}
-										} else if(curEntity.dataService) {
-											var service = $injector.get(curEntity.dataService.provider),
-												method = service[curEntity.dataService.method];
-
-											writableData = method(data);
-
-										}
-										return writableData;
-									},
-									"joiner-many": function (curEntity, data, scope) {
-										var writableData = {
-												drop: [],
-												add: []
-											},
-											sourceDataDrop = _.pluck(scope[curEntity.source.drop.property], curEntity.source.drop.pluck),
-											sourceDataAdd = scope[curEntity.source.add.property],
-											createJoin = preOps.joiner;
-
-										if(sourceDataDrop) {
-											for(var dd = 0; dd < sourceDataDrop.length; dd++) {
-												var sdd = sourceDataDrop[dd];
-												writableData.drop.push(createJoin(curEntity, sdd, scope));
-											}
-										}
-
-										if(sourceDataAdd) {
-											for(var da = 0; da < sourceDataAdd.length; da++) {
-												var sda = sourceDataAdd[da];
-												writableData.add.push(createJoin(curEntity, sda, scope));
-											}
-										}
-
-										return writableData;
-									}
-								};
-
-							function getAllRelatedToParentKey(parentCfg, entity, data) {
-								var filter = new noInfoPath.data.NoFilters();
-
-								filter.quickAdd(parentCfg.primaryKey, "eq", data[parentCfg.primaryKey]);
-
-								return entity.noRead(filter)
-									.then(function (data) {
-										console.log(data.paged);
-
-										var ra = [];
-										for(var d = 0; d < data.length; d++) {
-											var datum = data[d];
-											ra.push(datum[entity.primaryKey[0]]);
-										}
-
-										return ra;
-									});
-							}
-							/*
-							 * Drop each record one at a time so that the operations
-							 * are recorded in the current transaction.
-							 */
-							function dropAllRelatedToParentKey(ds, curEntity, data) {
-								return $q(function (resolve, reject) {
-									var d = 0;
-
-									function recurse() {
-										var datum = data[d++],
-											filter = new noInfoPath.data.NoFilters();
-
-										if(datum) {
-
-											filter.quickAdd(curEntity.primaryKey, "eq", datum);
-
-											ds.destroy(null, SELF, filter)
-												.then(function (r) {
-													console.log(r);
-													recurse();
-												})
-												.catch(function (err) {
-													console.error(err);
-													reject(err);
-												});
-										} else {
-											resolve();
-										}
-
-									}
-
-									recurse();
-								});
-							}
-							/*
-							 * Add each record one at a time to ensure that the transaction is recorded.
-							 */
-							function addAllRelatedToParentKey(ds, entity, data, scope) {
-								return $q(function (resolve, reject) {
-									var d = 0;
-
-									function recurse() {
-										var datum = data[d++];
-
-										if(datum) {
-											ds.create(datum, SELF)
-												.then(function (r) {
-													console.log(r);
-													recurse();
-												})
-												.catch(function (err) {
-													console.error(err);
-													reject(err);
-												});
-										} else {
-											resolve();
-										}
-
-									}
-
-									recurse();
-								});
-
-
-							}
-							//Perform create or update operation.
-							function executeDataOperation(dataSource, curEntity, opType, writableData) {
-								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
-									.then(function (dataSource, data) {
-										//get row from base data source
-
-										//console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
-
-										dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
-											.then(function (scope, datum) {
-												var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
-													pure = noParameterParser.parse(datum);
-
-												//foo = angular.copy(scope[sk]);
-												results[sk] = pure;
-
-												if(scope[sk]){
-													noParameterParser.update(datum, scope[sk]);
-
-
-													if(curEntity.cacheOnScope) {
-														scope[curEntity.entityName] = pure;
+														val = prov[fld.value.method.name].apply(null, params);
+													} else if (prov && fld.value.property) {
+														val = noInfoPath.getItem(prov, fld.value.property);
 													}
 
+												} else {
 													/*
-													 *   #### @property scopeKey
-													 *
-													 *   Use this property allow NoTransaction to store a reference
-													 *   to the entity upon which this data operation was performed.
-													 *   This is useful when you have tables that rely on a one to one
-													 *   relationship.
-													 *
-													 *   It is best practice use this property when ever possible,
-													 *   but it not a required configuration property.
-													 *
+													 *	When field value is a primative type meaning not
+													 *	an object. or array. Use the value as is.
 													 */
-
-													//scope[sk] = foo;
-
-
+													val = fld.value;
 												}
-
-												//If there is an ActionQueue then execute it.
-												if(curEntity.actions && curEntity.actions.post) {
-													//support post operation actions for now.
-													var execQueue = noActionQueue.createQueue(datum, scope, {}, curEntity.actions.post);
-
-													noActionQueue.synchronize(execQueue)
-														.then(_recurse);
-												}else{
-													_recurse();
-												}
+											}
 
 
-											}.bind(null, scope));
-									}.bind(null, dataSource))
-									.catch(reject);
-							}
+											//When field has a type convert before saving.
+											//NOTE: This is temporary and should be refactored
+											//      into the actual provider.  And be data
+											//      driven not conditional.
+											if (fld.type === "date") {
+												val = noInfoPath.toDbDate(val);
+											}
 
-							function executeDataOperationBulk(dataSource, curEntity, opType, writableData) {
-								return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
-									.then(function (dataSource, data) {
-										return data;
-									}.bind(null, dataSource))
-									.catch(reject);
-							}
+											writableData[fldName] = val;
+										}
 
-							function _entity_standard(curEntity) {
-								var primaryKey, opType, preOp, dsConfig, dataSource, writableData, exec;
+										writableData = angular.merge(data, writableData);
 
-								//Resolve primary key
-								primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
+									} else if (curEntity.dataService) {
+										var service = $injector.get(curEntity.dataService.provider),
+											method = service[curEntity.dataService.method];
 
-								//Create or Update the curEntity.
-								opType = data[primaryKey] ? "update" : "create";
+										writableData = method(data);
 
-								//check entity type, if none found use `basic`
-								preOp = !!curEntity.type ? curEntity.type : "basic";
-
-								//create the datasource config used to create datasource.
-								// dsConfig = angular.merge({}, config.noDataSource, {
-								// 	entityName: curEntity.entityName
-								// });
-
-								dsConfig = angular.merge({}, config.noDataSource, curEntity);
-								//console.log(dsConfig);
-
-								//create the noDataSource object.
-								dataSource = noDataSource.create(dsConfig, scope);
-
-								//resolve writeable data, execution function.
-								switch(preOp) {
-									case "joiner-many":
-										/*
-										 *  ### joiner-many
-										 *
-										 *  `joiner-many` assumes that it represents a multiple choice question.
-										 *  In order to keep the algorithm simple we drop all joiner items
-										 *  that match the parent key. (i.e. SelectionID)
-										 */
-										writableData = preOps[preOp](curEntity, data, scope);
-
-										exec = function () {
-											return getAllRelatedToParentKey(dsCfg, dataSource.entity, data)
-												.then(dropAllRelatedToParentKey.bind(null, dataSource, curEntity))
-												.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
-												.then(_recurse)
-												.catch(reject);
-										};
-										break;
-
-									case "one-one":
-										/*
-										 *	### one-one
-										 *
-										 *	`one-one` enforces referential integrity between two table in a
-										 *	transaction that share a one to one relationship.  When the child
-										 *	data/table as defined in the noTransaction configuration and it's
-										 *	primary key value is undefined a create is performed, otherwise
-										 *	an update is performed.
-										 *
-										 */
-										var keyData = preOps.joiner(curEntity, data, scope);
-
-										opType = keyData[curEntity.primaryKey] ? "update" : "create";
-
-										writableData = preOps.basic(curEntity, data, scope);
-
-										writableData = angular.merge({}, writableData, keyData);
-
-										exec = executeDataOperation;
-
-										break;
-
-									default:
-										writableData = preOps[preOp](curEntity, data, scope);
-										exec = executeDataOperation;
-										break;
-								}
-
-								/*
-								 *	@property createOnly
-								 *
-								 *	Use this property to `create` new related records in a transaction
-								 *	member table when a matching item does not exist. So, this also
-								 *	means that no `update` operations are performed on the designated
-								 *	member table.
-								 *
-								 */
-								if((opType === "update" && !curEntity.createOnly) || opType == "create") {
-									exec(dataSource, curEntity, opType, writableData);
-								} else {
-									_recurse();
-								}
-							}
-
-							function _entity_bulk(curEntity) {
-								function _resolveMethod(curEntity, sdProv, sdProp) {
-									var method;
-
-									if(angular.isFunction(sdProp))
-									{
-									 	method = sdProp;
-									} else if(sdProp === undefined && curEntity.bulk.sourceData.method) {
-										method = sdProv[curEntity.bulk.sourceData.method].bind(sdProv);
-									} else if(sdProp !== undefined && curEntity.bulk.sourceData.method) {
-										method = sdProp[curEntity.bulk.sourceData.method].bind(sdProp);
+									} else {
+										writableData = data;
 									}
 
-									return method;
-								}
+									if (curEntity.omit_fields) {
+										writableData = _.omit(writableData, curEntity.omit_fields);
+									}
 
-								//Current version requires an objectFactory when using bulk feature.
-								if(!curEntity.objectFactory) throw "objectFactory property is required when using bulk upsert feature.";
+									//console.log(writableData);
 
-								var ofProv = $injector.get(curEntity.objectFactory.provider),
-									classConstructor = ofProv.get(curEntity.objectFactory.className),
-									sdProv = curEntity.bulk.sourceData.provider === "scope" ? scope : $injector.get(curEntity.bulk.sourceData.provider),
-									sdProp = sdProv[curEntity.bulk.sourceData.property],
-									sdMeth = _resolveMethod(curEntity, sdProv, sdProp),
-									data = sdMeth ? sdMeth() : sdProp,
-									dataSource, primaryKey, opType, promises = [];
+									return writableData;
 
-								primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
+								},
+								"joiner": function (curEntity, data, scope) {
+									var writableData = {};
 
-								//Create or Update the curEntity.
-								opType = data[primaryKey] ? "update" : "create";
+									if (curEntity.fields) {
+										for (var f in curEntity.fields) {
+											var fld = curEntity.fields[f],
+												prov, value;
 
-								//create the datasource config used to create datasource.
-								// dsConfig = angular.merge({}, config.noDataSource, {
-								// 	entityName: curEntity.entityName
-								// });
+											switch (fld.value.provider) {
+											case "data":
+												var t = {};
+												t[fld.value.property] = data;
+												prov = t;
+												break;
 
-								//dsConfig = angular.merge({}, config.noDataSource, curEntity);
-								//console.log(dsConfig);
+											case "results":
+												prov = results;
+												break;
 
+											case "scope":
+												prov = scope;
+												break;
 
+											default:
+												prov = $injector.get(fld.value.provider);
+												break;
+											}
 
+											value = noInfoPath.getItem(prov, fld.value.property);
 
-								//SELF.bulkUpsert(data, classConstructor, curEntity.bulk.ignoreDirtyFlag, results)
+											writableData[fld.field] = value;
+										}
+									} else if (curEntity.dataService) {
+										var service = $injector.get(curEntity.dataService.provider),
+											method = service[curEntity.dataService.method];
 
+										writableData = method(data);
 
+									}
+									return writableData;
+								},
+								"joiner-many": function (curEntity, data, scope) {
+									var writableData = {
+											drop: [],
+											add: []
+										},
+										sourceDataDrop = _.pluck(scope[curEntity.source.drop.property], curEntity.source.drop.pluck),
+										sourceDataAdd = scope[curEntity.source.add.property],
+										createJoin = preOps.joiner;
 
-								function _doTheUpserts(data) {
-									//create the noDataSource object.
-									dataSource = noDataSource.create(curEntity, scope);
-
-									//console.log(data);
-
-
-									for(var i = 0; i < data.length; i++) {
-										var model = data[i];
-										opType = model[primaryKey] ? "update" : "create";
-
-										if(curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
-											promises.push(executeDataOperationBulk(dataSource, curEntity, opType, new classConstructor(model, results)));
+									if (sourceDataDrop) {
+										for (var dd = 0; dd < sourceDataDrop.length; dd++) {
+											var sdd = sourceDataDrop[dd];
+											writableData.drop.push(createJoin(curEntity, sdd, scope));
 										}
 									}
 
-									$q.all(promises)
-										.then(_recurse)
-										.catch(reject);
-								}
-
-
-								if(data.then) {
-									data
-										.then(_doTheUpserts)
-										.catch(function(e){
-											reject(e);
-										});
-								} else {
-									_doTheUpserts(data);
-								}
-
-							}
-
-							function _recurse() {
-
-								var curEntity = opEntites[curOpEntity];
-
-								//Check to see if we have run out of entities to recurse.
-								if(!curEntity || curOpEntity >= opEntites.length) {
-									resolve(results);
-									return;
-								}
-
-								if(curEntity.bulk) {
-									_entity_bulk(curEntity, results);
-								} else {
-									_entity_standard(curEntity);
-								}
-
-								//Increment counter for next recursion.
-								curOpEntity++;
-							}
-
-							_recurse();
-						});
-					};
-
-					/**
-					 *	### @method bulkUpsert
-					 *
-					 *	Inserts or updates and array of data items. Uses a provided
-					 *	constructor to create the object that will be added to the
-					 *	entity. This allows for custom data conversion and business
-					 *	logic to be implement at the record level, before saving.
-					 *
-					 */
-					this.bulkUpsert = function (data, constructor, ignoreDirtyFlag, results) {
-
-						//console.log(data);
-						return $q(function (resolve, reject) {
-							var promises = [];
-
-							for(var i = 0; i < data.length; i++) {
-								var model = data[i];
-
-								if(ignoreDirtyFlag === true || model.dirty) {
-									promises.push(this.upsert(new constructor(model, results)));
-								}
-							}
-
-							$q.all(promises)
-								.then(resolve)
-								.catch(reject);
-
-						}.bind(this));
-					};
-
-					this.destroy = function (data, filters) {
-						data = data ? data : {};
-
-						return $q(function (resolve, reject) {
-							var THIS = SELF,
-								dsCfg = config.noDataSource,
-								opType = "destroy",
-								opEntites = dsCfg.noTransaction[opType],
-								curOpEntity = 0,
-								totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
-								results = {};
-
-							function _recurse() {
-								var curEntity = opEntites[curOpEntity],
-									preOp, dsConfig, dataSource, writableData;
-
-								if(!curEntity || curOpEntity >= opEntites.length) {
-									resolve(results);
-									return;
-								}
-
-								curOpEntity++;
-
-								dsConfig = angular.merge({}, config.noDataSource, {
-									entityName: curEntity.entityName
-								});
-
-								dataSource = noDataSource.create(dsConfig, scope);
-
-								writableData = data; //preOps[preOp](curEntity, data, scope);
-
-								dataSource[opType](writableData, SELF, filters)
-									.then(function (data) {
-										results[config.noDataSource.entityName] = writableData;
-										_recurse();
-
-									})
-									.catch(reject);
-							}
-
-							_recurse();
-						});
-					};
-
-				}
-
-				function NoTransactionLite(userId, namespace, thecope) {
-					//var transCfg = noTransConfig;
-					var SELF = this,
-						scope = thescope;
-
-					Object.defineProperties(this, {
-						"__type": {
-							"get": function () {
-								return "NoTransactionLite";
-							}
-						}
-					});
-
-					this.namespace = namespace;
-					this.transactionId = noInfoPath.createUUID();
-					this.timestamp = (new Date()).toJSON();
-					this.userId = userId;
-					this.changes = new NoChanges();
-					this.state = "pending";
-
-					this.addChange = function (tableName, data, changeType) {
-						var tableCfg = scope["noDbSchema_" + namespace];
-						this.changes.add(tableName, data, changeType, tableCfg);
-					};
-
-					this.toObject = function () {
-						var json = angular.fromJson(angular.toJson(this));
-						json.changes = _.toArray(json.changes);
-
-						return json;
-					};
-				}
-
-
-				function NoChanges() {
-					Object.defineProperties(this, {
-						"__type": {
-							"get": function () {
-								return "NoChanges";
-							}
-						}
-					});
-					var arr = [];
-					noInfoPath.setPrototypeOf(this, arr);
-					this.add = function (tableName, data, changeType, tableCfg, ns) {
-						var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
-							change = new NoChange(tableName, data, changeType, tableCfg, !!syncVer ? syncVer.version : 0, ns);
-
-						this.unshift(change);
-					};
-				}
-
-				function NoChange(tableName, data, changeType, tableCfg, version, ns) {
-					var tblSchema = tableCfg.tables[tableName];
-
-					function normalizeValues(inData) {
-						var data = angular.copy(inData),
-							converters = {
-								"bit": function (d) {
-									return !!d;
-								},
-								"decimal": function (d) {
-									var r = d;
-									if(r) {
-										r = String(r);
+									if (sourceDataAdd) {
+										for (var da = 0; da < sourceDataAdd.length; da++) {
+											var sda = sourceDataAdd[da];
+											writableData.add.push(createJoin(curEntity, sda, scope));
+										}
 									}
 
-									return r;
-								},
-								"undefined": function (d) {
-									return d;
+									return writableData;
 								}
 							};
 
-						for(var c in data) {
-							var dt,
-								col = tblSchema.columns[c];
+						function getAllRelatedToParentKey(parentCfg, entity, data) {
+							var filter = new noInfoPath.data.NoFilters();
 
-							if(col) {
-								dt = converters[col.type];
+							filter.quickAdd(parentCfg.primaryKey, "eq", data[parentCfg.primaryKey]);
 
-								if(!dt) {
-									dt = converters["undefined"];
+							return entity.noRead(filter)
+								.then(function (data) {
+									console.log(data.paged);
+
+									var ra = [];
+									for (var d = 0; d < data.length; d++) {
+										var datum = data[d];
+										ra.push(datum[entity.primaryKey[0]]);
+									}
+
+									return ra;
+								});
+						}
+						/*
+						 * Drop each record one at a time so that the operations
+						 * are recorded in the current transaction.
+						 */
+						function dropAllRelatedToParentKey(ds, curEntity, data) {
+							return $q(function (resolve, reject) {
+								var d = 0;
+
+								function recurse() {
+									var datum = data[d++],
+										filter = new noInfoPath.data.NoFilters();
+
+									if (datum) {
+
+										filter.quickAdd(curEntity.primaryKey, "eq", datum);
+
+										ds.destroy(null, SELF, filter)
+											.then(function (r) {
+												console.log(r);
+												recurse();
+											})
+											.catch(function (err) {
+												console.error(err);
+												reject(err);
+											});
+									} else {
+										resolve();
+									}
+
 								}
 
-								data[c] = dt(data[c]);
-							}
-						}
-						return data;
-					}
-
-					Object.defineProperties(this, {
-						"__type": {
-							"get": function () {
-								return "NoChange";
-							}
-						}
-					});
-
-					this.namespace = ns;
-					this.tableName = tableName;
-					this.data = !!tblSchema ? normalizeValues(data) : data;
-					this.changeType = changeType;
-					this.version = version;
-				}
-
-				function NoTransactionCache() {
-
-
-					this.beginTransaction = function (userId, noTransConfig, scope) {
-						if(angular.isObject(noTransConfig)) {
-							return new NoTransaction(userId, noTransConfig, scope);
-						} else {
-							return new NoTransactionLite(userId, noTransConfig, scope);
-						}
-					};
-
-					this.endTransaction = function (transaction) {
-						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
-							entity = db.NoInfoPath_Changes;
-
-						//console.log(db);
-
-						return entity.noCreate(transaction.toObject())
-							.then(function () {
-								$rootScope.$broadcast("noTransactionCache::localDataUpdated", transaction);
+								recurse();
 							});
-					};
+						}
+						/*
+						 * Add each record one at a time to ensure that the transaction is recorded.
+						 */
+						function addAllRelatedToParentKey(ds, entity, data, scope) {
+							return $q(function (resolve, reject) {
+								var d = 0;
 
-					this.getAllPending = function () {
-						return $q(function (resolve, reject) {
-							var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
-								entity = db.NoInfoPath_Changes;
+								function recurse() {
+									var datum = data[d++];
 
-							entity
-								.where("state")
-								.equals("pending")
-								.toArray()
-								.then(resolve)
+									if (datum) {
+										ds.create(datum, SELF)
+											.then(function (r) {
+												console.log(r);
+												recurse();
+											})
+											.catch(function (err) {
+												console.error(err);
+												reject(err);
+											});
+									} else {
+										resolve();
+									}
+
+								}
+
+								recurse();
+							});
+
+
+						}
+						//Perform create or update operation.
+						function executeDataOperation(dataSource, curEntity, opType, writableData) {
+							return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
+								.then(function (dataSource, data) {
+									//get row from base data source
+
+									//console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
+
+									dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
+										.then(function (scope, datum) {
+											var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
+												pure = noParameterParser.parse(datum);
+
+											//foo = angular.copy(scope[sk]);
+											results[sk] = pure;
+
+											if (scope[sk]) {
+												noParameterParser.update(datum, scope[sk]);
+
+
+												if (curEntity.cacheOnScope) {
+													scope[curEntity.entityName] = pure;
+												}
+
+												/*
+												 *	#### @property scopeKey
+												 *
+												 *	Use this property allow NoTransaction to store a reference
+												 *	to the entity upon which this data operation was performed.
+												 *	This is useful when you have tables that rely on a one to one
+												 *	relationship.
+												 *
+												 *	It is best practice use this property when ever possible,
+												 *	but it not a required configuration property.
+												 *
+												 */
+
+												//scope[sk] = foo;
+
+
+											}
+
+											//If there is an ActionQueue then execute it.
+											if (curEntity.actions && curEntity.actions.post) {
+												//support post operation actions for now.
+												var execQueue = noActionQueue.createQueue(datum, scope, {}, curEntity.actions.post);
+
+												noActionQueue.synchronize(execQueue)
+													.then(_recurse);
+											} else {
+												_recurse();
+											}
+
+
+										}.bind(null, scope));
+								}.bind(null, dataSource))
 								.catch(reject);
+						}
 
-						});
-					};
+						function executeDataOperationBulk(dataSource, curEntity, opType, writableData) {
+							return dataSource[opType](writableData, curEntity.notSyncable ? undefined : SELF)
+								.then(function (dataSource, data) {
+									return data;
+								}.bind(null, dataSource))
+								.catch(reject);
+						}
 
-					this.markTransactionSynced = function (t) {
-						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
-							entity = db.NoInfoPath_Changes;
+						function _entity_standard(curEntity) {
+							var primaryKey, opType, preOp, dsConfig, dataSource, writableData, exec;
 
-						t.state = "synced";
+							//Resolve primary key
+							primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
 
-						return entity.noUpdate(t);
+							//Create or Update the curEntity.
+							opType = data[primaryKey] ? "update" : "create";
 
-					};
+							//check entity type, if none found use `basic`
+							preOp = !!curEntity.type ? curEntity.type : "basic";
 
-					this.dropAllSynced = function () {
-						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
-							entity = db.NoInfoPath_Changes;
+							//create the datasource config used to create datasource.
+							// dsConfig = angular.merge({}, config.noDataSource, {
+							// 	entityName: curEntity.entityName
+							// });
 
-						return entity
-							.where("state")
-							.equals("synced")
-							.toArray()
-							.then(function (data) {
-								for(var d in data) {
-									var datum = data[d];
+							dsConfig = angular.merge({}, config.noDataSource, curEntity);
+							//console.log(dsConfig);
 
-									entity.noDestroy(datum);
+							//create the noDataSource object.
+							dataSource = noDataSource.create(dsConfig, scope);
+
+							//resolve writeable data, execution function.
+							switch (preOp) {
+							case "joiner-many":
+								/*
+								 *	### joiner-many
+								 *
+								 *	`joiner-many` assumes that it represents a multiple choice question.
+								 *	In order to keep the algorithm simple we drop all joiner items
+								 *	that match the parent key. (i.e. SelectionID)
+								 */
+								writableData = preOps[preOp](curEntity, data, scope);
+
+								exec = function () {
+									return getAllRelatedToParentKey(dsCfg, dataSource.entity, data)
+										.then(dropAllRelatedToParentKey.bind(null, dataSource, curEntity))
+										.then(addAllRelatedToParentKey.bind(null, dataSource, curEntity, writableData.add, scope))
+										.then(_recurse)
+										.catch(reject);
+								};
+								break;
+
+							case "one-one":
+								/*
+								 *	### one-one
+								 *
+								 *	`one-one` enforces referential integrity between two table in a
+								 *	transaction that share a one to one relationship.  When the child
+								 *	data/table as defined in the noTransaction configuration and it's
+								 *	primary key value is undefined a create is performed, otherwise
+								 *	an update is performed.
+								 *
+								 */
+								var keyData = preOps.joiner(curEntity, data, scope);
+
+								opType = keyData[curEntity.primaryKey] ? "update" : "create";
+
+								writableData = preOps.basic(curEntity, data, scope);
+
+								writableData = angular.merge({}, writableData, keyData);
+
+								exec = executeDataOperation;
+
+								break;
+
+							default:
+								writableData = preOps[preOp](curEntity, data, scope);
+								exec = executeDataOperation;
+								break;
+							}
+
+							/*
+							 *	@property createOnly
+							 *
+							 *	Use this property to `create` new related records in a transaction
+							 *	member table when a matching item does not exist. So, this also
+							 *	means that no `update` operations are performed on the designated
+							 *	member table.
+							 *
+							 */
+							if ((opType === "update" && !curEntity.createOnly) || opType == "create") {
+								exec(dataSource, curEntity, opType, writableData);
+							} else {
+								_recurse();
+							}
+						}
+
+						function _entity_bulk(curEntity) {
+							function _resolveMethod(curEntity, sdProv, sdProp) {
+								var method;
+
+								if (angular.isFunction(sdProp)) {
+									method = sdProp;
+								} else if (sdProp === undefined && curEntity.bulk.sourceData.method) {
+									method = sdProv[curEntity.bulk.sourceData.method].bind(sdProv);
+								} else if (sdProp !== undefined && curEntity.bulk.sourceData.method) {
+									method = sdProp[curEntity.bulk.sourceData.method].bind(sdProp);
 								}
-							})
-							.catch(function (err) {
-								console.error(err);
-							});
-					};
 
+								return method;
+							}
+
+							//Current version requires an objectFactory when using bulk feature.
+							if (!curEntity.objectFactory) throw "objectFactory property is required when using bulk upsert feature.";
+
+							var ofProv = $injector.get(curEntity.objectFactory.provider),
+								classConstructor = ofProv.get(curEntity.objectFactory.className),
+								sdProv = curEntity.bulk.sourceData.provider === "scope" ? scope : $injector.get(curEntity.bulk.sourceData.provider),
+								sdProp = sdProv[curEntity.bulk.sourceData.property],
+								sdMeth = _resolveMethod(curEntity, sdProv, sdProp),
+								data = sdMeth ? sdMeth() : sdProp,
+								dataSource, primaryKey, opType, promises = [];
+
+							primaryKey = curEntity.primaryKey ? curEntity.primaryKey : dsCfg.primaryKey;
+
+							//Create or Update the curEntity.
+							opType = data[primaryKey] ? "update" : "create";
+
+							//create the datasource config used to create datasource.
+							// dsConfig = angular.merge({}, config.noDataSource, {
+							// 	entityName: curEntity.entityName
+							// });
+
+							//dsConfig = angular.merge({}, config.noDataSource, curEntity);
+							//console.log(dsConfig);
+
+
+
+
+							//SELF.bulkUpsert(data, classConstructor, curEntity.bulk.ignoreDirtyFlag, results)
+
+
+
+							function _doTheUpserts(data) {
+								//create the noDataSource object.
+								dataSource = noDataSource.create(curEntity, scope);
+
+								//console.log(data);
+
+
+								for (var i = 0; i < data.length; i++) {
+									var model = data[i];
+									opType = model[primaryKey] ? "update" : "create";
+
+									if (curEntity.bulk.ignoreDirtyFlag === true || model.dirty) {
+										promises.push(executeDataOperationBulk(dataSource, curEntity, opType, new classConstructor(model, results)));
+									}
+								}
+
+								$q.all(promises)
+									.then(_recurse)
+									.catch(reject);
+							}
+
+
+							if (data.then) {
+								data
+									.then(_doTheUpserts)
+									.catch(function (e) {
+										reject(e);
+									});
+							} else {
+								_doTheUpserts(data);
+							}
+
+						}
+
+						function _recurse() {
+
+							var curEntity = opEntites[curOpEntity];
+
+							//Check to see if we have run out of entities to recurse.
+							if (!curEntity || curOpEntity >= opEntites.length) {
+								resolve(results);
+								return;
+							}
+
+							if (curEntity.bulk) {
+								_entity_bulk(curEntity, results);
+							} else {
+								_entity_standard(curEntity);
+							}
+
+							//Increment counter for next recursion.
+							curOpEntity++;
+						}
+
+						_recurse();
+					});
+				};
+
+				/**
+				 *	### @method bulkUpsert
+				 *
+				 *	Inserts or updates and array of data items. Uses a provided
+				 *	constructor to create the object that will be added to the
+				 *	entity. This allows for custom data conversion and business
+				 *	logic to be implement at the record level, before saving.
+				 *
+				 */
+				this.bulkUpsert = function (data, constructor, ignoreDirtyFlag, results) {
+
+					//console.log(data);
+					return $q(function (resolve, reject) {
+						var promises = [];
+
+						for (var i = 0; i < data.length; i++) {
+							var model = data[i];
+
+							if (ignoreDirtyFlag === true || model.dirty) {
+								promises.push(this.upsert(new constructor(model, results)));
+							}
+						}
+
+						$q.all(promises)
+							.then(resolve)
+							.catch(reject);
+
+					}.bind(this));
+				};
+
+				this.destroy = function (data, filters) {
+					data = data ? data : {};
+
+					return $q(function (resolve, reject) {
+						var THIS = SELF,
+							dsCfg = config.noDataSource,
+							opType = "destroy",
+							opEntites = dsCfg.noTransaction[opType],
+							curOpEntity = 0,
+							totOpEntity = angular.isArray(opEntites) ? opEntites.length : 1,
+							results = {};
+
+						function _recurse() {
+							var curEntity = opEntites[curOpEntity],
+								preOp, dsConfig, dataSource, writableData;
+
+							if (!curEntity || curOpEntity >= opEntites.length) {
+								resolve(results);
+								return;
+							}
+
+							curOpEntity++;
+
+							dsConfig = angular.merge({}, config.noDataSource, {
+								entityName: curEntity.entityName
+							});
+
+							dataSource = noDataSource.create(dsConfig, scope);
+
+							writableData = data; //preOps[preOp](curEntity, data, scope);
+
+							dataSource[opType](writableData, SELF, filters)
+								.then(function (data) {
+									results[config.noDataSource.entityName] = writableData;
+									_recurse();
+
+								})
+								.catch(reject);
+						}
+
+						_recurse();
+					});
+				};
+
+			}
+
+			function NoTransactionLite(userId, namespace, thecope) {
+				//var transCfg = noTransConfig;
+				var SELF = this,
+					scope = thescope;
+
+				Object.defineProperties(this, {
+					"__type": {
+						"get": function () {
+							return "NoTransactionLite";
+						}
+					}
+				});
+
+				this.namespace = namespace;
+				this.transactionId = noInfoPath.createUUID();
+				this.timestamp = (new Date()).toJSON();
+				this.userId = userId;
+				this.changes = new NoChanges();
+				this.state = "pending";
+
+				this.addChange = function (tableName, data, changeType) {
+					var tableCfg = scope["noDbSchema_" + namespace];
+					this.changes.add(tableName, data, changeType, tableCfg);
+				};
+
+				this.toObject = function () {
+					var json = angular.fromJson(angular.toJson(this));
+					json.changes = _.toArray(json.changes);
+
+					return json;
+				};
+			}
+
+
+			function NoChanges() {
+				Object.defineProperties(this, {
+					"__type": {
+						"get": function () {
+							return "NoChanges";
+						}
+					}
+				});
+				var arr = [];
+				noInfoPath.setPrototypeOf(this, arr);
+				this.add = function (tableName, data, changeType, tableCfg, ns) {
+					var syncVer = noLocalStorage.getItem("noSync_lastSyncVersion"),
+						change = new NoChange(tableName, data, changeType, tableCfg, !!syncVer ? syncVer.version : 0, ns);
+
+					this.unshift(change);
+				};
+			}
+
+			function NoChange(tableName, data, changeType, tableCfg, version, ns) {
+				var tblSchema = tableCfg.tables[tableName];
+
+				function normalizeValues(inData) {
+					var data = angular.copy(inData),
+						converters = {
+							"bit": function (d) {
+								return !!d;
+							},
+							"decimal": function (d) {
+								var r = d;
+								if (r) {
+									r = String(r);
+								}
+
+								return r;
+							},
+							"undefined": function (d) {
+								return d;
+							}
+						};
+
+					for (var c in data) {
+						var dt,
+							col = tblSchema.columns[c];
+
+						if (col) {
+							dt = converters[col.type];
+
+							if (!dt) {
+								dt = converters["undefined"];
+							}
+
+							data[c] = dt(data[c]);
+						}
+					}
+					return data;
 				}
 
-				// // These classes are exposed for testing purposes
-				// noInfoPath.data.NoTransaction = NoTransaction;
-				// noInfoPath.data.NoChanges = NoChanges;
-				// noInfoPath.data.NoChange = NoChange;
-				// noInfoPath.data.NoTransactionCache = NoTransactionCache;
+				Object.defineProperties(this, {
+					"__type": {
+						"get": function () {
+							return "NoChange";
+						}
+					}
+				});
 
-				return new NoTransactionCache($q, noIndexedDb);
+				this.namespace = ns;
+				this.tableName = tableName;
+				this.data = !!tblSchema ? normalizeValues(data) : data;
+				this.changeType = changeType;
+				this.version = version;
+			}
+
+			function NoTransactionCache() {
+
+
+				this.beginTransaction = function (userId, noTransConfig, scope) {
+					if (angular.isObject(noTransConfig)) {
+						return new NoTransaction(userId, noTransConfig, scope);
+					} else {
+						return new NoTransactionLite(userId, noTransConfig, scope);
+					}
+				};
+
+				this.endTransaction = function (transaction) {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
+
+					//console.log(db);
+
+					return entity.noCreate(transaction.toObject())
+						.then(function () {
+							$rootScope.$broadcast("noTransactionCache::localDataUpdated", transaction);
+						});
+				};
+
+				this.getAllPending = function () {
+					return $q(function (resolve, reject) {
+						var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+							entity = db.NoInfoPath_Changes;
+
+						entity
+							.where("state")
+							.equals("pending")
+							.toArray()
+							.then(resolve)
+							.catch(reject);
+
+					});
+				};
+
+				this.markTransactionSynced = function (t) {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
+
+					t.state = "synced";
+
+					return entity.noUpdate(t);
+
+				};
+
+				this.dropAllSynced = function () {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
+
+					return entity
+						.where("state")
+						.equals("synced")
+						.toArray()
+						.then(function (data) {
+							for (var d in data) {
+								var datum = data[d];
+
+								entity.noDestroy(datum);
+							}
+						})
+						.catch(function (err) {
+							console.error(err);
+						});
+				};
+
+			}
+
+			// // These classes are exposed for testing purposes
+			// noInfoPath.data.NoTransaction = NoTransaction;
+			// noInfoPath.data.NoChanges = NoChanges;
+			// noInfoPath.data.NoChange = NoChange;
+			// noInfoPath.data.NoTransactionCache = NoTransactionCache;
+
+			return new NoTransactionCache($q, noIndexedDb);
 			}]);
 })(angular);
 
 //indexeddb.js
 /*
+ *	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+ *
+ *	___
+ *
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+ *
+ *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+ *
+ *	Copyright (c) 2017 The NoInfoPath Group, LLC.
+ *
+ *	Licensed under the MIT License. (MIT)
+ *
+ *	___
+ *
+ *	noIndexedDB
+ *	------------------
  *	## noIndexedDB
  *
  *	The noIndexedDB factory creates and configures a new instance of Dexie.
@@ -7312,6 +7555,20 @@ var GloboTest = {};
 
 //data-source.js
 /*
+ *	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+ *
+ *	___
+ *
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+ *
+ *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+ *
+ *	Copyright (c) 2017 The NoInfoPath Group, LLC.
+ *
+ *	Licensed under the MIT License. (MIT)
+ *
+ *	___
+ *
  *	## noDataSource Service
  *
  *	Provides a generic service that exposes the NoInfoPath data providers'
@@ -7325,7 +7582,7 @@ var GloboTest = {};
  *        "entityName": "LU_PercentColor",
  *        "primaryKey": "PercentColorID",
  *        "queryParser": "noQueryParser",
- *        "sort":  [{"field": "Percentage", "dir": "asc"}]
+ *        "sort":  [{"field": "Percentage", "dir": "asc"}],
  *        "aggregation": {
  *             "actions": [
  *					{
@@ -7644,6 +7901,22 @@ var GloboTest = {};
 })(angular);
 
 //dynamic-filter.js
+/*
+*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+*
+*	___
+*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+*
+*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+*
+*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+*
+*	Licensed under the MIT License. (MIT)
+*
+*	___
+*
+*/
 (function (angular, undefined) {
 	"use strict";
 
@@ -7855,9 +8128,26 @@ var GloboTest = {};
 
 //template-cache.js
 /*
- *	NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
- *	inferred in the documentation or perform by ngInclude.
- */
+	*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+	*
+	*	___
+	*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+	*
+	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*
+	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+	*
+	*	Licensed under the MIT License. (MIT)
+	*
+	*	___
+	*
+	*	noTemplateCache
+	*	---------------
+	*
+	*	NoInfoPath abstraction of $templateCache. Added the actual $http calls that are
+	*	inferred in the documentation or perform by ngInclude.
+*/
 (function (angular, undefined) {
 	angular.module("noinfopath.data")
 		.service("noTemplateCache", ["$q", "$templateRequest", "$templateCache", function ($q, $templateRequest, $templateCache) {
@@ -7976,126 +8266,29 @@ var GloboTest = {};
 })(angular);
 
 //file-storage.js
-(function() {
+/*
+*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+*
+*	___
+*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+*
+*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+*
+*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+*
+*	Licensed under the MIT License. (MIT)
+*
+*	___
+*
+*/
+(function () {
 	"use strict";
 
-
-	function NoLocalFileStorageService($q, noDataSource) {
-
-		/**
-		*	@method cache(file)
-		*
-		*	Saves a file to the noDataSource defined in the config object.
-		*
-		*	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
-		*
-		*/
-		this.cache = function saveToCache(fileObj, trans) {
-			var dsCfg = {
-				"dataProvider": "noIndexedDb",
-				"databaseName": "NoInfoPath_dtc_v1",
-				"entityName": "NoInfoPath_FileUploadCache",
-				"primaryKey": "FileID",
-				"noTransaction": {
-					"create": true,
-					"update": true,
-					"destroy": true
-				}
-			};
-
-			var ds = noDataSource.create(dsCfg, {});
-
-			return ds.create(fileObj, trans);
-		};
-
-		/**
-		*	@method cache(file)
-		*
-		*	Saves a file to the noDataSource defined in the config object.
-		*
-		*	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
-		*
-		*/
-		this.get = function loadFromCache(fileID) {
-			var dsCfg = {
-				"dataProvider": "noIndexedDb",
-				"databaseName": "NoInfoPath_dtc_v1",
-				"entityName": "NoInfoPath_FileUploadCache",
-				"primaryKey": "FileID"
-			};
-
-			var ds = noDataSource.create(dsCfg, {});
-
-			return ds.one(fileID);
-		};
-
-		/**
-		*	@method removeFromCache(file)
-		*
-		*	Deletes a file by FileID from the NoInfoPath_FileUploadCache.
-		*/
-		this.removeFromCache = function(fileID, trans) {
-			var dsCfg = {
-				"dataProvider": "noIndexedDb",
-				"databaseName": "NoInfoPath_dtc_v1",
-				"entityName": "NoInfoPath_FileUploadCache",
-				"primaryKey": "FileID",
-				"noTransaction": {
-					"create": true,
-					"update": true,
-					"destroy": true
-				}
-			};
-
-			var ds = noDataSource.create(dsCfg, {});
-
-			return ds.destroy(fileID, trans);
-		};
-
-		/**
-		*	@method read(file)
-		*
-		*	Reads a file from a DOM File object and converts to a binary
-		*	string compatible with the local, and upstream file systems.
-		*/
-		this.read = function(file, comp) {
-			var deferred = $q.defer();
-
-			var fileObj = {},
-			reader = new FileReader();
-
-			reader.onloadstart = function(e) {
-				fileObj.name = file.name;
-				fileObj.size = file.size;
-				fileObj.type = file.type;
-				fileObj.loaded = (e.loaded / file.size) * 100;
-				deferred.notify(e);
-			};
-
-
-			reader.onload = function(e) {
-				fileObj.blob = e.target.result;
-				deferred.resolve(fileObj);
-			};
-
-			reader.onerror = function(err) {
-				deferred.reject(err);
-			};
-
-			reader.onprogress = function(e) {
-				fileObj.loaded = (e.loaded / file.size) * 100;
-				deferred.notify(e);
-			};
-
-			reader.readAsBinaryString(file);
-			//reader[comp.readMethod || "readAsArrayBuffer"](file);
-			//reader.readAsArrayBuffer(file);
-
-			return deferred.promise;
-		};
-
-	}
-
+	/*
+		 *	noFileStoreageCRUD
+		 *	------------------
+	 */
 	function NoFileStorageCRUDProvider($timeout, $q, $rootScope, noLocalFileStorage) {
 		var THIS = this;
 
@@ -8113,14 +8306,14 @@ var GloboTest = {};
 			reject(err);
 		}
 
-		this.whenReady = function(config) {
-			return $q(function(resolve, reject) {
+		this.whenReady = function (config) {
+			return $q(function (resolve, reject) {
 				var dbInitialized = "noFileStorageCRUDInitialized";
 
 				if ($rootScope[dbInitialized]) {
 					resolve();
 				} else {
-					$rootScope.$watch(dbInitialized, function(newval) {
+					$rootScope.$watch(dbInitialized, function (newval) {
 						if (newval) {
 							resolve();
 						}
@@ -8130,11 +8323,11 @@ var GloboTest = {};
 			});
 		};
 
-		this.configure = function(noUser, schema) {
+		this.configure = function (noUser, schema) {
 			var db = new NoFileStorageDb(),
 				dbInitialized = "noFileStorageCRUD_" + schema.config.dbName;
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
 				for (var t in schema.tables) {
 					var table = schema.tables[t];
 					db[t] = new NoTable($q, t, table, noLocalFileStorage);
@@ -8149,20 +8342,20 @@ var GloboTest = {};
 
 		};
 
-		this.getDatabase = function(databaseName) {
+		this.getDatabase = function (databaseName) {
 			var dbInitialized = "noFileStorageCRUD_" + databaseName;
 			return $rootScope[dbInitialized];
 		};
 
-		this.destroyDb = function(databaseName) {
+		this.destroyDb = function (databaseName) {
 			var deferred = $q.defer();
 			var db = THIS.getDatabase(databaseName);
 			if (db) {
 				db.delete()
-				.then(function(res) {
-					delete $rootScope["noFileStoreageCRUD_" + databaseName];
-					deferred.resolve(res);
-				});
+					.then(function (res) {
+						delete $rootScope["noFileStoreageCRUD_" + databaseName];
+						deferred.resolve(res);
+					});
 			} else {
 				deferred.resolve(false);
 			}
@@ -8179,23 +8372,23 @@ var GloboTest = {};
 
 			Object.defineProperties(this, {
 				entity: {
-					get: function() {
+					get: function () {
 						return _table;
 					}
 				}
 			});
 
 			function noCreate(data, trans) {
-				return $q(function(resolve, reject) {
+				return $q(function (resolve, reject) {
 					noLocalFileStorage.cache(data)
 						.then(_recordTransaction.bind(null, resolve, _table.entityName, "C", trans, data))
 						.catch(_transactionFault.bind(null, reject));
 				});
-			};
+			}
 			this.noCreate = noCreate;
 
 			function noDestroy(data, trans) {
-				return $q(function(resolve, reject) {
+				return $q(function (resolve, reject) {
 					noLocalFileStorage.removeFromCache(data.FileID)
 						.then(_recordTransaction.bind(null, resolve, _table.entityName, "D", trans, data))
 						.catch(_transactionFault.bind(null, reject));
@@ -8203,27 +8396,27 @@ var GloboTest = {};
 			}
 			this.noDestroy = noDestroy;
 
-			this.noRead = function() {
+			this.noRead = function () {
 				return $q.when([{
 					"message": "TODO: Implment multi-row queries."
 				}]);
 			};
 
-			this.noUpdate = function(data, trans) {
+			this.noUpdate = function (data, trans) {
 				return noDestroy(data, trans)
-				.then(function(data) {
-					return noCreate(data, trans)
-					.catch(function(err) {
+					.then(function (data) {
+						return noCreate(data, trans)
+							.catch(function (err) {
+								return err;
+							});
+					})
+					.catch(function (err) {
 						return err;
 					});
-				})
-				.catch(function(err) {
-					return err;
-				});
 
 			};
 
-			this.noOne = function(query) {
+			this.noOne = function (query) {
 				return noLocalFileStorage.get(query);
 			};
 
@@ -8236,7 +8429,7 @@ var GloboTest = {};
 			 * AngularJS Promise.
 			 */
 			this.noClear = function () {
-				if(_table.entityType === "V") throw "Clear operation not supported by SQL Views.";
+				if (_table.entityType === "V") throw "Clear operation not supported by SQL Views.";
 
 				return $q(function (resolve, reject) {
 					noLocalFileStorage.removeFromCache()
@@ -8253,7 +8446,7 @@ var GloboTest = {};
 			 *	Inserts a file in to cache without logging a transaction.
 			 */
 			this.noBulkCreate = function (data) {
-				if(_table.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
+				if (_table.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
 
 				return $q(function (resolve, reject) {
 					noLocalFileStorage.cache(data)
@@ -8269,7 +8462,7 @@ var GloboTest = {};
 			 *	Promise.notify to report project of the bulkLoad operation.
 			 */
 			this.bulkLoad = function (data, progress) {
-				if(_table.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
+				if (_table.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
 
 				var deferred = $q.defer(),
 					table = this;
@@ -8290,7 +8483,7 @@ var GloboTest = {};
 					//});
 
 					function _next() {
-						if(currentItem < data.length) {
+						if (currentItem < data.length) {
 							var datum = data[currentItem];
 
 							table.noBulkCreate(datum)
@@ -8342,7 +8535,7 @@ var GloboTest = {};
 						localDate = new Date(data.ModifiedDate),
 						remoteDate = new Date(changes.ModifiedDate),
 						same = moment(localDate)
-							.isSame(remoteDate, 'second');
+						.isSame(remoteDate, 'second');
 
 					console.log(localDate, remoteDate, same);
 
@@ -8355,7 +8548,7 @@ var GloboTest = {};
 						"U": THIS.noUpdate
 					};
 					//console.log(data, changes);
-					if(isSame(data, changes.values)) {
+					if (isSame(data, changes.values)) {
 						console.warn("not updating local data because the ModifiedDate is the same or newer than the data being synced.");
 						changes.isSame = true;
 						resolve(changes);
@@ -8383,18 +8576,18 @@ var GloboTest = {};
 					checkForExisting()
 						.then(function (data) {
 
-							switch(noChange.operation) {
-								case "D":
+							switch (noChange.operation) {
+							case "D":
 
-									THIS.noDestroy(noChange.changedPKID)
-										.then(ok)
-										.catch(fault);
-									break;
+								THIS.noDestroy(noChange.changedPKID)
+									.then(ok)
+									.catch(fault);
+								break;
 
-								case "I":
-								case "U":
-									save(noChange, data, ok, fault);
-									break;
+							case "I":
+							case "U":
+								save(noChange, data, ok, fault);
+								break;
 							}
 						});
 
@@ -8408,15 +8601,156 @@ var GloboTest = {};
 
 	}
 
+
+	/*
+		 *	noLocalFileStorage
+		 *	------------------
+	 */
+	function NoLocalFileStorageService($q, noDataSource) {
+
+		/**
+		 *	@method cache(file)
+		 *
+		 *	Saves a file to the noDataSource defined in the config object.
+		 *
+		 *	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
+		 *
+		 */
+		this.cache = function saveToCache(fileObj, trans) {
+			var dsCfg = {
+				"dataProvider": "noIndexedDb",
+				"databaseName": "NoInfoPath_dtc_v1",
+				"entityName": "NoInfoPath_FileUploadCache",
+				"primaryKey": "FileID",
+				"noTransaction": {
+					"create": true,
+					"update": true,
+					"destroy": true
+				}
+			};
+
+			var ds = noDataSource.create(dsCfg, {});
+
+			return ds.create(fileObj, trans);
+		};
+
+		/**
+		 *	@method cache(file)
+		 *
+		 *	Saves a file to the noDataSource defined in the config object.
+		 *
+		 *	> NOTE: This service does not use syncable transations. It is the responsibility of the consumer to sync.  This is because it may not be appropriate to save the files to the upstream data store.
+		 *
+		 */
+		this.get = function loadFromCache(fileID) {
+			var dsCfg = {
+				"dataProvider": "noIndexedDb",
+				"databaseName": "NoInfoPath_dtc_v1",
+				"entityName": "NoInfoPath_FileUploadCache",
+				"primaryKey": "FileID"
+			};
+
+			var ds = noDataSource.create(dsCfg, {});
+
+			return ds.one(fileID);
+		};
+
+		/**
+		 *	@method removeFromCache(file)
+		 *
+		 *	Deletes a file by FileID from the NoInfoPath_FileUploadCache.
+		 */
+		this.removeFromCache = function (fileID, trans) {
+			var dsCfg = {
+				"dataProvider": "noIndexedDb",
+				"databaseName": "NoInfoPath_dtc_v1",
+				"entityName": "NoInfoPath_FileUploadCache",
+				"primaryKey": "FileID",
+				"noTransaction": {
+					"create": true,
+					"update": true,
+					"destroy": true
+				}
+			};
+
+			var ds = noDataSource.create(dsCfg, {});
+
+			return ds.destroy(fileID, trans);
+		};
+
+		/**
+		 *	@method read(file)
+		 *
+		 *	Reads a file from a DOM File object and converts to a binary
+		 *	string compatible with the local, and upstream file systems.
+		 */
+		this.read = function (file, comp) {
+			var deferred = $q.defer();
+
+			var fileObj = {},
+				reader = new FileReader();
+
+			reader.onloadstart = function (e) {
+				fileObj.name = file.name;
+				fileObj.size = file.size;
+				fileObj.type = file.type;
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
+
+
+			reader.onload = function (e) {
+				fileObj.blob = e.target.result;
+				deferred.resolve(fileObj);
+			};
+
+			reader.onerror = function (err) {
+				deferred.reject(err);
+			};
+
+			reader.onprogress = function (e) {
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
+
+			reader.readAsBinaryString(file);
+			//reader[comp.readMethod || "readAsArrayBuffer"](file);
+			//reader.readAsArrayBuffer(file);
+
+			return deferred.promise;
+		};
+
+	}
+
+
 	angular.module("noinfopath.data")
 		.service("noLocalFileStorage", ["$q", "noDataSource", NoLocalFileStorageService])
-		.factory("noFileStoreageCRUD", ["$timeout", "$q", "$rootScope", "noLocalFileStorage",function ($timeout, $q, $rootScope, noLocalFileStorage) {
+		.factory("noFileStoreageCRUD", ["$timeout", "$q", "$rootScope", "noLocalFileStorage", function ($timeout, $q, $rootScope, noLocalFileStorage) {
 			return new NoFileStorageCRUDProvider($timeout, $q, $rootScope, noLocalFileStorage);
 		}]);
 
 })();
 
 // no-local-file-storage.js
+/*
+	*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+	*
+	*	___
+	*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+	*
+	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*
+	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
+	*
+	*	Licensed under the MIT License. (MIT)
+	*
+	*	___
+	*
+	*	noLocalFileSystem
+	*	-----------------
+	*
+*/
 (function(angular, storageInfo, requestFileSystem, undefined) {
     function NoLocalFileSystemService($q, noLocalFileStorage, noMimeTypes) {
 
@@ -8562,6 +8896,10 @@ var GloboTest = {};
 		this.getUrl = _toUrl;
     }
 
+	/*
+	*	noMimeTypes
+	*	-----------
+	*/
 	function NoMimeTypeService() {
 		var mimeTypes = {
                 'a': 'application/octet-stream',

@@ -1,5 +1,19 @@
 //classes.js
 /*
+ *	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+ *
+ *	___
+ *
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+ *
+ *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+ *
+ *	Copyright (c) 2017 The NoInfoPath Group, LLC.
+ *
+ *	Licensed under the MIT License. (MIT)
+ *
+ *	___
+ *
  * NoInfoPath Data Classes
  * -----------------------
  *
@@ -8,7 +22,7 @@
  * |
  *
  * ### @class NoFilterExpression : Object
- *	
+ *
  * Represents an single filter expression that can be applied to an `IDBObjectStore`.
  *
  * #### Constructor
@@ -937,7 +951,7 @@
 	/*
 	 *	### Class NoDataModel
 	 *
-	 *  This class provides functionality to help other NoInfoPath services to 
+	 *  This class provides functionality to help other NoInfoPath services to
 	 *	access and utilitze data in a consistant way. It provides a pristine
 	 *	attribute to the data so a directive can 'roll back' a change, for example.
 	 *
@@ -951,7 +965,7 @@
 	 *
 	 *	##### data
 	 *
-	 *	Returns an object that is saved within the NoDataModel. 
+	 *	Returns an object that is saved within the NoDataModel.
 	 *
 	 *	##### pristine
 	 *
@@ -982,7 +996,7 @@
 	 *	**Returns**
 	 *
 	 *	Undefined
-	 * 
+	 *
 	 *	##### undo()
 	 *
 	 *	This method returns the value contained within the NoDataModel back to the current pristine value.
@@ -1021,10 +1035,10 @@
 	 *  ```
 	 *
 	 *	**Returns**
-	 *	
+	 *
 	 *	Undefined
 	 *
-	 *	
+	 *
 	 */
 
 	function NoDataModel() {

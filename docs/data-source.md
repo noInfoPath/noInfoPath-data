@@ -1,3 +1,17 @@
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
+
 ## noDataSource Service
 
 Provides a generic service that exposes the NoInfoPath data providers'
@@ -11,7 +25,7 @@ underlying CRUD interface.
        "entityName": "LU_PercentColor",
        "primaryKey": "PercentColorID",
        "queryParser": "noQueryParser",
-       "sort":  [{"field": "Percentage", "dir": "asc"}]
+       "sort":  [{"field": "Percentage", "dir": "asc"}],
        "aggregation": {
             "actions": [
 				{

@@ -1,3 +1,28 @@
+[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+
+___
+
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.41*
+
+[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+
+Copyright (c) 2017 The NoInfoPath Group, LLC.
+
+Licensed under the MIT License. (MIT)
+
+___
+
+noTransactionCache service
+--------------------------
+
+  Each top-level property represents a crud operation that must
+  be handled in a specific manner in order to ensure consistency.
+  Within each operation is a list of NoTables that are part of the
+  transaction.
+
+  For each table in the operation are instructions as to which entity are
+  involved, how to carry out the transaction, and in what order.
+
 
 When a field is a string then the value will be the
 property on the data object provider to the call
@@ -18,22 +43,22 @@ are recorded in the current transaction.
 
 Add each record one at a time to ensure that the transaction is recorded.
 
-  #### @property scopeKey
+#### @property scopeKey
 
-  Use this property allow NoTransaction to store a reference
-  to the entity upon which this data operation was performed.
-  This is useful when you have tables that rely on a one to one
-  relationship.
+Use this property allow NoTransaction to store a reference
+to the entity upon which this data operation was performed.
+This is useful when you have tables that rely on a one to one
+relationship.
 
-  It is best practice use this property when ever possible,
-  but it not a required configuration property.
+It is best practice use this property when ever possible,
+but it not a required configuration property.
 
 
- ### joiner-many
+### joiner-many
 
- `joiner-many` assumes that it represents a multiple choice question.
- In order to keep the algorithm simple we drop all joiner items
- that match the parent key. (i.e. SelectionID)
+`joiner-many` assumes that it represents a multiple choice question.
+In order to keep the algorithm simple we drop all joiner items
+that match the parent key. (i.e. SelectionID)
 
 ### one-one
 
