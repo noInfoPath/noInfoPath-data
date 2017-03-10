@@ -25,7 +25,7 @@ Web browsers.
 
 |Name|Description|
 |----|-----------|
-|[noDataSource](../wikis/data-source)|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
+|[noDataSource](/noinfopath/noinfopath-data/wikis/data-source)|Provides a abstracted CRUD interface that sits in front of actual NoInfoPath CRUD provider services.|
 |[noFileStoreageCRUD](noFileStoreageCRUD)|Establishes a CRUD interface in front of `noLocalFileStorage`.|
 |[noHTTP](noHTTP)|Establishes a CRUD interface in front of the AngularJS `$http` service|
 |[noIndexedDb](noIndexedDb)|Prodvides a CRUD interface for the Browser's native IndexedDB database. (Not fully supported by all browsers.)|
