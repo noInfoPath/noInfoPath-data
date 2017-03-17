@@ -28,21 +28,20 @@ module.exports = function (grunt) {
 				]
 			},
 			wiki: {
-				files: [
-					//{expand:true, flatten:false, src: [ 'lib/js/noinfopath/*.*'], dest: 'build/'},
-					{
-						expand: true,
-						flatten: true,
-						src: ['docs/*.md'],
-						dest: '/Users/gochinj/ws/noinfopath/wikis/noinfopath-data.wiki/'
-					}
-				]
-			},
+	            files: [
+	                {
+	                    expand: true,
+	                    flatten: true,
+	                    src: ['docs/*.md', '!docs/global.md'],
+	                    dest: '../wikis/<%= pkg.shortName %>.wiki/'
+	                }
+	            ]
+	        }
 		},
 		concat: {
 			noinfopath: {
 				src: [
-					'src/home.js',
+					'src/global.js',
 					'src/helper-functions.js',
 					'src/classes.js',
 					'src/query-builder.js',
@@ -75,13 +74,17 @@ module.exports = function (grunt) {
 				dest: 'dist/noinfopath-dexie.js'
 			},
 			readme: {
-				src: ['docs/noinfopath-data.md'],
-				dest: 'readme.md'
-			},
+	            src: ['docs/home.md'],
+	            dest: 'readme.md'
+	        },
 			readmeFull: {
 				src: ['docs/globals.md', 'docs/storage.md', 'docs/file-storage.md', 'docs/data-source.md', 'docs/transaction-cache.md', 'docs/template-cache.md', 'docs/http.md', 'docs/indexeddb.md', 'docs/websql-2.md', 'docs/no-local-file-storage.md', 'helper-functions.md', 'classes.md'],
 				dest: 'readme.md'
-			}
+			},
+			wikiHome: {
+	            src: ['docs/global.md'],
+	            dest: 'docs/home.md'
+	        }
 		},
 		karma: {
 			unit: {
@@ -144,7 +147,7 @@ module.exports = function (grunt) {
 			},
 			"internalGlobals": {
 				options: {
-					src: 'src/globals.js',
+					src: 'src/home.js',
 					dest: 'readme.md',
 					start: ['/*', '/**']
 				}
@@ -155,7 +158,18 @@ module.exports = function (grunt) {
 					dest: 'docs/noinfopath-data.md',
 					start: ['/*']
 				}
-			}
+			},
+			wiki: {
+	            options: {
+	                src: 'src/*.js',
+	                dest: 'docs/<%= pkg.shortName %>.md',
+	                start: ['/*', '/**'],
+	                multiDocs: {
+	                    multiFiles: true,
+	                    dest: "docs/"
+	                }
+	            }
+	        }
 		},
 		watch: {
 			dev: {
@@ -167,7 +181,7 @@ module.exports = function (grunt) {
 				}
 			},
 			document: {
-				files: ['src/*.js', 'test/**/*.spec.js'],
+				files: ['src/*.js'],
 				tasks: ['document'],
 				options: {
 					spawn: false
@@ -184,7 +198,26 @@ module.exports = function (grunt) {
 					'dist/noinfopath-data.min.js': ['dist/noinfopath-data.js']
 				}
 			}
-		}
+		},
+		shell: {
+	        wiki1: {
+	            command: [
+	                'cd ../wikis/<%= pkg.shortName %>.wiki',
+	                'pwd',
+	                'git stash',
+	                'git pull'
+	            ].join(' && ')
+	        },
+	        wiki2: {
+	            command: [
+	                'cd ../wikis/<%= pkg.shortName %>.wiki',
+	                'pwd',
+	                'git add .',
+	                'git commit -m"Wiki Updated"',
+	                'git push'
+	            ].join(' && ')
+	        }
+	    }
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-concat');
@@ -195,6 +228,8 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-bumpup');
 	grunt.loadNpmTasks('grunt-version');
 	grunt.loadNpmTasks('grunt-nodocs');
+	grunt.loadNpmTasks('grunt-shell');
+
 	//Default task(s).
 
 	//Only globals.js in readme.md
@@ -216,4 +251,9 @@ module.exports = function (grunt) {
 
 	grunt.registerTask('jenkins', ['karma:continuous']);
 
+	//WikiWacked!
+	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:wiki']);
+	grunt.registerTask('wikiWack', ['shell:wiki1', 'concat:wikiHome', 'copy:wiki', 'shell:wiki2']);
+	grunt.registerTask('updateWiki', ['document', 'wikiWack']);
+	grunt.registerTask('release', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'concat:dexie', 'updateWiki', 'copy:wiki', 'concat:wikiHome', 'concat:readme']);
 };

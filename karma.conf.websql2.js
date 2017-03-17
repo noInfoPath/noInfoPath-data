@@ -28,7 +28,7 @@ module.exports = function(config) {
         'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
         'node_modules/@noinfopath/noinfopath-user/dist/noinfopath-user.js',
         'node_modules/@noinfopath/noinfopath-logger/dist/noinfopath-logger.js',
-		'src/home.js',
+		'src/global.js',
 		'src/helper-functions.js',
 		'src/classes.js',
         'test/mock/configuration.mock.js',

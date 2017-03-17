@@ -4,7 +4,7 @@
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.43*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -182,7 +182,7 @@
 				if (_table.entityType === "V") throw "BulkCreate operation not supported by SQL Views.";
 
 				return $q(function (resolve, reject) {
-					noLocalFileStorage.cache(data)
+					noLocalFileStorage.cache(data.data)
 						.then(resolve)
 						.catch(reject);
 				});
@@ -194,60 +194,42 @@
 			 *	Returns an AngularJS Promise.  Takes advantage of
 			 *	Promise.notify to report project of the bulkLoad operation.
 			 */
-			this.bulkLoad = function (data, progress) {
+			this.bulkload = function (data, progress, remoteDataSvc) {
 				if (_table.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
 
 				var deferred = $q.defer(),
 					table = this;
 
 				//var table = this;
-				function _import(data, progress) {
-					var total = data ? data.length : 0;
+				function _import(documents, progress, remoteDataSvc) {
+					var total = data ? data.length : 0, promises = [];
 
 					$timeout(function () {
 						//progress.rows.start({max: total});
 						deferred.notify(progress);
 					});
 
-					var currentItem = 0;
+					documents.forEach(function (doc) {
+						var url = table.entity.uri + "/" + doc.FileID,
+							method = "GET",
+							data,
+							useCreds = true;
 
-					//_dexie.transaction('rw', table, function (){
-					_next();
-					//});
+						promises.push(remoteDataSvc.noRequestJSON(url, method, data, useCreds)
+							.then(table.noBulkCreate)
+							.then(deferred.notify)
+							.catch(deferred.reject));
+					});
 
-					function _next() {
-						if (currentItem < data.length) {
-							var datum = data[currentItem];
-
-							table.noBulkCreate(datum)
-								.then(function (data) {
-									//progress.updateRow(progress.rows);
-									deferred.notify(data);
-								})
-								.catch(function () {
-									deferred.reject({
-										entity: table,
-										error: arguments
-									});
-								})
-								.finally(function () {
-									currentItem++;
-									_next();
-								});
-
-						} else {
-							deferred.resolve(table.name);
-						}
-					}
-
+					$q.all(promises)
+						.then(deferred.resolve.bind(null, table.name))
+						.catch(deferred.reject);
 				}
 
 				//console.info("bulkLoad: ", table.TableName)
 
 				table.noClear()
-					.then(function () {
-						_import(data, progress);
-					}.bind(this));
+					.then(_import.bind(this, data, progress, remoteDataSvc));
 
 				return deferred.promise;
 			};
@@ -329,7 +311,9 @@
 				});
 			};
 
-
+			this.hasPrimaryKeys = function (keyList) {
+				return noLocalFileStorage.hasPrimaryKeys(keyList);
+			};
 		}
 
 	}
@@ -386,6 +370,19 @@
 			var ds = noDataSource.create(dsCfg, {});
 
 			return ds.one(fileID);
+		};
+
+		this.hasPrimaryKeys = function (fileIDs) {
+			var dsCfg = {
+				"dataProvider": "noIndexedDb",
+				"databaseName": "NoInfoPath_dtc_v1",
+				"entityName": "NoInfoPath_FileUploadCache",
+				"primaryKey": "FileID"
+			};
+
+			var ds = noDataSource.create(dsCfg, {});
+
+			return ds.entity.hasPrimaryKeys(fileIDs);
 		};
 
 		/**

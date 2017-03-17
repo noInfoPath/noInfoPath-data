@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.42*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.43*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -265,7 +265,6 @@
 						var deferred = $q.defer(),
 							req = {
 								method: "GET",
-								params: queryBuilder(filters, sort, page),
 								url: url,
 								headers: {
 									"Content-Type": "application/json",
@@ -273,6 +272,8 @@
 								},
 								withCredentials: true
 							};
+
+							req.params = queryBuilder(filters, sort, page);
 
 						$http(req)
 							.then(function (results) {
