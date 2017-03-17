@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.43*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -948,7 +948,7 @@
 		this.deepFollowRelations = ops.deepFollowRelations || false;
 	}
 
-	/*
+		/*
 	 *	### Class NoDataModel
 	 *
 	 *  This class provides functionality to help other NoInfoPath services to
@@ -1041,7 +1041,9 @@
 	 *
 	 */
 
-	function NoDataModel() {
+	function NoDataModel(model) {
+		var _model = model;
+
 		Object.defineProperties(this, {
 			"__type": {
 				"get": function () {
@@ -1071,6 +1073,12 @@
 
 		this.undo = function() {
 			_data = angular.copy(_pristine);
+
+			if(this.$setPristine) {
+				this.$setPristine();
+				this.$setUntouched();
+				this.$commitViewValue();
+			}
 		};
 
 		this.clean = function() {
@@ -1112,10 +1120,10 @@
 					}
 				});
 
-			if(_data.$setPristine) {
-				_data.$setPristine();
-				_data.$setUntouched();
-				_data.$commitViewValue();
+			if(this.$setPristine) {
+				this.$setPristine();
+				this.$setUntouched();
+				this.$commitViewValue();
 			}
 
 			function updateOne(ctrl, value) {
@@ -1133,7 +1141,6 @@
 			}
 		};
 	}
-
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
