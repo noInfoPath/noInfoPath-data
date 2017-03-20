@@ -44,6 +44,7 @@ module.exports = function (grunt) {
 					'src/global.js',
 					'src/helper-functions.js',
 					'src/classes.js',
+					'src/no-data-model.js',
 					'src/query-builder.js',
 					'src/storage.js',
 					'src/configuration.js',
@@ -103,9 +104,13 @@ module.exports = function (grunt) {
 				singleRun: false
 			},
 			noWebSQL2_ci: {
-				configFile: "karma.conf.websql2.js",
-				singleRun: true,
-				logLevel: "error"
+				configFile: "karma.conf.nodatamodel.js",
+				singleRun: true
+				//logLevel: "error"
+			},
+			noDataModel: {
+				configFile: "karma.conf.nodatamodel.js",
+				singleRun: false
 			},
 			/*noInitDatabases: {
 				configFile: "karma.conf.noInitDatabases.js",

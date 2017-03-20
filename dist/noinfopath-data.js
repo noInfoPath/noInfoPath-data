@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.44* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.45* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -1479,7 +1479,27 @@ angular.module("noinfopath.data")
 		this.deepFollowRelations = ops.deepFollowRelations || false;
 	}
 
-		/*
+	//Expose these classes on the global namespace so that they can be used by
+	//other modules.
+	var _interface = {
+		NoFilterExpression: NoFilterExpression,
+		NoFilter: NoFilter,
+		NoFilters: NoFilters,
+		NoSortExpression: NoSortExpression,
+		NoSort: NoSort,
+		NoPage: NoPage,
+		NoResults: NoResults,
+		NoReadOptions: NoReadOptions
+	};
+
+	noInfoPath.data = angular.extend(noInfoPath.data, _interface);
+
+})(angular);
+
+(function (angular, undefined) {
+	"use strict";
+
+	/*
 	 *	### Class NoDataModel
 	 *
 	 *  This class provides functionality to help other NoInfoPath services to
@@ -1572,8 +1592,125 @@ angular.module("noinfopath.data")
 	 *
 	 */
 
-	function NoDataModel(model) {
-		var _model = model;
+	function NoDataModel(schema, model) {
+		if (!schema) throw "schema is required contructor parameter.";
+		if (!model) throw "model is required contructor parameter.";
+
+		var _schema = schema, _pristine;
+
+		Object.setPrototypeOf(this, model);
+
+		_pristine = _pureModel(this);
+
+		function _isProperty(value, prop) {
+			return Object.is(value[prop], null) || value.hasOwnProperty(prop);
+		}
+
+		function _resolve(value, notAnArray) {
+			if (!!value && notAnArray) {
+				return value;
+			} else if (typeof (value) === "boolean") {
+				return value;
+			} else if (angular.isNumber(value)) {
+				return value;
+			} else {
+				return null;
+			}
+		}
+
+		function _updateView(THIS, data) {
+
+			for (var k in data) {
+				var value = data[k],
+					model = THIS[k],
+					validKey = k.indexOf("$") === -1 && !angular.isFunction(model),
+					notAnArray = !angular.isArray(model),
+					haveModelValue = validKey && model ? _isProperty(model, "$viewValue") : false,
+					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
+
+				if (!!model && validKey) {
+
+					if (haveModelValue) {
+						model.$setViewValue( _resolve(value, notAnArray) );
+					} else if (angular.isObject(value)) {
+						THIS[k] = fk ? value[fk.refColumn] : value;
+					} else {
+						THIS[k] = _resolve(value, notAnArray);
+					}
+
+				}
+
+			}
+
+		}
+
+		function _pureView(data) {
+			var values = {};
+
+			for (var k in data) {
+				var value = data[k],
+					validKey = k.indexOf("$") === -1 && !angular.isFunction(value),
+					notAnArray = !angular.isArray(value),
+					haveModelValue = validKey && value ? _isProperty(value, "$viewValue") : false,
+					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
+
+				if (!!value && validKey) {
+
+					if (haveModelValue) {
+						values[k] = _resolve(value.$viewValue, notAnArray);
+					} else if (angular.isObject(value)) {
+						values[k] = fk ? value[fk.refColumn] : value;
+					} else {
+						values[k] = _resolve(value, notAnArray);
+					}
+
+				}
+
+			}
+
+			return values;
+
+		}
+
+		function _pureModel(data) {
+			var values = {};
+
+			for (var k in data) {
+				var value = data[k],
+					validKey = k.indexOf("$") === -1 && !angular.isFunction(value),
+					notAnArray = !angular.isArray(value),
+					haveModelValue = validKey && value ? _isProperty(value, "$modelValue") : false,
+					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
+
+				if (!!value && validKey) {
+
+					if (haveModelValue) {
+						values[k] = _resolve(value.$modelValue, notAnArray);
+					} else if (angular.isObject(value)) {
+						values[k] = fk ? value[fk.refColumn] : value;
+					} else {
+						values[k] = _resolve(value, notAnArray);
+					}
+
+				}
+
+			}
+
+			return values;
+
+		}
+
+		function _updateViewValue(THIS, k, value) {
+			var ctrl = THIS[k];
+			if (ctrl && ctrl.$setViewValue) {
+				ctrl.$setViewValue(value);
+				ctrl.$setPristine();
+				ctrl.$setUntouched();
+				ctrl.$render();
+			} else {
+				THIS[k] = value;
+			}
+		}
 
 		Object.defineProperties(this, {
 			"__type": {
@@ -1583,106 +1720,56 @@ angular.module("noinfopath.data")
 			}
 		});
 
-		var _pristine;
 		Object.defineProperty(this, "pristine", {
-			get: function(){
-				return _pristine;
+			get: function () {
+				return _pristine || {};
+			},
+			set: function (v) {
+				throw new Error("NoDataModel::pristine is readonly.");
 			}
 		});
 
-		var _data = {};
-		Object.defineProperty(this, "data", {
-			get: function(){
-				return _data;
-			}
-		});
-
-		function _setData(data){
-			_data = data;
-			_pristine = angular.copy(data);
-		}
-
-		this.undo = function() {
-			_data = angular.copy(_pristine);
-
-			if(this.$setPristine) {
-				this.$setPristine();
-				this.$setUntouched();
-				this.$commitViewValue();
-			}
-		};
-
-		this.clean = function() {
-			var keys = Object.keys(_data).filter(function (v, k) {
-						if(v.indexOf("$") === -1 && v.indexOf(".") === -1) return v;
-					}),
-					values = {};
-				keys.forEach(function (k) {
-					var haveSomething = !!_data[k],
-						notAnArray = !angular.isArray(_data[k]),
-						haveModelValue = haveSomething && _data[k].hasOwnProperty("$modelValue");
-
-					if(haveModelValue) {
-						values[k] = _data[k].$modelValue;
-					} else if(haveSomething && notAnArray) {
-						values[k] = _data[k];
-					} else if(angular.isNumber(_data[k])) {
-						values[k] = _data[k];
-					} else {
-						values[k] = null;
-					}
-
-				});
-
-				_setData(values);
-		};
-
-		this.update = function(src) {
-			var THIS = this,
+		Object.defineProperty(this, "current", {
+			get: function () {
+				return _pureView(this);
+			},
+			set: function (src) {
+				var THIS = this,
 					keys = Object.keys(src).filter(function (v, k) {
-					if(v.indexOf("$") === -1) return v;
-				});
+						if (v.indexOf("$") === -1) return v;
+					});
+
 				keys.forEach(function (k) {
-					var d = _data[k];
-					if(d && d.hasOwnProperty("$viewValue")) {
-						updateOne(d, src[k]);
-					} else {
-						_data[k] = src[k];
-					}
+					_updateViewValue(THIS, k, src[k]);
 				});
 
-			if(this.$setPristine) {
+				//if(!_pristine) _pristine = _pureView(this);
+			}
+		});
+
+		this.undo = function () {
+			_updateView(this, _pristine);
+
+			if (this.$rollbackViewValue) {
+				this.$rollbackViewValue();
 				this.$setPristine();
 				this.$setUntouched();
-				this.$commitViewValue();
-			}
-
-			function updateOne(ctrl, value) {
-				if(ctrl) {
-					ctrl.$setViewValue(value);
-					ctrl.$setPristine();
-					ctrl.$setUntouched();
-					ctrl.$render();
-				}
-			}
-
-			// The first update of a NoDataModel needs to set the _pristine value.
-			if(!_pristine) {
-				_setData(_data);
 			}
 		};
+
+		this.commit = function () {
+			if (this.$commitViewValue) {
+				this.$commitViewValue();
+				this.$setPristine();
+				this.$setUntouched();
+				_pristine = _pureModel(this);
+			}
+		};
+
 	}
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
-		NoFilterExpression: NoFilterExpression,
-		NoFilter: NoFilter,
-		NoFilters: NoFilters,
-		NoSortExpression: NoSortExpression,
-		NoSort: NoSort,
-		NoPage: NoPage,
-		NoResults: NoResults,
-		NoReadOptions: NoReadOptions,
 		NoDataModel: NoDataModel
 	};
 
@@ -2019,7 +2106,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2156,7 +2243,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2309,7 +2396,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -3359,7 +3446,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -4811,7 +4898,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5707,7 +5794,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7567,7 +7654,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7914,7 +8001,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8140,7 +8227,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8279,7 +8366,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8742,7 +8829,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.44*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.45*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*

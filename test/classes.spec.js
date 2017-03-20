@@ -298,102 +298,20 @@ describe("Testing Classes", function () {
 
 	});
 
-	xdescribe("Testing date functions", function(){
-		describe("toDbDate", function() {
-			it("should convert a valid date object to dbDate", function(){
+	xdescribe("Testing date functions", function () {
+		describe("toDbDate", function () {
+			it("should convert a valid date object to dbDate", function () {
 				var input = new Date("12/31/2017"),
 					output = noInfopath.toDbDate(input);
 
 				expect(output);
 			});
 
-			it("should return null when passed a falsey value", function(){
+			it("should return null when passed a falsey value", function () {
 				var input = "";
 			});
 
-		})
-	});
-
-	describe("Testing NoDataModel", function(){
-		it("should create a new NoDataModel", function(){
-			var output = new noInfoPath.data.NoDataModel();
-
-			expect(output.__type).toBe("NoDataModel");
-		});
-
-		it("should update data contained in the NoDataModel using update function", function(){
-			var input =	{
-				PersonID: "6a2bfe0f-29da-440d-e5b9-62262ac0345c",
-				PersonFirstName: "Foo",
-				PersonLastName: "Bar",
-				PersonAge: 25,
-				Mother: {
-					PersonID: "54dd9168-0111-43e3-9db8-77dc33169b41",
-					PersonFirstName: "Bridget",
-					PersonLastName: "Bar",
-					PersonAge: 50
-				}
-			}
-			output = new noInfoPath.data.NoDataModel();
-
-			output.update(input);
-
-			expect(output.data).toBeDefined();
-			expect(output.data).toEqual(input);
-		});
-
-		it("should clean the data using the clean() method, removing falsy values and form control properties", function(){
-			var input = {
-				foo: "bar",
-				alpha: 'A',
-				interger: 10,
-				emptyString: "",
-				undefinedValue: undefined,
-				nullValue: null,
-				zero: 0,
-				$Test: {}
-			},
-			expected = {
-				foo: "bar",
-				alpha: 'A',
-				interger: 10,
-				emptyString: null,
-				undefinedValue: null,
-				nullValue: null,
-				zero: 0
-			},
-			dm = new noInfoPath.data.NoDataModel(),
-			output;
-
-			dm.update(input);
-			dm.clean();
-
-			output = dm.data;
-
-			expect(output).toEqual(expected);
-		});
-
-		it("should undo any changes to the data via the undo() method", function(){
-			var input = {
-				foo: "bar",
-				alpha: 'A',
-				interger: 10
-			},
-			change = {
-				foo: "apple",
-				alpha: 'D',
-				interger: 11
-			},
-			dm = new noInfoPath.data.NoDataModel(),
-			output;
-
-			dm.update(input);
-			dm.update(change);
-			dm.undo();
-
-			output = dm.data;
-
-			expect(output).toEqual(input);
 		});
 	});
+
 });
