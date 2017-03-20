@@ -290,6 +290,14 @@ Creates and adds a new NoSortExpression into the underlying array that NoSort re
 access and utilitze data in a consistant way. It provides a pristine
 attribute to the data so a directive can 'roll back' a change, for example.
 
+#### Constructor
+
+var foo = new noInfoPath.data.NoDataModel(model);
+
+|Parameter|Type|Description|
+|*********|****|***********|
+|model|Object|Required. NoDataModel requires an data model being passed in due to this extending an existing data model.|
+
 #### Properties
 
 |Name|Type|Description|

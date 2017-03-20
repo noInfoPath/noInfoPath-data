@@ -1486,6 +1486,14 @@ angular.module("noinfopath.data")
 	 *	access and utilitze data in a consistant way. It provides a pristine
 	 *	attribute to the data so a directive can 'roll back' a change, for example.
 	 *
+	 *	#### Constructor
+	 *
+	 *	var foo = new noInfoPath.data.NoDataModel(model);
+	 *
+	 *	|Parameter|Type|Description|
+	 *	|*********|****|***********|
+	 *	|model|Object|Required. NoDataModel requires an data model being passed in due to this extending an existing data model.|
+	 *
 	 *	#### Properties
 	 *
 	 *	|Name|Type|Description|
@@ -1573,6 +1581,7 @@ angular.module("noinfopath.data")
 	 */
 
 	function NoDataModel(model) {
+		if(!model) throw "Model must be provided when creating a NoDataModel";		
 
 		Object.defineProperties(this, {
 			"__type": {
