@@ -316,57 +316,60 @@ describe("Testing Classes", function () {
 
 	describe("Testing NoDataModel", function(){
 		it("should create a new NoDataModel", function(){
-			var output = new noInfoPath.data.NoDataModel();
+			var basicObj = {},
+				output = new noInfoPath.data.NoDataModel(basicObj);
 
-			expect(output.__type).toBe("NoDataModel");
+			expect(output.__type).toEqual("NoDataModel");
 		});
 
 		it("should update data contained in the NoDataModel using update function", function(){
-			var input =	{
-				PersonID: "6a2bfe0f-29da-440d-e5b9-62262ac0345c",
-				PersonFirstName: "Foo",
-				PersonLastName: "Bar",
-				PersonAge: 25,
-				Mother: {
-					PersonID: "54dd9168-0111-43e3-9db8-77dc33169b41",
-					PersonFirstName: "Bridget",
+			var basicObj = {},
+				input =	{
+					PersonID: "6a2bfe0f-29da-440d-e5b9-62262ac0345c",
+					PersonFirstName: "Foo",
 					PersonLastName: "Bar",
-					PersonAge: 50
+					PersonAge: 25,
+					Mother: {
+						PersonID: "54dd9168-0111-43e3-9db8-77dc33169b41",
+						PersonFirstName: "Bridget",
+						PersonLastName: "Bar",
+						PersonAge: 50
+					}
 				}
-			}
-			output = new noInfoPath.data.NoDataModel();
+				output = new noInfoPath.data.NoDataModel(basicObj);
 
-			output.update(input);
+			output.noUpdate(input);
 
 			expect(output.data).toBeDefined();
 			expect(output.data).toEqual(input);
 		});
 
 		it("should clean the data using the clean() method, removing falsy values and form control properties", function(){
-			var input = {
-				foo: "bar",
-				alpha: 'A',
-				interger: 10,
-				emptyString: "",
-				undefinedValue: undefined,
-				nullValue: null,
-				zero: 0,
-				$Test: {}
-			},
-			expected = {
-				foo: "bar",
-				alpha: 'A',
-				interger: 10,
-				emptyString: null,
-				undefinedValue: null,
-				nullValue: null,
-				zero: 0
-			},
-			dm = new noInfoPath.data.NoDataModel(),
-			output;
+			var basicObj = {},
+				input = {
+					foo: "bar",
+					alpha: 'A',
+					interger: 10,
+					emptyString: "",
+					undefinedValue: undefined,
+					nullValue: null,
+					zero: 0,
+					$Test: {}
+				},
+				expected = {
+					foo: "bar",
+					alpha: 'A',
+					interger: 10,
+					emptyString: null,
+					undefinedValue: null,
+					nullValue: null,
+					zero: 0
+				},
+				dm = new noInfoPath.data.NoDataModel(basicObj),
+				output;
 
-			dm.update(input);
-			dm.clean();
+			dm.noUpdate(input);
+			dm.noClean();
 
 			output = dm.data;
 
@@ -374,22 +377,23 @@ describe("Testing Classes", function () {
 		});
 
 		it("should undo any changes to the data via the undo() method", function(){
-			var input = {
-				foo: "bar",
-				alpha: 'A',
-				interger: 10
-			},
-			change = {
-				foo: "apple",
-				alpha: 'D',
-				interger: 11
-			},
-			dm = new noInfoPath.data.NoDataModel(),
-			output;
+			var basicObj = {},
+				input = {
+					foo: "bar",
+					alpha: 'A',
+					interger: 10
+				},
+				change = {
+					foo: "apple",
+					alpha: 'D',
+					interger: 11
+				},
+				dm = new noInfoPath.data.NoDataModel(basicObj),
+				output;
 
-			dm.update(input);
-			dm.update(change);
-			dm.undo();
+			dm.noUpdate(input);
+			dm.noUpdate(change);
+			dm.noUndo();
 
 			output = dm.data;
 
