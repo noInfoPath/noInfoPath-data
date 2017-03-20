@@ -1042,7 +1042,6 @@
 	 */
 
 	function NoDataModel(model) {
-		var _model = model;
 
 		Object.defineProperties(this, {
 			"__type": {
@@ -1071,7 +1070,7 @@
 			_pristine = angular.copy(data);
 		}
 
-		this.undo = function() {
+		this.noUndo = function() {
 			_data = angular.copy(_pristine);
 
 			if(this.$setPristine) {
@@ -1081,7 +1080,7 @@
 			}
 		};
 
-		this.clean = function() {
+		this.noClean = function() {
 			var keys = Object.keys(_data).filter(function (v, k) {
 						if(v.indexOf("$") === -1 && v.indexOf(".") === -1) return v;
 					}),
@@ -1106,7 +1105,7 @@
 				_setData(values);
 		};
 
-		this.update = function(src) {
+		this.noUpdate = function(src) {
 			var THIS = this,
 					keys = Object.keys(src).filter(function (v, k) {
 					if(v.indexOf("$") === -1) return v;
@@ -1140,6 +1139,8 @@
 				_setData(_data);
 			}
 		};
+
+		Object.setPrototypeOf(this, model);		
 	}
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
