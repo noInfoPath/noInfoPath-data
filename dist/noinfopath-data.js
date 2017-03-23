@@ -1734,15 +1734,17 @@ angular.module("noinfopath.data")
 				return _pureView(this);
 			},
 			set: function (src) {
-				var THIS = this,
+				var THIS = this, keys;
+
+				if(angular.isObject(src)) {
 					keys = Object.keys(src).filter(function (v, k) {
 						if (v.indexOf("$") === -1) return v;
 					});
 
-				keys.forEach(function (k) {
-					_updateViewValue(THIS, k, src[k]);
-				});
-
+					keys.forEach(function (k) {
+						_updateViewValue(THIS, k, src[k]);
+					});
+				}
 				//if(!_pristine) _pristine = _pureView(this);
 			}
 		});
