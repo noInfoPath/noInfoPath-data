@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.46*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -115,6 +115,7 @@
 				normalizeTransactions(config, schema);
 
 				this.upsert = function upsert(data) {
+					//if(!data.current) data = new noInfoPath.data.NoDataModel(table.noInfoPath, data);
 					data = noParameterParser.parse(data ? data : {});
 
 					return $q(function (resolve, reject) {

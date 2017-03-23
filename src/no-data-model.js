@@ -104,11 +104,14 @@
 
 		_pristine = _pureModel(this);
 
+
 		function _isProperty(value, prop) {
 			return Object.is(value[prop], null) || value.hasOwnProperty(prop);
 		}
 
 		function _resolve(value, notAnArray) {
+
+
 			if (!!value && notAnArray) {
 				return value;
 			} else if (typeof (value) === "boolean") {
@@ -129,6 +132,8 @@
 					notAnArray = !angular.isArray(model),
 					haveModelValue = validKey && model ? _isProperty(model, "$viewValue") : false,
 					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
+
+				console.log(k, data);
 
 				if (!!model && validKey) {
 
