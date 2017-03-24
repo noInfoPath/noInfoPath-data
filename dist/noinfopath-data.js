@@ -2550,7 +2550,7 @@ angular.module("noinfopath.data")
 							};
 
 						if(!!data) {
-							req.data =  json
+							req.data =  json;
 						}
 
 						$http(req)
@@ -2577,6 +2577,32 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: !!useCreds
 							};
+
+						$http(req)
+							.then(function (data) {
+								deferred.resolve(data);
+							})
+							.catch(function (reason) {
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noRequest = function(url, options, data) {
+
+						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
+						var deferred = $q.defer(),
+							req = angular.extend({}, {
+								url: url,
+								withCredentials: true
+							}, options);
+
+						if(!!data) {
+							req.data =  data;
+						}
 
 						$http(req)
 							.then(function (data) {
@@ -8833,145 +8859,200 @@ var GloboTest = {};
 
 // no-local-file-storage.js
 /*
-	*	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
-	*
-	*	___
-	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
-	*
-	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
-	*
-	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
-	*
-	*	Licensed under the MIT License. (MIT)
-	*
-	*	___
-	*
-	*	noLocalFileSystem
-	*	-----------------
-	*
-*/
-(function(angular, storageInfo, requestFileSystem, undefined) {
-    function NoLocalFileSystemService($q, noLocalFileStorage, noMimeTypes) {
+ *	[NoInfoPath Home](http://gitlab.imginconline.com/noinfopath/noinfopath/wikis/home)
+ *
+ *	___
+ *
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *
+ *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+ *
+ *	Copyright (c) 2017 The NoInfoPath Group, LLC.
+ *
+ *	Licensed under the MIT License. (MIT)
+ *
+ *	___
+ *
+ *	noLocalFileSystem
+ *	-----------------
+ *
+ */
+(function (angular, storageInfo, requestFileSystem, undefined) {
+	function NoLocalFileSystemService($q, noHTTP, noLocalFileStorage, noMimeTypes, noConfig) {
 
-        var requestedBytes = 1024 * 1024 * 280,
-        	fileSystem;
+		var requestedBytes = noConfig.current.localFileSystem.quota,
+			fileSystem;
 
+		/**
+		 *	@method read(file)
+		 *
+		 *	Reads a file from a DOM File object and converts to a binary
+		 *	string compatible with the local, and upstream file systems.
+		 */
+		function _readFileObject(file) {
+			var deferred = $q.defer();
 
-        function _requestStorageQuota() {
+			var fileObj = {},
+				reader = new FileReader();
 
-            return $q(function(resolve, reject) {
-                storageInfo.requestQuota(
-                    requestedBytes,
-                    function(grantedBytes) {
-                        console.log('we were granted ', grantedBytes, 'bytes');
-                        resolve(grantedBytes);
-                    },
-                    function(e) {
-                        console.log('Error', e);
-                        reject(e);
-                    }
-                );
-            });
+			reader.onloadstart = function (e) {
+				fileObj.name = file.name;
+				fileObj.size = file.size;
+				fileObj.type = file.type;
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
 
+			reader.onload = function (e) {
+				//fileObj.blob = e.target.result;
+				deferred.resolve(e.target.result);
+			};
 
-        }
-        this.requestStorageQuota = _requestStorageQuota;
+			reader.onerror = function (err) {
+				deferred.reject(err);
+			};
 
-        function _requestFileSystem() {
-            var deferred = $q.defer();
+			reader.onprogress = function (e) {
+				fileObj.loaded = (e.loaded / file.size) * 100;
+				deferred.notify(e);
+			};
 
-            requestFileSystem(
-                window.TEMPORARY,
-                requestedBytes,
-                function(fs) {
-                    fileSystem = fs;
-                    deferred.resolve(fs);
-                },
-                function(e) {
-                    deferred.reject(e);
-                }
-            );
+			reader.readAsBinaryString(file);
 
-            return deferred.promise;
-        }
-        this.requestFileSystem = _requestFileSystem;
-
-		function str2ab(str) {
-		  var buf = new ArrayBuffer(str.length); // 2 bytes for each char
-		  var bufView = new Uint8Array(buf);
-		  for (var i=0, strLen=str.length; i<strLen; i++) {
-		    bufView[i] = str.charCodeAt(i);
-		  }
-		  return buf;
+			return deferred.promise;
 		}
 
-        function _save(fileObj) {
+		function _requestStorageQuota() {
 
-			return $q(function(resolve, reject) {
+			return $q(function (resolve, reject) {
+				storageInfo.requestQuota(
+					requestedBytes,
+					function (grantedBytes) {
+						console.log('Requested ', requestedBytes, 'bytes, were granted ', grantedBytes, 'bytes');
+						resolve(grantedBytes);
+					},
+					function (e) {
+						console.log('Error', e);
+						reject(e);
+					}
+				);
+			});
+
+
+		}
+		this.requestStorageQuota = _requestStorageQuota;
+
+		function _requestFileSystem() {
+			var deferred = $q.defer();
+
+			requestFileSystem(
+				window.PERSISTENT,
+				requestedBytes,
+				function (fs) {
+					fileSystem = fs;
+					deferred.resolve(fs);
+				},
+				function (e) {
+					deferred.reject(e);
+				}
+			);
+
+			return deferred.promise;
+		}
+		this.requestFileSystem = _requestFileSystem;
+
+		function str2ab(str) {
+			var buf = new ArrayBuffer(str.length); // 2 bytes for each char
+			var bufView = new Uint8Array(buf);
+			for (var i = 0, strLen = str.length; i < strLen; i++) {
+				bufView[i] = str.charCodeAt(i);
+			}
+			return buf;
+		}
+
+		function _save(fileObj) {
+
+			return $q(function (resolve, reject) {
 				if (!fileSystem || fileObj === null) {
 					reject("File not found in File Cache.");
 					return;
 				}
 
-				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type);
+				var path = fileObj.DocumentID + "." + noMimeTypes.fromMimeType(fileObj.type);
 
-				fileSystem.root.getFile(path, {
-					create: true
-				}, function(fileEntry) {
-					fileEntry.createWriter(function(writer) {
-						var arr = [str2ab(fileObj.blob)],
-							blob = new Blob(arr, {type: fileObj.type});
-						writer.write(blob);
+				_readFileObject(fileObj)
+					.then(function(fileBlob){
+						fileSystem.root.getFile(path, {
+							create: true
+						}, function (fileEntry) {
+							fileEntry.createWriter(function (writer) {
+								var arr = [str2ab(fileBlob)],
+									blob = new Blob(arr, {
+										type: fileObj.type
+									});
+								writer.write(blob);
 
-						 resolve(fileObj);
-					}, reject);
+								resolve(fileObj);
+							}, reject);
+						}, reject);
+					})
+					.catch(function(err){
+						console.error(err);
+					});
+
+
+
+			});
+
+		}
+		this.save = _save;
+
+		function _read(fileObj, fileNameField) {
+			return $q(function (resolve, reject) {
+				var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
+				if (!fileSystem) reject();
+
+				fileSystem.root.getFile(path, null, function (fileEntry) {
+					resolve({
+						fileObj: fileObj,
+						fileEntry: fileEntry
+					});
 				}, reject);
 			});
 
-        }
-        this.save = _save;
-
-        function _read(fileObj) {
-            return $q(function(resolve, reject) {
-				var path = fileObj.FileID + "." + noMimeTypes.fromMimeType(fileObj.type);
-                if (!fileSystem) reject();
-
-                fileSystem.root.getFile(path, null, function(fileEntry) {
-                    resolve({fileObj: fileObj, fileEntry: fileEntry});
-                }, reject);
-            });
-
-        }
-        this.read = _read;
+		}
+		this.read = _read;
 
 		function _getFileUrls(docs, resolver) {
 			var promises = [];
 
 
 
-			for(var d=0; d < docs.length; d++) {
+			for (var d = 0; d < docs.length; d++) {
 
 				var doc = docs[d],
 					fileId = null,
 					useDoc = false;
 
-				if(angular.isFunction(resolver)) {
+				if (angular.isFunction(resolver)) {
 					doc = resolver(doc);
 					fileId = doc ? doc.FileID : "";
-				} else if(angular.isObject(resolver)) {
+				} else if (angular.isObject(resolver)) {
 					useDoc = noInfoPath.getItem(doc, resolver.key) === resolver.value;
-					if(useDoc) {
+					if (useDoc) {
 						fileId = doc.FileID;
 					}
 				} else {
 					fileId = doc.FileID;
 				}
 
-				if(!!fileId) {
+				if (!!fileId) {
 					promises.push(_toUrl(fileId)
-						.then(function(doc, results){
-							return {url: results ? results.url : "", name: doc.name};
+						.then(function (doc, results) {
+							return {
+								url: results ? results.url : "",
+								name: doc.name
+							};
 						}.bind(null, docs[d])));
 
 				}
@@ -8985,158 +9066,182 @@ var GloboTest = {};
 			return noLocalFileStorage.get(angular.isObject(fileObj) ? fileObj.FileID : fileObj)
 				.then(_save)
 				.then(_read)
-				.then(function(result){
+				.then(function (result) {
 					result.url = result.fileEntry.toURL();
 					return result;
 				})
-				.catch(function(err){
+				.catch(function (err) {
 					console.error(err);
 				});
 		}
 		this.getUrl = _toUrl;
-    }
+
+		function _get(fileObj, schema) {
+			var options = {
+				headers: {
+					"Content-Type": fileObj.type,
+					"Accept": fileObj.type
+				},
+				method: "GET"
+			};
+
+			return _read(fileObj, schema.primryKey)
+				.then(function(file){
+					return noHTTP.noRequest(file.fileEntry.toURL(), options);
+				})
+				.catch(function (err) {
+					console.error("_read", err);
+				});
+
+		}
+		this.getFile = _get;
+
+		function _delete() {
+			return $q.when();
+		}
+		this.deleteFile = _delete;
+	}
 
 	/*
-	*	noMimeTypes
-	*	-----------
-	*/
+	 *	noMimeTypes
+	 *	-----------
+	 */
 	function NoMimeTypeService() {
 		var mimeTypes = {
-                'a': 'application/octet-stream',
-                'ai': 'application/postscript',
-                'aif': 'audio/x-aiff',
-                'aifc': 'audio/x-aiff',
-                'aiff': 'audio/x-aiff',
-                'au': 'audio/basic',
-                'avi': 'video/x-msvideo',
-                'bat': 'text/plain',
-                'bin': 'application/octet-stream',
-                'bmp': 'image/x-ms-bmp',
-                'c': 'text/plain',
-                'cdf': 'application/x-cdf',
-                'csh': 'application/x-csh',
-                'css': 'text/css',
+				'a': 'application/octet-stream',
+				'ai': 'application/postscript',
+				'aif': 'audio/x-aiff',
+				'aifc': 'audio/x-aiff',
+				'aiff': 'audio/x-aiff',
+				'au': 'audio/basic',
+				'avi': 'video/x-msvideo',
+				'bat': 'text/plain',
+				'bin': 'application/octet-stream',
+				'bmp': 'image/x-ms-bmp',
+				'c': 'text/plain',
+				'cdf': 'application/x-cdf',
+				'csh': 'application/x-csh',
+				'css': 'text/css',
 				'csv': 'text/csv',
-                'dll': 'application/octet-stream',
-                'doc': 'application/msword',
-                'dvi': 'application/x-dvi',
-                'eml': 'message/rfc822',
-                'eps': 'application/postscript',
-                'etx': 'text/x-setext',
-                'exe': 'application/octet-stream',
-                'gif': 'image/gif',
-                'gtar': 'application/x-gtar',
-                'h': 'text/plain',
-                'hdf': 'application/x-hdf',
-                'htm': 'text/html',
-                'html': 'text/html',
-                'jpe': 'image/jpeg',
-                'jpeg': 'image/jpeg',
-                'jpg': 'image/jpeg',
-                'js': 'application/x-javascript',
-                'ksh': 'text/plain',
-                'latex': 'application/x-latex',
-                'm1v': 'video/mpeg',
-                'man': 'application/x-troff-man',
-                'me': 'application/x-troff-me',
-                'mht': 'message/rfc822',
-                'mhtml': 'message/rfc822',
-                'mif': 'application/x-mif',
-                'mov': 'video/quicktime',
-                'movie': 'video/x-sgi-movie',
-                'mp2': 'audio/mpeg',
-                'mp3': 'audio/mpeg',
-                'mp4': 'video/mp4',
-                'mpa': 'video/mpeg',
-                'mpe': 'video/mpeg',
-                'mpeg': 'video/mpeg',
-                'mpg': 'video/mpeg',
-                'ms': 'application/x-troff-ms',
-                'nc': 'application/x-netcdf',
-                'nws': 'message/rfc822',
-                'o': 'application/octet-stream',
-                'obj': 'application/octet-stream',
-                'oda': 'application/oda',
-                'pbm': 'image/x-portable-bitmap',
-                'pdf': 'application/pdf',
-                'pfx': 'application/x-pkcs12',
-                'pgm': 'image/x-portable-graymap',
-                'png': 'image/png',
-                'pnm': 'image/x-portable-anymap',
-                'pot': 'application/vnd.ms-powerpoint',
-                'ppa': 'application/vnd.ms-powerpoint',
-                'ppm': 'image/x-portable-pixmap',
-                'pps': 'application/vnd.ms-powerpoint',
-                'ppt': 'application/vnd.ms-powerpoint',
-                'pptx': 'application/vnd.ms-powerpoint',
-                'ps': 'application/postscript',
-                'pwz': 'application/vnd.ms-powerpoint',
-                'py': 'text/x-python',
-                'pyc': 'application/x-python-code',
-                'pyo': 'application/x-python-code',
-                'qt': 'video/quicktime',
-                'ra': 'audio/x-pn-realaudio',
-                'ram': 'application/x-pn-realaudio',
-                'ras': 'image/x-cmu-raster',
-                'rdf': 'application/xml',
-                'rgb': 'image/x-rgb',
-                'roff': 'application/x-troff',
-                'rtx': 'text/richtext',
-                'sgm': 'text/x-sgml',
-                'sgml': 'text/x-sgml',
-                'sh': 'application/x-sh',
-                'shar': 'application/x-shar',
-                'snd': 'audio/basic',
-                'so': 'application/octet-stream',
-                'src': 'application/x-wais-source',
-                'swf': 'application/x-shockwave-flash',
-                't': 'application/x-troff',
-                'tar': 'application/x-tar',
-                'tcl': 'application/x-tcl',
-                'tex': 'application/x-tex',
-                'texi': 'application/x-texinfo',
-                'texinfo': 'application/x-texinfo',
-                'tif': 'image/tiff',
-                'tiff': 'image/tiff',
-                'tr': 'application/x-troff',
-                'tsv': 'text/tab-separated-values',
-                'txt': 'text/plain',
-                'ustar': 'application/x-ustar',
-                'vcf': 'text/x-vcard',
-                'wav': 'audio/x-wav',
-                'wsdl': 'application/xml',
-                'xbm': 'image/x-xbitmap',
-                'xlb': 'application/vnd.ms-excel',
-                'xls': 'application/vnd.ms-excel',
-                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'xml': 'text/xml',
-                'xpdl': 'application/xml',
-                'xpm': 'image/x-xpixmap',
-                'xsl': 'application/xml',
-                'xwd': 'image/x-xwindowdump',
-                'zip': 'application/zip'
-            },
+				'dll': 'application/octet-stream',
+				'doc': 'application/msword',
+				'dvi': 'application/x-dvi',
+				'eml': 'message/rfc822',
+				'eps': 'application/postscript',
+				'etx': 'text/x-setext',
+				'exe': 'application/octet-stream',
+				'gif': 'image/gif',
+				'gtar': 'application/x-gtar',
+				'h': 'text/plain',
+				'hdf': 'application/x-hdf',
+				'htm': 'text/html',
+				'html': 'text/html',
+				'jpe': 'image/jpeg',
+				'jpeg': 'image/jpeg',
+				'jpg': 'image/jpeg',
+				'js': 'application/x-javascript',
+				'ksh': 'text/plain',
+				'latex': 'application/x-latex',
+				'm1v': 'video/mpeg',
+				'man': 'application/x-troff-man',
+				'me': 'application/x-troff-me',
+				'mht': 'message/rfc822',
+				'mhtml': 'message/rfc822',
+				'mif': 'application/x-mif',
+				'mov': 'video/quicktime',
+				'movie': 'video/x-sgi-movie',
+				'mp2': 'audio/mpeg',
+				'mp3': 'audio/mpeg',
+				'mp4': 'video/mp4',
+				'mpa': 'video/mpeg',
+				'mpe': 'video/mpeg',
+				'mpeg': 'video/mpeg',
+				'mpg': 'video/mpeg',
+				'ms': 'application/x-troff-ms',
+				'nc': 'application/x-netcdf',
+				'nws': 'message/rfc822',
+				'o': 'application/octet-stream',
+				'obj': 'application/octet-stream',
+				'oda': 'application/oda',
+				'pbm': 'image/x-portable-bitmap',
+				'pdf': 'application/pdf',
+				'pfx': 'application/x-pkcs12',
+				'pgm': 'image/x-portable-graymap',
+				'png': 'image/png',
+				'pnm': 'image/x-portable-anymap',
+				'pot': 'application/vnd.ms-powerpoint',
+				'ppa': 'application/vnd.ms-powerpoint',
+				'ppm': 'image/x-portable-pixmap',
+				'pps': 'application/vnd.ms-powerpoint',
+				'ppt': 'application/vnd.ms-powerpoint',
+				'pptx': 'application/vnd.ms-powerpoint',
+				'ps': 'application/postscript',
+				'pwz': 'application/vnd.ms-powerpoint',
+				'py': 'text/x-python',
+				'pyc': 'application/x-python-code',
+				'pyo': 'application/x-python-code',
+				'qt': 'video/quicktime',
+				'ra': 'audio/x-pn-realaudio',
+				'ram': 'application/x-pn-realaudio',
+				'ras': 'image/x-cmu-raster',
+				'rdf': 'application/xml',
+				'rgb': 'image/x-rgb',
+				'roff': 'application/x-troff',
+				'rtx': 'text/richtext',
+				'sgm': 'text/x-sgml',
+				'sgml': 'text/x-sgml',
+				'sh': 'application/x-sh',
+				'shar': 'application/x-shar',
+				'snd': 'audio/basic',
+				'so': 'application/octet-stream',
+				'src': 'application/x-wais-source',
+				'swf': 'application/x-shockwave-flash',
+				't': 'application/x-troff',
+				'tar': 'application/x-tar',
+				'tcl': 'application/x-tcl',
+				'tex': 'application/x-tex',
+				'texi': 'application/x-texinfo',
+				'texinfo': 'application/x-texinfo',
+				'tif': 'image/tiff',
+				'tiff': 'image/tiff',
+				'tr': 'application/x-troff',
+				'tsv': 'text/tab-separated-values',
+				'txt': 'text/plain',
+				'ustar': 'application/x-ustar',
+				'vcf': 'text/x-vcard',
+				'wav': 'audio/x-wav',
+				'wsdl': 'application/xml',
+				'xbm': 'image/x-xbitmap',
+				'xlb': 'application/vnd.ms-excel',
+				'xls': 'application/vnd.ms-excel',
+				'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				'xml': 'text/xml',
+				'xpdl': 'application/xml',
+				'xpm': 'image/x-xpixmap',
+				'xsl': 'application/xml',
+				'xwd': 'image/x-xwindowdump',
+				'zip': 'application/zip'
+			},
 			mimeTypesInverted = {};
 
-		for(var m in mimeTypes) {
+		for (var m in mimeTypes) {
 			var mime = mimeTypes[m];
 			mimeTypesInverted[mime] = m;
 		}
 
-		this.fromExtention = function(ext) {
+		this.fromExtention = function (ext) {
 			return mimeTypes[ext];
 		};
 
-		this.fromMimeType = function(mimeType) {
+		this.fromMimeType = function (mimeType) {
 			return mimeTypesInverted[mimeType];
 		};
-    }
+	}
 
 
-    angular.module("noinfopath.data")
+	angular.module("noinfopath.data")
 		.service("noMimeTypes", [NoMimeTypeService])
-        .service("noLocalFileSystem", ["$q", "noLocalFileStorage", "noMimeTypes", NoLocalFileSystemService])
-		;
+		.service("noLocalFileSystem", ["$q", "noHTTP", "noLocalFileStorage", "noMimeTypes", "noConfig", NoLocalFileSystemService]);
 })(angular, navigator.webkitPersistentStorage, window.requestFileSystem || window.webkitRequestFileSystem);
 
 //parameter-parser.js

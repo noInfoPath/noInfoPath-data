@@ -16,6 +16,10 @@ noLocalFileSystem
 -----------------
 
 
+
+Reads a file from a DOM File object and converts to a binary
+string compatible with the local, and upstream file systems.
+
 noMimeTypes
 -----------
 

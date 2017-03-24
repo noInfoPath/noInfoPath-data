@@ -151,7 +151,7 @@
 							};
 
 						if(!!data) {
-							req.data =  json
+							req.data =  json;
 						}
 
 						$http(req)
@@ -178,6 +178,32 @@
 								},
 								withCredentials: !!useCreds
 							};
+
+						$http(req)
+							.then(function (data) {
+								deferred.resolve(data);
+							})
+							.catch(function (reason) {
+								console.error(reason);
+								deferred.reject(reason);
+							});
+
+						return deferred.promise;
+					};
+
+					this.noRequest = function(url, options, data) {
+
+						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
+						var deferred = $q.defer(),
+							req = angular.extend({}, {
+								url: url,
+								withCredentials: true
+							}, options);
+
+						if(!!data) {
+							req.data =  data;
+						}
 
 						$http(req)
 							.then(function (data) {
