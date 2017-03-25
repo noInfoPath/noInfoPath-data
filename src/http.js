@@ -83,10 +83,10 @@
 		}])
 		.provider("noHTTP", [function () {
 			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', "noParameterParser", function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig, noParameterParser) {
+				var _currentUser;
 
 				function NoHTTP(queryBuilder) {
-					var THIS = this,
-						_currentUser;
+					 var THIS = this; //,	_currentUser;
 
 					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
 
@@ -237,7 +237,19 @@
 					});
 
 					this.noCreate = function (data) {
+
+						data.CreatedBy = _currentUser.userId;
+						data.DateCreated = noInfoPath.toDbDate(new Date());
+						data.ModifiedDate = noInfoPath.toDbDate(new Date());
+						data.ModifiedBy = _currentUser.userId;
+
+						if (!data[table.primaryKey]) {
+							data[table.primaryKey] = noInfoPath.createUUID();
+						}
+
 						var json = angular.toJson(data);
+
+						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
 
 						var deferred = $q.defer(),
 							req = {
@@ -316,7 +328,13 @@
 					};
 
 					this.noUpdate = function (data) {
+						data.ModifiedDate = noInfoPath.toDbDate(new Date());
+						data.ModifiedBy = _currentUser.userId;
+
 						var json = angular.toJson(data);
+
+						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
 
 						var deferred = $q.defer(),
 							req = {
