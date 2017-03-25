@@ -19,7 +19,7 @@
  *
  */
 (function (angular, storageInfo, requestFileSystem, undefined) {
-	function NoLocalFileSystemService($q, noHTTP, noLocalFileStorage, noMimeTypes, noConfig) {
+	function NoLocalFileSystemService($q, $http, noHTTP, noLocalFileStorage, noMimeTypes, noConfig) {
 
 		var requestedBytes = noConfig.current.localFileSystem.quota,
 			fileSystem;
@@ -122,7 +122,7 @@
 				var path = fileObj.DocumentID + "." + noMimeTypes.fromMimeType(fileObj.type);
 
 				_readFileObject(fileObj)
-					.then(function(fileBlob){
+					.then(function (fileBlob) {
 						fileSystem.root.getFile(path, {
 							create: true
 						}, function (fileEntry) {
@@ -137,7 +137,7 @@
 							}, reject);
 						}, reject);
 					})
-					.catch(function(err){
+					.catch(function (err) {
 						console.error(err);
 					});
 
@@ -218,17 +218,36 @@
 		this.getUrl = _toUrl;
 
 		function _get(fileObj, schema) {
+			function appendTransform(defaults, transform) {
+
+				// We can't guarantee that the default transformation is an array
+				defaults = angular.isArray(defaults) ? defaults : [defaults];
+
+				// Append the new transformation to the defaults
+				return defaults.concat(transform);
+			}
+
 			var options = {
 				headers: {
 					"Content-Type": fileObj.type,
 					"Accept": fileObj.type
 				},
-				method: "GET"
+				method: "GET",
+				responseType: "arraybuffer"
 			};
 
-			return _read(fileObj, schema.primryKey)
-				.then(function(file){
-					return noHTTP.noRequest(file.fileEntry.toURL(), options);
+
+
+			return _read(fileObj, schema.primaryKey)
+				.then(function (file) {
+					return noHTTP.noRequest(file.fileEntry.toURL(), options)
+						.then(function (resp) {
+							//console.log(x.readAsArrayBuffer(resp.data));
+							var file = new File([resp.data], fileObj.name, {
+								type: fileObj.type
+							});
+							return file;
+						});
 				})
 				.catch(function (err) {
 					console.error("_read", err);
@@ -382,5 +401,5 @@
 
 	angular.module("noinfopath.data")
 		.service("noMimeTypes", [NoMimeTypeService])
-		.service("noLocalFileSystem", ["$q", "noHTTP", "noLocalFileStorage", "noMimeTypes", "noConfig", NoLocalFileSystemService]);
+		.service("noLocalFileSystem", ["$q", "$http", "noHTTP", "noLocalFileStorage", "noMimeTypes", "noConfig", NoLocalFileSystemService]);
 })(angular, navigator.webkitPersistentStorage, window.requestFileSystem || window.webkitRequestFileSystem);

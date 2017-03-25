@@ -443,7 +443,7 @@
 				deferred.notify(e);
 			};
 
-			reader.readAsBinaryString(file);
+			reader[comp || "readAsBinaryString"](file);
 			//reader[comp.readMethod || "readAsArrayBuffer"](file);
 			//reader.readAsArrayBuffer(file);
 
