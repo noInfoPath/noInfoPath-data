@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -218,15 +218,6 @@
 		this.getUrl = _toUrl;
 
 		function _get(fileObj, schema) {
-			function appendTransform(defaults, transform) {
-
-				// We can't guarantee that the default transformation is an array
-				defaults = angular.isArray(defaults) ? defaults : [defaults];
-
-				// Append the new transformation to the defaults
-				return defaults.concat(transform);
-			}
-
 			var options = {
 				headers: {
 					"Content-Type": fileObj.type,
@@ -235,8 +226,6 @@
 				method: "GET",
 				responseType: "arraybuffer"
 			};
-
-
 
 			return _read(fileObj, schema.primaryKey)
 				.then(function (file) {
@@ -395,6 +384,10 @@
 
 		this.fromMimeType = function (mimeType) {
 			return mimeTypesInverted[mimeType];
+		};
+
+		this.isImage = function(mimeType) {
+			return mimeType.indexOf("image/") > -1;
 		};
 	}
 

@@ -104,7 +104,6 @@
 
 		_pristine = _pureModel(this);
 
-
 		function _isProperty(value, prop) {
 			return Object.is(value[prop], null) || value.hasOwnProperty(prop);
 		}

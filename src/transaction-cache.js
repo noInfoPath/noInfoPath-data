@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -864,6 +864,7 @@
 				};
 
 				this.dropAllSynced = function () {
+
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
@@ -883,13 +884,14 @@
 						});
 				};
 
-			}
+				this.logException = function (transaction) {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
 
-			// // These classes are exposed for testing purposes
-			// noInfoPath.data.NoTransaction = NoTransaction;
-			// noInfoPath.data.NoChanges = NoChanges;
-			// noInfoPath.data.NoChange = NoChange;
-			// noInfoPath.data.NoTransactionCache = NoTransactionCache;
+					return entity.noCreate(transaction);
+				};
+
+			}
 
 			return new NoTransactionCache($q, noIndexedDb);
 			}]);

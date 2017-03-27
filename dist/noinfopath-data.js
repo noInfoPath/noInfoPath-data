@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.47* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.49* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -1602,7 +1602,6 @@ angular.module("noinfopath.data")
 
 		_pristine = _pureModel(this);
 
-
 		function _isProperty(value, prop) {
 			return Object.is(value[prop], null) || value.hasOwnProperty(prop);
 		}
@@ -2113,7 +2112,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2250,7 +2249,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2403,7 +2402,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -3497,7 +3496,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -4949,7 +4948,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5809,6 +5808,7 @@ var GloboTest = {};
 				};
 
 				this.dropAllSynced = function () {
+
 					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
 						entity = db.NoInfoPath_Changes;
 
@@ -5828,13 +5828,14 @@ var GloboTest = {};
 						});
 				};
 
-			}
+				this.logException = function (transaction) {
+					var db = noIndexedDb.getDatabase("NoInfoPath_dtc_v1"),
+						entity = db.NoInfoPath_Changes;
 
-			// // These classes are exposed for testing purposes
-			// noInfoPath.data.NoTransaction = NoTransaction;
-			// noInfoPath.data.NoChanges = NoChanges;
-			// noInfoPath.data.NoChange = NoChange;
-			// noInfoPath.data.NoTransactionCache = NoTransactionCache;
+					return entity.noCreate(transaction);
+				};
+
+			}
 
 			return new NoTransactionCache($q, noIndexedDb);
 			}]);
@@ -5846,7 +5847,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7706,7 +7707,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -8053,7 +8054,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8279,7 +8280,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8418,7 +8419,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8881,7 +8882,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.47*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -9095,15 +9096,6 @@ var GloboTest = {};
 		this.getUrl = _toUrl;
 
 		function _get(fileObj, schema) {
-			function appendTransform(defaults, transform) {
-
-				// We can't guarantee that the default transformation is an array
-				defaults = angular.isArray(defaults) ? defaults : [defaults];
-
-				// Append the new transformation to the defaults
-				return defaults.concat(transform);
-			}
-
 			var options = {
 				headers: {
 					"Content-Type": fileObj.type,
@@ -9112,8 +9104,6 @@ var GloboTest = {};
 				method: "GET",
 				responseType: "arraybuffer"
 			};
-
-
 
 			return _read(fileObj, schema.primaryKey)
 				.then(function (file) {
@@ -9272,6 +9262,10 @@ var GloboTest = {};
 
 		this.fromMimeType = function (mimeType) {
 			return mimeTypesInverted[mimeType];
+		};
+
+		this.isImage = function(mimeType) {
+			return mimeType.indexOf("image/") > -1;
 		};
 	}
 
