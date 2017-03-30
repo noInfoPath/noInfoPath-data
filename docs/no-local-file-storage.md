@@ -2,7 +2,7 @@
 
 ___
 
-[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.50*
 
 [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
@@ -22,4 +22,20 @@ string compatible with the local, and upstream file systems.
 
 noMimeTypes
 -----------
+
+### @method noClear()
+
+Delete all files from the cache, without recording each delete transaction.
+
+#### Returns
+AngularJS Promise.
+
+### @method noBulkCreate(data)
+
+Inserts a file in to cache without logging a transaction.
+
+### @method bulkload(data, progress)
+
+Returns an AngularJS Promise.  Takes advantage of
+Promise.notify to report project of the bulkLoad operation.
 

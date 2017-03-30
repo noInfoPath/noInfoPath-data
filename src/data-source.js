@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.50*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -46,14 +46,19 @@
  */
 (function (angular, undefined) {
 
-	function NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch) {
+	function NoDataSource($injector, $q, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
 			entity = db[dsConfig.entityName],
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
-			_scope = scope;
+			_scope = scope,
+			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache;
+
+		function _makeRemoteFileUrl(resource) {
+			return noConfig.current.FILECACHEURL + "/" + resource;
+		}
 
 		Object.defineProperties(this, {
 			"entity": {
@@ -73,6 +78,28 @@
 
 			return entity.noCreate(data, noTrans);
 
+		};
+
+		this.createDocument = function (data, file, trans) {
+			return this.create(data,trans)
+				.then(function(fileObj) {
+					file.DocumentID = fileObj[entity.noInfoPath.primaryKey];
+					return noFileCache.noCreate(file);
+				});
+		};
+
+		this.deleteDocument = function (doc, trans, deleteFile) {
+			var promise;
+
+			if (angular.isObject(doc) && deleteFile && doc.ID) {
+				promise = this.destroy(doc, trans);
+			} else if (angular.isObject(doc) && !deleteFile) {
+				promise = this.destroy(doc);
+			} else {
+				promise = $q.when(true);
+			}
+
+			return promise;
 		};
 
 		this.read = function (options, follow) {
@@ -148,8 +175,15 @@
 
 		this.destroy = function (data, noTrans, filters) {
 			if(isNoView) throw "destroy operation not supported on entities of type NoView";
+			var p = data ? entity.noDestroy(data, noTrans, filters) : entity.noClear();
+			return p.then(function(){
+				if(entity.noInfoPath.NoInfoPath_FileUploadCache) {
+					return noFileCache.noDestroy(data);
+				} else {
+					return;
+				}
 
-			return data ? entity.noDestroy(data, noTrans, filters) : entity.noClear();
+			});
 		};
 
 		this.one = function (id) {
@@ -208,11 +242,102 @@
 
 		};
 
+		this.bulkLoad = function (data) {
+			var THIS = this,
+				deferred = $q.defer(),
+				table = entity;
+
+			function _downloadFile(fileObj) {
+				return $q(function(resolve, reject){
+					if(table.noInfoPath.NoInfoPath_FileUploadCache) {
+						if(fileObj && fileObj.name && fileObj.type) {
+							noFileCache.downloadFile(_makeRemoteFileUrl(fileObj.name), fileObj.type, fileObj.name)
+								.then(resolve)
+								.catch(reject);
+						} else {
+							reject(new Error("Invalid document object.  Missing file name and or type properties"));
+						}
+
+					} else {
+						resolve();
+					}
+				});
+			}
+
+			function _saveParent(fileObj, file) {
+				if(table.noInfoPath.NoInfoPath_FileUploadCache) {
+					if(file) {
+						return THIS.create(fileObj);
+					} else {
+						return $q.when(null);	//Don't save parent
+					}
+
+				} else {
+					return THIS.create(fileObj);
+				}
+			}
+
+			function _saveFile(fileObj, file) {
+				if(file) {
+					file.DocumentID = fileObj[table.noInfoPath.primaryKey];
+					return noFileCache.noCreate(file);
+				} else {
+					return $q.when(null);
+				}
+			}
+
+			function _import(data) {
+				var total = data ? data.length : 0,
+				 	currentItem = 0;
+
+				function _next() {
+					if (currentItem < data.length) {
+						var datum = data[currentItem];
+
+
+						_downloadFile(datum)
+							.then(_saveFile.bind(THIS, datum))
+							.then(_saveParent.bind(THIS, datum))
+							.then(deferred.notify)
+							.catch(deferred.notify.bind(null, {"error": "error importing data.", "data": datum}))
+							.finally(function () {
+								currentItem++;
+								_next();
+							});
+
+					} else {
+						deferred.resolve(table.name);
+					}
+				}
+
+				_next();
+			}
+
+			function _clearLocalFileSystem(table) {
+				if(table.noInfoPath.NoInfoPath_FileUploadCache) {
+					return noFileCache.noClear();
+				} else {
+					return $q.when();
+				}
+			}
+			//console.info("bulkLoad: ", table.TableName)
+
+			THIS.entity.noClear()
+				.then(_clearLocalFileSystem.bind(null, table))
+				.then(_import.bind(null, data))
+				.catch(function (err) {
+					console.error(err);
+				});
+
+			return deferred.promise;
+		};
+
 	}
+
 
 	angular.module("noinfopath.data")
 
-	.service("noDataSource", ["$injector", "$q", "noDynamicFilters", "noCalculatedFields", function ($injector, $q, noDynamicFilters, noCalculatedFields) {
+	.service("noDataSource", ["$injector", "$q", "noConfig", "noDynamicFilters", "noCalculatedFields", "noFileSystem", function ($injector, $q, noConfig, noDynamicFilters, noCalculatedFields, noFileSystem) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -232,9 +357,11 @@
 		 *
 		 */
 		this.create = function (dsConfig, scope, watch) {
-			return new NoDataSource($injector, $q, noDynamicFilters, dsConfig, scope, noCalculatedFields, watch);
+			return new NoDataSource($injector, $q, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch);
 		};
-	}]);
+	}])
+
+	;
 
 
 })(angular);

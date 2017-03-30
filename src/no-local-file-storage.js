@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.50*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -19,10 +19,9 @@
  *
  */
 (function (angular, storageInfo, requestFileSystem, undefined) {
-	function NoLocalFileSystemService($q, $http, noHTTP, noLocalFileStorage, noMimeTypes, noConfig) {
+	function NoLocalFileSystemService($q, $http, noHTTP, noMimeTypes, noConfig) {
 
-		var requestedBytes = noConfig.current.localFileSystem.quota,
-			fileSystem;
+		var requestedBytes, fileSystem, root;
 
 		/**
 		 *	@method read(file)
@@ -62,8 +61,10 @@
 
 			return deferred.promise;
 		}
+		this.getBinaryString = _readFileObject;
 
 		function _requestStorageQuota() {
+			requestedBytes = noConfig.current.localFileSystem.quota;
 
 			return $q(function (resolve, reject) {
 				storageInfo.requestQuota(
@@ -90,7 +91,14 @@
 				window.PERSISTENT,
 				requestedBytes,
 				function (fs) {
+
 					fileSystem = fs;
+
+					fs.root.getDirectory('NoFileCache', {create:true}, function(directoryEntry){
+						root = directoryEntry;
+						deferred.resolve();
+					}, deferred.reject);
+
 					deferred.resolve(fs);
 				},
 				function (e) {
@@ -111,10 +119,33 @@
 			return buf;
 		}
 
-		function _save(fileObj) {
+		function _count() {
+			var deferred = $q.defer(),
+				noFileCacheReader = root.createReader();
+
+			noFileCacheReader.readEntries(function(results) {
+				deferred.resolve(results.length);
+			}, deferred.reject);
+
+			return deferred.promise;
+		}
+
+		function _dir() {
+			var deferred = $q.defer(),
+				noFileCacheReader = root.createReader();
+
+			noFileCacheReader.readEntries(function(results) {
+				deferred.resolve(new noInfoPath.data.NoResults(results));
+			}, deferred.reject);
+
+			return deferred.promise;
+		}
+		this.dir = _dir;
+
+		function _save(fileObj, fileIdKey) {
 
 			return $q(function (resolve, reject) {
-				if (!fileSystem || fileObj === null) {
+				if (!root || fileObj === null) {
 					reject("File not found in File Cache.");
 					return;
 				}
@@ -123,7 +154,7 @@
 
 				_readFileObject(fileObj)
 					.then(function (fileBlob) {
-						fileSystem.root.getFile(path, {
+						root.getFile(path, {
 							create: true
 						}, function (fileEntry) {
 							fileEntry.createWriter(function (writer) {
@@ -151,9 +182,10 @@
 		function _read(fileObj, fileNameField) {
 			return $q(function (resolve, reject) {
 				var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
-				if (!fileSystem) reject();
 
-				fileSystem.root.getFile(path, null, function (fileEntry) {
+				if(!root) reject(new Error("Root folder missing."));
+
+				root.getFile(path, null, function (fileEntry) {
 					resolve({
 						fileObj: fileObj,
 						fileEntry: fileEntry
@@ -164,58 +196,58 @@
 		}
 		this.read = _read;
 
-		function _getFileUrls(docs, resolver) {
-			var promises = [];
-
-
-
-			for (var d = 0; d < docs.length; d++) {
-
-				var doc = docs[d],
-					fileId = null,
-					useDoc = false;
-
-				if (angular.isFunction(resolver)) {
-					doc = resolver(doc);
-					fileId = doc ? doc.FileID : "";
-				} else if (angular.isObject(resolver)) {
-					useDoc = noInfoPath.getItem(doc, resolver.key) === resolver.value;
-					if (useDoc) {
-						fileId = doc.FileID;
-					}
-				} else {
-					fileId = doc.FileID;
-				}
-
-				if (!!fileId) {
-					promises.push(_toUrl(fileId)
-						.then(function (doc, results) {
-							return {
-								url: results ? results.url : "",
-								name: doc.name
-							};
-						}.bind(null, docs[d])));
-
-				}
-			}
-
-			return $q.all(promises);
-		}
-		this.getFileUrls = _getFileUrls;
-
-		function _toUrl(fileObj) {
-			return noLocalFileStorage.get(angular.isObject(fileObj) ? fileObj.FileID : fileObj)
-				.then(_save)
-				.then(_read)
-				.then(function (result) {
-					result.url = result.fileEntry.toURL();
-					return result;
-				})
-				.catch(function (err) {
-					console.error(err);
-				});
-		}
-		this.getUrl = _toUrl;
+		// function _getFileUrls(docs, resolver) {
+		// 	var promises = [];
+		//
+		//
+		//
+		// 	for (var d = 0; d < docs.length; d++) {
+		//
+		// 		var doc = docs[d],
+		// 			fileId = null,
+		// 			useDoc = false;
+		//
+		// 		if (angular.isFunction(resolver)) {
+		// 			doc = resolver(doc);
+		// 			fileId = doc ? doc.FileID : "";
+		// 		} else if (angular.isObject(resolver)) {
+		// 			useDoc = noInfoPath.getItem(doc, resolver.key) === resolver.value;
+		// 			if (useDoc) {
+		// 				fileId = doc.FileID;
+		// 			}
+		// 		} else {
+		// 			fileId = doc.FileID;
+		// 		}
+		//
+		// 		if (!!fileId) {
+		// 			promises.push(_toUrl(fileId)
+		// 				.then(function (doc, results) {
+		// 					return {
+		// 						url: results ? results.url : "",
+		// 						name: doc.name
+		// 					};
+		// 				}.bind(null, docs[d])));
+		//
+		// 		}
+		// 	}
+		//
+		// 	return $q.all(promises);
+		// }
+		// this.getFileUrls = _getFileUrls;
+		//
+		// function _toUrl(fileObj) {
+		// 	return noLocalFileStorage.get(angular.isObject(fileObj) ? fileObj.FileID : fileObj)
+		// 		.then(_save)
+		// 		.then(_read)
+		// 		.then(function (result) {
+		// 			result.url = result.fileEntry.toURL();
+		// 			return result;
+		// 		})
+		// 		.catch(function (err) {
+		// 			console.error(err);
+		// 		});
+		// }
+		// this.getUrl = _toUrl;
 
 		function _get(fileObj, schema) {
 			var options = {
@@ -229,26 +261,89 @@
 
 			return _read(fileObj, schema.primaryKey)
 				.then(function (file) {
-					return noHTTP.noRequest(file.fileEntry.toURL(), options)
+					return _download(file.fileEntry.toURL(), fileObj.type, fileObj.name)
 						.then(function (resp) {
-							//console.log(x.readAsArrayBuffer(resp.data));
-							var file = new File([resp.data], fileObj.name, {
-								type: fileObj.type
-							});
-							return file;
+							return resp.data || resp;
 						});
 				})
 				.catch(function (err) {
-					console.error("_read", err);
+					return err;
 				});
 
 		}
 		this.getFile = _get;
 
-		function _delete() {
-			return $q.when();
+		function _delete(fileObj, fileNameField) {
+			return $q(function (resolve, reject) {
+				var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
+				if (!root) reject("Local file system is not initialized.");
+				if (!fileObj) reject("File metadata object is missing");
+
+				root.getFile(path, null, function (fileEntry) {
+					fileEntry.remove(resolve, reject);
+				}, reject);
+			});
+
 		}
 		this.deleteFile = _delete;
+
+		function _clear() {
+			var deferred = $q.defer(),
+				noFileCacheReader = root.createReader();
+
+			noFileCacheReader.readEntries(function(results) {
+				if(!!results.length) {
+					var count = 0;
+					console.log("Deleteing", results.length);
+
+					results.forEach(function(f){
+						f.remove(function(){
+							count++;
+							if(count >= results.length) deferred.resolve();
+						}, function(err){
+							console.log(err);
+							count++;
+							if(count >= results.length) deferred.resolve();
+						});
+					});
+
+				} else {
+					deferred.resolve();
+				}
+
+			});
+
+			return deferred.promise;
+
+		}
+		this.clear = _clear;
+
+		function _download(url, mimeType, fileName) {
+			return $q(function(resolve, reject){
+				var options = {
+					headers: {
+						"Content-Type": mimeType,
+						"Accept": mimeType
+					},
+					method: "GET",
+					responseType: "arraybuffer"
+				};
+
+				noHTTP.noRequest(url, options)
+					.then(function (resp) {
+						//console.log(x.readAsArrayBuffer(resp.data));
+						var file = new File([resp.data], fileName, {
+							type: mimeType
+						});
+						console.log("noLocalFileSystem::download", file.name, mimeType, file.type, file.size);
+						resolve(file);
+					}).catch(function(err){
+						resolve(null);
+					});
+			});
+
+		}
+		this.downloadFile = _download;
 	}
 
 	/*
@@ -391,8 +486,201 @@
 		};
 	}
 
+	function NoFileSystemService($q, $rootScope, noLocalFileSystem) {
+		var THIS = this;
+
+		function _recordTransaction(resolve, tableName, operation, trans, rawData, result1, result2) {
+			//console.log(arguments);
+
+			var transData = result2 && result2.rows && result2.rows.length ? result2 : angular.isObject(result1) ? result1 : rawData;
+
+			if (trans) trans.addChange(tableName, transData, operation, "NoInfoPath_dtc_v1_files");
+
+			resolve(transData);
+		}
+
+		function _transactionFault(reject, err) {
+			reject(err);
+		}
+
+		this.whenReady = function (config) {
+			return $q(function (resolve, reject) {
+				var dbInitialized = "noFileSystemInitialized";
+
+				if ($rootScope[dbInitialized]) {
+					resolve();
+				} else {
+					$rootScope.$watch(dbInitialized, function (newval) {
+						if (newval) {
+							resolve();
+						}
+					});
+
+				}
+			});
+		};
+
+		this.configure = function () {
+			var schema = {
+					"dbName": "rmEFR2",
+					"provider": "LocalFileSystem",
+					"schemaSource": {
+						"provider": "inline",
+						"schema": {
+							"NoFileCache": {
+								"entityName": "NoFileCache",
+								"entityType": "T",
+								"primaryKey": "name",
+								"foreignKeys": {},
+								"columns": {},
+								"indexes": []
+							}
+						}
+					}
+				},
+				db = new noFileSystemDb(),
+				dbInitialized = "noFileSystem_rmEFR2";
+
+			return $q(function (resolve, reject) {
+				db.NoFileCache = new NoTable($q, "NoFileCache", schema, noLocalFileSystem);
+				$rootScope[dbInitialized] = db;
+				console.log(dbInitialized + " ready.");
+				resolve(THIS);
+			});
+
+		};
+
+		this.getDatabase = function (backerSchema) {
+			var dbInitialized = "noFileSystem_rmEFR2",
+				db = $rootScope[dbInitialized];
+
+				db.NoFileCache.backerSchema = backerSchema;
+
+			return $rootScope[dbInitialized];
+		};
+
+		this.destroyDb = function (databaseName) {
+			return $q.when();
+		};
+
+		function noFileSystemDb() {}
+
+		function NoTable($q, tableName, table, noLocalFileSystem) {
+			var THIS = this,
+				schema = table,
+				SQLOPS = {};
+
+			Object.defineProperties(this, {
+				entity: {
+					get: function () {
+						return _table;
+					}
+				},
+				backerSchema: {
+					set: function(v) {
+						schema = v;
+					}
+				}
+			});
+
+			function noCreate(data, trans) {
+				return $q(function (resolve, reject) {
+
+					noLocalFileSystem.save(data, schema.primaryKey)
+						.then(_recordTransaction.bind(null, resolve, schema.entityName, "C", trans, data))
+						.catch(_transactionFault.bind(null, reject));
+				});
+			}
+			this.noCreate = noCreate;
+
+			function noDestroy(data, trans) {
+				return $q(function (resolve, reject) {
+					noLocalFileSystem.deleteFile(data, schema.primaryKey)
+						.then(_recordTransaction.bind(null, resolve, schema.entityName, "D", trans, data))
+						.catch(_transactionFault.bind(null, reject));
+				});
+			}
+			this.noDestroy = noDestroy;
+
+			this.noRead = function () {
+				return noLocalFileSystem.dir();
+			};
+
+			this.noUpdate = function (data, trans) {
+				return 	noLocalFileSystem.deleteFile(data, schema.primaryKey)
+					.then(function (data) {
+						return noLocalFileSystem.save(data, schema.primaryKey)
+							.catch(function (err) {
+								return err;
+							});
+					})
+					.catch(function (err) {
+						return err;
+					});
+
+			};
+
+			this.noOne = function (query) {
+				return noLocalFileSystem.getFile(query, schema.primaryKey);
+			};
+
+			/*
+			 * ### @method noClear()
+			 *
+			 * Delete all files from the cache, without recording each delete transaction.
+			 *
+			 * #### Returns
+			 * AngularJS Promise.
+			 */
+			this.noClear = function () {
+				if (schema.entityType === "V") throw "Clear operation not supported by SQL Views.";
+
+				return noLocalFileSystem.clear();
+			};
+
+			/*
+			 *	### @method noBulkCreate(data)
+			 *
+			 *	Inserts a file in to cache without logging a transaction.
+			 */
+			this.noBulkCreate = function (data) {
+				return $q.when("noBulkCreate not supported by noFileSystem");
+			};
+
+			/*
+			 *	### @method bulkload(data, progress)
+			 *
+			 *	Returns an AngularJS Promise.  Takes advantage of
+			 *	Promise.notify to report project of the bulkLoad operation.
+			 */
+			this.bulkload = function (data, progress, remoteDataSvc) {
+				if (_table.entityType === "V") throw "BulkLoad operation not supported by SQL Views.";
+
+				return $q.when("bulkload not supported by noFileSystem");
+			};
+
+			SQLOPS.I = this.noCreate;
+			SQLOPS.U = this.noUpdate;
+			SQLOPS.D = this.noDestroy;
+
+			this.noImport = function (noChange) {
+				return $q.when("noImport not supported by noFileSystem");
+			};
+
+			this.hasPrimaryKeys = function (keyList) {
+				return $q.when("hasPrimaryKeys not supported by noFileSystem");
+			};
+
+			this.downloadFile = noLocalFileSystem.downloadFile;
+		}
+
+	}
+
 
 	angular.module("noinfopath.data")
 		.service("noMimeTypes", [NoMimeTypeService])
-		.service("noLocalFileSystem", ["$q", "$http", "noHTTP", "noLocalFileStorage", "noMimeTypes", "noConfig", NoLocalFileSystemService]);
+		.service("noLocalFileSystem", ["$q", "$http", "noHTTP", "noMimeTypes", "noConfig", NoLocalFileSystemService])
+		.service("noFileSystem", ["$q", "$rootScope", "noLocalFileSystem", NoFileSystemService])
+		;
+
 })(angular, navigator.webkitPersistentStorage, window.requestFileSystem || window.webkitRequestFileSystem);

@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.50*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -182,7 +182,7 @@
 (function (angular, Dexie, undefined) {
 	"use strict";
 
-	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noLocalFileStorage) {
+	function NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
 
 		var _name, _noIndexedDb = this;
 
@@ -431,6 +431,8 @@
 					table = this;
 
 				data = _unfollow_data(table, data);
+
+				console.warn(data);
 				//noLogService.log("adding: ", _dexie.currentUser);
 
 				_dexie.transaction("rw", table, function () {
@@ -1386,16 +1388,6 @@
 					key = angular.isString(data) ? data : data[table.noInfoPath.primaryKey],
 					collection;
 
-				//noLogService.log("adding: ", _dexie.currentUser);
-				//noLogService.log(key);
-				function _deleteCachedFile(data, trans) {
-					if (table.noInfoPath.NoInfoPath_FileUploadCache) {
-						return noLocalFileStorage.removeFromCache(data, trans);
-					} else {
-						return $q.when(data);
-					}
-				}
-
 				_dexie.transaction("rw", table, function () {
 
 						Dexie.currentTransaction.nosync = true;
@@ -1410,15 +1402,15 @@
 							collection = method.call(where, ex.value);
 
 							collection.delete()
-								.then(_deleteCachedFile.bind(null, data, trans))
+								//.then(_deleteCachedFile.bind(null, data, trans))
 								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
-								.catch(_transactionFault.bind(null, deferred.reject));
+								.catch(_transactionFault.bind(null, deferred.reject.bind(null, data)));
 
 						} else {
 							table.delete(key)
-								.then(_deleteCachedFile.bind(null, data, trans))
+								//.then(_deleteCachedFile.bind(null, data, trans))
 								.then(_recordTransaction.bind(null, deferred.resolve, table.name, "D", trans, data))
-								.catch(_transactionFault.bind(null, deferred.reject));
+								.catch(_transactionFault.bind(null, deferred.reject.bind(null, data)));
 						}
 					}.bind(null, data))
 					.then(angular.noop())
@@ -1479,15 +1471,16 @@
 									if (childRelation.schema.relationships) parentKeys[childRelation.schema.entityName] = keys;
 									childRelation.deletionKeys = data;
 
-									if (childRelation.schema.NoInfoPath_FileUploadCache) {
-										childRelation.fileKeys = data;
-
-										console.log(childRelation.fileKeys);
-									}
+									// if (childRelation.schema.NoInfoPath_FileUploadCache) {
+									// 	childRelation.fileKeys = data;
+									//
+									// 	console.log(childRelation.fileKeys);
+									// }
 
 									_resolveOnToManyRelationship(deferred, childIndex - 1);
 								})
 								.catch(function (err) {
+									_resolveOnToManyRelationship(deferred, childIndex - 1);
 									console.error(err);
 								});
 
@@ -1848,12 +1841,12 @@
 	}
 
 	angular.module("noinfopath.data")
-		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", "noLocalFileStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD) {
-			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD);
+		.factory("noIndexedDb", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+			return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}])
 
-	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", "noLocalFileStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD) {
-		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage, noFileStoreageCRUD);
+	.factory("noIndexedDB", ['$timeout', '$q', '$rootScope', "lodash", "noLogService", "noLocalStorage", function ($timeout, $q, $rootScope, _, noLogService, noLocalStorage) {
+		return new NoIndexedDbService($timeout, $q, $rootScope, _, noLogService, noLocalStorage);
 		}]);
 
 })(angular, Dexie);

@@ -179,7 +179,7 @@ var GloboTest = {};
 
 			table.uri = table.uri || noDbConfig.uri;
 
-			
+
 		});
 
 
@@ -252,9 +252,10 @@ var GloboTest = {};
 			if($rootScope[schemaKey]) {
 				deferred.resolve(schemaKey);
 			} else {
-				$rootScope.$watch(schemaKey, function (newval, oldval) {
+				var unWatch = $rootScope.$watch(schemaKey, function (newval, oldval) {
 					if(newval) {
 						noLocalStorage.setItem(schemaKey, newval.tables);
+						if(unWatch) unWatch();
 						deferred.resolve(schemaKey);
 					}
 				});

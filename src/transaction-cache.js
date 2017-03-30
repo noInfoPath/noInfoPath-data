@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.49*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.50*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -52,10 +52,16 @@
 				this.userId = userId;
 				this.changes = new NoChanges();
 				this.state = "pending";
+				this.cachedFiles = [];
 
 				this.addChange = function (tableName, data, changeType, dbName) {
-					var tableCfg = scope["noDbSchema_" + (dbName || config.noDataSource.databaseName)];
+					var tableCfg = scope["noDbSchema_" + (dbName || config.noDataSource.databaseName)],
+						schema = tableCfg.entity(tableName);
+
 					this.changes.add(tableName, data, changeType, tableCfg, (dbName || config.noDataSource.databaseName));
+
+					if(schema.NoInfoPath_FileUploadCache) this.cachedFiles.push({schema: schema, data: data, changeType: changeType});
+
 				};
 
 				this.toObject = function () {
@@ -87,7 +93,7 @@
 									entityName: en,
 									scopeKey: config.scopeKey ? config.scopeKey : undefined
 										//omit_fields: keysd
-									}];
+								}];
 						}
 					}
 

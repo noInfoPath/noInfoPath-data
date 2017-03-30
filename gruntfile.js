@@ -61,7 +61,7 @@ module.exports = function (grunt) {
 					'src/dynamic-filters.js',
 					'src/template-cache.js',
 					'src/mock-http.js',
-					'src/file-storage.js',
+					//'src/file-storage.js',
 					'src/no-local-file-storage.js',
 					'src/parameter-parser.js',
 					'src/metadata.js'
