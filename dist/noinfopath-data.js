@@ -5853,7 +5853,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.52*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.51*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7551,23 +7551,18 @@ var GloboTest = {};
 								return false;
 							});
 					});
-
 				}
 
 				function isSame(data, changes) {
 					if (!!data) {
-						var
-							localDate = new Date(data.ModifiedDate),
+						var localDate = new Date(data.ModifiedDate),
 							remoteDate = new Date(changes.ModifiedDate),
 							same = moment(localDate).isSame(remoteDate, 'second');
-
-						//console.log(localDate, remoteDate, same);
 
 						return same;
 					} else {
 						return false;
 					}
-
 				}
 
 				function save(changes, data, resolve, reject) {
@@ -7619,7 +7614,8 @@ var GloboTest = {};
 								if (!data) {
 									save(noChange, data, ok, fault);
 								} else {
-									resolve(data);
+									noChange.isSame = true;
+									resolve(noChange);
 								}
 								break;
 							case "U":
@@ -7718,7 +7714,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.52*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.51*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
