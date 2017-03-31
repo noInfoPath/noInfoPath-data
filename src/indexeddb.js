@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.50*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.51*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -432,7 +432,7 @@
 
 				data = _unfollow_data(table, data);
 
-				console.warn(data);
+				//console.warn(data);
 				//noLogService.log("adding: ", _dexie.currentUser);
 
 				_dexie.transaction("rw", table, function () {
@@ -1353,7 +1353,6 @@
 
 			db.Table.prototype.noReadScripted = NoRead_scripted;
 
-
 			db.WriteableTable.prototype.noUpdate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this,
@@ -1788,6 +1787,19 @@
 
 						});
 				});
+			};
+
+			db.WriteableTable.prototype.bulkLoadOne = function (datum) {
+				var table = this;
+
+				_dexie.transaction('rw', table, function () {
+					Dexie.currentTransaction.nosync = true;
+					_next();
+				});
+
+				function _next() {
+					return table.add(datum);
+				}
 			};
 
 			db.WriteableTable.prototype.hasPrimaryKeys = function (keyList) {
