@@ -351,6 +351,9 @@
 		this.value = value;
 		this.logic = logic;
 
+
+
+
 		this.toODATA = function () {
 			var opFn = normalizeOdataOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
@@ -458,6 +461,16 @@
 				var f = this[j];
 
 				ra.push(f.toKendo());
+			}
+			return ra;
+		};
+
+		this.toQueryString = function () {
+			var ra = [];
+			for(var j = 0; j < this.length; j++) {
+				var f = this[j];
+
+				ra.push(f.toQueryString());
 			}
 			return ra;
 		};
@@ -697,6 +710,40 @@
 				ro.filters.push(newFilter);
 			}
 			return ro;
+		};
+
+		this.toQueryString = function () {
+			// filter: {
+			// 	logic: "or",
+			// 	filters: [{
+			// 		field: "category",
+			// 		operator: "eq",
+			// 		value: "Food"
+			// 	}, {
+			// 		field: "name",
+			// 		operator: "eq",
+			// 		value: "Tea"
+			// 	}]
+			// }
+
+			var filters = [];
+
+			for(var f = 0; f < this.filters.length; f++) {
+				var exp = this.filters[f],
+					newFilter = {};
+
+				if(exp.logic && !ro.logic) {
+					ro.logic = exp.logic;
+				}
+
+				newFilter.field = this.column;
+				newFilter.column = this.column;
+				newFilter.operator = exp.operator;
+				newFilter.value = exp.value;
+
+				filters.push(newFilter);
+			}
+			return filters;
 		};
 
 		this.toSQL = function () {

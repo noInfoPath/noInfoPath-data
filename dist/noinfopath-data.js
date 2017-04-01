@@ -882,6 +882,9 @@ angular.module("noinfopath.data")
 		this.value = value;
 		this.logic = logic;
 
+
+
+
 		this.toODATA = function () {
 			var opFn = normalizeOdataOperator(this.operator),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
@@ -989,6 +992,16 @@ angular.module("noinfopath.data")
 				var f = this[j];
 
 				ra.push(f.toKendo());
+			}
+			return ra;
+		};
+
+		this.toQueryString = function () {
+			var ra = [];
+			for(var j = 0; j < this.length; j++) {
+				var f = this[j];
+
+				ra.push(f.toQueryString());
 			}
 			return ra;
 		};
@@ -1228,6 +1241,40 @@ angular.module("noinfopath.data")
 				ro.filters.push(newFilter);
 			}
 			return ro;
+		};
+
+		this.toQueryString = function () {
+			// filter: {
+			// 	logic: "or",
+			// 	filters: [{
+			// 		field: "category",
+			// 		operator: "eq",
+			// 		value: "Food"
+			// 	}, {
+			// 		field: "name",
+			// 		operator: "eq",
+			// 		value: "Tea"
+			// 	}]
+			// }
+
+			var filters = [];
+
+			for(var f = 0; f < this.filters.length; f++) {
+				var exp = this.filters[f],
+					newFilter = {};
+
+				if(exp.logic && !ro.logic) {
+					ro.logic = exp.logic;
+				}
+
+				newFilter.field = this.column;
+				newFilter.column = this.column;
+				newFilter.operator = exp.operator;
+				newFilter.value = exp.value;
+
+				filters.push(newFilter);
+			}
+			return filters;
 		};
 
 		this.toSQL = function () {
@@ -2402,7 +2449,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.53*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.50*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2474,22 +2521,17 @@ angular.module("noinfopath.data")
 (function (angular, undefined) {
 	"use strict";
 	var $httpProviderRef;
-
 	angular.module('noinfopath.data')
 		.config(["$httpProvider", function ($httpProvider) {
 			$httpProviderRef = $httpProvider;
 		}])
 		.provider("noHTTP", [function () {
-			this.$get = ['$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', "noParameterParser", function ($rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig, noParameterParser) {
+			this.$get = ['$injector', '$rootScope', '$q', '$timeout', '$http', '$filter', 'noUrl', 'noDbSchema', 'noOdataQueryBuilder', 'noConfig', "noParameterParser", "lodash", function ($injector, $rootScope, $q, $timeout, $http, $filter, noUrl, noDbSchema, noOdataQueryBuilder, noConfig, noParameterParser, _) {
 				var _currentUser;
-
 				function NoHTTP(queryBuilder) {
 					 var THIS = this; //,	_currentUser;
-
 					console.warn("TODO: make sure noHTTP conforms to the same interface as noIndexedDb and noWebSQL");
-
 					this.whenReady = function (tables) {
-
 						return $q(function (resolve, reject) {
 							if($rootScope.noHTTPInitialized) {
 								console.log("noHTTP Ready.");
@@ -2502,15 +2544,12 @@ angular.module("noinfopath.data")
 										resolve();
 									}
 								});
-
 							}
 						});
 					};
-
 					this.configure = function (noUser, schema) {
 						_currentUser = noUser.data || noUser;
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
-
 						//console.log("noHTTP::configure", schema);
 						var promise = $q(function (resolve, reject) {
 							for(var t in schema.tables) {
@@ -2519,24 +2558,17 @@ angular.module("noinfopath.data")
 							}
 							$rootScope.noHTTPInitialized = true;
 							console.log("noHTTP_" + schema.config.dbName + " ready.");
-
 							$rootScope["noHTTP_" + schema.config.dbName] = THIS;
-
 							resolve(THIS);
 						});
-
 						return promise;
 					};
-
 					this.getDatabase = function (databaseName) {
 						return $rootScope["noHTTP_" + databaseName];
 					};
-
 					this.noRequestJSON = function (url, method, data, useCreds) {
 						var json = angular.toJson(noParameterParser.parse(data || {}));
-
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
-
 						var deferred = $q.defer(),
 							req = {
 								method: method,
@@ -2547,11 +2579,9 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: !!useCreds
 							};
-
 						if(!!data) {
 							req.data =  json;
 						}
-
 						$http(req)
 							.then(function (data) {
 								deferred.resolve(data);
@@ -2560,10 +2590,8 @@ angular.module("noinfopath.data")
 								console.error(reason);
 								deferred.reject(reason);
 							});
-
 						return deferred.promise;
 					};
-
 					this.noRequestForm = function (url, method, data, useCreds) {
 						var deferred = $q.defer(),
 							json = $.param(noParameterParser.parse(data)),
@@ -2576,7 +2604,6 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: !!useCreds
 							};
-
 						$http(req)
 							.then(function (data) {
 								deferred.resolve(data);
@@ -2585,24 +2612,18 @@ angular.module("noinfopath.data")
 								console.error(reason);
 								deferred.reject(reason);
 							});
-
 						return deferred.promise;
 					};
-
 					this.noRequest = function(url, options, data) {
-
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
-
 						var deferred = $q.defer(),
 							req = angular.extend({}, {
 								url: url,
 								withCredentials: true
 							}, options);
-
 						if(!!data) {
 							req.data =  data;
 						}
-
 						$http(req)
 							.then(function (data) {
 								deferred.resolve(data);
@@ -2610,20 +2631,45 @@ angular.module("noinfopath.data")
 							.catch(function (reason) {
 								deferred.reject(reason);
 							});
-
 						return deferred.promise;
 					};
 				}
-
 				function NoTable(tableName, table, queryBuilder) {
+					function _resolveUrl(uri) {
+						if(angular.isString(uri)) {
+							return uri;
+						} else if(angular.isObject(uri)){
+							return uri.url;
+						} else {
+							return;
+						}
+					}
+					function _resolveQueryParams(filters) {
+
+
+						if(filters) {
+							var ret	= {};
+
+							_.flatten(filters.toQueryString()).forEach(function(v, k){
+								var parm = {};
+
+								ret[v.column] = v.value;
+
+							 	return parm;
+							});
+
+							return ret;
+						} else {
+							return;
+						}
+
+					}
+
 					var THIS = this,
 						_table = table;
-
 					this.noInfoPath = table;
-
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
-
-					var url = noUrl.makeResourceUrl(_table.uri || noConfig.current.RESTURI, tableName);
+					var url = noUrl.makeResourceUrl(_resolveUrl(_table.uri) || noConfig.current.RESTURI, tableName);
 
 					Object.defineProperties(this, {
 						entity: {
@@ -2632,22 +2678,16 @@ angular.module("noinfopath.data")
 							}
 						}
 					});
-
 					this.noCreate = function (data) {
-
 						data.CreatedBy = _currentUser.userId;
 						data.DateCreated = noInfoPath.toDbDate(new Date());
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _currentUser.userId;
-
 						if (!data[table.primaryKey]) {
 							data[table.primaryKey] = noInfoPath.createUUID();
 						}
-
 						var json = angular.toJson(data);
-
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
-
 						var deferred = $q.defer(),
 							req = {
 								method: "POST",
@@ -2659,28 +2699,22 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
-
 						$http(req)
 							.then(function (data) {
 								//console.log(angular.toJson(data) );
-
 								deferred.resolve(data);
 							})
 							.catch(function (reason) {
 								console.error(reason);
 								deferred.reject(reason);
 							});
-
 						return deferred.promise;
 					};
-
 					this.noRead = function () {
 						//console.debug("noRead say's, 'swag!'");
 						var filters, sort, page;
-
 						for(var ai in arguments) {
 							var arg = arguments[ai];
-
 							//success and error must always be first, then
 							if(angular.isObject(arg)) {
 								switch(arg.__type) {
@@ -2696,7 +2730,6 @@ angular.module("noinfopath.data")
 								}
 							}
 						}
-
 						var deferred = $q.defer(),
 							req = {
 								method: "GET",
@@ -2707,8 +2740,7 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
-
-							req.params = queryBuilder(filters, sort, page);
+							req.params = _table.uri ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page);
 
 						$http(req)
 							.then(function (results) {
@@ -2720,19 +2752,13 @@ angular.module("noinfopath.data")
 								console.error(arguments);
 								deferred.reject(reason);
 							});
-
 						return deferred.promise;
 					};
-
 					this.noUpdate = function (data) {
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _currentUser.userId;
-
 						var json = angular.toJson(data);
-
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
-
-
 						var deferred = $q.defer(),
 							req = {
 								method: "PUT",
@@ -2744,7 +2770,6 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
-
 						$http(req)
 							.then(function (data, status) {
 								deferred.resolve(status);
@@ -2753,11 +2778,8 @@ angular.module("noinfopath.data")
 								console.error(reason);
 								deferred.reject(reason);
 							});
-
 						return deferred.promise;
-
 					};
-
 					this.noDestroy = function (data) {
 						var deferred = $q.defer(),
 							req = {
@@ -2769,7 +2791,6 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
-
 						$http(req)
 							.then(function (data, status) {
 								deferred.resolve(status);
@@ -2778,10 +2799,8 @@ angular.module("noinfopath.data")
 								console.error(reason);
 								deferred.reject(reason);
 							});
-
 						return deferred.promise;
 					};
-
 					this.noOne = function (query) {
 						/**
 						 *	When 'query' is an object then check to see if it is a
@@ -2789,7 +2808,6 @@ angular.module("noinfopath.data")
 						 *	based on the query's key property, and the query's value.
 						 */
 						var filters = new noInfoPath.data.NoFilters();
-
 						if(angular.isNumber(query)) {
 							//Assume rowid
 							/*
@@ -2799,7 +2817,6 @@ angular.module("noinfopath.data")
 							 *	value of query.
 							 */
 							filters.quickAdd("rowid", "eq", query);
-
 						} else if(angular.isString(query)) {
 							//Assume guid
 							/*
@@ -2810,9 +2827,7 @@ angular.module("noinfopath.data")
 							 * a SQL View is not allowed.
 							 */
 							if(THIS.noInfoPath.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
-
 							filters.quickAdd(THIS.noInfoPath.primaryKey, "eq", query);
-
 						} else if(angular.isObject(query)) {
 							if(query.__type === "NoFilters") {
 								filters = query;
@@ -2822,11 +2837,9 @@ angular.module("noinfopath.data")
 									filters.quickAdd(k, "eq", query[k]);
 								}
 							}
-
 						} else {
 							throw "One requires a query parameter. May be a Number, String or Object";
 						}
-
 						//Internal _getOne requires and NoFilters object.
 						return THIS.noRead(filters)
 							.then(function (data) {
@@ -2839,10 +2852,8 @@ angular.module("noinfopath.data")
 									throw "noHTTP::noOne: Record Not Found";
 								}
 							});
-
 					};
 				}
-
 				//return new noREST($q, $http, $filter, noUrl, noConfig)
 				return new NoHTTP(noOdataQueryBuilder.makeQuery);
 			}];
