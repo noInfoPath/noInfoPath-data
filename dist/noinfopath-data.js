@@ -7756,7 +7756,7 @@ var GloboTest = {};
  */
 (function (angular, undefined) {
 
-	function NoDataSource($injector, $q, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch) {
+	function NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
@@ -7811,6 +7811,18 @@ var GloboTest = {};
 
 			return promise;
 		};
+
+		this.readDocument = function(fileObj) {
+			var promise;
+
+			if (angular.isObject(fileObj) && fileObj.ID) {
+				promise = noFileCache.noOne(fileObj);
+			} else {
+				promise = $q.when(true);
+			}
+
+			return promise;
+		}
 
 		this.read = function (options, follow) {
 			function requestData(scope, config, entity, queryParser, resolve, reject) {
@@ -7888,7 +7900,6 @@ var GloboTest = {};
 				} else {
 					return;
 				}
-
 			});
 		};
 
@@ -7955,9 +7966,13 @@ var GloboTest = {};
 				return $q(function(resolve, reject){
 					if(table.noInfoPath.NoInfoPath_FileUploadCache) {
 						if(fileObj && fileObj.name && fileObj.type) {
-							noFileCache.downloadFile(_makeRemoteFileUrl(fileObj.name), fileObj.type, fileObj.name)
-								.then(resolve)
-								.catch(reject);
+							//var x = 
+								// .then(resolve)
+								// .catch(reject);
+
+							// $timeout(function(){
+								noFileCache.downloadFile(_makeRemoteFileUrl(fileObj.name), fileObj.type, fileObj.name).then(resolve).catch(reject);
+							// }, 100);
 						} else {
 							reject(new Error("Invalid document object.  Missing file name and or type properties"));
 						}
@@ -8041,7 +8056,7 @@ var GloboTest = {};
 
 	angular.module("noinfopath.data")
 
-	.service("noDataSource", ["$injector", "$q", "noConfig", "noDynamicFilters", "noCalculatedFields", "noFileSystem", function ($injector, $q, noConfig, noDynamicFilters, noCalculatedFields, noFileSystem) {
+	.service("noDataSource", ["$injector", "$q", "$timeout", "noConfig", "noDynamicFilters", "noCalculatedFields", "noFileSystem", function ($injector, $q, $timeout, noConfig, noDynamicFilters, noCalculatedFields, noFileSystem) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -8061,7 +8076,7 @@ var GloboTest = {};
 		 *
 		 */
 		this.create = function (dsConfig, scope, watch) {
-			return new NoDataSource($injector, $q, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch);
+			return new NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch);
 		};
 	}])
 
@@ -9164,7 +9179,7 @@ var GloboTest = {};
 			};
 
 			this.noOne = function (query) {
-				return noLocalFileSystem.getFile(query, schema.primaryKey);
+				return noLocalFileSystem.getFile(query, schema);
 			};
 
 			/*

@@ -554,7 +554,9 @@
 			var dbInitialized = "noFileSystem_rmEFR2",
 				db = $rootScope[dbInitialized];
 
+			if(db.NoFileCache){	
 				db.NoFileCache.backerSchema = backerSchema;
+			}
 
 			return $rootScope[dbInitialized];
 		};
@@ -621,7 +623,7 @@
 			};
 
 			this.noOne = function (query) {
-				return noLocalFileSystem.getFile(query, schema.primaryKey);
+				return noLocalFileSystem.getFile(query, schema);
 			};
 
 			/*
