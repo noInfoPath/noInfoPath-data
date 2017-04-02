@@ -7801,6 +7801,8 @@ var GloboTest = {};
 
 		};
 
+
+		//This function are for use by what???
 		this.createDocument = function (data, file, trans) {
 			return this.create(data,trans)
 				.then(function(fileObj) {
@@ -7810,17 +7812,20 @@ var GloboTest = {};
 		};
 
 		this.deleteDocument = function (doc, trans, deleteFile) {
-			var promise;
-
-			if (angular.isObject(doc) && deleteFile && doc.ID) {
-				promise = this.destroy(doc, trans);
-			} else if (angular.isObject(doc) && !deleteFile) {
-				promise = this.destroy(doc);
-			} else {
-				promise = $q.when(true);
-			}
-
-			return promise;
+			return $q(function(resolve, reject){
+				if (angular.isObject(doc) && deleteFile && doc.ID) {
+					this.destroy(doc, trans)
+						.then(function(){
+							noFileCache.noDestroy(data)
+								.then(resolve);
+						});
+				} else if (angular.isObject(doc) && !deleteFile) {
+					this.destroy(doc)
+						.then(resolve);
+				} else {
+					resolve();
+				}
+			});
 		};
 
 		this.readDocument = function(fileObj) {
@@ -7833,7 +7838,7 @@ var GloboTest = {};
 			}
 
 			return promise;
-		}
+		};
 
 		this.read = function (options, follow) {
 			function requestData(scope, config, entity, queryParser, resolve, reject) {
@@ -7902,14 +7907,31 @@ var GloboTest = {};
 			return entity.noUpdate(data, noTrans);
 		};
 
+		/*
+		*	## destroy
+		*
+		*	Deletes the entity supplied as data.  If the current entity supports NoInfoPath_FileUploadCache
+		*	then delete the associated file.  if `filters` is a bool and false, then it indicates that the
+		*	associated file should be delete. If it is a bool and true the file should be preserved.
+		*
+		*/
 		this.destroy = function (data, noTrans, filters) {
 			if(isNoView) throw "destroy operation not supported on entities of type NoView";
+
+			/*
+			*	> This method also doubles as the `clear` method when it is called with no parameters.
+			*/
 			var p = data ? entity.noDestroy(data, noTrans, filters) : entity.noClear();
-			return p.then(function(){
+
+			return p.then(function(r1){
 				if(entity.noInfoPath.NoInfoPath_FileUploadCache) {
-					return noFileCache.noDestroy(data);
+					return noFileCache.noDestroy(data)
+						.then(function(r2){
+							console.log(r2);
+							return r2;
+						});
 				} else {
-					return;
+					return r1;
 				}
 			});
 		};
@@ -7977,7 +7999,7 @@ var GloboTest = {};
 				return $q(function(resolve, reject){
 					if(table.noInfoPath.NoInfoPath_FileUploadCache) {
 						if(fileObj && fileObj.name && fileObj.type) {
-							//var x = 
+							//var x =
 								// .then(resolve)
 								// .catch(reject);
 
@@ -8588,7 +8610,7 @@ var GloboTest = {};
  *
  */
 (function (angular, storageInfo, requestFileSystem, undefined) {
-	function NoLocalFileSystemService($q, $http, noHTTP, noMimeTypes, noConfig) {
+	function NoLocalFileSystemService($q, $http, noLocalStorage, noHTTP, noMimeTypes, noConfig) {
 
 		var requestedBytes, fileSystem, root;
 
@@ -8633,21 +8655,26 @@ var GloboTest = {};
 		this.getBinaryString = _readFileObject;
 
 		function _requestStorageQuota() {
-			requestedBytes = noConfig.current.localFileSystem.quota;
+			if(!noLocalStorage.getItem("noLocalFileSystemQuota"))
+			{
+				requestedBytes = noConfig.current.localFileSystem.quota;
 
-			return $q(function (resolve, reject) {
-				storageInfo.requestQuota(
-					requestedBytes,
-					function (grantedBytes) {
-						console.log('Requested ', requestedBytes, 'bytes, were granted ', grantedBytes, 'bytes');
-						resolve(grantedBytes);
-					},
-					function (e) {
-						console.log('Error', e);
-						reject(e);
-					}
-				);
-			});
+				return $q(function (resolve, reject) {
+					storageInfo.requestQuota(
+						requestedBytes,
+						function (grantedBytes) {
+							console.log('Requested ', requestedBytes, 'bytes, were granted ', grantedBytes, 'bytes');
+							noLocalStorage.setItem("noLocalFileSystemQuota", grantedBytes);
+							resolve(grantedBytes);
+						},
+						function (e) {
+							console.log('Error', e);
+							reject(e);
+						}
+					);
+				});
+			}
+
 
 
 		}
@@ -9123,7 +9150,7 @@ var GloboTest = {};
 			var dbInitialized = "noFileSystem_rmEFR2",
 				db = $rootScope[dbInitialized];
 
-			if(db.NoFileCache){	
+			if(db.NoFileCache){
 				db.NoFileCache.backerSchema = backerSchema;
 			}
 
@@ -9164,11 +9191,11 @@ var GloboTest = {};
 			}
 			this.noCreate = noCreate;
 
-			function noDestroy(data, trans) {
+			function noDestroy(data) {
 				return $q(function (resolve, reject) {
 					noLocalFileSystem.deleteFile(data, schema.primaryKey)
-						.then(_recordTransaction.bind(null, resolve, schema.entityName, "D", trans, data))
-						.catch(_transactionFault.bind(null, reject));
+						.then(resolve)
+						.catch(resolve);
 				});
 			}
 			this.noDestroy = noDestroy;
@@ -9250,7 +9277,7 @@ var GloboTest = {};
 
 	angular.module("noinfopath.data")
 		.service("noMimeTypes", [NoMimeTypeService])
-		.service("noLocalFileSystem", ["$q", "$http", "noHTTP", "noMimeTypes", "noConfig", NoLocalFileSystemService])
+		.service("noLocalFileSystem", ["$q", "$http", "noLocalStorage","noHTTP", "noMimeTypes", "noConfig", NoLocalFileSystemService])
 		.service("noFileSystem", ["$q", "$rootScope", "noLocalFileSystem", NoFileSystemService])
 		;
 

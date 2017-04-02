@@ -19,7 +19,7 @@
  *
  */
 (function (angular, storageInfo, requestFileSystem, undefined) {
-	function NoLocalFileSystemService($q, $http, noHTTP, noMimeTypes, noConfig) {
+	function NoLocalFileSystemService($q, $http, noLocalStorage, noHTTP, noMimeTypes, noConfig) {
 
 		var requestedBytes, fileSystem, root;
 
@@ -64,21 +64,26 @@
 		this.getBinaryString = _readFileObject;
 
 		function _requestStorageQuota() {
-			requestedBytes = noConfig.current.localFileSystem.quota;
+			if(!noLocalStorage.getItem("noLocalFileSystemQuota"))
+			{
+				requestedBytes = noConfig.current.localFileSystem.quota;
 
-			return $q(function (resolve, reject) {
-				storageInfo.requestQuota(
-					requestedBytes,
-					function (grantedBytes) {
-						console.log('Requested ', requestedBytes, 'bytes, were granted ', grantedBytes, 'bytes');
-						resolve(grantedBytes);
-					},
-					function (e) {
-						console.log('Error', e);
-						reject(e);
-					}
-				);
-			});
+				return $q(function (resolve, reject) {
+					storageInfo.requestQuota(
+						requestedBytes,
+						function (grantedBytes) {
+							console.log('Requested ', requestedBytes, 'bytes, were granted ', grantedBytes, 'bytes');
+							noLocalStorage.setItem("noLocalFileSystemQuota", grantedBytes);
+							resolve(grantedBytes);
+						},
+						function (e) {
+							console.log('Error', e);
+							reject(e);
+						}
+					);
+				});
+			}
+
 
 
 		}
@@ -554,7 +559,7 @@
 			var dbInitialized = "noFileSystem_rmEFR2",
 				db = $rootScope[dbInitialized];
 
-			if(db.NoFileCache){	
+			if(db.NoFileCache){
 				db.NoFileCache.backerSchema = backerSchema;
 			}
 
@@ -595,11 +600,11 @@
 			}
 			this.noCreate = noCreate;
 
-			function noDestroy(data, trans) {
+			function noDestroy(data) {
 				return $q(function (resolve, reject) {
 					noLocalFileSystem.deleteFile(data, schema.primaryKey)
-						.then(_recordTransaction.bind(null, resolve, schema.entityName, "D", trans, data))
-						.catch(_transactionFault.bind(null, reject));
+						.then(resolve)
+						.catch(resolve);
 				});
 			}
 			this.noDestroy = noDestroy;
@@ -681,7 +686,7 @@
 
 	angular.module("noinfopath.data")
 		.service("noMimeTypes", [NoMimeTypeService])
-		.service("noLocalFileSystem", ["$q", "$http", "noHTTP", "noMimeTypes", "noConfig", NoLocalFileSystemService])
+		.service("noLocalFileSystem", ["$q", "$http", "noLocalStorage","noHTTP", "noMimeTypes", "noConfig", NoLocalFileSystemService])
 		.service("noFileSystem", ["$q", "$rootScope", "noLocalFileSystem", NoFileSystemService])
 		;
 

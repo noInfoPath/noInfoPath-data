@@ -80,6 +80,8 @@
 
 		};
 
+
+		//This function are for use by what???
 		this.createDocument = function (data, file, trans) {
 			return this.create(data,trans)
 				.then(function(fileObj) {
@@ -89,17 +91,20 @@
 		};
 
 		this.deleteDocument = function (doc, trans, deleteFile) {
-			var promise;
-
-			if (angular.isObject(doc) && deleteFile && doc.ID) {
-				promise = this.destroy(doc, trans);
-			} else if (angular.isObject(doc) && !deleteFile) {
-				promise = this.destroy(doc);
-			} else {
-				promise = $q.when(true);
-			}
-
-			return promise;
+			return $q(function(resolve, reject){
+				if (angular.isObject(doc) && deleteFile && doc.ID) {
+					this.destroy(doc, trans)
+						.then(function(){
+							noFileCache.noDestroy(data)
+								.then(resolve);
+						});
+				} else if (angular.isObject(doc) && !deleteFile) {
+					this.destroy(doc)
+						.then(resolve);
+				} else {
+					resolve();
+				}
+			});
 		};
 
 		this.readDocument = function(fileObj) {
@@ -112,7 +117,7 @@
 			}
 
 			return promise;
-		}
+		};
 
 		this.read = function (options, follow) {
 			function requestData(scope, config, entity, queryParser, resolve, reject) {
@@ -181,14 +186,31 @@
 			return entity.noUpdate(data, noTrans);
 		};
 
+		/*
+		*	## destroy
+		*
+		*	Deletes the entity supplied as data.  If the current entity supports NoInfoPath_FileUploadCache
+		*	then delete the associated file.  if `filters` is a bool and false, then it indicates that the
+		*	associated file should be delete. If it is a bool and true the file should be preserved.
+		*
+		*/
 		this.destroy = function (data, noTrans, filters) {
 			if(isNoView) throw "destroy operation not supported on entities of type NoView";
+
+			/*
+			*	> This method also doubles as the `clear` method when it is called with no parameters.
+			*/
 			var p = data ? entity.noDestroy(data, noTrans, filters) : entity.noClear();
-			return p.then(function(){
+
+			return p.then(function(r1){
 				if(entity.noInfoPath.NoInfoPath_FileUploadCache) {
-					return noFileCache.noDestroy(data);
+					return noFileCache.noDestroy(data)
+						.then(function(r2){
+							console.log(r2);
+							return r2;
+						});
 				} else {
-					return;
+					return r1;
 				}
 			});
 		};
@@ -256,7 +278,7 @@
 				return $q(function(resolve, reject){
 					if(table.noInfoPath.NoInfoPath_FileUploadCache) {
 						if(fileObj && fileObj.name && fileObj.type) {
-							//var x = 
+							//var x =
 								// .then(resolve)
 								// .catch(reject);
 

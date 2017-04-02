@@ -42,6 +42,15 @@ underlying CRUD interface.
 
 ```
 
+## destroy
+
+Deletes the entity supplied as data.  If the current entity supports NoInfoPath_FileUploadCache
+then delete the associated file.  if `filters` is a bool and false, then it indicates that the
+associated file should be delete. If it is a bool and true the file should be preserved.
+
+
+> This method also doubles as the `clear` method when it is called with no parameters.
+
 
 Use this property when you want the data source wait for some other
 NoInfoPath component to update the `scope`.
