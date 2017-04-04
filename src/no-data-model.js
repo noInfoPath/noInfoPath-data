@@ -132,7 +132,7 @@
 					haveModelValue = validKey && model ? _isProperty(model, "$viewValue") : false,
 					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
 
-				console.log(k, data);
+				//console.log(k, data);
 
 				if (!!model && validKey) {
 
@@ -272,6 +272,27 @@
 				this.$setUntouched();
 				_pristine = _pureModel(this);
 			}
+		};
+
+		function _unfollow_data(data) {
+			var foreignKeys = _schema.foreignKeys || {};
+
+			for (var fks in foreignKeys) {
+
+				var fk = foreignKeys[fks],
+					datum = data[fk.column];
+
+				if (datum) {
+					data[fk.column] = datum[fk.refColumn] || datum;
+				}
+			}
+
+			return data;
+		}
+
+		this.update = function (data) {
+			_updateView(this, _unfollow_data(data));
+			this.commit();
 		};
 
 	}
