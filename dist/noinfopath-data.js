@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.56* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.57* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -1639,6 +1639,30 @@ angular.module("noinfopath.data")
 	 *
 	 */
 
+	 function _unfollow_data(data, schema) {
+		var foreignKeys = schema.foreignKeys || {},
+		 	outdata = angular.copy(data);
+
+		 for (var fks in foreignKeys) {
+
+			 var fk = foreignKeys[fks],
+				 datum = data[fk.column];
+
+			 if (datum) {
+				 outdata[fk.column] = datum[fk.refColumn] || datum;
+			 }
+		 }
+
+		 return outdata;
+	 }
+
+	 function _update_ngModelController(ctrl, value) {
+		 ctrl.$setViewValue(value);
+		 ctrl.$setPristine();
+		 ctrl.$setUntouched();
+		 ctrl.$render();
+	 }
+
 	function NoDataModel(schema, model) {
 		if (!schema) throw "schema is required contructor parameter.";
 		if (!model) throw "model is required contructor parameter.";
@@ -1654,8 +1678,6 @@ angular.module("noinfopath.data")
 		}
 
 		function _resolve(value, notAnArray) {
-
-
 			if (!!value && notAnArray) {
 				return value;
 			} else if (typeof (value) === "boolean") {
@@ -1693,6 +1715,21 @@ angular.module("noinfopath.data")
 
 			}
 
+			//Second pass to clean up [object Object] anamoly.
+			// for(var p in THIS){
+			// 	var model2 = THIS[p],
+			// 		validKey2 = p.indexOf("$") === -1 && !angular.isFunction(model2),
+			// 		hasModelValue2 = validKey2 && model2 ? _isProperty(model2, "$viewValue") : false;
+			//
+			// 	if(validKey2) {
+			// 		if(hasModelValue2) {
+			// 			if(model2.$viewValue === "[object Object]") {
+			// 				_updateViewValue(THIS, p, null) ;
+			//
+			// 			}
+			// 		}
+			// 	}
+			// }
 		}
 
 		function _pureView(data) {
@@ -1745,6 +1782,13 @@ angular.module("noinfopath.data")
 
 				}
 
+				// //Check for missing properties using the schema.colums hash.
+				// for(var c in _schema.columns) {
+				// 	if(!values.hasOwnProperty(c)) {
+				// 		values[c] = ""; //This is to make sure that [Object object] does not appear in the controlls.
+				// 	}
+				//}
+
 			}
 
 			return values;
@@ -1761,6 +1805,11 @@ angular.module("noinfopath.data")
 			} else {
 				THIS[k] = value;
 			}
+		}
+
+		function _normalizeProperties(THIS, schema) {
+			return;
+
 		}
 
 		Object.defineProperties(this, {
@@ -1812,6 +1861,7 @@ angular.module("noinfopath.data")
 
 		this.commit = function () {
 			if (this.$commitViewValue) {
+				_normalizeProperties(this, _schema);
 				this.$commitViewValue();
 				this.$setPristine();
 				this.$setUntouched();
@@ -1819,28 +1869,19 @@ angular.module("noinfopath.data")
 			}
 		};
 
-		function _unfollow_data(data) {
-			var foreignKeys = _schema.foreignKeys || {};
 
-			for (var fks in foreignKeys) {
-
-				var fk = foreignKeys[fks],
-					datum = data[fk.column];
-
-				if (datum) {
-					data[fk.column] = datum[fk.refColumn] || datum;
-				}
-			}
-
-			return data;
-		}
 
 		this.update = function (data) {
-			_updateView(this, _unfollow_data(data));
+			_updateView(this, _unfollow_data(data, _schema));
 			this.commit();
 		};
 
+
 	}
+
+	NoDataModel.clean = _unfollow_data;
+	NoDataModel.ngModelHack = _update_ngModelController;
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
@@ -2180,7 +2221,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2317,7 +2358,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2470,7 +2511,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -3528,7 +3569,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -4980,7 +5021,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5762,6 +5803,9 @@ var GloboTest = {};
 							},
 							"undefined": function (d) {
 								return d;
+							},
+							"datetime": function(d) {
+								return angular.isDate(d) ? noInfoPath.toDbDate(d) : null;
 							}
 						};
 
@@ -5885,7 +5929,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -6381,9 +6425,12 @@ var GloboTest = {};
 								//that will be used to create a collection based on the filter.
 								where = table.where(filter.column);
 
+								if(!ex.value)  throw new Error("Invalid filter value for expression: " + filter.column + " " + ex.operator + " " + ex.value);
+
 								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
 								if (table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
 									evaluator = where[indexedOperators[ex.operator]];
+
 									collection = evaluator.call(where, ex.value);
 								} else {
 									collection = table.toCollection();
@@ -7746,7 +7793,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -8251,7 +8298,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8477,7 +8524,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8616,7 +8663,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *

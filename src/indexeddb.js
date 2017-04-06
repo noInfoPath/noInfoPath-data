@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.56*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -500,9 +500,12 @@
 								//that will be used to create a collection based on the filter.
 								where = table.where(filter.column);
 
+								if(!ex.value)  throw new Error("Invalid filter value for expression: " + filter.column + " " + ex.operator + " " + ex.value);
+
 								//NOTE: Dexie changed they way they are handling primKey, they now require that the name be prefixed with $$
 								if (table.schema.primKey.keyPath === filter.column || table.schema.idxByName[filter.column]) {
 									evaluator = where[indexedOperators[ex.operator]];
+
 									collection = evaluator.call(where, ex.value);
 								} else {
 									collection = table.toCollection();

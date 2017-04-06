@@ -94,6 +94,30 @@
 	 *
 	 */
 
+	 function _unfollow_data(data, schema) {
+		var foreignKeys = schema.foreignKeys || {},
+		 	outdata = angular.copy(data);
+
+		 for (var fks in foreignKeys) {
+
+			 var fk = foreignKeys[fks],
+				 datum = data[fk.column];
+
+			 if (datum) {
+				 outdata[fk.column] = datum[fk.refColumn] || datum;
+			 }
+		 }
+
+		 return outdata;
+	 }
+
+	 function _update_ngModelController(ctrl, value) {
+		 ctrl.$setViewValue(value);
+		 ctrl.$setPristine();
+		 ctrl.$setUntouched();
+		 ctrl.$render();
+	 }
+
 	function NoDataModel(schema, model) {
 		if (!schema) throw "schema is required contructor parameter.";
 		if (!model) throw "model is required contructor parameter.";
@@ -109,8 +133,6 @@
 		}
 
 		function _resolve(value, notAnArray) {
-
-
 			if (!!value && notAnArray) {
 				return value;
 			} else if (typeof (value) === "boolean") {
@@ -148,6 +170,21 @@
 
 			}
 
+			//Second pass to clean up [object Object] anamoly.
+			// for(var p in THIS){
+			// 	var model2 = THIS[p],
+			// 		validKey2 = p.indexOf("$") === -1 && !angular.isFunction(model2),
+			// 		hasModelValue2 = validKey2 && model2 ? _isProperty(model2, "$viewValue") : false;
+			//
+			// 	if(validKey2) {
+			// 		if(hasModelValue2) {
+			// 			if(model2.$viewValue === "[object Object]") {
+			// 				_updateViewValue(THIS, p, null) ;
+			//
+			// 			}
+			// 		}
+			// 	}
+			// }
 		}
 
 		function _pureView(data) {
@@ -200,6 +237,13 @@
 
 				}
 
+				// //Check for missing properties using the schema.colums hash.
+				// for(var c in _schema.columns) {
+				// 	if(!values.hasOwnProperty(c)) {
+				// 		values[c] = ""; //This is to make sure that [Object object] does not appear in the controlls.
+				// 	}
+				//}
+
 			}
 
 			return values;
@@ -216,6 +260,11 @@
 			} else {
 				THIS[k] = value;
 			}
+		}
+
+		function _normalizeProperties(THIS, schema) {
+			return;
+
 		}
 
 		Object.defineProperties(this, {
@@ -267,6 +316,7 @@
 
 		this.commit = function () {
 			if (this.$commitViewValue) {
+				_normalizeProperties(this, _schema);
 				this.$commitViewValue();
 				this.$setPristine();
 				this.$setUntouched();
@@ -274,28 +324,19 @@
 			}
 		};
 
-		function _unfollow_data(data) {
-			var foreignKeys = _schema.foreignKeys || {};
 
-			for (var fks in foreignKeys) {
-
-				var fk = foreignKeys[fks],
-					datum = data[fk.column];
-
-				if (datum) {
-					data[fk.column] = datum[fk.refColumn] || datum;
-				}
-			}
-
-			return data;
-		}
 
 		this.update = function (data) {
-			_updateView(this, _unfollow_data(data));
+			_updateView(this, _unfollow_data(data, _schema));
 			this.commit();
 		};
 
+
 	}
+
+	NoDataModel.clean = _unfollow_data;
+	NoDataModel.ngModelHack = _update_ngModelController;
+
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
 	var _interface = {
