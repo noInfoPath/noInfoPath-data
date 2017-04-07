@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.57*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.58*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -786,9 +786,6 @@
 							},
 							"undefined": function (d) {
 								return d;
-							},
-							"datetime": function(d) {
-								return angular.isDate(d) ? noInfoPath.toDbDate(d) : null;
 							}
 						};
 
