@@ -93,18 +93,14 @@
 		this.deleteDocument = function (doc, trans, deleteFile) {
 			return $q(function(resolve, reject){
 				if (angular.isObject(doc) && deleteFile && doc.ID) {
-					this.destroy(doc, trans)
-						.then(function(){
-							noFileCache.noDestroy(data)
-								.then(resolve);
-						});
+					this.destroy(doc, trans).then(resolve);  //This way will delete the metadata and the file
 				} else if (angular.isObject(doc) && !deleteFile) {
-					this.destroy(doc)
+					entity.noDestroy(data, noTrans, filters) //This way will only delete the document. The file will remain.
 						.then(resolve);
 				} else {
 					resolve();
 				}
-			});
+			}.bind(this));
 		};
 
 		this.readDocument = function(fileObj) {
