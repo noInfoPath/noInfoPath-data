@@ -54,7 +54,173 @@
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
 			_scope = scope,
-			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache;
+			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache,
+			toDatabaseConversionFunctions = {
+				"bigint": function (i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"bit": function (i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"decimal": function (n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"int": function (i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"money": function (n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"numeric": function (n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"smallint": function (i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"smallmoney": function (n) {
+					return angular.isNumber(n) ? n : null;
+				},
+				"tinyint": function (i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"float": function (i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"real": function (i) {
+					return angular.isNumber(i) ? i : null;
+				},
+				"date": function (n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"datetime": function (n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"datetime2": function (n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"datetimeoffset": function (n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"smalldatetime": function (n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"time": function (n) {
+					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+				},
+				"char": function (t) {
+					return angular.isString(t) ? t : null;
+				},
+				"nchar": function (t) {
+					return angular.isString(t) ? t : null;
+				},
+				"varchar": function (t) {
+					return angular.isString(t) ? t : null;
+				},
+				"nvarchar": function (t) {
+					return angular.isString(t) ? t : null;
+				},
+				"text": function (t) {
+					return angular.isString(t) ? t : null;
+				},
+				"ntext": function (t) {
+					return angular.isString(t) ? t : null;
+				},
+				"binary": function (i) {
+					return !angular.isNumber(i) ? i : null;
+				},
+				"varbinary": function (i) {
+					return !angular.isNumber(i) ? i : null;
+				},
+				"image": function (i) {
+					return !angular.isNumber(i) ? i : null;
+				},
+				"uniqueidentifier": function (t) {
+					return angular.isString(t) ? t : null;
+				}
+			},
+			fromDatabaseConversionFunctions = {
+				"bigint": function (i) {
+					return i;
+				},
+				"bit": function (i) {
+					return i;
+				},
+				"decimal": function (n) {
+					return n;
+				},
+				"int": function (i) {
+					return i;
+				},
+				"money": function (n) {
+					return n;
+				},
+				"numeric": function (n) {
+					return n;
+				},
+				"smallint": function (i) {
+					return i;
+				},
+				"smallmoney": function (n) {
+					return n;
+				},
+				"tinyint": function (i) {
+					return i;
+				},
+				"float": function (i) {
+					return i;
+				},
+				"real": function (i) {
+					return i;
+				},
+				"date": function (n) {
+					return n ? new Date(n) : null;
+				},
+				"datetime": function (n) {
+					return n ? new Date(n) : null;
+				},
+				"datetime2": function (n) {
+					return n ? new Date(n) : null;
+				},
+				"datetimeoffset": function (n) {
+					return n ? new Date(n) : null;
+				},
+				"smalldatetime": function (n) {
+					return n ? new Date(n) : null;
+				},
+				"time": function (n) {
+					return n ? new Date(n) : null;
+				},
+				"char": function (t) {
+					return t;
+				},
+				"nchar": function (t) {
+					return t;
+				},
+				"varchar": function (t) {
+					return t;
+				},
+				"nvarchar": function (t) {
+					return t;
+				},
+				"text": function (t) {
+					return t;
+				},
+				"ntext": function (t) {
+					return t;
+				},
+				"binary": function (i) {
+					return i;
+				},
+				"varbinary": function (i) {
+					return i;
+				},
+				"image": function (i) {
+					return i;
+				},
+				"uniqueidentifier": function (t) {
+					return t;
+				}
+			};
 
 		function _makeRemoteFileUrl(resource) {
 			return noConfig.current.FILECACHEURL + "/" + resource;
@@ -68,6 +234,49 @@
 			}
 		});
 
+		// The following two functions only change columns defined in the table configuration, it does not touch any columns that are not defined. This does not scrub out other columns!
+		function cleanSaveFields(data) {
+			var columns = entity.noInfoPath && entity.noInfoPath.columns ? entity.noInfoPath.columns : [];
+
+			for(var ck in columns) {
+				var col = columns[ck],
+					val = data[ck];
+
+				val = val === "undefined" || val === undefined ? null : val;
+
+				//perform data conversion
+				val = toDatabaseConversionFunctions[col.type](data[ck]);
+
+				//clean up NaN's
+				val = isNaN(val) && typeof val === "number" ? null : val;
+
+				data[ck] = val;				
+			}
+
+			return data
+		}
+
+		function cleanReadFields(data) {
+			var columns = entity.noInfoPath && entity.noInfoPath.columns ? entity.noInfoPath.columns : [];
+
+			for(var ck in columns) {
+				var col = columns[ck],
+					val = data[ck];
+
+				val = val === "undefined" || val === undefined ? null : val;
+
+				//perform data conversion
+				val = fromDatabaseConversionFunctions[col.type](data[ck]);
+
+				//clean up NaN's
+				val = isNaN(val) && typeof val === "number" ? null : val;
+
+				data[ck] = val;				
+			}
+
+			return data
+		}
+
 		// var tmpFilters = noDynamicFilters.configure(dsCfg, scope, watch);
 		// ds.filter = tmpFilters ? {
 		// 	filters: tmpFilters
@@ -75,6 +284,8 @@
 		//
 		this.create = function (data, noTrans) {
 			if(isNoView) throw "create operation not supported on entities of type NoView";
+
+			data = cleanSaveFields(data);
 
 			return entity.noCreate(data, noTrans);
 
@@ -141,6 +352,8 @@
 				return entity.noRead.apply(entity, x)
 					.then(function (data) {
 						data = noCalculatedFields.calculate(config, data);
+
+						data = cleanReadFields(data);
 						//If there is an ActionQueue then execute it.
 						if(config.aggregation && config.aggregation.actions) {
 							var execQueue = noActionQueue.createQueue(data, scope, {}, config.aggregation.action);
@@ -178,6 +391,8 @@
 
 		this.update = function (data, noTrans) {
 			if(isNoView) throw "update operation not supported on entities of type NoView";
+
+			data = cleanSaveFields(data);
 
 			return entity.noUpdate(data, noTrans);
 		};
@@ -235,6 +450,7 @@
 
 				return entity.noOne.apply(entity, params)
 					.then(function (data) {
+						data = cleanReadFields(data);
 						resolve(data);
 					})
 					.catch(function (err) {

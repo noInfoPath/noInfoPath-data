@@ -426,6 +426,10 @@
 					}
 				};
 
+			function cleanData(data){
+				
+			}
+
 			db.WriteableTable.prototype.noCreate = function (data, trans) {
 				var deferred = $q.defer(),
 					table = this;
