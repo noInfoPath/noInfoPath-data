@@ -14,28 +14,33 @@ module.exports = function(config) {
 
 
     // list of files / patterns to load in the browser
-    files: [
-        'node_modules/es5-shim/es5-shim.min.js',
-        'node_modules/moment/min/moment.min.js',
-        'node_modules/noinfopath-helpers/node_modules/jquery/dist/jquery.js',
-        'node_modules/angular/angular.js',
-        'node_modules/angular-mocks/angular-mocks.js',
-        'node_modules/ng-lodash/build/ng-lodash.js',
-        'node_modules/noinfopath/dist/noinfopath.js',
-        'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
-        'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
-        'node_modules/@noinfopath/noinfopath-logger/dist/noinfopath-logger.js',
-        'lib/indexedDB.polyfill.js',
-        'lib/dexie.js',
-        'lib/dexie.observable.js',
-        'lib/dexie.syncable.js',
-
-        'test/mock/data-source.mock.js',
-
-        'src/data-source.js',
-
-        'test/no-data-source.spec.js'
-    ],
+	files: [
+			'node_modules/es5-shim/es5-shim.min.js',
+	        'node_modules/noinfopath-helpers/node_modules/jquery/dist/jquery.js',
+	        'node_modules/moment/min/moment.min.js',
+	        'node_modules/angular/angular.js',
+	        'node_modules/angular-mocks/angular-mocks.js',
+	        'node_modules/angular-base64/angular-base64.min.js',
+	        'node_modules/ng-lodash/build/ng-lodash.js',
+	        'node_modules/dexie/dist/dexie.js',
+	        'node_modules/noinfopath/dist/noinfopath.js',
+	        'node_modules/noinfopath-helpers/src/noinfopath-helpers.js',
+	        'node_modules/noinfopath-helpers/src/noinfopath-filters.js',
+	        'node_modules/@noinfopath/noinfopath-user/dist/noinfopath-user.js',
+	        'node_modules/@noinfopath/noinfopath-logger/dist/noinfopath-logger.js',
+			'node_modules/@noinfopath/noinfopath-data/test/mock/form-controller.mock.js',
+			'src/global.js',
+			'src/helper-functions.js',
+			'src/classes.js',
+			'src/no-data-model.js',
+			'test/fixures/project.fixture.js',
+			'test/fixures/project.schema.fixture.js',
+			'test/mock/form-controller.mock.js',
+	        'test/no-data-source.spec.js',
+			'test/mock/data-source.mock.js',
+	        'src/data-source.js',
+	        'test/no-data-source.spec.js'
+	    ],
 
 
     // list of files to exclude

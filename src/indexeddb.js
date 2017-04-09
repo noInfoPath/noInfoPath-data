@@ -1646,9 +1646,9 @@
 					_dexie.nosync = true;
 
 					table.add(data)
+						.then(deferred.resolve)
 						.catch(function (table, data, err) {
 							//console.error(err);
-							console.error("loadData", err.message, table.name, data.ID);
 							deferred.reject({table: table, data: data, error: err});
 						}.bind(null, table, data));
 				});
