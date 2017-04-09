@@ -2,7 +2,7 @@ var
   DATASOURCE_TO_CONVERSION_FUNCTIONS,
   DATASOURCE_FROM_CONVERSION_FUNCTIONS;
 
-describe("Tesing WebSQL constants", function () {
+describe("Testing noDataSource", function () {
   beforeEach(function () {
     module("noinfopath.data");
 
@@ -11,7 +11,9 @@ describe("Tesing WebSQL constants", function () {
       DATASOURCE_FROM_CONVERSION_FUNCTIONS = $injector.get("DATASOURCE_FROM_CONVERSION_FUNCTIONS");
     });
 
-    describe("Injected version of DATASOURCE_TO_CONVERSION_FUNCTIONS should match test version.", function () {
+  });
+
+  describe("Injected version of DATASOURCE_TO_CONVERSION_FUNCTIONS should match test version.", function () {
     it("should have been injected", function () {
       expect(DATASOURCE_TO_CONVERSION_FUNCTIONS);
     });
@@ -60,5 +62,4 @@ describe("Tesing WebSQL constants", function () {
       createFromTest(yi, DATASOURCE_TO_CONVERSION[yi], expected);
     }
   });
-
 });
