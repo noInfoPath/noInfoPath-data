@@ -48,37 +48,37 @@
 
 	var toDatabaseConversionFunctions = {
 				"bigint": function (i) {
-					return angular.isNumber(i) ? i : null;
+					return angular.isNumber(i) ? i : Number(i);
 				},
 				"bit": function (i) {
-					return angular.isNumber(i) ? i : null;
+					return angular.isNumber(i) ? i : Number(i);
 				},
 				"decimal": function (n) {
-					return angular.isNumber(n) ? n : null;
+					return angular.isNumber(n) ? n : Number(n);
 				},
 				"int": function (i) {
-					return angular.isNumber(i) ? i : null;
+					return angular.isNumber(i) ? i : Number(i);
 				},
 				"money": function (n) {
-					return angular.isNumber(n) ? n : null;
+					return angular.isNumber(n) ? n : Number(n);
 				},
 				"numeric": function (n) {
-					return angular.isNumber(n) ? n : null;
+					return angular.isNumber(n) ? n : Number(n);
 				},
 				"smallint": function (i) {
-					return angular.isNumber(i) ? i : null;
+					return angular.isNumber(i) ? i : Number(i);
 				},
 				"smallmoney": function (n) {
-					return angular.isNumber(n) ? n : null;
+					return angular.isNumber(n) ? n : Number(n);
 				},
 				"tinyint": function (i) {
-					return angular.isNumber(i) ? i : null;
+					return angular.isNumber(i) ? i : Number(i);
 				},
 				"float": function (i) {
-					return angular.isNumber(i) ? i : null;
+					return angular.isNumber(i) ? i : Number(i);
 				},
 				"real": function (i) {
-					return angular.isNumber(i) ? i : null;
+					return angular.isNumber(i) ? i : Number(i);
 				},
 				"date": function (n) {
 					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
