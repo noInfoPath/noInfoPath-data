@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.59*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -245,7 +245,7 @@
 				val = val === "undefined" || val === undefined ? null : val;
 
 				//perform data conversion
-				val = toDatabaseConversionFunctions[col.type](data[ck]);
+				val = toDatabaseConversionFunctions[col.type](val);
 
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
@@ -266,7 +266,7 @@
 				val = val === "undefined" || val === undefined ? null : val;
 
 				//perform data conversion
-				val = fromDatabaseConversionFunctions[col.type](data[ck]);
+				val = fromDatabaseConversionFunctions[col.type](val);
 
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
