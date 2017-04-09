@@ -36,8 +36,8 @@ module.exports = function(config) {
 			'test/fixures/project.fixture.js',
 			'test/fixures/project.schema.fixture.js',
 			'test/mock/form-controller.mock.js',
-	        'test/no-data-source.spec.js',
 			'test/mock/data-source.mock.js',
+	        'test/no-data-source.spec.js',
 	        'src/data-source.js',
 	        'test/no-data-source.spec.js'
 	    ],
@@ -50,9 +50,9 @@ module.exports = function(config) {
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {
-        'src/*.js': 'coverage'
-    },
+    // preprocessors: {
+    //     'src/*.js': 'coverage'
+    // },
 
     coverageReporter: {
         type: 'cobertura',
@@ -64,7 +64,7 @@ module.exports = function(config) {
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
     // reporters: ['verbose', 'coverage'],
-    reporters: ['verbose', 'coverage'],
+    reporters: ['verbose'],
 
 
     // web server port
