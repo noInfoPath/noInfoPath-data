@@ -46,16 +46,7 @@
  */
 (function (angular, undefined) {
 
-	function NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch) {
-		var provider = $injector.get(dsConfig.dataProvider),
-			db = provider.getDatabase(dsConfig.databaseName),
-			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
-			entity = db[dsConfig.entityName],
-			qp = $injector.get("noQueryParser"),
-			isNoView = entity.constructor.name === "NoView",
-			_scope = scope,
-			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache,
-			toDatabaseConversionFunctions = {
+	var toDatabaseConversionFunctions = {
 				"bigint": function (i) {
 					return angular.isNumber(i) ? i : null;
 				},
@@ -222,6 +213,16 @@
 				}
 			};
 
+	function NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS) {
+		var provider = $injector.get(dsConfig.dataProvider),
+			db = provider.getDatabase(dsConfig.databaseName),
+			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
+			entity = db[dsConfig.entityName],
+			qp = $injector.get("noQueryParser"),
+			isNoView = entity.constructor.name === "NoView",
+			_scope = scope,
+			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache;			
+
 		function _makeRemoteFileUrl(resource) {
 			return noConfig.current.FILECACHEURL + "/" + resource;
 		}
@@ -245,7 +246,7 @@
 				val = val === "undefined" || val === undefined ? null : val;
 
 				//perform data conversion
-				val = toDatabaseConversionFunctions[col.type](val);
+				val = DATASOURCE_TO_CONVERSION_FUNCTIONS[col.type](val);
 
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
@@ -266,7 +267,7 @@
 				val = val === "undefined" || val === undefined ? null : val;
 
 				//perform data conversion
-				val = fromDatabaseConversionFunctions[col.type](val);
+				val = DATASOURCE_FROM_CONVERSION_FUNCTIONS[col.type](val);
 
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
@@ -579,8 +580,9 @@
 
 
 	angular.module("noinfopath.data")
-
-	.service("noDataSource", ["$injector", "$q", "$timeout", "noConfig", "noDynamicFilters", "noCalculatedFields", "noFileSystem", function ($injector, $q, $timeout, noConfig, noDynamicFilters, noCalculatedFields, noFileSystem) {
+	.constant("DATASOURCE_TO_CONVERSION_FUNCTIONS", toDatabaseConversionFunctions)
+	.constant("DATASOURCE_FROM_CONVERSION_FUNCTIONS", fromDatabaseConversionFunctions)
+	.service("noDataSource", ["$injector", "$q", "$timeout", "noConfig", "noDynamicFilters", "noCalculatedFields", "noFileSystem", "DATASOURCE_TO_CONVERSION_FUNCTIONS", "DATASOURCE_FROM_CONVERSION_FUNCTIONS", function ($injector, $q, $timeout, noConfig, noDynamicFilters, noCalculatedFields, noFileSystem, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -600,7 +602,7 @@
 		 *
 		 */
 		this.create = function (dsConfig, scope, watch) {
-			return new NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch);
+			return new NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS);
 		};
 	}])
 
