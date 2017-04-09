@@ -30,12 +30,11 @@ module.exports = function(config) {
         'lib/dexie.observable.js',
         'lib/dexie.syncable.js',
 
-
-
         //'test/mock/noinfopath.mock.js',
         'test/mock/db.json.mock.js',
         'test/mock/sql-builder.mock.js',
         'test/mock/configuration.mock.js',
+        'test/mock/data-source.mock.js',
         //'test/mock/schema.mock.js',
 		'src/globals.js',
 		'src/classes.js',

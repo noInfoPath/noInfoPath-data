@@ -13,14 +13,15 @@ describe("Testing noDataSource", function () {
 
   });
 
-  describe("Injected version of DATASOURCE_TO_CONVERSION_FUNCTIONS should match test version.", function () {
+  describe("Testing Conversion Functions.", function () {
     it("should have been injected", function () {
       expect(DATASOURCE_TO_CONVERSION_FUNCTIONS);
+      expect(DATASOURCE_FROM_CONVERSION_FUNCTIONS);
     });
 
     function createToTest(property, source, expected) {
       describe("Testing saving property " + property, function () {
-        it("should exist in injected version" + property, function () {
+        it("should exist in injected version " + property, function () {
           var actual = DATASOURCE_TO_CONVERSION_FUNCTIONS[property];
 
           expect(actual);
@@ -36,7 +37,7 @@ describe("Testing noDataSource", function () {
 
     function createFromTest(property, source, expected) {
       describe("Testing read property " + property, function () {
-        it("should exist in injected version" + property, function () {
+        it("should exist in injected version " + property, function () {
           var actual = DATASOURCE_FROM_CONVERSION_FUNCTIONS[property];
 
           expect(actual);
