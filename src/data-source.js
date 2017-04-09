@@ -86,55 +86,55 @@
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
-					return d
+					return d;
 				},
 				"datetime": function (n) {
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
-					return d
+					return d;
 				},
 				"datetime2": function (n) {
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
-					return d
+					return d;
 				},
 				"datetimeoffset": function (n) {
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
-					return d
+					return d;
 				},
 				"smalldatetime": function (n) {
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
-					return d
+					return d;
 				},
 				"time": function (n) {
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
-					return d
+					return d;
 				},
 				"char": function (t) {
 					return angular.isString(t) ? t : null;

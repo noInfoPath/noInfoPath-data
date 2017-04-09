@@ -114,7 +114,8 @@ module.exports = function (grunt) {
 			},
 			noDataSource: {
 				configFile: "karma.conf.nodatasource.js",
-				singleRun: false
+				singleRun: false,
+				browsers: ['PhantomJS']
 			},
 			/*noInitDatabases: {
 				configFile: "karma.conf.noInitDatabases.js",
