@@ -1633,6 +1633,30 @@
 					});
 			};
 
+			db.WriteableTable.prototype.loadData = function (data) {
+				var deferred = $q.defer(),
+					table = this;
+
+				//data = _unfollow_data(table, data);
+
+				//console.warn(data);
+				//noLogService.log("adding: ", _dexie.currentUser);
+
+				_dexie.transaction("rw", table, function () {
+					_dexie.nosync = true;
+
+					table.add(data)
+						.then(deferred.resolve)
+						.catch(function (table, data, err) {
+							//console.error(err);
+							deferred.reject({table: table, data: data, error: err});
+						}.bind(null, table, data));
+				});
+
+				return deferred.promise;
+
+			};
+
 			db.WriteableTable.prototype.bulkLoad = function (data, progress) {
 				var deferred = $q.defer(),
 					table = this;

@@ -45,58 +45,96 @@
  *	```
  */
 (function (angular, undefined) {
-
+	function isNumber(i) {
+		return !Number.isNaN(Number(i)) && i !== null;
+	}
 	var toDatabaseConversionFunctions = {
 				"bigint": function (i) {
-					return angular.isNumber(i) ? i : Number(i);
+					return isNumber(i) ? i : null;
 				},
 				"bit": function (i) {
-					return angular.isNumber(i) ? i : Number(i);
+					return isNumber(i) ? i : null;
 				},
 				"decimal": function (n) {
-					return angular.isNumber(n) ? n : Number(n);
+					return isNumber(n) ? n : null;
 				},
 				"int": function (i) {
-					return angular.isNumber(i) ? i : Number(i);
+					return isNumber(i) ? i : null;
 				},
 				"money": function (n) {
-					return angular.isNumber(n) ? n : Number(n);
+					return isNumber(n) ? n : null;
 				},
 				"numeric": function (n) {
-					return angular.isNumber(n) ? n : Number(n);
+					return isNumber(n) ? n : null;
 				},
 				"smallint": function (i) {
-					return angular.isNumber(i) ? i : Number(i);
+					return isNumber(i) ? i : null;
 				},
 				"smallmoney": function (n) {
-					return angular.isNumber(n) ? n : Number(n);
+					return isNumber(n) ? n : null;
 				},
 				"tinyint": function (i) {
-					return angular.isNumber(i) ? i : Number(i);
+					return isNumber(i) ? i : null;
 				},
 				"float": function (i) {
-					return angular.isNumber(i) ? i : Number(i);
+					return isNumber(i) ? i : null;
 				},
 				"real": function (i) {
-					return angular.isNumber(i) ? i : Number(i);
+					return isNumber(i) ? i : null;
 				},
 				"date": function (n) {
-					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+					var d = null;
+					
+					if(n) {
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+					}
+
+					return d
 				},
 				"datetime": function (n) {
-					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+					var d = null;
+					
+					if(n) {
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+					}
+
+					return d
 				},
 				"datetime2": function (n) {
-					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+					var d = null;
+					
+					if(n) {
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+					}
+
+					return d
 				},
 				"datetimeoffset": function (n) {
-					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+					var d = null;
+					
+					if(n) {
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+					}
+
+					return d
 				},
 				"smalldatetime": function (n) {
-					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+					var d = null;
+					
+					if(n) {
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+					}
+
+					return d
 				},
 				"time": function (n) {
-					return angular.isDate(n) ? noInfoPath.toDbDate(n) : null;
+					var d = null;
+					
+					if(n) {
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : noInfoPath.toDbDate(new Date(n));
+					}
+
+					return d
 				},
 				"char": function (t) {
 					return angular.isString(t) ? t : null;
@@ -221,7 +259,7 @@
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
 			_scope = scope,
-			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache;			
+			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache;
 
 		function _makeRemoteFileUrl(resource) {
 			return noConfig.current.FILECACHEURL + "/" + resource;
@@ -251,7 +289,7 @@
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
 
-				data[ck] = val;				
+				data[ck] = val;
 			}
 
 			return data
@@ -272,7 +310,7 @@
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
 
-				data[ck] = val;				
+				data[ck] = val;
 			}
 
 			return data
