@@ -7896,7 +7896,8 @@ var GloboTest = {};
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
+						// Convert JS date to moment UTC, then stringify it to strip out offset and then make it a dbDate... otherwise assume it's already a dbdate
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n; 
 					}
 
 					return d;
@@ -7905,7 +7906,7 @@ var GloboTest = {};
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
 
 					return d;
@@ -7914,7 +7915,7 @@ var GloboTest = {};
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
 
 					return d;
@@ -7923,7 +7924,7 @@ var GloboTest = {};
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
 
 					return d;
@@ -7932,7 +7933,7 @@ var GloboTest = {};
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
 
 					return d;
@@ -7941,7 +7942,7 @@ var GloboTest = {};
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
 
 					return d;
@@ -8094,7 +8095,7 @@ var GloboTest = {};
 				val = val === "undefined" || val === undefined ? null : val;
 
 				//perform data conversion
-				val = DATASOURCE_TO_CONVERSION_FUNCTIONS[col.type](val);
+				val = col.type ? DATASOURCE_TO_CONVERSION_FUNCTIONS[col.type](val) : val;
 
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
@@ -8115,7 +8116,7 @@ var GloboTest = {};
 				val = val === "undefined" || val === undefined ? null : val;
 
 				//perform data conversion
-				val = DATASOURCE_FROM_CONVERSION_FUNCTIONS[col.type](val);
+				val = col.type ? DATASOURCE_FROM_CONVERSION_FUNCTIONS[col.type](val) : val;
 
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
@@ -8202,7 +8203,7 @@ var GloboTest = {};
 					.then(function (data) {
 						data = noCalculatedFields.calculate(config, data);
 
-						data = cleanReadFields(data);
+						data = data ? cleanReadFields(data) : data;
 						//If there is an ActionQueue then execute it.
 						if(config.aggregation && config.aggregation.actions) {
 							var execQueue = noActionQueue.createQueue(data, scope, {}, config.aggregation.action);
@@ -8299,7 +8300,7 @@ var GloboTest = {};
 
 				return entity.noOne.apply(entity, params)
 					.then(function (data) {
-						data = cleanReadFields(data);
+						data = data ? cleanReadFields(data) : data;
 						resolve(data);
 					})
 					.catch(function (err) {
