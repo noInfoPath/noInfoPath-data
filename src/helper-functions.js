@@ -258,7 +258,7 @@ angular.module("noinfopath.data")
 			dateResult = null;
 		} else {
 			dateResult = moment.utc(date)
-				.format("YYYY-MM-DDTHH:mm:ss.sss");
+				.format("YYYY-MM-DDTHH:mm:ss.SSS");
 		}
 
 		if(dateResult === "Invalid date") {

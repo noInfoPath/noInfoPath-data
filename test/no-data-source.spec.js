@@ -51,12 +51,14 @@ describe("Testing noDataSource", function () {
       });
     }
 
+    // Convert to Database Friendly Fields.
     for(var wi in DATASOURCE_TO_CONVERSION_SOURCE) {
       var expected = DATASOURCE_TO_CONVERSION[wi];
 
       createToTest(wi, DATASOURCE_TO_CONVERSION_SOURCE[wi], expected);
     }
 
+    // Convert from Database Friendly Fields to UI friendly fields.
     for(var yi in DATASOURCE_TO_CONVERSION) {
       var expected = DATASOURCE_TO_CONVERSION_SOURCE[yi];
 
