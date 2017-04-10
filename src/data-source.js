@@ -87,7 +87,7 @@
 					
 					if(n) {
 						// Convert JS date to moment UTC, then stringify it to strip out offset and then make it a dbDate... otherwise assume it's already a dbdate
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n; 
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n; 
 					}
 
 					return d;
@@ -96,7 +96,7 @@
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -105,7 +105,7 @@
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -114,7 +114,7 @@
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -123,7 +123,7 @@
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -132,7 +132,7 @@
 					var d = null;
 					
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
