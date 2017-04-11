@@ -84,17 +84,17 @@
 				},
 				"date": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						// Convert JS date to moment UTC, then stringify it to strip out offset and then make it a dbDate... otherwise assume it's already a dbdate
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n; 
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
 
 					return d;
 				},
 				"datetime": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -103,7 +103,7 @@
 				},
 				"datetime2": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -112,7 +112,7 @@
 				},
 				"datetimeoffset": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -121,7 +121,7 @@
 				},
 				"smalldatetime": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -130,7 +130,7 @@
 				},
 				"time": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -260,7 +260,8 @@
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
 			_scope = scope,
-			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache;
+			fsDb = noFileSystem.getDatabase(entity.noInfoPath),
+			noFileCache = fsDb ? fsDb.NoFileCache : null;
 
 		function _makeRemoteFileUrl(resource) {
 			return noConfig.current.FILECACHEURL + "/" + resource;

@@ -7894,17 +7894,17 @@ var GloboTest = {};
 				},
 				"date": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						// Convert JS date to moment UTC, then stringify it to strip out offset and then make it a dbDate... otherwise assume it's already a dbdate
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n; 
+						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
 
 					return d;
 				},
 				"datetime": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -7913,7 +7913,7 @@ var GloboTest = {};
 				},
 				"datetime2": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -7922,7 +7922,7 @@ var GloboTest = {};
 				},
 				"datetimeoffset": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -7931,7 +7931,7 @@ var GloboTest = {};
 				},
 				"smalldatetime": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -7940,7 +7940,7 @@ var GloboTest = {};
 				},
 				"time": function (n) {
 					var d = null;
-					
+
 					if(n) {
 						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
 					}
@@ -8070,7 +8070,8 @@ var GloboTest = {};
 			qp = $injector.get("noQueryParser"),
 			isNoView = entity.constructor.name === "NoView",
 			_scope = scope,
-			noFileCache = noFileSystem.getDatabase(entity.noInfoPath).NoFileCache;
+			fsDb = noFileSystem.getDatabase(entity.noInfoPath),
+			noFileCache = fsDb ? fsDb.NoFileCache : null;
 
 		function _makeRemoteFileUrl(resource) {
 			return noConfig.current.FILECACHEURL + "/" + resource;
@@ -9492,11 +9493,11 @@ var GloboTest = {};
 			var dbInitialized = "noFileSystem_rmEFR2",
 				db = $rootScope[dbInitialized];
 
-			if(db.NoFileCache){
+			if(db && db.NoFileCache){
 				db.NoFileCache.backerSchema = backerSchema;
 			}
 
-			return $rootScope[dbInitialized];
+			return db;
 		};
 
 		this.destroyDb = function (databaseName) {

@@ -559,11 +559,11 @@
 			var dbInitialized = "noFileSystem_rmEFR2",
 				db = $rootScope[dbInitialized];
 
-			if(db.NoFileCache){
+			if(db && db.NoFileCache){
 				db.NoFileCache.backerSchema = backerSchema;
 			}
 
-			return $rootScope[dbInitialized];
+			return db;
 		};
 
 		this.destroyDb = function (databaseName) {
