@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.60* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.61* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -342,7 +342,7 @@ angular.module("noinfopath.data")
 			dateResult = null;
 		} else {
 			dateResult = moment.utc(date)
-				.format("YYYY-MM-DDTHH:mm:ss.sss");
+				.format("YYYY-MM-DDTHH:mm:ss.SSS");
 		}
 
 		if(dateResult === "Invalid date") {
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2221,7 +2221,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2358,7 +2358,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2511,7 +2511,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -3569,7 +3569,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -5021,7 +5021,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5926,7 +5926,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7814,7 +7814,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7897,7 +7897,7 @@ var GloboTest = {};
 
 					if(n) {
 						// Convert JS date to moment UTC, then stringify it to strip out offset and then make it a dbDate... otherwise assume it's already a dbdate
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -7906,7 +7906,7 @@ var GloboTest = {};
 					var d = null;
 
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -7915,7 +7915,7 @@ var GloboTest = {};
 					var d = null;
 
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -7924,7 +7924,7 @@ var GloboTest = {};
 					var d = null;
 
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -7933,7 +7933,7 @@ var GloboTest = {};
 					var d = null;
 
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -7942,7 +7942,7 @@ var GloboTest = {};
 					var d = null;
 
 					if(n) {
-						d = angular.isDate(n) ? noInfoPath.toDbDate(moment.utc(n).toString()) : n;
+						d = angular.isDate(n) ? noInfoPath.toDbDate(n) : n;
 					}
 
 					return d;
@@ -8573,7 +8573,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8799,7 +8799,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8938,7 +8938,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.60*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
