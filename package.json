@@ -19,15 +19,12 @@
 	"dependencies": {
 		"angular": "1.4.8",
 		"dexie": "^1.5.1",
-		"dexie-observable": "^0.9.2",
 		"moment": "^2.11.1",
 		"ng-lodash": "^0.2.3",
-		"noinfopath": "^0.2.5"
+		"@noinfopath/noinfopath": "^0.2.5",
+		"@noinfopath/noinfopath-user": "^1.0.0"
 	},
 	"devDependencies": {
-		"@noinfopath/noinfopath-logger": "^1.0.1",
-		"@noinfopath/noinfopath-user": "^1.0.0",
-		"angular-base64": "^2.0.5",
 		"angular-mocks": "1.4.8",
 		"es5-shim": "^4.4.1",
 		"grunt": "^0.4.5",
@@ -53,8 +50,6 @@
 		"karma-phantomjs-launcher": "^0.1.4",
 		"karma-safari-launcher": "^0.1.1",
 		"karma-verbose-reporter": "0.0.1",
-		"moment": "^2.10.6",
-		"ng-lodash": "^0.2.3",
 		"phantomjs": "^1.9.15"
 	}
 }

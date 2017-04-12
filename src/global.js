@@ -78,6 +78,6 @@
 (function (angular, undefined) {
 	"use strict";
 
-	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
+	angular.module("noinfopath.data", ['ngLodash', 'noinfopath', 'noinfopath.helpers', 'noinfopath.user'])
 	;
 })(angular);
