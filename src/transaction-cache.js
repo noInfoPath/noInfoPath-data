@@ -29,6 +29,16 @@
 (function (angular, undefined) {
 	"use strict";
 
+	function msWebApiLargeNumberHack(data, colSchemas) {
+		for(var c in data) {
+			var colschema = colSchemas[c];
+
+			if(colschema && ["decimal"].indexOf(colschema.type) > -1) {
+				data[c] = String(data[c]);
+			}
+		}
+	}
+
 	angular.module("noinfopath.data")
 		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", "noActionQueue", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser, noActionQueue) {
 
@@ -57,6 +67,8 @@
 				this.addChange = function (tableName, data, changeType, dbName) {
 					var tableCfg = scope["noDbSchema_" + (dbName || config.noDataSource.databaseName)],
 						schema = tableCfg.entity(tableName);
+
+					msWebApiLargeNumberHack(data, schema.columns);
 
 					this.changes.add(tableName, data, changeType, tableCfg, (dbName || config.noDataSource.databaseName));
 

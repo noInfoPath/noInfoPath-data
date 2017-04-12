@@ -2583,6 +2583,7 @@ angular.module("noinfopath.data")
 (function (angular, undefined) {
 	"use strict";
 	var $httpProviderRef;
+
 	angular.module('noinfopath.data')
 		.config(["$httpProvider", function ($httpProvider) {
 			$httpProviderRef = $httpProvider;
@@ -2748,7 +2749,11 @@ angular.module("noinfopath.data")
 						if (!data[table.primaryKey]) {
 							data[table.primaryKey] = noInfoPath.createUUID();
 						}
+
+						//msWebApiLargeNumberHack(data, this.noInfoPath.columns);
+
 						var json = angular.toJson(data);
+						console.log(data);
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
 						var deferred = $q.defer(),
 							req = {
@@ -5046,6 +5051,16 @@ var GloboTest = {};
 (function (angular, undefined) {
 	"use strict";
 
+	function msWebApiLargeNumberHack(data, colSchemas) {
+		for(var c in data) {
+			var colschema = colSchemas[c];
+
+			if(colschema && ["decimal"].indexOf(colschema.type) > -1) {
+				data[c] = String(data[c]);
+			}
+		}
+	}
+
 	angular.module("noinfopath.data")
 		.factory("noTransactionCache", ["$injector", "$q", "$rootScope", "noIndexedDb", "lodash", "noDataSource", "noDbSchema", "noLocalStorage", "noParameterParser", "noActionQueue", function ($injector, $q, $rootScope, noIndexedDb, _, noDataSource, noDbSchema, noLocalStorage, noParameterParser, noActionQueue) {
 
@@ -5074,6 +5089,8 @@ var GloboTest = {};
 				this.addChange = function (tableName, data, changeType, dbName) {
 					var tableCfg = scope["noDbSchema_" + (dbName || config.noDataSource.databaseName)],
 						schema = tableCfg.entity(tableName);
+
+					msWebApiLargeNumberHack(data, schema.columns);
 
 					this.changes.add(tableName, data, changeType, tableCfg, (dbName || config.noDataSource.databaseName));
 

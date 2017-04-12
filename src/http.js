@@ -76,6 +76,7 @@
 (function (angular, undefined) {
 	"use strict";
 	var $httpProviderRef;
+
 	angular.module('noinfopath.data')
 		.config(["$httpProvider", function ($httpProvider) {
 			$httpProviderRef = $httpProvider;
@@ -241,7 +242,11 @@
 						if (!data[table.primaryKey]) {
 							data[table.primaryKey] = noInfoPath.createUUID();
 						}
+
+						//msWebApiLargeNumberHack(data, this.noInfoPath.columns);
+
 						var json = angular.toJson(data);
+						console.log(data);
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
 						var deferred = $q.defer(),
 							req = {
