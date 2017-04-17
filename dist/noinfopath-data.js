@@ -2204,6 +2204,11 @@ angular.module("noinfopath.data")
 							query.$top = arg.take;
 							query.$inlinecount = "allpages";
 							break;
+						default:
+
+						 	if(angular.isArray(arg)){
+								query.$select = arg.join(",");
+							}
 					}
 				}
 			}
@@ -2779,7 +2784,7 @@ angular.module("noinfopath.data")
 					};
 					this.noRead = function () {
 						//console.debug("noRead say's, 'swag!'");
-						var filters, sort, page;
+						var filters, sort, page, select;
 						for(var ai in arguments) {
 							var arg = arguments[ai];
 							//success and error must always be first, then
@@ -2794,6 +2799,11 @@ angular.module("noinfopath.data")
 									case "NoPage":
 										page = arg;
 										break;
+									default:
+										if(angular.isArray(arg)) {
+											select = arg;
+										}
+										break;
 								}
 							}
 						}
@@ -2807,7 +2817,7 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
-							req.params = _table.uri ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page);
+							req.params = _table.uri ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page, select);
 
 						$http(req)
 							.then(function (results) {
@@ -5056,7 +5066,7 @@ var GloboTest = {};
 			var colschema = colSchemas[c];
 
 			if(colschema && ["decimal"].indexOf(colschema.type) > -1) {
-				data[c] = String(data[c]);
+				data[c] = data[c] ? String(data[c]) : null;
 			}
 		}
 	}
@@ -5619,7 +5629,7 @@ var GloboTest = {};
 								//create the noDataSource object.
 								dataSource = noDataSource.create(curEntity, scope);
 
-								//console.log(data);
+								console.log("_doTheUpserts", data.length);
 
 
 								for (var i = 0; i < data.length; i++) {

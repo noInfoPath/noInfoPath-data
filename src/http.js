@@ -272,7 +272,7 @@
 					};
 					this.noRead = function () {
 						//console.debug("noRead say's, 'swag!'");
-						var filters, sort, page;
+						var filters, sort, page, select;
 						for(var ai in arguments) {
 							var arg = arguments[ai];
 							//success and error must always be first, then
@@ -287,6 +287,11 @@
 									case "NoPage":
 										page = arg;
 										break;
+									default:
+										if(angular.isArray(arg)) {
+											select = arg;
+										}
+										break;
 								}
 							}
 						}
@@ -300,7 +305,7 @@
 								},
 								withCredentials: true
 							};
-							req.params = _table.uri ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page);
+							req.params = _table.uri ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page, select);
 
 						$http(req)
 							.then(function (results) {

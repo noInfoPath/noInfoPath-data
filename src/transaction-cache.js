@@ -34,7 +34,7 @@
 			var colschema = colSchemas[c];
 
 			if(colschema && ["decimal"].indexOf(colschema.type) > -1) {
-				data[c] = String(data[c]);
+				data[c] = data[c] ? String(data[c]) : null;
 			}
 		}
 	}
@@ -597,7 +597,7 @@
 								//create the noDataSource object.
 								dataSource = noDataSource.create(curEntity, scope);
 
-								//console.log(data);
+								console.log("_doTheUpserts", data.length);
 
 
 								for (var i = 0; i < data.length; i++) {
