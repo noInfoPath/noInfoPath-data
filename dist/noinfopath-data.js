@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.61* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.62* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2226,7 +2226,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2363,7 +2363,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2516,7 +2516,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -3584,7 +3584,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -5036,7 +5036,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5953,7 +5953,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7841,7 +7841,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -8600,7 +8600,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8826,7 +8826,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8965,7 +8965,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
