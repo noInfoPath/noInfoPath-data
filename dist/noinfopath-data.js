@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.62* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.63* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2226,7 +2226,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2363,7 +2363,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2516,7 +2516,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2742,7 +2742,7 @@ angular.module("noinfopath.data")
 					Object.defineProperties(this, {
 						entity: {
 							get: function () {
-								return _table;
+								return this.noInfoPath;
 							}
 						}
 					});
@@ -3584,7 +3584,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -5036,7 +5036,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5953,7 +5953,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7841,7 +7841,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -8093,11 +8093,11 @@ var GloboTest = {};
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
-			entity = db[dsConfig.entityName],
+			_entity = db[dsConfig.entityName],
 			qp = $injector.get("noQueryParser"),
-			isNoView = entity.constructor.name === "NoView",
+			isNoView = _entity.constructor.name === "NoView",
 			_scope = scope,
-			fsDb = noFileSystem.getDatabase(entity.noInfoPath),
+			fsDb = noFileSystem.getDatabase(_entity.noInfoPath),
 			noFileCache = fsDb ? fsDb.NoFileCache : null;
 
 		function _makeRemoteFileUrl(resource) {
@@ -8107,14 +8107,14 @@ var GloboTest = {};
 		Object.defineProperties(this, {
 			"entity": {
 				"get": function () {
-					return entity;
+					return _entity.noInfoPath;
 				}
 			}
 		});
 
 		// The following two functions only change columns defined in the table configuration, it does not touch any columns that are not defined. This does not scrub out other columns!
 		function cleanSaveFields(data) {
-			var columns = entity.noInfoPath && entity.noInfoPath.columns ? entity.noInfoPath.columns : [];
+			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [];
 
 			for(var ck in columns) {
 				var col = columns[ck],
@@ -8131,11 +8131,11 @@ var GloboTest = {};
 				data[ck] = val;
 			}
 
-			return data
+			return data;
 		}
 
 		function cleanReadFields(data) {
-			var columns = entity.noInfoPath && entity.noInfoPath.columns ? entity.noInfoPath.columns : [];
+			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [];
 
 			for(var ck in columns) {
 				var col = columns[ck],
@@ -8152,7 +8152,7 @@ var GloboTest = {};
 				data[ck] = val;
 			}
 
-			return data
+			return data;
 		}
 
 		// var tmpFilters = noDynamicFilters.configure(dsCfg, scope, watch);
@@ -8165,7 +8165,7 @@ var GloboTest = {};
 
 			data = cleanSaveFields(data);
 
-			return entity.noCreate(data, noTrans);
+			return _entity.noCreate(data, noTrans);
 
 		};
 
@@ -8174,7 +8174,7 @@ var GloboTest = {};
 		this.createDocument = function (data, file, trans) {
 			return this.create(data,trans)
 				.then(function(fileObj) {
-					file.DocumentID = fileObj[entity.noInfoPath.primaryKey];
+					file.DocumentID = fileObj[_entity.noInfoPath.primaryKey];
 					return noFileCache.noCreate(file);
 				});
 		};
@@ -8184,7 +8184,7 @@ var GloboTest = {};
 				if (angular.isObject(doc) && deleteFile && doc.ID) {
 					this.destroy(doc, trans).then(resolve);  //This way will delete the metadata and the file
 				} else if (angular.isObject(doc) && !deleteFile) {
-					entity.noDestroy(data, noTrans, filters) //This way will only delete the document. The file will remain.
+					_entity.noDestroy(data, noTrans, filters) //This way will only delete the document. The file will remain.
 						.then(resolve);
 				} else {
 					resolve();
@@ -8227,7 +8227,7 @@ var GloboTest = {};
 
 				x.push(noReadOptions);
 
-				return entity.noRead.apply(entity, x)
+				return _entity.noRead.apply(_entity, x)
 					.then(function (data) {
 						data = noCalculatedFields.calculate(config, data);
 
@@ -8257,12 +8257,12 @@ var GloboTest = {};
 				if(dsConfig.waitFor) {
 					waitFor = _scope.$watch(dsConfig.waitFor.property, function (newval, oldval, scope) {
 						if(newval) {
-							requestData(scope, dsConfig, entity, qp, resolve, reject);
+							requestData(scope, dsConfig, _entity, qp, resolve, reject);
 							waitFor();
 						}
 					});
 				} else {
-					requestData(scope, dsConfig, entity, qp, resolve, reject);
+					requestData(scope, dsConfig, _entity, qp, resolve, reject);
 				}
 			});
 		};
@@ -8272,7 +8272,7 @@ var GloboTest = {};
 
 			data = cleanSaveFields(data);
 
-			return entity.noUpdate(data, noTrans);
+			return _entity.noUpdate(data, noTrans);
 		};
 
 		/*
@@ -8289,10 +8289,10 @@ var GloboTest = {};
 			/*
 			*	> This method also doubles as the `clear` method when it is called with no parameters.
 			*/
-			var p = data ? entity.noDestroy(data, noTrans, filters) : entity.noClear();
+			var p = data ? _entity.noDestroy(data, noTrans, filters) : _entity.noClear();
 
 			return p.then(function(r1){
-				if(entity.noInfoPath.NoInfoPath_FileUploadCache) {
+				if(_entity.noInfoPath.NoInfoPath_FileUploadCache) {
 					return noFileCache.noDestroy(data)
 						.then(function(r2){
 							console.log(r2);
@@ -8347,12 +8347,12 @@ var GloboTest = {};
 				if(dsConfig.waitFor) {
 					endWaitFor = _scope.$watch(dsConfig.waitFor.property, function (newval, oldval, scope) {
 						if(newval) {
-							requestData(scope, dsConfig, entity, resolve, reject);
+							requestData(scope, dsConfig, _entity, resolve, reject);
 							endWaitFor();
 						}
 					});
 				} else {
-					requestData(scope, dsConfig, entity, resolve, reject);
+					requestData(scope, dsConfig, _entity, resolve, reject);
 				}
 
 			});
@@ -8362,7 +8362,7 @@ var GloboTest = {};
 		this.bulkLoad = function (data) {
 			var THIS = this,
 				deferred = $q.defer(),
-				table = entity;
+				table = _entity;
 
 			function _downloadFile(fileObj) {
 				return $q(function(resolve, reject){
@@ -8440,7 +8440,7 @@ var GloboTest = {};
 			}
 			//console.info("bulkLoad: ", table.TableName)
 
-			THIS.entity.noClear()
+			_entity.noClear()
 				.then(_clearLocalFileSystem.bind(null, table))
 				.then(_import.bind(null, data))
 				.catch(function (err) {
@@ -8451,7 +8451,7 @@ var GloboTest = {};
 		};
 
 		this.bulkImportOne = function (datum) {
-			return entity.bulkLoadOne(datum);
+			return _entity.bulkLoadOne(datum);
 		};
 	}
 
@@ -8600,7 +8600,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8826,7 +8826,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8965,7 +8965,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.62*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -9438,6 +9438,12 @@ var GloboTest = {};
 			var mime = mimeTypes[m];
 			mimeTypesInverted[mime] = m;
 		}
+
+		this.fromFileName = function (fileName) {
+			var ext = fileName.substring(fileName.lastIndexOf(".") + 1);
+			return mimeTypes[ext];
+		};
+
 
 		this.fromExtention = function (ext) {
 			return mimeTypes[ext];
