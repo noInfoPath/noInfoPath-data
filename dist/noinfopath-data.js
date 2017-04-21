@@ -78,7 +78,7 @@
 (function (angular, undefined) {
 	"use strict";
 
-	angular.module("noinfopath.data", ['ngLodash', 'noinfopath.helpers', 'noinfopath.logger'])
+	angular.module("noinfopath.data", ['ngLodash', 'noinfopath', 'noinfopath.helpers', 'noinfopath.user'])
 	;
 })(angular);
 
@@ -1678,28 +1678,40 @@ angular.module("noinfopath.data")
 		}
 
 		function _resolve(value, notAnArray) {
-			if (!!value && notAnArray) {
-				return value;
-			} else if (typeof (value) === "boolean") {
-				return value;
-			} else if (angular.isNumber(value)) {
-				return value;
-			} else {
-				return null;
+			var outval;
+
+			if(value && value.$$unwrapTrustedValue) {
+				value = value.$$unwrapTrustedValue();
 			}
+
+			if (!!value && notAnArray) {
+				outval = value;
+			} else if (typeof (value) === "boolean") {
+				outval = value;
+			} else if (angular.isNumber(value)) {
+				outval = value;
+			} else {
+				outval = null;
+			}			
+
+			return outval;
 		}
 
 		function _updateView(THIS, data) {
 
 			for (var k in data) {
 				var value = data[k],
-					model = THIS[k],
+					model = THIS[k],					
 					validKey = k.indexOf("$") === -1 && !angular.isFunction(model),
 					notAnArray = !angular.isArray(model),
 					haveModelValue = validKey && model ? _isProperty(model, "$viewValue") : false,
 					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
 
 				//console.log(k, data);
+
+				// if (value && value.constructor && (value.constructor.name === "TrustedValueHolderType")){
+				// 	value = value.toString();
+				// } 
 
 				if (!!model && validKey) {
 
@@ -1743,7 +1755,6 @@ angular.module("noinfopath.data")
 					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
 
 				if (!!value && validKey) {
-
 					if (haveModelValue) {
 						values[k] = _resolve(value.$viewValue, notAnArray);
 					} else if (angular.isObject(value)) {
@@ -5437,7 +5448,7 @@ var GloboTest = {};
 
 									//console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
 
-									dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
+									dataSource.one(data[dataSource.entity.primaryKey])
 										.then(function (scope, datum) {
 											var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
 												pure = noParameterParser.parse(datum);

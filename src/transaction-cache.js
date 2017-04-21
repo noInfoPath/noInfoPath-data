@@ -399,7 +399,7 @@
 
 									//console.log("executeDataOperation - calling dataSource.one", dataSource.entity.noInfoPath.primaryKey, data[dataSource.entity.noInfoPath.primaryKey]);
 
-									dataSource.one(data[dataSource.entity.noInfoPath.primaryKey])
+									dataSource.one(data[dataSource.entity.primaryKey])
 										.then(function (scope, datum) {
 											var sk = curEntity.scopeKey ? curEntity.scopeKey : curEntity.entityName,
 												pure = noParameterParser.parse(datum);

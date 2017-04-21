@@ -133,28 +133,40 @@
 		}
 
 		function _resolve(value, notAnArray) {
-			if (!!value && notAnArray) {
-				return value;
-			} else if (typeof (value) === "boolean") {
-				return value;
-			} else if (angular.isNumber(value)) {
-				return value;
-			} else {
-				return null;
+			var outval;
+
+			if(value && value.$$unwrapTrustedValue) {
+				value = value.$$unwrapTrustedValue();
 			}
+
+			if (!!value && notAnArray) {
+				outval = value;
+			} else if (typeof (value) === "boolean") {
+				outval = value;
+			} else if (angular.isNumber(value)) {
+				outval = value;
+			} else {
+				outval = null;
+			}			
+
+			return outval;
 		}
 
 		function _updateView(THIS, data) {
 
 			for (var k in data) {
 				var value = data[k],
-					model = THIS[k],
+					model = THIS[k],					
 					validKey = k.indexOf("$") === -1 && !angular.isFunction(model),
 					notAnArray = !angular.isArray(model),
 					haveModelValue = validKey && model ? _isProperty(model, "$viewValue") : false,
 					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
 
 				//console.log(k, data);
+
+				// if (value && value.constructor && (value.constructor.name === "TrustedValueHolderType")){
+				// 	value = value.toString();
+				// } 
 
 				if (!!model && validKey) {
 
@@ -198,7 +210,6 @@
 					fk = schema.foreignKeys ? schema.foreignKeys[k] : null;
 
 				if (!!value && validKey) {
-
 					if (haveModelValue) {
 						values[k] = _resolve(value.$viewValue, notAnArray);
 					} else if (angular.isObject(value)) {
