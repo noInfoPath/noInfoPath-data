@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.63* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.64* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2226,7 +2226,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2363,7 +2363,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2516,7 +2516,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2616,13 +2616,16 @@ angular.module("noinfopath.data")
 						});
 					};
 					this.configure = function (noUser, schema) {
-						_currentUser = noUser.data || noUser;
+						_currentUser = schema.config.creds || noUser.data || noUser;
+
+						//console.log(schema);
+						//_currentUser = noUser.data || noUser;
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
 						//console.log("noHTTP::configure", schema);
 						var promise = $q(function (resolve, reject) {
 							for(var t in schema.tables) {
 								var table = schema.tables[t];
-								THIS[t] = new NoTable(t, table, queryBuilder);
+								THIS[t] = new NoTable(t, table, queryBuilder, schema);
 							}
 							$rootScope.noHTTPInitialized = true;
 							console.log("noHTTP_" + schema.config.dbName + " ready.");
@@ -2702,7 +2705,7 @@ angular.module("noinfopath.data")
 						return deferred.promise;
 					};
 				}
-				function NoTable(tableName, table, queryBuilder) {
+				function NoTable(tableName, table, queryBuilder, schema) {
 					function _resolveUrl(uri) {
 						if(angular.isString(uri)) {
 							return uri;
@@ -2736,9 +2739,12 @@ angular.module("noinfopath.data")
 					var THIS = this,
 						_table = table;
 					this.noInfoPath = table;
-					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
-					var url = noUrl.makeResourceUrl(_resolveUrl(_table.uri) || noConfig.current.RESTURI, tableName);
+					_table.parentSchema = schema;
 
+					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
+
+					var url = noUrl.makeResourceUrl(_resolveUrl(_table.uri) || noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
+					console.log(url);
 					Object.defineProperties(this, {
 						entity: {
 							get: function () {
@@ -2839,7 +2845,7 @@ angular.module("noinfopath.data")
 						var deferred = $q.defer(),
 							req = {
 								method: "PUT",
-								url: url + "(guid'" + data[table.primaryKey] + "')",
+								url: _table.parentSchema.config.msOdata === false ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')",
 								data: json,
 								headers: {
 									"Content-Type": "application/json",
@@ -2861,7 +2867,7 @@ angular.module("noinfopath.data")
 						var deferred = $q.defer(),
 							req = {
 								method: "DELETE",
-								url: url + "(guid'" + data[table.primaryKey] + "')",
+								url: _table.parentSchema.config.msOdata ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')",
 								headers: {
 									"Content-Type": "application/json",
 									"Accept": "application/json"
@@ -3584,7 +3590,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -5036,7 +5042,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5953,7 +5959,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7841,7 +7847,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -8600,7 +8606,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8826,7 +8832,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8965,7 +8971,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.63*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -9441,16 +9447,16 @@ var GloboTest = {};
 
 		this.fromFileName = function (fileName) {
 			var ext = fileName.substring(fileName.lastIndexOf(".") + 1);
-			return mimeTypes[ext];
+			return mimeTypes[ext.toLowerCase()];
 		};
 
 
 		this.fromExtention = function (ext) {
-			return mimeTypes[ext];
+			return mimeTypes[ext.toLowerCase()];
 		};
 
 		this.fromMimeType = function (mimeType) {
-			return mimeTypesInverted[mimeType];
+			return mimeTypesInverted[mimeType.toLowerCase()];
 		};
 
 		this.isImage = function(mimeType) {
