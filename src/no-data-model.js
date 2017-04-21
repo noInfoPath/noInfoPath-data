@@ -136,7 +136,7 @@
 			var outval;
 
 			if(value && value.$$unwrapTrustedValue) {
-				value = value.$$unwrapTrustedValue();
+				value = value.toString();
 			}
 
 			if (!!value && notAnArray) {
