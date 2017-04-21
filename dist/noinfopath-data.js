@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	*@version 2.0.61* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
+	*	*@version 2.0.64* [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
@@ -89,7 +89,7 @@ angular.module("noinfopath.data")
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -535,7 +535,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2204,6 +2204,11 @@ angular.module("noinfopath.data")
 							query.$top = arg.take;
 							query.$inlinecount = "allpages";
 							break;
+						default:
+
+						 	if(angular.isArray(arg)){
+								query.$select = arg.join(",");
+							}
 					}
 				}
 			}
@@ -2221,7 +2226,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2358,7 +2363,7 @@ angular.module("noinfopath.data")
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -2511,7 +2516,7 @@ angular.module("noinfopath.data")
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -2611,13 +2616,16 @@ angular.module("noinfopath.data")
 						});
 					};
 					this.configure = function (noUser, schema) {
-						_currentUser = noUser.data || noUser;
+						_currentUser = schema.config.creds || noUser.data || noUser;
+
+						//console.log(schema);
+						//_currentUser = noUser.data || noUser;
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
 						//console.log("noHTTP::configure", schema);
 						var promise = $q(function (resolve, reject) {
 							for(var t in schema.tables) {
 								var table = schema.tables[t];
-								THIS[t] = new NoTable(t, table, queryBuilder);
+								THIS[t] = new NoTable(t, table, queryBuilder, schema);
 							}
 							$rootScope.noHTTPInitialized = true;
 							console.log("noHTTP_" + schema.config.dbName + " ready.");
@@ -2697,7 +2705,7 @@ angular.module("noinfopath.data")
 						return deferred.promise;
 					};
 				}
-				function NoTable(tableName, table, queryBuilder) {
+				function NoTable(tableName, table, queryBuilder, schema) {
 					function _resolveUrl(uri) {
 						if(angular.isString(uri)) {
 							return uri;
@@ -2731,13 +2739,16 @@ angular.module("noinfopath.data")
 					var THIS = this,
 						_table = table;
 					this.noInfoPath = table;
-					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
-					var url = noUrl.makeResourceUrl(_resolveUrl(_table.uri) || noConfig.current.RESTURI, tableName);
+					_table.parentSchema = schema;
 
+					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
+
+					var url = noUrl.makeResourceUrl(_resolveUrl(_table.uri) || noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
+					console.log(url);
 					Object.defineProperties(this, {
 						entity: {
 							get: function () {
-								return _table;
+								return this.noInfoPath;
 							}
 						}
 					});
@@ -2779,7 +2790,7 @@ angular.module("noinfopath.data")
 					};
 					this.noRead = function () {
 						//console.debug("noRead say's, 'swag!'");
-						var filters, sort, page;
+						var filters, sort, page, select;
 						for(var ai in arguments) {
 							var arg = arguments[ai];
 							//success and error must always be first, then
@@ -2794,6 +2805,11 @@ angular.module("noinfopath.data")
 									case "NoPage":
 										page = arg;
 										break;
+									default:
+										if(angular.isArray(arg)) {
+											select = arg;
+										}
+										break;
 								}
 							}
 						}
@@ -2807,7 +2823,7 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
-							req.params = _table.uri ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page);
+							req.params = _table.uri ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page, select);
 
 						$http(req)
 							.then(function (results) {
@@ -2829,7 +2845,7 @@ angular.module("noinfopath.data")
 						var deferred = $q.defer(),
 							req = {
 								method: "PUT",
-								url: url + "(guid'" + data[table.primaryKey] + "')",
+								url: _table.parentSchema.config.msOdata === false ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')",
 								data: json,
 								headers: {
 									"Content-Type": "application/json",
@@ -2851,7 +2867,7 @@ angular.module("noinfopath.data")
 						var deferred = $q.defer(),
 							req = {
 								method: "DELETE",
-								url: url + "(guid'" + data[table.primaryKey] + "')",
+								url: _table.parentSchema.config.msOdata ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')",
 								headers: {
 									"Content-Type": "application/json",
 									"Accept": "application/json"
@@ -3574,7 +3590,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -5026,7 +5042,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -5056,7 +5072,7 @@ var GloboTest = {};
 			var colschema = colSchemas[c];
 
 			if(colschema && ["decimal"].indexOf(colschema.type) > -1) {
-				data[c] = String(data[c]);
+				data[c] = data[c] ? String(data[c]) : null;
 			}
 		}
 	}
@@ -5619,7 +5635,7 @@ var GloboTest = {};
 								//create the noDataSource object.
 								dataSource = noDataSource.create(curEntity, scope);
 
-								//console.log(data);
+								console.log("_doTheUpserts", data.length);
 
 
 								for (var i = 0; i < data.length; i++) {
@@ -5943,7 +5959,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -7831,7 +7847,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -8083,11 +8099,11 @@ var GloboTest = {};
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
-			entity = db[dsConfig.entityName],
+			_entity = db[dsConfig.entityName],
 			qp = $injector.get("noQueryParser"),
-			isNoView = entity.constructor.name === "NoView",
+			isNoView = _entity.constructor.name === "NoView",
 			_scope = scope,
-			fsDb = noFileSystem.getDatabase(entity.noInfoPath),
+			fsDb = noFileSystem.getDatabase(_entity.noInfoPath),
 			noFileCache = fsDb ? fsDb.NoFileCache : null;
 
 		function _makeRemoteFileUrl(resource) {
@@ -8097,14 +8113,14 @@ var GloboTest = {};
 		Object.defineProperties(this, {
 			"entity": {
 				"get": function () {
-					return entity;
+					return _entity.noInfoPath;
 				}
 			}
 		});
 
 		// The following two functions only change columns defined in the table configuration, it does not touch any columns that are not defined. This does not scrub out other columns!
 		function cleanSaveFields(data) {
-			var columns = entity.noInfoPath && entity.noInfoPath.columns ? entity.noInfoPath.columns : [];
+			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [];
 
 			for(var ck in columns) {
 				var col = columns[ck],
@@ -8121,11 +8137,11 @@ var GloboTest = {};
 				data[ck] = val;
 			}
 
-			return data
+			return data;
 		}
 
 		function cleanReadFields(data) {
-			var columns = entity.noInfoPath && entity.noInfoPath.columns ? entity.noInfoPath.columns : [];
+			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [];
 
 			for(var ck in columns) {
 				var col = columns[ck],
@@ -8142,7 +8158,7 @@ var GloboTest = {};
 				data[ck] = val;
 			}
 
-			return data
+			return data;
 		}
 
 		// var tmpFilters = noDynamicFilters.configure(dsCfg, scope, watch);
@@ -8155,7 +8171,7 @@ var GloboTest = {};
 
 			data = cleanSaveFields(data);
 
-			return entity.noCreate(data, noTrans);
+			return _entity.noCreate(data, noTrans);
 
 		};
 
@@ -8164,7 +8180,7 @@ var GloboTest = {};
 		this.createDocument = function (data, file, trans) {
 			return this.create(data,trans)
 				.then(function(fileObj) {
-					file.DocumentID = fileObj[entity.noInfoPath.primaryKey];
+					file.DocumentID = fileObj[_entity.noInfoPath.primaryKey];
 					return noFileCache.noCreate(file);
 				});
 		};
@@ -8174,7 +8190,7 @@ var GloboTest = {};
 				if (angular.isObject(doc) && deleteFile && doc.ID) {
 					this.destroy(doc, trans).then(resolve);  //This way will delete the metadata and the file
 				} else if (angular.isObject(doc) && !deleteFile) {
-					entity.noDestroy(data, noTrans, filters) //This way will only delete the document. The file will remain.
+					_entity.noDestroy(data, noTrans, filters) //This way will only delete the document. The file will remain.
 						.then(resolve);
 				} else {
 					resolve();
@@ -8217,7 +8233,7 @@ var GloboTest = {};
 
 				x.push(noReadOptions);
 
-				return entity.noRead.apply(entity, x)
+				return _entity.noRead.apply(_entity, x)
 					.then(function (data) {
 						data = noCalculatedFields.calculate(config, data);
 
@@ -8247,12 +8263,12 @@ var GloboTest = {};
 				if(dsConfig.waitFor) {
 					waitFor = _scope.$watch(dsConfig.waitFor.property, function (newval, oldval, scope) {
 						if(newval) {
-							requestData(scope, dsConfig, entity, qp, resolve, reject);
+							requestData(scope, dsConfig, _entity, qp, resolve, reject);
 							waitFor();
 						}
 					});
 				} else {
-					requestData(scope, dsConfig, entity, qp, resolve, reject);
+					requestData(scope, dsConfig, _entity, qp, resolve, reject);
 				}
 			});
 		};
@@ -8262,7 +8278,7 @@ var GloboTest = {};
 
 			data = cleanSaveFields(data);
 
-			return entity.noUpdate(data, noTrans);
+			return _entity.noUpdate(data, noTrans);
 		};
 
 		/*
@@ -8279,10 +8295,10 @@ var GloboTest = {};
 			/*
 			*	> This method also doubles as the `clear` method when it is called with no parameters.
 			*/
-			var p = data ? entity.noDestroy(data, noTrans, filters) : entity.noClear();
+			var p = data ? _entity.noDestroy(data, noTrans, filters) : _entity.noClear();
 
 			return p.then(function(r1){
-				if(entity.noInfoPath.NoInfoPath_FileUploadCache) {
+				if(_entity.noInfoPath.NoInfoPath_FileUploadCache) {
 					return noFileCache.noDestroy(data)
 						.then(function(r2){
 							console.log(r2);
@@ -8337,12 +8353,12 @@ var GloboTest = {};
 				if(dsConfig.waitFor) {
 					endWaitFor = _scope.$watch(dsConfig.waitFor.property, function (newval, oldval, scope) {
 						if(newval) {
-							requestData(scope, dsConfig, entity, resolve, reject);
+							requestData(scope, dsConfig, _entity, resolve, reject);
 							endWaitFor();
 						}
 					});
 				} else {
-					requestData(scope, dsConfig, entity, resolve, reject);
+					requestData(scope, dsConfig, _entity, resolve, reject);
 				}
 
 			});
@@ -8352,7 +8368,7 @@ var GloboTest = {};
 		this.bulkLoad = function (data) {
 			var THIS = this,
 				deferred = $q.defer(),
-				table = entity;
+				table = _entity;
 
 			function _downloadFile(fileObj) {
 				return $q(function(resolve, reject){
@@ -8430,7 +8446,7 @@ var GloboTest = {};
 			}
 			//console.info("bulkLoad: ", table.TableName)
 
-			THIS.entity.noClear()
+			_entity.noClear()
 				.then(_clearLocalFileSystem.bind(null, table))
 				.then(_import.bind(null, data))
 				.catch(function (err) {
@@ -8441,7 +8457,7 @@ var GloboTest = {};
 		};
 
 		this.bulkImportOne = function (datum) {
-			return entity.bulkLoadOne(datum);
+			return _entity.bulkLoadOne(datum);
 		};
 	}
 
@@ -8590,7 +8606,7 @@ var GloboTest = {};
 *
 *	___
 *
-*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 *
 *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 *
@@ -8816,7 +8832,7 @@ var GloboTest = {};
 	*
 	*	___
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
 	*
 	*	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 	*
@@ -8955,7 +8971,7 @@ var GloboTest = {};
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.61*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.64*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -9429,12 +9445,18 @@ var GloboTest = {};
 			mimeTypesInverted[mime] = m;
 		}
 
+		this.fromFileName = function (fileName) {
+			var ext = fileName.substring(fileName.lastIndexOf(".") + 1);
+			return mimeTypes[ext.toLowerCase()];
+		};
+
+
 		this.fromExtention = function (ext) {
-			return mimeTypes[ext];
+			return mimeTypes[ext.toLowerCase()];
 		};
 
 		this.fromMimeType = function (mimeType) {
-			return mimeTypesInverted[mimeType];
+			return mimeTypesInverted[mimeType.toLowerCase()];
 		};
 
 		this.isImage = function(mimeType) {

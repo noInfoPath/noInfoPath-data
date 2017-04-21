@@ -310,6 +310,11 @@
 							query.$top = arg.take;
 							query.$inlinecount = "allpages";
 							break;
+						default:
+
+						 	if(angular.isArray(arg)){
+								query.$select = arg.join(",");
+							}
 					}
 				}
 			}
