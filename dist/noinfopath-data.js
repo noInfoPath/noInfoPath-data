@@ -5081,7 +5081,6 @@ var GloboTest = {};
 	function msWebApiLargeNumberHack(data, colSchemas) {
 		for(var c in data) {
 			var colschema = colSchemas[c];
-
 			if(colschema && ["decimal"].indexOf(colschema.type) > -1) {
 				data[c] = data[c] ? String(data[c]) : null;
 			}
@@ -8106,7 +8105,7 @@ var GloboTest = {};
 				}
 			};
 
-	function NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS) {
+	function NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, noMimeTypes, watch, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS) {
 		var provider = $injector.get(dsConfig.dataProvider),
 			db = provider.getDatabase(dsConfig.databaseName),
 			noReadOptions = new noInfoPath.data.NoReadOptions(dsConfig.noReadOptions),
@@ -8118,7 +8117,7 @@ var GloboTest = {};
 			noFileCache = fsDb ? fsDb.NoFileCache : null;
 
 		function _makeRemoteFileUrl(resource) {
-			return noConfig.current.FILECACHEURL + "/" + resource;
+			return noConfig.current.FILECACHEURL + "/" + resource.ID + "." + noMimeTypes.fromMimeType(resource.type);
 		}
 
 		Object.defineProperties(this, {
@@ -8126,16 +8125,22 @@ var GloboTest = {};
 				"get": function () {
 					return _entity.noInfoPath;
 				}
+			},
+			"underlyingEntity": {
+				"get": function() {
+					return _entity;
+				}
 			}
 		});
 
 		// The following two functions only change columns defined in the table configuration, it does not touch any columns that are not defined. This does not scrub out other columns!
 		function cleanSaveFields(data) {
-			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [];
+			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [],
+				cleaned = noInfoPath.data.NoDataModel.clean(data, _entity.noInfoPath);
 
 			for(var ck in columns) {
 				var col = columns[ck],
-					val = data[ck];
+					val = cleaned[ck];
 
 				val = val === "undefined" || val === undefined ? null : val;
 
@@ -8145,10 +8150,10 @@ var GloboTest = {};
 				//clean up NaN's
 				val = isNaN(val) && typeof val === "number" ? null : val;
 
-				data[ck] = val;
+				cleaned[ck] = val;
 			}
 
-			return data;
+			return cleaned;
 		}
 
 		function cleanReadFields(data) {
@@ -8390,7 +8395,7 @@ var GloboTest = {};
 								// .catch(reject);
 
 							// $timeout(function(){
-								noFileCache.downloadFile(_makeRemoteFileUrl(fileObj.name), fileObj.type, fileObj.name).then(resolve).catch(reject);
+								noFileCache.downloadFile(_makeRemoteFileUrl(fileObj), fileObj.type, fileObj.name).then(resolve).catch(reject);
 							// }, 100);
 						} else {
 							reject(new Error("Invalid document object.  Missing file name and or type properties"));
@@ -8474,9 +8479,9 @@ var GloboTest = {};
 
 
 	angular.module("noinfopath.data")
-	.constant("DATASOURCE_TO_CONVERSION_FUNCTIONS", toDatabaseConversionFunctions)
-	.constant("DATASOURCE_FROM_CONVERSION_FUNCTIONS", fromDatabaseConversionFunctions)
-	.service("noDataSource", ["$injector", "$q", "$timeout", "noConfig", "noDynamicFilters", "noCalculatedFields", "noFileSystem", "DATASOURCE_TO_CONVERSION_FUNCTIONS", "DATASOURCE_FROM_CONVERSION_FUNCTIONS", function ($injector, $q, $timeout, noConfig, noDynamicFilters, noCalculatedFields, noFileSystem, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS) {
+		.constant("DATASOURCE_TO_CONVERSION_FUNCTIONS", toDatabaseConversionFunctions)
+		.constant("DATASOURCE_FROM_CONVERSION_FUNCTIONS", fromDatabaseConversionFunctions)
+		.service("noDataSource", ["$injector", "$q", "$timeout", "noConfig", "noDynamicFilters", "noCalculatedFields", "noFileSystem", "noMimeTypes", "DATASOURCE_TO_CONVERSION_FUNCTIONS", "DATASOURCE_FROM_CONVERSION_FUNCTIONS", function ($injector, $q, $timeout, noConfig, noDynamicFilters, noCalculatedFields, noFileSystem, noMimeTypes, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS) {
 		/*
 		 *	#### create(dsConfigKey)
 		 *
@@ -8496,7 +8501,7 @@ var GloboTest = {};
 		 *
 		 */
 		this.create = function (dsConfig, scope, watch) {
-			return new NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, watch, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS);
+			return new NoDataSource($injector, $q, $timeout, noConfig, noDynamicFilters, dsConfig, scope, noCalculatedFields, noFileSystem, noMimeTypes, watch, DATASOURCE_TO_CONVERSION_FUNCTIONS, DATASOURCE_FROM_CONVERSION_FUNCTIONS);
 		};
 	}])
 

@@ -32,7 +32,6 @@
 	function msWebApiLargeNumberHack(data, colSchemas) {
 		for(var c in data) {
 			var colschema = colSchemas[c];
-
 			if(colschema && ["decimal"].indexOf(colschema.type) > -1) {
 				data[c] = data[c] ? String(data[c]) : null;
 			}
