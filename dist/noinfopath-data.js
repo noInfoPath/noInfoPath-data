@@ -2843,7 +2843,7 @@ angular.module("noinfopath.data")
 								deferred.resolve(resp);
 							})
 							.catch(function (reason) {
-								console.error(arguments);
+								//console.error(arguments);
 								deferred.reject(reason);
 							});
 						return deferred.promise;
