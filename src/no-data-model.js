@@ -118,6 +118,19 @@
 		 ctrl.$render();
 	 }
 
+	 function _purify(schema, data) {
+		 if(!schema || !schema.columns) throw "schema required for noDataModel::purify";
+		 if(!data) throw "data required for noDataModel::purify";
+
+		 var returnObj = {};
+
+		 for(var key in schema.columns){
+			 returnObj[key] = data[key];
+		 }
+
+		 return returnObj;
+	 }
+
 	function NoDataModel(schema, model) {
 		if (!schema) throw "schema is required contructor parameter.";
 		if (!model) throw "model is required contructor parameter.";
@@ -147,7 +160,7 @@
 				outval = value;
 			} else {
 				outval = null;
-			}			
+			}
 
 			return outval;
 		}
@@ -156,7 +169,7 @@
 
 			for (var k in data) {
 				var value = data[k],
-					model = THIS[k],					
+					model = THIS[k],
 					validKey = k.indexOf("$") === -1 && !angular.isFunction(model),
 					notAnArray = !angular.isArray(model),
 					haveModelValue = validKey && model ? _isProperty(model, "$viewValue") : false,
@@ -166,7 +179,7 @@
 
 				// if (value && value.constructor && (value.constructor.name === "TrustedValueHolderType")){
 				// 	value = value.toString();
-				// } 
+				// }
 
 				if (!!model && validKey) {
 
@@ -335,18 +348,15 @@
 			}
 		};
 
-
-
 		this.update = function (data) {
 			_updateView(this, _unfollow_data(data, _schema));
 			this.commit();
 		};
-
-
 	}
 
 	NoDataModel.clean = _unfollow_data;
 	NoDataModel.ngModelHack = _update_ngModelController;
+	NoDataModel.purify = _purify;
 
 	//Expose these classes on the global namespace so that they can be used by
 	//other modules.
