@@ -2726,7 +2726,9 @@ angular.module("noinfopath.data")
 						return deferred.promise;
 					};
 				}
+
 				function NoTable(tableName, table, queryBuilder, schema) {
+
 					function _resolveUrl(uri) {
 						if(angular.isString(uri)) {
 							return uri;
@@ -2736,23 +2738,30 @@ angular.module("noinfopath.data")
 							return;
 						}
 					}
-					function _resolveQueryParams(filters) {
 
+					function _resolveQueryParams(schema, filters, sort, page, select) {
+						function _makeQp() {
+							if(filters) {
+								var ret	= {};
+								_.flatten(filters.toQueryString()).forEach(function(v, k){
+									var parm = {};
+									ret[v.column] = v.value;
+									return parm;
+								});
+								return ret;
+							} else {
+								return;
+							}
+						}
 
-						if(filters) {
-							var ret	= {};
-
-							_.flatten(filters.toQueryString()).forEach(function(v, k){
-								var parm = {};
-
-								ret[v.column] = v.value;
-
-							 	return parm;
-							});
-
-							return ret;
-						} else {
-							return;
+						if(schema.uri && _table.useQueryParams === false) {
+							return queryBuilder(filters, sort, page, select);
+						} else if(schema.uri && _table.useQueryParams !== false) {
+							return _makeQp();
+						} else if(!schema.uri && _table.useQueryParams !== true){
+							return queryBuilder(filters, sort, page, select);
+						} else if(!schema.uri && _table.useQueryParams === true ) {
+							return _makeQp();
 						}
 
 					}
@@ -2844,7 +2853,7 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
-							req.params = _table.uri || _table.useQueryParams ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page, select);
+							req.params = _resolveQueryParams(_table, filters, sort, page, select);
 
 						$http(req)
 							.then(function (results) {
@@ -8169,22 +8178,34 @@ var GloboTest = {};
 		function cleanReadFields(data) {
 			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [];
 
-			for(var ck in columns) {
-				var col = columns[ck],
-					val = data[ck];
-
-				val = val === "undefined" || val === undefined ? null : val;
-
-				//perform data conversion
-				val = col.type ? DATASOURCE_FROM_CONVERSION_FUNCTIONS[col.type](val) : val;
-
-				//clean up NaN's
-				val = isNaN(val) && typeof val === "number" ? null : val;
-
-				data[ck] = val;
+			if(data.length){
+				for(var i = 0; i < data.length; i++){
+					data[i] = _cleanRecord(data[i]);
+				}
+			} else {
+				data = _cleanRecord(data);
 			}
 
 			return data;
+
+			function _cleanRecord(datum){
+				for(var ck in columns) {
+					var col = columns[ck],
+						val = datum[ck];
+
+					val = val === "undefined" || val === undefined ? null : val;
+
+					//perform data conversion
+					val = col.type ? DATASOURCE_FROM_CONVERSION_FUNCTIONS[col.type](val) : val;
+
+					//clean up NaN's
+					val = isNaN(val) && typeof val === "number" ? null : val;
+
+					datum[ck] = val;
+				}
+
+				return datum;
+			}
 		}
 
 		// var tmpFilters = noDynamicFilters.configure(dsCfg, scope, watch);
