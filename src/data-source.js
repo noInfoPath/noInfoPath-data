@@ -166,6 +166,9 @@
 				},
 				"uniqueidentifier": function (t) {
 					return angular.isString(t) ? t : null;
+				},
+				"mediumtext": function (t) {
+					return angular.isString(t) ? t : null;
 				}
 			},
 			fromDatabaseConversionFunctions = {
@@ -248,6 +251,9 @@
 					return i;
 				},
 				"uniqueidentifier": function (t) {
+					return t;
+				},
+				"mediumtext": function (t) {
 					return t;
 				}
 			};

@@ -314,7 +314,7 @@
 
 						 	if(angular.isArray(arg)){
 								query.$select = arg.join(",");
-							}
+							}						
 					}
 				}
 			}

@@ -198,7 +198,7 @@ var GloboTest = {};
 				"inline": function (key, schemaConfig) {
 					return $q.when(schemaConfig.schemaSource.schema);
 				},
-				"noDBSchema": function (key, schemaConfig) {
+				"noDBSchema": function (key, schemaConfig, noConfig) {
 					return getRemoteSchema(noConfig)
 						.then(function (resp) {
 							return resp.data;
@@ -224,7 +224,7 @@ var GloboTest = {};
 		function getRemoteSchema(config) {
 			var req = {
 				method: "GET",
-				url: noConfig.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
+				url: config.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
 				headers: {
 					"Content-Type": "application/json",
 					"Accept": "application/json"
@@ -245,7 +245,7 @@ var GloboTest = {};
 			return noLocalStorage.getItem(schemaKey);
 		}
 
-		function resolveSchema(schemaKey, schemaConfig) {
+		function resolveSchema(schemaKey, schemaConfig, noConfig) {
 			var deferred = $q.defer(),
 				schemaProvider = schemaConfig.schemaSource.provider;
 
@@ -260,7 +260,7 @@ var GloboTest = {};
 					}
 				});
 
-				schemaSourceProviders[schemaProvider](schemaKey, schemaConfig)
+				schemaSourceProviders[schemaProvider](schemaKey, schemaConfig, noConfig)
 					.then(function (schema) {
 						$rootScope[schemaKey] = new NoDbSchema(_, noConfig, schemaConfig, schema);
 					})
@@ -294,7 +294,7 @@ var GloboTest = {};
 				var schemaConfig = noDbSchemaConfig[c],
 					schemaKey = "noDbSchema_" + schemaConfig.dbName;
 
-				promises.push(resolveSchema(schemaKey, schemaConfig));
+				promises.push(resolveSchema(schemaKey, schemaConfig, noConfig));
 			}
 
 			return $q.all(promises)

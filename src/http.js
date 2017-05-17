@@ -196,31 +196,46 @@
 				function NoTable(tableName, table, queryBuilder, schema) {
 					function _resolveUrl(uri) {
 						if(angular.isString(uri)) {
-							return uri;
+							return noConfig.current.RESTURI + uri;
 						} else if(angular.isObject(uri)){
-							return uri.url;
+							return noConfig.current.RESTURI + uri.url;
 						} else {
 							return;
 						}
 					}
-					function _resolveQueryParams(filters) {
 
+					function _resolveQueryParams(schema, filters, sort, page, select) {
+						function _makeQp() {
+							if(filters) {
+								var ret	= {};
 
-						if(filters) {
-							var ret	= {};
+								_.flatten(filters.toQueryString()).forEach(function(v, k){
+									var parm = {};
 
-							_.flatten(filters.toQueryString()).forEach(function(v, k){
-								var parm = {};
+									ret[v.column] = v.value;
 
-								ret[v.column] = v.value;
+									return parm;
+								});
+								return ret;
+							} else {
+								return;
+							}
 
-							 	return parm;
-							});
-
-							return ret;
-						} else {
-							return;
 						}
+
+
+
+						if(schema.uri && _table.useQueryParams === false) {
+							return queryBuilder(filters, sort, page, select);
+						} else if(schema.uri && _table.useQueryParams !== false) {
+							return _makeQp();
+						} else if(!schema.uri && _table.useQueryParams !== true){
+							return queryBuilder(filters, sort, page, select);
+						} else if(!schema.uri && _table.useQueryParams === true ) {
+							return _makeQp();
+						}
+						
+
 
 					}
 
@@ -231,7 +246,7 @@
 
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-					var url = noUrl.makeResourceUrl(_resolveUrl(_table.uri) || noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
+					var url = _resolveUrl(_table.uri) ||  noUrl.makeResourceUrl(noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
 					console.log(url);
 					Object.defineProperties(this, {
 						entity: {
@@ -286,6 +301,7 @@
 								switch(arg.__type) {
 									case "NoFilters":
 										filters = arg;
+										filters.msOdata = _table.parentSchema.msOdata !== false;
 										break;
 									case "NoSort":
 										sort = arg;
@@ -311,7 +327,7 @@
 								},
 								withCredentials: true
 							};
-							req.params = _table.uri || _table.useQueryParams ? _resolveQueryParams(filters) : queryBuilder(filters, sort, page, select);
+							req.params =  _resolveQueryParams(_table, filters, sort, page, select);
 
 						$http(req)
 							.then(function (results) {
