@@ -198,7 +198,11 @@
 
 					function _resolveUrl(uri) {
 						if(angular.isString(uri)) {
-							return noConfig.current.RESTURI + uri;
+							if(RegExp("^(http|https):\/\/", "gi").test(uri)){
+								return uri;
+							} else {
+								return noConfig.current.RESTURI + uri;
+							}
 						} else if(angular.isObject(uri)){
 							return noConfig.current.RESTURI + uri.url;
 						} else {
