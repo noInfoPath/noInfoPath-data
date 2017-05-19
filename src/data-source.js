@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.68*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.69*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -166,6 +166,9 @@
 				},
 				"uniqueidentifier": function (t) {
 					return angular.isString(t) ? t : null;
+				},
+				"mediumtext": function (t) {
+					return angular.isString(t) ? t : null;
 				}
 			},
 			fromDatabaseConversionFunctions = {
@@ -248,6 +251,9 @@
 					return i;
 				},
 				"uniqueidentifier": function (t) {
+					return t;
+				},
+				"mediumtext": function (t) {
 					return t;
 				}
 			};

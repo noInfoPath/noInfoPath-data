@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.68*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.69*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -253,11 +253,11 @@
 			"le": function (v) {
 				return "{0} le " + normalizeValue(v);
 			},
-			"contains": function (v) {
-				return "substringof(" + normalizeValue(v) + ", {0})";
+			"contains": function (v, msOdata) {
+				return true ? "substringof(" + normalizeValue(v) + ", {0})" : "{0} has " + normalizeValue("%" + v + "%");
 			},
-			"notcontains": function (v) {
-				return "not substringof(" + normalizeValue(v) + ", {0})";
+			"notcontains": function (v, msOdata) {
+				return true ? "not substringof(" + normalizeValue(v) + ", {0})" : "not {0} has " + normalizeValue("%" + v + "%");
 			},
 			"startswith": function (v) {
 				return "startswith(" + "{0}, " + normalizeValue(v) + ")";
@@ -341,7 +341,7 @@
 		return odataOperators[op];
 	}
 
-	function NoFilterExpression(operator, value, logic) {
+	function NoFilterExpression(operator, value, logic, msOdata) {
 
 		if(!operator) throw "INoFilterExpression requires a operator to filter by.";
 		//if (!value) throw "INoFilterExpression requires a value(s) to filter for.";
@@ -355,7 +355,7 @@
 
 
 		this.toODATA = function () {
-			var opFn = normalizeOdataOperator(this.operator),
+			var opFn = normalizeOdataOperator(this.operator, this.msOdata),
 				rs = opFn(this.value) + normalizeLogic(this.logic);
 
 			return rs;
@@ -524,7 +524,7 @@
 			if(!column) throw "NoFilters::add requires a column to filter on.";
 			if(!filters) throw "NoFilters::add requires a value(s) to filter for.";
 
-			var tmp = new NoFilter(column, logic, beginning, end, filters);
+			var tmp = new NoFilter(column, logic, beginning, end, filters, this.msOdata);
 
 			this.push(tmp);
 
@@ -608,7 +608,7 @@
 	 * |value|Any Primative or Array of Primatives or Objects | The vales to filter against.|
 	 * |logic|String|(Optional) One of the following values: `and`, `or`.|
 	 */
-	function NoFilter(column, logic, beginning, end, filters) {
+	function NoFilter(column, logic, beginning, end, filters, msOdata) {
 		Object.defineProperties(this, {
 			"__type": {
 				"get": function () {
@@ -622,9 +622,10 @@
 		this.beginning = beginning;
 		this.end = end;
 		this.filters = [];
+		this.msOdata = msOdata;
 
 		angular.forEach(filters, function (value, key) {
-			this.filters.push(new NoFilterExpression(value.operator, value.value, value.logic));
+			this.filters.push(new NoFilterExpression(value.operator, value.value, value.logic, this.msOdata));
 		}, this);
 
 		function normalizeColumn(incol, val) {
@@ -669,8 +670,10 @@
 				}
 			}
 
-			if(this.beginning) os = "(" + os;
-			if(this.end) os = os + ")";
+			if(this.filters.length > 1) {
+				if(this.beginning) os = "(" + os;
+				if(this.end) os = os + ")";
+			}
 
 			return os;
 		};

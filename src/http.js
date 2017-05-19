@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.68*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.69*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -198,13 +198,14 @@
 
 					function _resolveUrl(uri) {
 						if(angular.isString(uri)) {
-							return uri;
+							return noConfig.current.RESTURI + uri;
 						} else if(angular.isObject(uri)){
-							return uri.url;
+							return noConfig.current.RESTURI + uri.url;
 						} else {
 							return;
 						}
 					}
+<<<<<<< HEAD
 
 					function _resolveQueryParams(schema, filters, sort, page, select) {
 						function _makeQp() {
@@ -213,14 +214,35 @@
 								_.flatten(filters.toQueryString()).forEach(function(v, k){
 									var parm = {};
 									ret[v.column] = v.value;
+=======
+
+					function _resolveQueryParams(schema, filters, sort, page, select) {
+						function _makeQp() {
+							if(filters) {
+								var ret	= {};
+
+								_.flatten(filters.toQueryString()).forEach(function(v, k){
+									var parm = {};
+
+									ret[v.column] = v.value;
+
+>>>>>>> 9a8991c43c8c309dab09813b3fa623b8272bf173
 									return parm;
 								});
 								return ret;
 							} else {
 								return;
 							}
+<<<<<<< HEAD
 						}
 
+=======
+
+						}
+
+
+
+>>>>>>> 9a8991c43c8c309dab09813b3fa623b8272bf173
 						if(schema.uri && _table.useQueryParams === false) {
 							return queryBuilder(filters, sort, page, select);
 						} else if(schema.uri && _table.useQueryParams !== false) {
@@ -230,6 +252,8 @@
 						} else if(!schema.uri && _table.useQueryParams === true ) {
 							return _makeQp();
 						}
+						
+
 
 					}
 
@@ -240,7 +264,7 @@
 
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-					var url = noUrl.makeResourceUrl(_resolveUrl(_table.uri) || noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
+					var url = _resolveUrl(_table.uri) ||  noUrl.makeResourceUrl(noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
 					console.log(url);
 					Object.defineProperties(this, {
 						entity: {
@@ -295,6 +319,7 @@
 								switch(arg.__type) {
 									case "NoFilters":
 										filters = arg;
+										filters.msOdata = _table.parentSchema.msOdata !== false;
 										break;
 									case "NoSort":
 										sort = arg;
@@ -320,7 +345,11 @@
 								},
 								withCredentials: true
 							};
+<<<<<<< HEAD
 							req.params = _resolveQueryParams(_table, filters, sort, page, select);
+=======
+							req.params =  _resolveQueryParams(_table, filters, sort, page, select);
+>>>>>>> 9a8991c43c8c309dab09813b3fa623b8272bf173
 
 						$http(req)
 							.then(function (results) {
