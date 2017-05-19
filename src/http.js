@@ -205,7 +205,6 @@
 							return;
 						}
 					}
-<<<<<<< HEAD
 
 					function _resolveQueryParams(schema, filters, sort, page, select) {
 						function _makeQp() {
@@ -214,35 +213,14 @@
 								_.flatten(filters.toQueryString()).forEach(function(v, k){
 									var parm = {};
 									ret[v.column] = v.value;
-=======
-
-					function _resolveQueryParams(schema, filters, sort, page, select) {
-						function _makeQp() {
-							if(filters) {
-								var ret	= {};
-
-								_.flatten(filters.toQueryString()).forEach(function(v, k){
-									var parm = {};
-
-									ret[v.column] = v.value;
-
->>>>>>> 9a8991c43c8c309dab09813b3fa623b8272bf173
 									return parm;
 								});
 								return ret;
 							} else {
 								return;
 							}
-<<<<<<< HEAD
 						}
 
-=======
-
-						}
-
-
-
->>>>>>> 9a8991c43c8c309dab09813b3fa623b8272bf173
 						if(schema.uri && _table.useQueryParams === false) {
 							return queryBuilder(filters, sort, page, select);
 						} else if(schema.uri && _table.useQueryParams !== false) {
@@ -252,7 +230,7 @@
 						} else if(!schema.uri && _table.useQueryParams === true ) {
 							return _makeQp();
 						}
-						
+
 
 
 					}
@@ -345,11 +323,8 @@
 								},
 								withCredentials: true
 							};
-<<<<<<< HEAD
-							req.params = _resolveQueryParams(_table, filters, sort, page, select);
-=======
-							req.params =  _resolveQueryParams(_table, filters, sort, page, select);
->>>>>>> 9a8991c43c8c309dab09813b3fa623b8272bf173
+
+						req.params = _resolveQueryParams(_table, filters, sort, page, select);
 
 						$http(req)
 							.then(function (results) {
