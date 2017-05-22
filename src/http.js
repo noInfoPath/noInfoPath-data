@@ -234,19 +234,17 @@
 						} else if(!schema.uri && _table.useQueryParams === true ) {
 							return _makeQp();
 						}
-
-
-
 					}
 
 					var THIS = this,
 						_table = table;
+
 					this.noInfoPath = table;
 					_table.parentSchema = schema;
 
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-					var url = _resolveUrl(_table.uri) ||  noUrl.makeResourceUrl(noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
+					var url = _table.uri ? _resolveUrl(_table.uri) + tableName :  noUrl.makeResourceUrl(noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
 					console.log(url);
 					Object.defineProperties(this, {
 						entity: {
