@@ -244,9 +244,9 @@
 
 				angular.forEach(dbSchema, function (table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
-					dexieTable.mapToClass(noDatum, _toDexieClass(table));
-					table.parentSchema = schema;
-					dexieTable.noInfoPath = table;
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));	
+					dexieTable.noInfoPath = Object.assign({}, table);
+					dexieTable.noInfoPath.parentSchema = schema;
 					dexieTable.provider = _dexie;
 				});
 			}

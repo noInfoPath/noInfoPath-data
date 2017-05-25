@@ -6237,9 +6237,9 @@ var GloboTest = {};
 
 				angular.forEach(dbSchema, function (table, tableName) {
 					var dexieTable = _dexie[table.entityName || tableName];
-					dexieTable.mapToClass(noDatum, _toDexieClass(table));
-					table.parentSchema = schema;
-					dexieTable.noInfoPath = table;
+					dexieTable.mapToClass(noDatum, _toDexieClass(table));	
+					dexieTable.noInfoPath = Object.assign({}, table);
+					dexieTable.noInfoPath.parentSchema = schema;
 					dexieTable.provider = _dexie;
 				});
 			}
@@ -8357,6 +8357,8 @@ var GloboTest = {};
 			/*
 			*	> This method also doubles as the `clear` method when it is called with no parameters.
 			*/
+
+
 			var p = data ? _entity.noDestroy(data, noTrans, filters) : _entity.noClear();
 
 			return p.then(function(r1){
@@ -8369,6 +8371,9 @@ var GloboTest = {};
 				} else {
 					return r1;
 				}
+			})
+			.catch(function(err){
+				console.error(err);
 			});
 		};
 
@@ -9308,16 +9313,19 @@ var GloboTest = {};
 		this.getFile = _get;
 
 		function _delete(fileObj, fileNameField) {
-			return $q(function (resolve, reject) {
-				var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
-				if (!root) reject("Local file system is not initialized.");
-				if (!fileObj) reject("File metadata object is missing");
+			if(!fileObj.type){
+				return $q.when("fileObj does not have type provided.");
+			} else {
+				return $q(function (resolve, reject) {
+					var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
+					if (!root) reject("Local file system is not initialized.");
+					if (!fileObj) reject("File metadata object is missing");
 
-				root.getFile(path, null, function (fileEntry) {
-					fileEntry.remove(resolve, reject);
-				}, reject);
-			});
-
+					root.getFile(path, null, function (fileEntry) {
+						fileEntry.remove(resolve, reject);
+					}, reject);
+				});
+			}
 		}
 		this.deleteFile = _delete;
 

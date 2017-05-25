@@ -122,9 +122,15 @@
 
 			function noDestroy(data, trans) {
 				return $q(function (resolve, reject) {
-					noLocalFileStorage.removeFromCache(data.FileID)
-						.then(_recordTransaction.bind(null, resolve, _table.entityName, "D", trans, data))
-						.catch(_transactionFault.bind(null, reject));
+					if(data.FileID){
+						noLocalFileStorage.removeFromCache(data.FileID)
+							.then(_recordTransaction.bind(null, resolve, _table.entityName, "D", trans, data))
+							.catch(_transactionFault.bind(null, reject));
+					} else {
+						console.warn("noFileSystem::noDestroy not provided valid data.FileID");
+						resolve();
+					}
+
 				});
 			}
 			this.noDestroy = noDestroy;

@@ -476,6 +476,8 @@
 			/*
 			*	> This method also doubles as the `clear` method when it is called with no parameters.
 			*/
+
+
 			var p = data ? _entity.noDestroy(data, noTrans, filters) : _entity.noClear();
 
 			return p.then(function(r1){
@@ -488,6 +490,9 @@
 				} else {
 					return r1;
 				}
+			})
+			.catch(function(err){
+				console.error(err);
 			});
 		};
 
