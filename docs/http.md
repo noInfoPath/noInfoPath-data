@@ -2,7 +2,7 @@
 
 ___
 
-[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.72*
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.73*
 
 [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
@@ -70,6 +70,29 @@ NoInfoPath component that consume data such as noKendo.
 |----|----|-----------|
 |tableName|string|name of the table that this instance will interact with.|
 |queryBuilder|function|a reference to a function that compiles supplied NoFilters, NoSort, and NoPage objects into a query object compatible with the upstream provider.|
+
+#### primaryKey
+
+This configuration option is found in db configuraiton files. It is a
+sibling property to schema source, and allows the definition of the
+type of primary key used on tables to create new records.
+
+Currently this feature is only available for the noHTTP provider.
+It has two child properties; 	`type` and `createLocal`.
+
+|Name|Description|
+|----|-----------|
+|type|Defines the type of value that defines the primary key. Can be `guid` or `int`|
+|createLocal|When `true` and the `type` is `guid` the primary key is generated before sending the data to the remote server.|
+
+For backwards compatibility the default value for this property is as follows:
+
+```json
+{
+	"type": "guid",
+	"createLocal": true
+}
+```
 
 When 'query' is an object then check to see if it is a
 NoFilters object.  If not, add a filter to the intrinsic filters object
