@@ -275,7 +275,7 @@
 				expr;
 
 			angular.forEach(sort, function (value) {
-				console.log(value);
+
 				var order = value.column.replace(/\./g, "/");
 
 				if(value.dir === "desc") {
@@ -314,7 +314,7 @@
 
 						 	if(angular.isArray(arg)){
 								query.$select = arg.join(",");
-							}						
+							}
 					}
 				}
 			}

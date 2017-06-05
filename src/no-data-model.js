@@ -132,8 +132,8 @@
 	 }
 
 	function NoDataModel(schema, model) {
-		if (!schema) throw "schema is required contructor parameter.";
-		if (!model) throw "model is required contructor parameter.";
+		if (!schema) throw new Error("schema is required contructor parameter.");
+		if (!model) throw new Error("model is required contructor parameter.");
 
 		var _schema = schema, _pristine;
 

@@ -1680,8 +1680,8 @@ angular.module("noinfopath.data")
 	 }
 
 	function NoDataModel(schema, model) {
-		if (!schema) throw "schema is required contructor parameter.";
-		if (!model) throw "model is required contructor parameter.";
+		if (!schema) throw new Error("schema is required contructor parameter.");
+		if (!model) throw new Error("model is required contructor parameter.");
 
 		var _schema = schema, _pristine;
 
@@ -2193,7 +2193,7 @@ angular.module("noinfopath.data")
 				expr;
 
 			angular.forEach(sort, function (value) {
-				console.log(value);
+
 				var order = value.column.replace(/\./g, "/");
 
 				if(value.dir === "desc") {
@@ -2232,7 +2232,7 @@ angular.module("noinfopath.data")
 
 						 	if(angular.isArray(arg)){
 								query.$select = arg.join(",");
-							}						
+							}
 					}
 				}
 			}
@@ -2770,7 +2770,7 @@ angular.module("noinfopath.data")
 						} else if(!schema.uri && _table.useQueryParams === true ) {
 							return _makeQp();
 						}
-						
+
 
 
 					}
@@ -2796,15 +2796,47 @@ angular.module("noinfopath.data")
 						data.DateCreated = noInfoPath.toDbDate(new Date());
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _currentUser.userId;
-						if (!data[table.primaryKey]) {
-							data[table.primaryKey] = noInfoPath.createUUID();
-						}
 
+						/*
+						*	#### primaryKey
+						*
+						*	This configuration option is found in db configuraiton files. It is a
+						*	sibling property to schema source, and allows the definition of the
+						*	type of primary key used on tables to create new records.
+						*
+						*	Currently this feature is only available for the noHTTP provider.
+						*	It has two child properties; 	`type` and `createLocal`.
+						*
+						*	|Name|Description|
+						*	|----|-----------|
+						*	|type|Defines the type of value that defines the primary key. Can be `guid` or `int`|
+						*	|createLocal|When `true` and the `type` is `guid` the primary key is generated before sending the data to the remote server.|
+						*
+						*	For backwards compatibility the default value for this property is as follows:
+						*
+						*	```json
+						*	{
+						*		"type": "guid",
+						*		"createLocal": true
+						*	}
+						*	```
+						*/
+						var pkTmp = this.noInfoPath.parentSchema.config.primaryKey || {
+							"type": "guid",
+							"createLocal": true
+						};
+
+						if(pkTmp.createLocal) {
+							if (pkTmp.createLocal && !data[table.primaryKey]) {
+								data[table.primaryKey] = noInfoPath.createUUID();
+							}
+						}
 						//msWebApiLargeNumberHack(data, this.noInfoPath.columns);
 
 						var json = angular.toJson(data);
-						console.log(data);
+
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
 						var deferred = $q.defer(),
 							req = {
 								method: "POST",
@@ -2816,15 +2848,17 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
+
 						$http(req)
-							.then(function (data) {
+							.then(function (results) {
 								//console.log(angular.toJson(data) );
-								deferred.resolve(data);
+								deferred.resolve(results.data || results);
 							})
 							.catch(function (reason) {
-								console.error(reason);
+								//console.error(reason);
 								deferred.reject(reason);
 							});
+
 						return deferred.promise;
 					};
 					this.noRead = function () {
@@ -2877,11 +2911,15 @@ angular.module("noinfopath.data")
 							});
 						return deferred.promise;
 					};
+
 					this.noUpdate = function (data) {
 						data.ModifiedDate = noInfoPath.toDbDate(new Date());
 						data.ModifiedBy = _currentUser.userId;
+
 						var json = angular.toJson(data);
+
 						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
 						var deferred = $q.defer(),
 							req = {
 								method: "PUT",
@@ -2893,37 +2931,43 @@ angular.module("noinfopath.data")
 								},
 								withCredentials: true
 							};
+
 						$http(req)
-							.then(function (data, status) {
-								deferred.resolve(status);
+							.then(function (results, status) {
+								//console.log("noHTTP::noUpdate", data, status);
+								deferred.resolve(results.data || results);
 							})
 							.catch(function (reason) {
-								console.error(reason);
+								if(reason.status !== 404) console.error(reason);
 								deferred.reject(reason);
 							});
 						return deferred.promise;
 					};
+
 					this.noDestroy = function (data) {
 						var deferred = $q.defer(),
 							req = {
 								method: "DELETE",
-								url: _table.parentSchema.config.msOdata ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')",
+								url: _table.parentSchema.config.msOdata === false ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')",
 								headers: {
 									"Content-Type": "application/json",
 									"Accept": "application/json"
 								},
 								withCredentials: true
 							};
+
 						$http(req)
 							.then(function (data, status) {
+								console.log("noHTTP::noDestory", data, status);
 								deferred.resolve(status);
 							})
 							.catch(function (reason) {
-								console.error(reason);
+								if(reason.status !== 404) console.error(reason);
 								deferred.reject(reason);
 							});
 						return deferred.promise;
 					};
+
 					this.noOne = function (query) {
 						/**
 						 *	When 'query' is an object then check to see if it is a
@@ -2931,8 +2975,8 @@ angular.module("noinfopath.data")
 						 *	based on the query's key property, and the query's value.
 						 */
 						var filters = new noInfoPath.data.NoFilters();
+
 						if(angular.isNumber(query)) {
-							//Assume rowid
 							/*
 							 *	When query a number, a filter is created on the instrinsic
 							 *	filters object using the `rowid`  WebSQL column as the column
@@ -2941,7 +2985,6 @@ angular.module("noinfopath.data")
 							 */
 							filters.quickAdd("rowid", "eq", query);
 						} else if(angular.isString(query)) {
-							//Assume guid
 							/*
 							 * When the query is a string it is assumed a table is being queried
 							 * by it's primary key.
@@ -2951,6 +2994,7 @@ angular.module("noinfopath.data")
 							 */
 							if(THIS.noInfoPath.entityType === "V") throw "One operation not supported by SQL Views when query parameter is a string. Use the simple key/value pair object instead.";
 							filters.quickAdd(THIS.noInfoPath.primaryKey, "eq", query);
+
 						} else if(angular.isObject(query)) {
 							if(query.__type === "NoFilters") {
 								filters = query;
@@ -2961,18 +3005,19 @@ angular.module("noinfopath.data")
 								}
 							}
 						} else {
-							throw "One requires a query parameter. May be a Number, String or Object";
+							throw new Error("noOne requires a query parameter. May be a Number, String or Object");
 						}
+
 						//Internal _getOne requires and NoFilters object.
 						return THIS.noRead(filters)
 							.then(function (data) {
-								console.log("noHTTP.noRead", data);
+								//console.log("noHTTP.noRead", data);
 								if(data.length) {
 									return data[0];
 								} else if(data.paged && data.paged.length) {
 									return data.paged[0];
 								} else {
-									throw "noHTTP::noOne: Record Not Found";
+									throw new Error("noHTTP::noOne: Record Not Found");
 								}
 							});
 					};
