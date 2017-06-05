@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.70*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.72*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -312,22 +312,34 @@
 		function cleanReadFields(data) {
 			var columns = _entity.noInfoPath && _entity.noInfoPath.columns ? _entity.noInfoPath.columns : [];
 
-			for(var ck in columns) {
-				var col = columns[ck],
-					val = data[ck];
-
-				val = val === "undefined" || val === undefined ? null : val;
-
-				//perform data conversion
-				val = col.type ? DATASOURCE_FROM_CONVERSION_FUNCTIONS[col.type](val) : val;
-
-				//clean up NaN's
-				val = isNaN(val) && typeof val === "number" ? null : val;
-
-				data[ck] = val;
+			if(data.length){
+				for(var i = 0; i < data.length; i++){
+					data[i] = _cleanRecord(data[i]);
+				}
+			} else {
+				data = _cleanRecord(data);
 			}
 
 			return data;
+
+			function _cleanRecord(datum){
+				for(var ck in columns) {
+					var col = columns[ck],
+						val = datum[ck];
+
+					val = val === "undefined" || val === undefined ? null : val;
+
+					//perform data conversion
+					val = col.type ? DATASOURCE_FROM_CONVERSION_FUNCTIONS[col.type](val) : val;
+
+					//clean up NaN's
+					val = isNaN(val) && typeof val === "number" ? null : val;
+
+					datum[ck] = val;
+				}
+
+				return datum;
+			}
 		}
 
 		// var tmpFilters = noDynamicFilters.configure(dsCfg, scope, watch);
@@ -464,6 +476,8 @@
 			/*
 			*	> This method also doubles as the `clear` method when it is called with no parameters.
 			*/
+
+
 			var p = data ? _entity.noDestroy(data, noTrans, filters) : _entity.noClear();
 
 			return p.then(function(r1){
@@ -476,6 +490,9 @@
 				} else {
 					return r1;
 				}
+			})
+			.catch(function(err){
+				console.error(err);
 			});
 		};
 

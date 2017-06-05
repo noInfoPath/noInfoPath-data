@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.70*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.72*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -279,16 +279,19 @@
 		this.getFile = _get;
 
 		function _delete(fileObj, fileNameField) {
-			return $q(function (resolve, reject) {
-				var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
-				if (!root) reject("Local file system is not initialized.");
-				if (!fileObj) reject("File metadata object is missing");
+			if(!fileObj.type){
+				return $q.when("fileObj does not have type provided.");
+			} else {
+				return $q(function (resolve, reject) {
+					var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
+					if (!root) reject("Local file system is not initialized.");
+					if (!fileObj) reject("File metadata object is missing");
 
-				root.getFile(path, null, function (fileEntry) {
-					fileEntry.remove(resolve, reject);
-				}, reject);
-			});
-
+					root.getFile(path, null, function (fileEntry) {
+						fileEntry.remove(resolve, reject);
+					}, reject);
+				});
+			}
 		}
 		this.deleteFile = _delete;
 
