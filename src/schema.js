@@ -222,12 +222,15 @@ var GloboTest = {};
 			};
 
 		function getRemoteSchema(config) {
+			//console.log($rootScope);
 			var req = {
 				method: "GET",
 				url: config.NODBSCHEMAURI, //TODO: change this to use the real noinfopath-rest endpoint
 				headers: {
 					"Content-Type": "application/json",
-					"Accept": "application/json"
+					"Accept": "application/json",
+					"Authorization": "Bearer " + $rootScope.noUser.access_token
+
 				},
 				withCredentials: true
 			};
@@ -380,7 +383,8 @@ var GloboTest = {};
 		|isReady|Boolean|Returns true if the size of the tables object is greater than zero|
 	*/
 
-	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector", function ($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
+	.factory("noDbSchema", ["$q", "$timeout", "$http", "$rootScope", "lodash", "noLogService", "$filter", "noLocalStorage", "$injector",
+	function ($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector) {
 
 		return new NoDbSchemaFactory($q, $timeout, $http, $rootScope, _, noLogService, $filter, noLocalStorage, $injector);
 	}]);

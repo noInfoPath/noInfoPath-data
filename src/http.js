@@ -108,7 +108,9 @@
 
 						//console.log(schema);
 						//_currentUser = noUser.data || noUser;
-						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+						// if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+
+
 						//console.log("noHTTP::configure", schema);
 						var promise = $q(function (resolve, reject) {
 							for(var t in schema.tables) {
@@ -127,14 +129,15 @@
 					};
 					this.noRequestJSON = function (url, method, data, useCreds) {
 						var json = angular.toJson(noParameterParser.parse(data || {}));
-						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+					//	if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _authProvider.resolveAuthorization(_currentUser);
 						var deferred = $q.defer(),
 							req = {
 								method: method,
 								url: url,
 								headers: {
 									"Content-Type": "application/json",
-									"Accept": "application/json"
+									"Accept": "application/json",
+									Authorization: _currentUser ? _authProvider.resolveAuthorization(_currentUser) : undefined
 								},
 								withCredentials: !!useCreds
 							};
@@ -174,11 +177,14 @@
 						return deferred.promise;
 					};
 					this.noRequest = function(url, options, data) {
-						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+						//if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization =
 						var deferred = $q.defer(),
 							req = angular.extend({}, {
 								url: url,
-								withCredentials: true
+								withCredentials: true,
+								headers: {
+									Authorization: _authProvider.resolveAuthorization(_currentUser)
+								}
 							}, options);
 						if(!!data) {
 							req.data =  data;
@@ -237,14 +243,15 @@
 					}
 
 					var THIS = this,
-						_table = table;
+						_table = table,
+						_authProvider = schema.config.authProvider && $injector.get(schema.config.authProvider);
 
 					this.noInfoPath = table;
 					_table.parentSchema = schema;
 
 					if(!queryBuilder) throw "TODO: implement default queryBuilder service";
 
-					var url = _table.uri ? _resolveUrl(_table.uri) :  noUrl.makeResourceUrl(noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
+					var url = _table.uri ? _resolveUrl(_table.uri) : noUrl.makeResourceUrl(noConfig.current.RESTURI + (schema.config.restPrefix || ""), tableName);
 					console.log(url);
 					Object.defineProperties(this, {
 						entity: {
@@ -297,7 +304,7 @@
 
 						var json = angular.toJson(data);
 
-						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+						//if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _authProvider.resolveAuthorization(_currentUser);
 
 						var deferred = $q.defer(),
 							req = {
@@ -306,23 +313,28 @@
 								data: json,
 								headers: {
 									"Content-Type": "application/json",
-									"Accept": "application/json"
+									"Accept": "application/json",
+									Authorization: ""
 								},
 								withCredentials: true
 							};
 
-						$http(req)
-							.then(function (results) {
-								//console.log(angular.toJson(data) );
-								deferred.resolve(results.data || results);
-							})
-							.catch(function (reason) {
-								//console.error(reason);
-								deferred.reject(reason);
+						_authProvider.resolveAuthorization(_currentUser)
+							.then(function(){
+								$http(req)
+									.then(function (results) {
+										//console.log(angular.toJson(data) );
+										deferred.resolve(results.data || results);
+									})
+									.catch(function (reason) {
+										//console.error(reason);
+										deferred.reject(reason);
+									});
 							});
 
 						return deferred.promise;
 					};
+
 					this.noRead = function () {
 						//console.debug("noRead say's, 'swag!'");
 						var filters, sort, page, select;
@@ -355,23 +367,32 @@
 								url: url,
 								headers: {
 									"Content-Type": "application/json",
-									"Accept": "application/json"
+									"Accept": "application/json",
+									Authorization: ""
 								},
 								withCredentials: true
 							};
 
+					//	if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _authProvider.resolveAuthorization(_currentUser);
+
 						req.params = _resolveQueryParams(_table, filters, sort, page, select);
 
-						$http(req)
-							.then(function (results) {
-								//console.log( angular.toJson(results));
-								var resp = new noInfoPath.data.NoResults(results.data || results);
-								deferred.resolve(resp);
-							})
-							.catch(function (reason) {
-								//console.error(arguments);
-								deferred.reject(reason);
+						_authProvider.resolveAuthorization(_currentUser)
+							.then(function(authHeader){
+								req.headers.Authorization = authHeader;
+								$http(req)
+									.then(function (results) {
+										//console.log( angular.toJson(results));
+										var resp = new noInfoPath.data.NoResults(results.data || results);
+										deferred.resolve(resp);
+									})
+									.catch(function (reason) {
+										//console.error(arguments);
+										if(reason.status !== 404) console.error(reason);
+										deferred.reject(reason);
+									});
 							});
+
 						return deferred.promise;
 					};
 
@@ -381,7 +402,7 @@
 
 						var json = angular.toJson(data);
 
-						if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _currentUser.token_type + " " + _currentUser.access_token;
+						//if(_currentUser) $httpProviderRef.defaults.headers.common.Authorization = _authProvider.resolveAuthorization(_currentUser);
 
 						var deferred = $q.defer(),
 							req = {
@@ -390,20 +411,27 @@
 								data: json,
 								headers: {
 									"Content-Type": "application/json",
-									"Accept": "application/json"
+									"Accept": "application/json",
+									Authorization: ""
 								},
 								withCredentials: true
 							};
 
-						$http(req)
-							.then(function (results, status) {
-								//console.log("noHTTP::noUpdate", data, status);
-								deferred.resolve(results.data || results);
-							})
-							.catch(function (reason) {
-								if(reason.status !== 404) console.error(reason);
-								deferred.reject(reason);
-							});
+							_authProvider.resolveAuthorization(_currentUser)
+								.then(function(authHeader){
+									req.headers.Authorization = authHeader;
+
+									$http(req)
+										.then(function (results, status) {
+											//console.log("noHTTP::noUpdate", data, status);
+											deferred.resolve(results.data || results);
+										})
+										.catch(function (reason) {
+											if(reason.status !== 404) console.error(reason);
+											deferred.reject(reason);
+										});
+								});
+
 						return deferred.promise;
 					};
 
@@ -419,15 +447,21 @@
 								withCredentials: true
 							};
 
-						$http(req)
-							.then(function (data, status) {
-								console.log("noHTTP::noDestory", data, status);
-								deferred.resolve(status);
-							})
-							.catch(function (reason) {
-								if(reason.status !== 404) console.error(reason);
-								deferred.reject(reason);
+						_authProvider.resolveAuthorization(_currentUser)
+							.then(function(authHeader){
+								req.headers.Authorization = authHeader;
+
+								$http(req)
+									.then(function (data, status) {
+										console.log("noHTTP::noDestory", data, status);
+										deferred.resolve(status);
+									})
+									.catch(function (reason) {
+										if(reason.status !== 404) console.error(reason);
+										deferred.reject(reason);
+									});
 							});
+
 						return deferred.promise;
 					};
 
