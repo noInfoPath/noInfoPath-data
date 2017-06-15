@@ -720,7 +720,8 @@ angular.module("noinfopath.data")
 			doesnotcontain: "notcontains",
 			endswith: "endswith",
 			startswith: "startswith",
-			"in": "in"
+			"in": "in",
+			"fulltext": "fulltext"
 		},
 
 		sqlOperators = {
@@ -795,6 +796,12 @@ angular.module("noinfopath.data")
 			},
 			"endswith": function (v) {
 				return "endswith(" + "{0}, " + normalizeValue(v) + ")";
+			},
+			"in": function(v) {
+				return "{0} in (" + normalizeValue(v) + ")";
+			},
+			"fulltext": function(v) {
+				return "fulltext('{0}', " + normalizeValue(v) + ")"
 			}
 		};
 	/*
@@ -2856,7 +2863,8 @@ angular.module("noinfopath.data")
 							};
 
 						_authProvider.resolveAuthorization(_currentUser)
-							.then(function(){
+							.then(function(authHeader){
+								req.headers.Authorization = authHeader;
 								$http(req)
 									.then(function (results) {
 										//console.log(angular.toJson(data) );
@@ -2924,8 +2932,12 @@ angular.module("noinfopath.data")
 									})
 									.catch(function (reason) {
 										//console.error(arguments);
-										if(reason.status !== 404) console.error(reason);
-										deferred.reject(reason);
+										if(reason.status === 404) {
+											deferred.resolve(new noInfoPath.data.NoResults([]));
+										} else {
+											console.error(reason);
+											deferred.reject(reason);
+										}
 									});
 							});
 

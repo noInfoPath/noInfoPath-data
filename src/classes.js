@@ -189,7 +189,8 @@
 			doesnotcontain: "notcontains",
 			endswith: "endswith",
 			startswith: "startswith",
-			"in": "in"
+			"in": "in",
+			"fulltext": "fulltext"
 		},
 
 		sqlOperators = {
@@ -264,6 +265,12 @@
 			},
 			"endswith": function (v) {
 				return "endswith(" + "{0}, " + normalizeValue(v) + ")";
+			},
+			"in": function(v) {
+				return "{0} in (" + normalizeValue(v) + ")";
+			},
+			"fulltext": function(v) {
+				return "fulltext('{0}', " + normalizeValue(v) + ")"
 			}
 		};
 	/*

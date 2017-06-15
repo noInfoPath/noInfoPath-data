@@ -320,7 +320,8 @@
 							};
 
 						_authProvider.resolveAuthorization(_currentUser)
-							.then(function(){
+							.then(function(authHeader){
+								req.headers.Authorization = authHeader;
 								$http(req)
 									.then(function (results) {
 										//console.log(angular.toJson(data) );
@@ -388,8 +389,12 @@
 									})
 									.catch(function (reason) {
 										//console.error(arguments);
-										if(reason.status !== 404) console.error(reason);
-										deferred.reject(reason);
+										if(reason.status === 404) {
+											deferred.resolve(new noInfoPath.data.NoResults([]));
+										} else {
+											console.error(reason);
+											deferred.reject(reason);
+										}
 									});
 							});
 

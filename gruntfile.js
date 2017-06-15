@@ -128,7 +128,7 @@ module.exports = function (grunt) {
 			},
 			ugly: {
 				configFile: 'karma.ugly.conf.js',
-				singleRun: true,
+				singleRun: false,
 				browsers: ['Chrome']
 			}
 		},
