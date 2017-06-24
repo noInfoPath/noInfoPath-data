@@ -441,10 +441,16 @@
 					};
 
 					this.noDestroy = function (data) {
+						var ourl = _table.parentSchema.config.msOdata === false ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')";
+
+						if(data.__type === "NoFilters") {
+							ourl = url + "?$filter=" + data.toODATA();
+						}
+
 						var deferred = $q.defer(),
 							req = {
 								method: "DELETE",
-								url: _table.parentSchema.config.msOdata === false ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')",
+								url: ourl,
 								headers: {
 									"Content-Type": "application/json",
 									"Accept": "application/json"

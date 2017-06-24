@@ -17,12 +17,12 @@
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"dependencies": {
-		"angular": "1.4.8",
-		"dexie": "^1.5.1",
-		"moment": "^2.11.1",
-		"ng-lodash": "^0.2.3",
 		"@noinfopath/noinfopath": "^0.2.5",
-		"@noinfopath/noinfopath-user": "^1.0.0"
+		"@noinfopath/noinfopath-user": "^1.2.3",
+		"angular": "^1.4.8",
+		"dexie": "^1.5.1",
+		"moment": "^2.18.1",
+		"ng-lodash": "^0.2.3"
 	},
 	"devDependencies": {
 		"angular-mocks": "1.4.8",
