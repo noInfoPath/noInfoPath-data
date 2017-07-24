@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.77*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.78*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -525,8 +525,9 @@
 								} else if(data.paged && data.paged.length) {
 									return data.paged[0];
 								} else {
-									console.warn("noHTTP::noOne: Record Not Found", _table.entityName, filters.toODATA(), data);
-									throw new Error("noHTTP::noOne: Record Not Found");
+									//console.warn("noHTTP::noOne: Record Not Found", _table.entityName, filters.toODATA(), data);
+									//throw new Error("noHTTP::noOne: Record Not Found");
+									return null;
 								}
 							});
 					};
