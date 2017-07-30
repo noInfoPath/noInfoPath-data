@@ -448,18 +448,61 @@
 
 		//arr.push.apply(arr, arguments);
 		this.toODATA = function () {
-			var tmp = [];
+			var tmp = [], groups = [], curGroup;
+
 			for(var fi = 0; fi < this.length; fi++) {
-				var fltr = this[fi],
-					os = fltr.toODATA();
+				var fltr = this[fi];
 
-				if(fltr.logic && this.length > 1 && fi !== this.length-1 ) os = os + " " + fltr.logic + " ";
+				if(fltr.beginning) {
+					curGroup = []
+				}
 
-				tmp.push(os);
+				if(curGroup) curGroup.push(fltr);
+
+				if(fltr.end) {
+					groups.push(curGroup);
+				}
 			}
 
-			tmp = tmp.join("");
-			return tmp;
+
+			if(groups.length > 0) {
+
+				var parts = [];
+				groups.forEach(function(group, gi){
+					filters = group.map(function(filter, fi){
+
+						var os = filter.toODATA();
+
+						if(filter.logic && this.length > 1 && fi !== this.length-1 ) os = os + " " + filter.logic + " ";
+
+						return os;
+					}, group);
+
+					parts.push("(" + filters.join("") + ")");
+
+					if(gi !== groups.length-1) {
+						parts.push(group[group.length - 1].logic);
+					}
+
+
+				});
+
+				return parts.join(" ");
+
+			} else {
+				for(var fi = 0; fi < this.length; fi++) {
+					var fltr = this[fi],
+						os = fltr.toODATA();
+
+					if(fltr.logic && this.length > 1 && fi !== this.length-1 ) os = os + " " + fltr.logic + " ";
+
+					tmp.push(os);
+				}
+
+				tmp = tmp.join("");
+				return tmp;
+			}
+
 		};
 
 		this.toKendo = function () {
