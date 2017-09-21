@@ -3,7 +3,7 @@
 NoInfoPath Data (noinfopath-data)
 =============================================
 
-[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.79*
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.81*
 
 Copyright (c) 2017 The NoInfoPath Group, LLC.
 
