@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.81*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.82*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -442,15 +442,13 @@
 
 					this.noDestroy = function (data) {
 						var ourl;
-
 						if(this.entity.useQueryParams) {
 							//Temporary hack. This needs to be refactor to hand params to the Nth degree.
 							ourl = url + "?" + table.primaryKey + "=" + data[table.primaryKey];
 						} else {
 							ourl = _table.parentSchema.config.msOdata === false ? url + "/" + data[table.primaryKey] : url + "(guid'" + data[table.primaryKey] + "')";
 						}
-
-						if(data.__type === "NoFilters") {
+						if(data.__type === "NoFilters" && this.entity.useQueryParams === false) {
 							ourl = url + "?$filter=" + data.toODATA();
 						}
 
