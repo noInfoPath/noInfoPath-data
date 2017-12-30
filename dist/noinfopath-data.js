@@ -9212,8 +9212,20 @@ var GloboTest = {};
  *	-----------------
  *
  */
-(function (angular, storageInfo, requestFileSystem, undefined) {
+(function (angular, undefined) {
+	// This method of user agent detection also works, though it means you might have to maintain this UA list
+	// if (!storageInfo && !requestFileSystem && navigator.userAgent.match(/(iOS|iPhone|iPod|iPad|Android|BlackBerry)/)) {
+	// 	document.addEventListener("deviceready", function(){
+	// 		storageInfo = navigator.webkitPersistentStorage;
+	// 		requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+	// 	}, false);
+	// } else if(!storageInfo && !requestFileSystem) {
+	// 	throw new Error("Could not resolve storageInfo and/or requestFileSystem interfaces.");
+	// }
+
 	function NoLocalFileSystemService($q, $http, noLocalStorage, noHTTP, noMimeTypes, noConfig) {
+		var storageInfo = navigator.webkitPersistentStorage;
+		var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 
 		var requestedBytes, fileSystem, root;
 
@@ -9893,7 +9905,7 @@ var GloboTest = {};
 		.service("noFileSystem", ["$q", "$rootScope", "noLocalFileSystem", NoFileSystemService])
 		;
 
-})(angular, navigator.webkitPersistentStorage, window.requestFileSystem || window.webkitRequestFileSystem);
+})(angular);
 
 //parameter-parser.js
 (function(angular, undefined){
