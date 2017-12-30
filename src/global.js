@@ -5,7 +5,7 @@
 	*	NoInfoPath Data (noinfopath-data)
 	*	=============================================
 	*
-	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.83*
+	*	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.84*
 	*
 	*	Copyright (c) 2017 The NoInfoPath Group, LLC.
 	*
