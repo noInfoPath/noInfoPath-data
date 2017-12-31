@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.84*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.85*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -34,6 +34,38 @@
 		var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 
 		var requestedBytes, fileSystem, root;
+
+		var ENCODING_ERR = "5",
+			INVALID_MODIFICATION_ERR = "9",
+			INVALID_STATE_ERR = "7",
+			NO_MODIFICATION_ALLOWED_ERR = "6",
+			NOT_FOUND_ERR = "1",
+			NOT_READABLE_ERR = "4",
+			PATH_EXISTS_ERR = "12",
+			QUOTA_EXCEEDED_ERR = "10",
+			SECURITY_ERR = "2",
+			TYPE_MISMATCH_ERR = "11",
+			errorMessages = {};
+
+		errorMessages[ENCODING_ERR] = "The URL is malformed. Make sure that the URL is complete and valid."
+		errorMessages[INVALID_MODIFICATION_ERR] = "The modification requested is not allowed. For example, the app might be trying to move a directory into its own child or moving a file into its parent directory without changing its name.";
+		errorMessages[INVALID_STATE_ERR] = "The operation cannot be performed on the current state of the interface object. For example, the state that was cached in an interface object has changed since it was last read from disk.";
+		errorMessages[NO_MODIFICATION_ALLOWED_ERR] = "The state of the underlying file system prevents any writing to a file or a directory.";
+		errorMessages[NOT_FOUND_ERR] = "A required file or directory could not be found at the time an operation was processed. For example, a file did not exist but was being opened.";
+		errorMessages[NOT_READABLE_ERR] = "The file or directory cannot be read, typically due to permission problems that occur after a reference to a file has been acquired (for example, the file or directory is concurrently locked by another application).";
+		errorMessages[PATH_EXISTS_ERR] = "The file or directory with the same path already exists.";
+		errorMessages[QUOTA_EXCEEDED_ERR] = "Either there's not enough remaining storage space or the storage quota was reached and the user declined to give more space to the database. To ask for more storage, see Managing HTML5 Offline Storage.";
+		errorMessages[SECURITY_ERR] = "Access to the files were denied for one of the following reasons: \nThe files might be unsafe for access within a Web application.\nToo many calls are being made on file resources.\nOther unspecified security error code or situations.";
+		errorMessages[TYPE_MISMATCH_ERR] = "The app looked up an entry, but the entry found is of the wrong type. For example, the app is asking for a directory, when the entry is really a file.";
+
+
+
+
+		function fileSystemErrors(errCode) {
+			var e = errorMessages[String(errCode)];
+
+			return e ? new Error(e) : new Error("Unknown  FileError code " + errCode);
+		}
 
 		/**
 		 *	@method read(file)
@@ -76,8 +108,7 @@
 		this.getBinaryString = _readFileObject;
 
 		function _requestStorageQuota() {
-			if(!noLocalStorage.getItem("noLocalFileSystemQuota"))
-			{
+			if (!noLocalStorage.getItem("noLocalFileSystemQuota")) {
 				requestedBytes = noConfig.current.localFileSystem.quota;
 
 				return $q(function (resolve, reject) {
@@ -111,7 +142,9 @@
 
 					fileSystem = fs;
 
-					fs.root.getDirectory('NoFileCache', {create:true}, function(directoryEntry){
+					fs.root.getDirectory('NoFileCache', {
+						create: true
+					}, function (directoryEntry) {
 						root = directoryEntry;
 						deferred.resolve();
 					}, deferred.reject);
@@ -119,7 +152,8 @@
 					deferred.resolve(fs);
 				},
 				function (e) {
-					deferred.reject(e);
+					console.log(e);
+					deferred.reject(fileSystemErrors(e.code));
 				}
 			);
 
@@ -140,7 +174,7 @@
 			var deferred = $q.defer(),
 				noFileCacheReader = root.createReader();
 
-			noFileCacheReader.readEntries(function(results) {
+			noFileCacheReader.readEntries(function (results) {
 				deferred.resolve(results.length);
 			}, deferred.reject);
 
@@ -151,7 +185,7 @@
 			var deferred = $q.defer(),
 				noFileCacheReader = root.createReader();
 
-			noFileCacheReader.readEntries(function(results) {
+			noFileCacheReader.readEntries(function (results) {
 				deferred.resolve(new noInfoPath.data.NoResults(results));
 			}, deferred.reject);
 
@@ -186,7 +220,9 @@
 						}, reject);
 					})
 					.catch(function (err) {
-						console.error(err);
+
+						throw fileSystemErrors(err.target.error.code);
+						//console.error(err);
 					});
 
 
@@ -200,7 +236,7 @@
 			return $q(function (resolve, reject) {
 				var path = fileObj[fileNameField || "DocumentID"] + "." + noMimeTypes.fromMimeType(fileObj.type);
 
-				if(!root) reject(new Error("Root folder missing."));
+				if (!root) reject(new Error("Root folder missing."));
 
 				root.getFile(path, null, function (fileEntry) {
 					resolve({
@@ -284,14 +320,16 @@
 						});
 				})
 				.catch(function (err) {
-					return err;
+					//err.target.error.code
+					throw err; //fileSystemErrors(err.code)
+
 				});
 
 		}
 		this.getFile = _get;
 
 		function _delete(fileObj, fileNameField) {
-			if(!fileObj.type){
+			if (!fileObj.type) {
 				return $q.when("fileObj does not have type provided.");
 			} else {
 				return $q(function (resolve, reject) {
@@ -311,19 +349,19 @@
 			var deferred = $q.defer(),
 				noFileCacheReader = root.createReader();
 
-			noFileCacheReader.readEntries(function(results) {
-				if(!!results.length) {
+			noFileCacheReader.readEntries(function (results) {
+				if (!!results.length) {
 					var count = 0;
 					console.log("Deleteing", results.length);
 
-					results.forEach(function(f){
-						f.remove(function(){
+					results.forEach(function (f) {
+						f.remove(function () {
 							count++;
-							if(count >= results.length) deferred.resolve();
-						}, function(err){
+							if (count >= results.length) deferred.resolve();
+						}, function (err) {
 							console.log(err);
 							count++;
-							if(count >= results.length) deferred.resolve();
+							if (count >= results.length) deferred.resolve();
 						});
 					});
 
@@ -339,7 +377,7 @@
 		this.clear = _clear;
 
 		function _download(url, mimeType, fileName) {
-			return $q(function(resolve, reject){
+			return $q(function (resolve, reject) {
 				var options = {
 					headers: {
 						"Content-Type": mimeType,
@@ -352,12 +390,19 @@
 				noHTTP.noRequest(url, options)
 					.then(function (resp) {
 						//console.log(x.readAsArrayBuffer(resp.data));
-						var file = new File([resp.data], fileName, {
-							type: mimeType
-						});
+						var file = new Blob([resp.data], {type: mimeType});
+						file.name = fileName;
+
+						// if(cordova) {
+                        //
+						// } else {
+						// 	file = new File(, fileName, {
+						// 		type: mimeType
+						// 	});
+						// }
 						console.log("noLocalFileSystem::download", file.name, mimeType, file.type, file.size);
 						resolve(file);
-					}).catch(function(err){
+					}).catch(function (err) {
 						resolve(null);
 					});
 			});
@@ -365,6 +410,8 @@
 		}
 		this.downloadFile = _download;
 	}
+
+
 
 	/*
 	 *	noMimeTypes
@@ -507,7 +554,7 @@
 			return mimeTypesInverted[mimeType.toLowerCase()];
 		};
 
-		this.isImage = function(mimeType) {
+		this.isImage = function (mimeType) {
 			return mimeType.indexOf("image/") > -1;
 		};
 	}
@@ -580,7 +627,7 @@
 			var dbInitialized = "noFileSystem_rmEFR2",
 				db = $rootScope[dbInitialized];
 
-			if(db && db.NoFileCache){
+			if (db && db.NoFileCache) {
 				db.NoFileCache.backerSchema = backerSchema;
 			}
 
@@ -605,7 +652,7 @@
 					}
 				},
 				backerSchema: {
-					set: function(v) {
+					set: function (v) {
 						schema = v;
 					}
 				}
@@ -635,7 +682,7 @@
 			};
 
 			this.noUpdate = function (data, trans) {
-				return 	noLocalFileSystem.deleteFile(data, schema.primaryKey)
+				return noLocalFileSystem.deleteFile(data, schema.primaryKey)
 					.then(function (data) {
 						return noLocalFileSystem.save(data, schema.primaryKey)
 							.catch(function (err) {
@@ -707,8 +754,7 @@
 
 	angular.module("noinfopath.data")
 		.service("noMimeTypes", [NoMimeTypeService])
-		.service("noLocalFileSystem", ["$q", "$http", "noLocalStorage","noHTTP", "noMimeTypes", "noConfig", NoLocalFileSystemService])
-		.service("noFileSystem", ["$q", "$rootScope", "noLocalFileSystem", NoFileSystemService])
-		;
+		.service("noLocalFileSystem", ["$q", "$http", "noLocalStorage", "noHTTP", "noMimeTypes", "noConfig", NoLocalFileSystemService])
+		.service("noFileSystem", ["$q", "$rootScope", "noLocalFileSystem", NoFileSystemService]);
 
 })(angular);
