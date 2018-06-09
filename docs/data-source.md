@@ -2,7 +2,7 @@
 
 ___
 
-[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.85*
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.1.5*
 
 [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
@@ -51,6 +51,7 @@ associated file should be delete. If it is a bool and true the file should be pr
 
 > This method also doubles as the `clear` method when it is called with no parameters.
 
+@property noDataSource.waitFor
 
 Use this property when you want the data source wait for some other
 NoInfoPath component to update the `scope`.

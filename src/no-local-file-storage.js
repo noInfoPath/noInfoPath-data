@@ -4,7 +4,7 @@
  *
  *	___
  *
- *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.85*
+ *	[NoInfoPath Data (noinfopath-data)](home) *@version 2.1.1*
  *
  *	[![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
  *
@@ -133,7 +133,8 @@
 		this.requestStorageQuota = _requestStorageQuota;
 
 		function _requestFileSystem() {
-			var deferred = $q.defer();
+			var requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem,
+				deferred = $q.defer();
 
 			requestFileSystem(
 				window.PERSISTENT,
@@ -390,11 +391,11 @@
 				noHTTP.noRequest(url, options)
 					.then(function (resp) {
 						//console.log(x.readAsArrayBuffer(resp.data));
-						var file = new Blob([resp.data], {type: mimeType});
+						var file = new Blob([resp.data], { type: mimeType });
 						file.name = fileName;
 
 						// if(cordova) {
-                        //
+						//
 						// } else {
 						// 	file = new File(, fileName, {
 						// 		type: mimeType
@@ -402,7 +403,8 @@
 						// }
 						console.log("noLocalFileSystem::download", file.name, mimeType, file.type, file.size);
 						resolve(file);
-					}).catch(function (err) {
+					})
+					.catch(function (err) {
 						resolve(null);
 					});
 			});

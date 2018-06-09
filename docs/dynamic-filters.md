@@ -2,7 +2,7 @@
 
 ___
 
-[NoInfoPath Data (noinfopath-data)](home) *@version 2.0.85*
+[NoInfoPath Data (noinfopath-data)](home) *@version 2.1.5*
 
 [![Build Status](http://gitlab.imginconline.com:8081/buildStatus/icon?job=noinfopath-data&build=6)](http://gitlab.imginconline.com/job/noinfopath-data/6/)
 
@@ -13,12 +13,14 @@ Licensed under the MIT License. (MIT)
 ___
 
 
+@method normalizeFilterValue
 
 Evaluates the type parameter looking for know types, and converts
 converts the value parameter to explicitly be of the type provied.
 
 If the type is not a supported type then value is returned unchanged.
 
+@method configureFilterWatch
 
 If the filterCfg parameter's value property, has a watch property, and
 the value's source property is an AngularJS  observable object
@@ -45,6 +47,7 @@ the source is injected using the $injector service.
   > property set to `scope` then use the directives scope variable.
   > Otherwise assume source is an injectable.
 
+@property noDataSource.filter
 
 An array of NoInfoPath dynamic filters. Each filter defines what
 the provider of the filter data is, and what property to filter on.

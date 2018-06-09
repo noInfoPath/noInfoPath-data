@@ -18,25 +18,21 @@ module.exports = function (grunt) {
 				]
 			},
 			test2: {
-				files: [
-					{
-						expand: true,
-						flatten: true,
-						src: ['dist/*.js'],
-						dest: '/Users/gochinj/ws/noinfopath-v3/noinfopath-app/test/http/lib/js/noinfopath'
-					}
-				]
+				files: [{
+					expand: true,
+					flatten: true,
+					src: ['dist/*.js'],
+					dest: '/Users/gochinj/ws/noinfopath-v3/noinfopath-app/test/http/lib/js/noinfopath'
+				}]
 			},
 			wiki: {
-	            files: [
-	                {
-	                    expand: true,
-	                    flatten: true,
-	                    src: ['docs/*.md', '!docs/global.md'],
-	                    dest: '../wikis/<%= pkg.shortName %>.wiki/'
-	                }
-	            ]
-	        }
+				files: [{
+					expand: true,
+					flatten: true,
+					src: ['docs/*.md', '!docs/global.md'],
+					dest: '../wikis/<%= pkg.shortName %>.wiki/'
+				}]
+			}
 		},
 		concat: {
 			noinfopath: {
@@ -75,17 +71,17 @@ module.exports = function (grunt) {
 				dest: 'dist/noinfopath-dexie.js'
 			},
 			readme: {
-	            src: ['docs/home.md'],
-	            dest: 'readme.md'
-	        },
+				src: ['docs/home.md'],
+				dest: 'readme.md'
+			},
 			readmeFull: {
 				src: ['docs/globals.md', 'docs/storage.md', 'docs/file-storage.md', 'docs/data-source.md', 'docs/transaction-cache.md', 'docs/template-cache.md', 'docs/http.md', 'docs/indexeddb.md', 'docs/websql-2.md', 'docs/no-local-file-storage.md', 'helper-functions.md', 'classes.md'],
 				dest: 'readme.md'
 			},
 			wikiHome: {
-	            src: ['docs/global.md'],
-	            dest: 'docs/home.md'
-	        }
+				src: ['docs/global.md'],
+				dest: 'docs/home.md'
+			}
 		},
 		karma: {
 			unit: {
@@ -170,16 +166,16 @@ module.exports = function (grunt) {
 				}
 			},
 			wiki: {
-	            options: {
-	                src: 'src/*.js',
-	                dest: 'docs/<%= pkg.shortName %>.md',
-	                start: ['/*', '/**'],
-	                multiDocs: {
-	                    multiFiles: true,
-	                    dest: "docs/"
-	                }
-	            }
-	        }
+				options: {
+					src: 'src/*.js',
+					dest: 'docs/<%= pkg.shortName %>.md',
+					start: ['/*', '/**'],
+					multiDocs: {
+						multiFiles: true,
+						dest: "docs/"
+					}
+				}
+			}
 		},
 		watch: {
 			dev: {
@@ -187,7 +183,7 @@ module.exports = function (grunt) {
 				tasks: ['compile'],
 				options: {
 					spawn: false
-						// livereload: true
+					// livereload: true
 				}
 			},
 			document: {
@@ -195,7 +191,7 @@ module.exports = function (grunt) {
 				tasks: ['document'],
 				options: {
 					spawn: false
-						// livereload: true
+					// livereload: true
 				}
 			}
 		},
@@ -210,24 +206,24 @@ module.exports = function (grunt) {
 			}
 		},
 		shell: {
-	        wiki1: {
-	            command: [
-	                'cd ../wikis/<%= pkg.shortName %>.wiki',
-	                'pwd',
-	                'git stash',
-	                'git pull'
-	            ].join(' && ')
-	        },
-	        wiki2: {
-	            command: [
-	                'cd ../wikis/<%= pkg.shortName %>.wiki',
-	                'pwd',
-	                'git add .',
-	                'git commit -m"Wiki Updated"',
-	                'git push'
-	            ].join(' && ')
-	        }
-	    }
+			wiki1: {
+				command: [
+					'cd ../wikis/<%= pkg.shortName %>.wiki',
+					'pwd',
+					'git stash',
+					'git pull'
+				].join(' && ')
+			},
+			wiki2: {
+				command: [
+					'cd ../wikis/<%= pkg.shortName %>.wiki',
+					'pwd',
+					'git add .',
+					'git commit -m"Wiki Updated"',
+					'git push'
+				].join(' && ')
+			}
+		}
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-concat');
@@ -265,5 +261,5 @@ module.exports = function (grunt) {
 	grunt.registerTask('document', ['concat:noinfopath', 'nodocs:wiki']);
 	grunt.registerTask('wikiWack', ['shell:wiki1', 'concat:wikiHome', 'copy:wiki', 'shell:wiki2']);
 	grunt.registerTask('updateWiki', ['document', 'wikiWack']);
-	grunt.registerTask('release', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'concat:dexie', 'updateWiki', 'copy:wiki', 'concat:wikiHome', 'concat:readme']);
+	grunt.registerTask('release', ['karma:noWebSQL2_ci', 'bumpup', 'version', 'concat:noinfopath', 'concat:dexie']);
 };
