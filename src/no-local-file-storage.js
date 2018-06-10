@@ -108,24 +108,31 @@
 		this.getBinaryString = _readFileObject;
 
 		function _requestStorageQuota() {
-			if (!noLocalStorage.getItem("noLocalFileSystemQuota")) {
-				requestedBytes = noConfig.current.localFileSystem.quota;
+			requestedBytes = noConfig.current.localFileSystem.quota;
+			if (navigator.webkitPersistentStorage) {
+				if (!noLocalStorage.getItem("noLocalFileSystemQuota")) {
 
-				return $q(function (resolve, reject) {
-					storageInfo.requestQuota(
-						requestedBytes,
-						function (grantedBytes) {
-							console.log('Requested ', requestedBytes, 'bytes, were granted ', grantedBytes, 'bytes');
-							noLocalStorage.setItem("noLocalFileSystemQuota", grantedBytes);
-							resolve(grantedBytes);
-						},
-						function (e) {
-							console.log('Error', e);
-							reject(e);
-						}
-					);
-				});
+					return $q(function (resolve, reject) {
+						storageInfo.requestQuota(
+							requestedBytes,
+							function (grantedBytes) {
+								console.log('Requested ', requestedBytes, 'bytes, were granted ', grantedBytes, 'bytes');
+								noLocalStorage.setItem("noLocalFileSystemQuota", grantedBytes);
+								resolve(grantedBytes);
+							},
+							function (e) {
+								console.log('Error', e);
+								reject(e);
+							}
+						);
+					});
+				}
+			} else {
+				noLocalStorage.setItem("noLocalFileSystemQuota", noConfig.current.localFileSystem.quota);
+				return Promise.resolve();
 			}
+
+
 
 
 
